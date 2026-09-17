@@ -1,0 +1,6 @@
+[submodule "contracts/lib/aigg-porw"]
+	path = contracts/lib/aigg-porw
+	url = https://github.com/jianmliu/aigg-porw.git
+[submodule "contracts/lib/forge-std"]
+	path = contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
