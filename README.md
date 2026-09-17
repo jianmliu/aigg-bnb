@@ -108,7 +108,34 @@ Published brain: `gnfd://aigg-brains/flywire-fafb-v783-min5.bin` on Greenfield t
 registry (tx `0xb20e5fd164198ea293590adfbec61ab70c2d25b53af660a5041f78a0951f8d2e`): int-lif, 100 steps, stride 10,
 139,255 neurons, 2,700,513 synapse records, model_id `0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a`.
 
-Live run (`test/live_bsc.mjs` against a running relayer): see the "Live run" entry below once recorded.
+### Live run record — 2026-09-17, BSC testnet (chain 97)
+
+`test/live_bsc.mjs` (a headless instance holding the real FlyWire brain) against `relayer/relayer.mjs`, both on
+the deployment above; all transactions on https://testnet.bscscan.com/tx/<hash>. One account played deployer,
+relayer and instance (only one funded key); in production these are three parties.
+
+| step | who | tx | gas |
+|---|---|---|---|
+| bond 0.05 BNB for the FlyWire MEP (1 vote) | instance wallet | `0xe8677a1d0d5211fd92eab0c4a73f7b06a4166c7e1985c9f24d5a862d888949a8` | — |
+| delegateBySig (session key, EIP-712) | relayer, sponsored | `0x3a6ca9b493ee4aa04818647c55b389b4e85649209fee7ccf59a0962d47409155` | 54,935 |
+| beacon commit for epoch 164533 | relayer | `0xedcc81a69a7c9b00ffae3692900e9ae453a4baaac202c8c539777f5b0da09917` | 115,235 |
+| beacon reveal for epoch 164533 | relayer | `0xa79cc2ed1ceac7833ece936d83e09dad5762144395febb4185ca7c9b6585200d` | 100,408 |
+| rollEpoch(164533) | relayer | `0x4080d6a7ebfc1dd61b43a2ff630050b7cfa2f6974ce0aaa2f60ebcc30a5f4637` | 52,276 |
+| claim for epoch 164533 (off-chain, over the relay) | instance | claimHash `0x248d455aeb…`, slot 5.1 s (100 LIF steps + commitments, single thread) | — |
+| beacon commit / reveal for epoch 164534 | relayer | `0xffb68421bb2bcd91968636dfa090de7cf3f1afd96c1a3719ad011841362dd109` / `0xd6fd02ec9918dbd29e99ed1d4ccfd198ada9208668e3d3427ba82f1888b431e0` | 115,235 / 100,396 |
+| rollEpoch(164534) | relayer | `0x27a843a60d61b2fe5efdaf956372a3421fb864d8b91aa6dfe63853135171e15d` | 52,276 |
+| postEpochRoot(MEP, 164533, 1 claim) — root `0xa102297a18b16b6be233793be29f939f4ea806d42f01edcd4c42c84a5f0dc518` | relayer | `0x9cafda285e33d7195db230797992684811893c768d280a643e6003bb84af1e3f` | 97,803 |
+| claim for epoch 164534 (off-chain) | instance | claimHash `0xde77e12d2f…`, slot 5.1 s | — |
+| materializeClaim(164533) with the relayer's inclusion proof | relayer, sponsored | `0xeb02cdfcb35e971964e42da139ec1e76f35e0cd4a18ab851b86af82178f367e7` | 284,571 |
+| postTask (fee 0.001 BNB, redundancy 1) → sortition picked the instance | client | `0xf096e8bf393541335e56c70b13986d108e7fc9906f5dfc1fc4fc686f59463a63` | — |
+| task executed over the relay (100 LIF steps), execDigest `0x688bc3909079…` | instance | off-chain | — |
+| submitResult (EIP-712, session key) | relayer, sponsored | `0x8c67ddc7c9d4fffbdffad99e09b9702467b96126dc9eb9134e9815101537ddd0` | — |
+| settle → fee paid to the instance | relayer | `0xd07c48aaec2fbf1c701bf064246b44a029dc195001b5e55a6942d88b02b3bac7` | — |
+
+Verified afterwards by read calls: `hasValidClaim(instance, MEP, 164533) == true`, `epochRoots(MEP, 164533, relayer) ==
+(0xa10229…, 1)`. One transient failure: the first `postEpochRoot` attempt got "nonce lower than current" from the
+public RPC pool right after `rollEpoch`; the relayer's next tick (5 s later) succeeded. Wall clock from bond to
+settlement: 10.5 minutes, dominated by waiting for epoch boundaries (800 blocks ≈ 10 min).
 
 ## Build and test (standalone layout)
 
