@@ -82,7 +82,7 @@ independent re-execution. The wallet is prompted exactly twice (bond tx, one `De
 
 Never in git. `deploy.sh` writes `.env.<network>` (`PORW_CHAIN_ID`, `PORW_RPC`, `PORW_EPOCH_BLOCKS`,
 `PORW_VERIFIER`, `PORW_MEP_REGISTRY`, `PORW_INSTANCES`, `PORW_BEACON`, `PORW_CLAIMS`, `PORW_MARKET`,
-`PORW_DISPUTES`, `PORW_RELAYS`); the relayer reads the environment (`relayer/env.mjs`) and serves the
+`PORW_DISPUTES`, `PORW_RELAYS`, plus the deployer that owns the registries: `PORW_DEPLOYER`, `PORW_DEPLOYER_KEY`); the relayer reads the environment (`relayer/env.mjs`) and serves the
 addresses to the frontend over `/deployment`, so the page needs nothing but the relayer URL. `deployments/*.json`,
 `.env*` and `relayer/config.json` are gitignored; keep the env files in your secret store. The end-to-end tests
 start the relayer through the same `PORW_*` variables.
