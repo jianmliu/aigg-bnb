@@ -1,0 +1,74 @@
+{
+ "flywire-783-min5|joLR|seed7|5000": {
+  "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+  "total_spikes": 29095,
+  "active": 560,
+  "last_half_per100ms": {
+   "DNge145": 2.8,
+   "DNp12": 6.0,
+   "GF": 10.4,
+   "locked38": 104.4
+  },
+  "seconds": 73.7
+ },
+ "flywire-783-min5|joLR+gate|seed7|5000": {
+  "execDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
+  "total_spikes": 28991,
+  "active": 504,
+  "last_half_per100ms": {
+   "DNge145": 0.0,
+   "DNp12": 3.2,
+   "GF": 12.4,
+   "locked38": 112.0
+  },
+  "seconds": 73.3
+ },
+ "flywire-783-min5-ablate4|joLR|seed7|5000": {
+  "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+  "total_spikes": 29095,
+  "active": 560,
+  "last_half_per100ms": {
+   "DNge145": 2.8,
+   "DNp12": 6.0,
+   "GF": 10.4,
+   "locked38": 104.4
+  },
+  "seconds": 72.7
+ },
+ "flywire-783-min5-ablate4|joLR+gate|seed7|5000": {
+  "execDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
+  "total_spikes": 29016,
+  "active": 501,
+  "last_half_per100ms": {
+   "DNge145": 3.6,
+   "DNp12": 2.8,
+   "GF": 12.4,
+   "locked38": 111.2
+  },
+  "seconds": 73.3
+ },
+ "flywire-783-min5-keep4|joLR|seed7|5000": {
+  "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+  "total_spikes": 29095,
+  "active": 560,
+  "last_half_per100ms": {
+   "DNge145": 2.8,
+   "DNp12": 6.0,
+   "GF": 10.4,
+   "locked38": 104.4
+  },
+  "seconds": 73.4
+ },
+ "flywire-783-min5-keep4|joLR+gate|seed7|5000": {
+  "execDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
+  "total_spikes": 29248,
+  "active": 552,
+  "last_half_per100ms": {
+   "DNge145": 0.0,
+   "DNp12": 7.2,
+   "GF": 11.2,
+   "locked38": 111.6
+  },
+  "seconds": 74.3
+ }
+}

@@ -1,0 +1,12 @@
+{
+ "joLR": {
+  "count": 359,
+  "initStateRoot": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3",
+  "stimulated": 359
+ },
+ "joLR+gate": {
+  "count": 361,
+  "initStateRoot": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35",
+  "stimulated": 361
+ }
+}

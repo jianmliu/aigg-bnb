@@ -1,0 +1,90 @@
+{
+ "steps": 5000,
+ "commitStride": 500,
+ "seed": 7,
+ "models": {
+  "flywire-783-min5": {
+   "mepId": "0x1569abaaa3c688414fa4f5317a525c0df319666683cbadcc217ee56117234749",
+   "modelId": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+   "schemeDigest": "0x718b2eb3b33a6d18d904363ee1cc2fb797e344af10132ebfd93aef8d5d72e4b4",
+   "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+   "steps": 5000,
+   "clampQ16": 500,
+   "neurons": 139255,
+   "synapses": 2700513,
+   "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
+   "tiles": 6866,
+   "sha256": null
+  },
+  "flywire-783-min5-ablate4": {
+   "mepId": "0xb831be529f12d196d4c484805ed9c320b37f60bde19b20f18448f1945eacfebf",
+   "modelId": "0x2c05fc989a1c651181c787b58e67982709d72c2aac6b72ebf7545fef20163781",
+   "schemeDigest": "0x718b2eb3b33a6d18d904363ee1cc2fb797e344af10132ebfd93aef8d5d72e4b4",
+   "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+   "steps": 5000,
+   "clampQ16": 500,
+   "neurons": 139255,
+   "synapses": 2700509,
+   "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
+   "tiles": 6866,
+   "sha256": null
+  },
+  "flywire-783-min5-keep4": {
+   "mepId": "0x08aa989d6899bf91cbde20a66b585a777924c565771e84ce2b60926e51c84562",
+   "modelId": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
+   "schemeDigest": "0x718b2eb3b33a6d18d904363ee1cc2fb797e344af10132ebfd93aef8d5d72e4b4",
+   "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+   "steps": 5000,
+   "clampQ16": 500,
+   "neurons": 139255,
+   "synapses": 2700046,
+   "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
+   "tiles": 6864,
+   "sha256": null
+  }
+ },
+ "runs": {
+  "flywire-783-min5|joLR|seed7|5000": {
+   "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+   "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+   "stimulated": 359,
+   "ms": 11061,
+   "matchesReference": true
+  },
+  "flywire-783-min5|joLR+gate|seed7|5000": {
+   "execDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
+   "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
+   "stimulated": 361,
+   "ms": 10753,
+   "matchesReference": true
+  },
+  "flywire-783-min5-ablate4|joLR|seed7|5000": {
+   "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+   "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+   "stimulated": 359,
+   "ms": 10919,
+   "matchesReference": true
+  },
+  "flywire-783-min5-ablate4|joLR+gate|seed7|5000": {
+   "execDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
+   "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778",
+   "stimulated": 361,
+   "ms": 10987,
+   "matchesReference": true
+  },
+  "flywire-783-min5-keep4|joLR|seed7|5000": {
+   "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+   "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+   "stimulated": 359,
+   "ms": 11013,
+   "matchesReference": true
+  },
+  "flywire-783-min5-keep4|joLR+gate|seed7|5000": {
+   "execDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
+   "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed",
+   "stimulated": 361,
+   "ms": 10834,
+   "matchesReference": true
+  }
+ }
+}
