@@ -16,6 +16,7 @@ changes a PoRW scheme id and never forks the neutral contracts.
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
 | `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
+| `js/greenfield_admin.mjs` / `js/register_mep.mjs` | publisher tools: bridge-funded deployer account → create a public-read bucket, upload the payload (SDK, Reed-Solomon checksums), then register the MEP on-chain after verifying the SP serves bytes with the pinned `model_id` |
 | `relayer/` | **the relayer service**: stage-1 relay hub + epoch aggregator (one root per MEP per epoch) + commit-reveal beacon participant / epoch roller + gas-sponsoring transaction submitter for bonded instances (`delegateBySig`, `materializeClaim`, `submitResult`, `settle`) with a small HTTP API |
 | `frontend/` | **the node page**: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
 | `test/` | end-to-end on a local anvil: `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
@@ -39,7 +40,13 @@ changes a PoRW scheme id and never forks the neutral contracts.
 npm install
 # contracts: deploy; the addresses are saved as environment variables in .env.<network> (gitignored, chmod 600)
 NETWORK=bsc-testnet PK=0x... ./deploy.sh
-# register your MEP (model_id, exec kind, steps, synapseRoot, weightsDA=gnfd://bucket/object) — see test/harness.mjs registerSyntheticMep
+# publish a brain: fund the deployer on Greenfield (TokenHub.transferOut on BSC testnet: 0xED8e5C546F84442219A5a987EE1D820698528E04,
+# value = amount + relayFee + minAckRelayFee from CrossChain.getRelayFees()), upload, then register the MEP
+source .env.bsc-testnet
+node js/greenfield_admin.mjs balance $PORW_DEPLOYER
+PORW_GNFD_SP=https://gnfd-testnet-sp2.bnbchain.org node js/greenfield_admin.mjs upload aigg-brains flywire-fafb-v783-min5.bin /path/to/flywire-783-min5.bin
+node js/register_mep.mjs fields.json gnfd://aigg-brains/flywire-fafb-v783-min5.bin https://gnfd-testnet-sp2.bnbchain.org
+#   fields.json = model_id / synapseRoot / exec kind / steps / stride computed by aigg-porw (web/porw-browser/model_id.mjs + node.loadModel)
 # relayer: addresses + RPC come from the env file; add the relayer key and the MEP ids to it (or export them)
 echo "PORW_RELAYER_KEY=0x...
 PORW_MEP_IDS=0x<mep id>,0x<mep id>

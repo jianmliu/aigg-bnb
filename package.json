@@ -11,10 +11,12 @@
     "frontend": "node frontend/serve.mjs"
   },
   "dependencies": {
+    "@bnb-chain/greenfield-js-sdk": "^2.2.2",
+    "@bnb-chain/reed-solomon": "^1.1.4",
     "@noble/hashes": "^2.4.0",
     "@noble/secp256k1": "^3.2.0",
-    "ws": "^8.18.0",
-    "viem": "^2.21.0"
+    "viem": "^2.21.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "playwright": "^1.63.0"
