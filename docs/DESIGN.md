@@ -92,8 +92,9 @@ mainnet; it remains the cheaper choice if every instance should carry an on-chai
   the beacon participant (commit in the last `COMMIT_BLOCKS` of an epoch, reveal in the first
   `REVEAL_BLOCKS` of the next, then `rollEpoch`), and a sponsor API. Sponsorship rules: the caller must be a
   bonded instance or its delegated session key; the call must simulate successfully; roots are posted only
-  once per (MEP, epoch). The relayer is untrusted for correctness and replaceable for liveness (several may
-  run; instances fan out). Its cost per epoch: beacon commit + reveal + roll + one root per MEP, plus the
+  once per (MEP, epoch). Sends are serialized with a locally tracked pending nonce (resync and one retry on
+  nonce errors), because public RPC pools return stale nonces right after a mined transaction. The relayer is
+  untrusted for correctness and replaceable for liveness (several may run; instances fan out). Its cost per epoch: beacon commit + reveal + roll + one root per MEP, plus the
   sponsored materializations and results, all recoverable from task fees / operator incentives.
 - **Frontend** (`frontend/`): no framework; neutral modules from aigg-porw; chain reads through the wallet
   provider; two wallet interactions in total (bond tx, one EIP-712 Delegation). The session key lives in

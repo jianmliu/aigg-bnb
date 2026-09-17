@@ -48,9 +48,13 @@ try {
   const e2 = await enterEpoch(2); check("epoch 2 entered", e2.rolled);
   check("relayer posted the epoch-1 root (2 claims) in epoch 2", await waitFor(async () => (await R.api("/status")).rootsPosted.some((r) => r.epoch === 1 && r.count === 2)));
   const pA = await R.api(`/proof?mep=${mepId}&epoch=1&instance=${A.addr}`); check("A's inclusion proof served by the relayer", pA.index !== undefined && pA.proof.length >= 1 && pA.posted);
-  const mA = await R.api("/tx/materialize", { mep: mepId, epoch: 1, instance: A.addr }), mB = await R.api("/tx/materialize", { mep: mepId, epoch: 1, instance: B.addr });
+  // two sponsored requests at once: sends are serialized with consecutive local nonces
+  const [mA, mB] = await Promise.all([R.api("/tx/materialize", { mep: mepId, epoch: 1, instance: A.addr }), R.api("/tx/materialize", { mep: mepId, epoch: 1, instance: B.addr })]);
   check(`materialized A and B through the relayer (gas ${mA.gasUsed}, ${mB.gasUsed})`, mA.ok && mB.ok && (await A.c.claims.read.hasValidClaim([A.wallet.address, mepId, 1n])) && (await A.c.claims.read.hasValidClaim([B.wallet.address, mepId, 1n])));
   check("both eligible in epoch 2 (bonded + materialized epoch-1 claims)", (await A.c.instances.read.isEligible([A.wallet.address, mepId, 2n])) && (await A.c.instances.read.isEligible([B.wallet.address, mepId, 2n])));
+  { const st0 = await R.api("/status"); const seq = st0.txs.map((t) => t.nonce); check(`relayer nonces are consecutive across ${seq.length} serialized sends (${seq.join(",")})`, seq.every((n, i) => i === 0 || n === seq[i - 1] + 1)); }
+  // desync the relayer's account on purpose: a transaction it did not send consumes the next nonce
+  { const RK = H.clientsFor(dep, H.KEYS[3]); await RK.pub.waitForTransactionReceipt({ hash: await RK.wallet.sendTransaction({ to: H.KEYS[3] && RK.account.address, value: 0n }) }); }
   // ---- a task: posted by a client, announced over the relay to the executors' session inboxes, results sponsored, settled ----
   const C = H.clientsFor(dep, H.KEYS[0]); const nonce = "0x" + "31".repeat(32);
   const h = await C.market.write.postTask([{ mepId, stimulusSeed: 9, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 2 }, nonce], { value: parseEther("0.01") });
@@ -63,7 +67,8 @@ try {
   check("both results submitted on-chain by the relayer (sponsored)", await waitFor(async () => A.results[0]?.relayer?.ok && B.results[0]?.relayer?.ok) && (await C.market.read.submitted([taskId, A.wallet.address])) && (await C.market.read.submitted([taskId, B.wallet.address])));
   const s = await R.api("/tx/settle", { taskId }); check("settled: identical results, fee split to the executors", s.ok && (await A.c.pub.getBalance({ address: A.wallet.address })) === balA + parseEther("0.005"));
   const re = Vf.reexecute(await loadKernelFromBytes(wasm), payload, { stimulusSeed: 9, execDigest: H.unhex(A.results[0].execDigest) }, mep); check("the client re-executes and matches the settled digest", re.matches);
-  const st = await R.api("/status"); console.log(`relayer txs: ${st.txs.length} (${st.txs.filter((t) => t.ok).length} ok), errors: ${st.errors.length}${st.errors.length ? " " + JSON.stringify(st.errors.slice(0, 3)) : ""}`);
+  const st = await R.api("/status"); console.log(`relayer txs: ${st.txs.length} (${st.txs.filter((t) => t.ok).length} ok), errors: ${st.errors.length}${st.errors.length ? " " + JSON.stringify(st.errors.slice(0, 3)) : ""}; nonce resyncs: ${st.nonce.resyncs}`);
+  check("after the external desync the relayer resynced its pending nonce and its later sends still succeeded", st.nonce.resyncs >= 2 && st.txs.slice(-3).every((t) => t.ok) && st.errors.length === 0);
   for (const X of [A, B]) X.rc.close(); client.close(); R.stop();
 } catch (e) { console.error(e); fails++; } finally { anvil.stop(); }
 console.log(fails ? `${fails} FAILURES` : "ALL PASS"); process.exit(fails ? 1 : 0);

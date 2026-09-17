@@ -134,7 +134,10 @@ relayer and instance (only one funded key); in production these are three partie
 
 Verified afterwards by read calls: `hasValidClaim(instance, MEP, 164533) == true`, `epochRoots(MEP, 164533, relayer) ==
 (0xa10229…, 1)`. One transient failure: the first `postEpochRoot` attempt got "nonce lower than current" from the
-public RPC pool right after `rollEpoch`; the relayer's next tick (5 s later) succeeded. Wall clock from bond to
+public RPC pool right after `rollEpoch`; the relayer's next tick (5 s later) succeeded. Since then the relayer
+carries an explicit, locally tracked pending nonce on every send (serialized sends, resync + one retry on nonce
+errors; `/status.nonce` shows the counter and resync count), covered by `e2e_anvil.mjs` with concurrent sponsored
+sends and a deliberate external desync. Wall clock from bond to
 settlement: 10.5 minutes, dominated by waiting for epoch boundaries (800 blocks ≈ 10 min).
 
 ## Build and test (standalone layout)
