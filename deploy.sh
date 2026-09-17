@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/contracts"
 case "${NETWORK:-anvil}" in
   opbnb-testnet) RPC="${RPC:-https://opbnb-testnet-rpc.bnbchain.org}"; CHAIN=5611 ;;
-  bsc-testnet)   RPC="${RPC:-https://data-seed-prebsc-1-s1.bnbchain.org:8545}"; CHAIN=97 ;;
+  bsc-testnet)   RPC="${RPC:-https://bsc-testnet-rpc.publicnode.com}"; CHAIN=97 ;;  # 443 endpoint; the official :8545 one is blocked by some egress proxies
   opbnb)         RPC="${RPC:-https://opbnb-mainnet-rpc.bnbchain.org}"; CHAIN=204 ;;
   bsc)           RPC="${RPC:-https://bsc-dataseed.bnbchain.org}"; CHAIN=56 ;;
   anvil)         RPC="${RPC:-http://127.0.0.1:8545}"; CHAIN=31337; PK="${PK:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}" ;;
