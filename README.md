@@ -30,6 +30,20 @@ changes a PoRW scheme id and never forks the neutral contracts.
 3. **Browsers** hold the brain resident, prove it, execute tasks, and settle through relays;
    wallets (MetaMask/Binance Wallet) sign one EIP-712 delegation per session key.
 
+## Claim posture per chain
+
+- **opBNB**: every instance may submit its own EIP-712 claim each epoch (`submitClaim`, ≈240k gas, negligible cost).
+- **BSC**: use the **aggregated path** from aigg-porw — an untrusted aggregator (`web/porw-browser/aggregator.js`)
+  batches the epoch's verified claims into one root (`postEpochRoot`, ≈72k gas per MEP per epoch) and serves
+  inclusion proofs over the relay; only instances that compete for tasks that epoch, or are audited,
+  `materializeClaim` (≈232k gas). Passive instances cost nothing on-chain; an omitted instance falls back to
+  `submitClaim`. See `docs/DESIGN.md` §5 for the cost model.
+
+## Testnet deployment status
+
+`deploy.sh` targets `bsc-testnet` (chain 97, default RPC on port 443) or `opbnb-testnet` (chain 5611). Not yet
+deployed: awaiting testnet funds on the deployer. Deployed addresses will be recorded in `deployments/<network>.json`.
+
 ## Build and test (standalone layout)
 
 ```sh
