@@ -1,4 +1,4 @@
-# First task: the fly-brain gate-synapse ablation (from jianmliu/flyaudio, tasks/mesh-first-task)
+# First task: the fly-brain gate-synapse ablation (source: jianmliu/flyaudio, tasks/mesh-first-task)
 
 The DREGONFLY gate experiment (docs-jo-audio-mapping.md §26o, outline E4) published as verifiable tasks for the
 aigg mesh (jianmliu/aigg-porw + jianmliu/aigg-bnb). One task = one whole-brain run of the FlyWire v783 female
@@ -29,7 +29,10 @@ the *same* digest (the removed records never carry a spike), which is the built-
 - `stimulus_sets.json`, `init_state_roots.json`, `reference_digests.json` — inputs and the reference runner's outputs.
 - `wasm_digests.json` — the same six runs through the browser kernel (`sketch.wasm`): all match the reference.
 - `e2e_gate_task.mjs`, `e2e_anvil_log.json`, `e2e_anvil_run.log` — the end-to-end run on a local anvil.
-- `bench_real_payload.mjs`, `wasm_digests.mjs`, `init_state_roots.mjs`, `assemble_task.py` — the tooling.
+- `post_tasks.mjs` — posts the tasks of `task.json` on any deployed mesh and drives them to settlement (executor
+  session keys resolved from the instance registry's `SessionKeySet` logs); the anvil run goes through it too.
+- `fields/*.json` — the three MEP field files for aigg-bnb's `js/register_mep.mjs`.
+- `build_variants.py`, `bench_real_payload.mjs`, `wasm_digests.mjs`, `init_state_roots.mjs`, `assemble_task.py` — the tooling.
 
 ## Reproduce
 
@@ -50,11 +53,18 @@ FOUNDRY_BIN=$HOME/.foundry/bin AIGG_BNB=/path/to/aigg-bnb node <flyaudio>/tasks/
 
 ## Publishing on a public network
 
-The MEP ids in `task.json` are network independent (they hash the registry fields only). On BSC testnet, with the
-deployer key funded: upload the three payloads to Greenfield (`node js/greenfield_admin.mjs upload aigg-brains
-flywire-783-min5.bin <file>` etc. in aigg-bnb), register each MEP (`node js/register_mep.mjs <fields.json>
-gnfd://aigg-brains/<name>.bin`, fields = the `mep` block of `task.json`), have the relayer serve the three MEP ids,
-and post the six tasks with `TaskMarket.postTask({mepId, stimulusSeed: 7, inputCommit, fee, deadline, redundancy: 2},
-nonce)` using the nonces and `inputCommit`s in `task.json`; the client then sends `task-announce {taskId,
-stimulusSeed: 7, stimulusIds}` to the chosen executors over the relay. A settled task whose digest equals
-`expectedExecDigest` is a third-party replication of that row of the table.
+The MEP ids in `task.json` are network independent (they hash the registry fields only). The aigg-bnb BSC testnet
+deployment (chain 97, 2026-09-17) already serves the full payload from Greenfield
+(`gnfd://aigg-brains/flywire-fafb-v783-min5.bin`, same model_id 0x9747cc81…), but under a 100-step / stride-10 MEP;
+this task needs the 5000-step / stride-500 MEPs below, registered by a funded deployer key:
+
+1. `node js/register_mep.mjs <flyaudio>/tasks/mesh-first-task/fields/flywire-783-min5.json gnfd://aigg-brains/flywire-fafb-v783-min5.bin https://gnfd-testnet-sp2.bnbchain.org`
+   (no upload needed: the pointer already serves these bytes);
+2. upload `flywire-783-min5-ablate4.bin` and `flywire-783-min5-keep4.bin` (built by `build_variants.py`; sha256 in
+   `task.json`) with `js/greenfield_admin.mjs upload`, then register their field files the same way;
+3. add the three MEP ids to the relayer's `PORW_MEP_IDS`; instances bond on them and claim for an epoch;
+4. `AIGG_BNB=/path/to/aigg-bnb node <flyaudio>/tasks/mesh-first-task/post_tasks.mjs --env /path/to/.env.bsc-testnet --relayer http://<relayer>:8788 --fee 0.001`
+   posts the six tasks (nonces and `inputCommit`s from `task.json`), announces them with the stimulus ids to the
+   sortitioned executors over the relay, waits for the sponsored results, settles, and writes `posted-97.json`.
+
+A settled task whose digest equals `expectedExecDigest` is a third-party replication of that row of the table.

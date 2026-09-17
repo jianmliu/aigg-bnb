@@ -1,0 +1,14 @@
+{
+ "mepId": "0x08aa989d6899bf91cbde20a66b585a777924c565771e84ce2b60926e51c84562",
+ "modelId": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
+ "schemeDigest": "0x718b2eb3b33a6d18d904363ee1cc2fb797e344af10132ebfd93aef8d5d72e4b4",
+ "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+ "steps": 5000,
+ "clampQ16": 500,
+ "neurons": 139255,
+ "synapses": 2700046,
+ "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
+ "name": "flywire-783-min5-keep4",
+ "sha256": "47285bdeb23101c21bdac9b412b5a044ba4cd07c33e947c51a00acb1219d6267",
+ "note": "register with aigg-bnb js/register_mep.mjs <this file> gnfd://<bucket>/<object>; the pointer must serve bytes with this sha256 / modelId"
+}

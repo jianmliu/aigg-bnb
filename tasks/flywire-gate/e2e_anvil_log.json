@@ -1,5 +1,5 @@
 {
- "startedAt": "2026-09-17T21:25:11.413Z",
+ "startedAt": "2026-09-17T21:37:49.559Z",
  "steps": 5000,
  "commitStride": 500,
  "seed": 7,
@@ -15,7 +15,7 @@
    "synapses": 2700513,
    "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
    "weightsDA": "0x676e66643a2f2f616967672d627261696e732f666c79776972652d3738332d6d696e352e62696e",
-   "registerTx": "0x3bb8bec540e74407778320bdb4d81589be304ca23eade37d605cdf268535cae9",
+   "registerTx": "0x760def449da95288326aabc1f27ee54516b4541ba960e573a37393d8047a4bdd",
    "gas": "228108"
   },
   "flywire-783-min5-ablate4": {
@@ -29,7 +29,7 @@
    "synapses": 2700509,
    "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
    "weightsDA": "0x676e66643a2f2f616967672d627261696e732f666c79776972652d3738332d6d696e352d61626c617465342e62696e",
-   "registerTx": "0xa8f2a9c6bfa1df710df9b3dc829ecc1c32b0928cbdcd952ab7a4ceee1ed96d96",
+   "registerTx": "0x1d30aa2fcc6d1976312b6d1cf5a60026c0af4768fc249dde821c4e0fd8ed862e",
    "gas": "228204"
   },
   "flywire-783-min5-keep4": {
@@ -43,7 +43,7 @@
    "synapses": 2700046,
    "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
    "weightsDA": "0x676e66643a2f2f616967672d627261696e732f666c79776972652d3738332d6d696e352d6b656570342e62696e",
-   "registerTx": "0xe16c9c344f819a822e9b6eabbcac0d84695523208bb3bd0dd2cbebf7e5abdc95",
+   "registerTx": "0x0891293236172838b3a3728794f5f5d4f1b90ae83e5d3581c94627ccd3ba50fc",
    "gas": "228180"
   }
  },
@@ -52,33 +52,32 @@
   "B": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
  },
  "epochs": {
-  "claimsMs": 74603
+  "claimsMs": 66162
  },
  "tasks": [
   {
    "model": "flywire-783-min5",
-   "stimulus": "joLR",
-   "stimulusCount": 359,
-   "nonce": "0xae534eaf782c80e1c8946c932d5bc98d75c488e1c8bfe40d2effd9ed8130b9f1",
+   "stimulusSet": "joLR",
    "taskId": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
-   "inputCommit": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3",
+   "expected": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
    "postTx": "0x484e73b34cbe32b0f2618601289394848d1fc6d1e2ac75af3d27c352d7bb08f7",
    "executors": [
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
    ],
    "results": {
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
      "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12"
+     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+     "ok": true
     },
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12"
+     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+     "ok": true
     }
    },
-   "executeMs": 24736,
-   "expectedDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+   "submitted": true,
    "settle": {
     "hash": "0x932e324b9c1101a0849d44c36ab9b22725fb6e2d5e67baab1e6b8e8ea80b176c",
     "ok": true,
@@ -87,41 +86,38 @@
   },
   {
    "model": "flywire-783-min5",
-   "stimulus": "joLR+gate",
-   "stimulusCount": 361,
-   "nonce": "0x4915b7f50fec427349b59aa477571acb9b930093bba17af8e92008e031888e51",
+   "stimulusSet": "joLR+gate",
    "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
-   "inputCommit": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35",
+   "expected": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
    "postTx": "0x27818932565d2992599f7d93eceb445302d6d8e70d803dbdbf61dc0bc485bf0e",
    "executors": [
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
    ],
    "results": {
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
      "execDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
-     "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2"
+     "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
+     "ok": true
     },
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
-     "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2"
+     "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
+     "ok": true
     }
    },
-   "executeMs": 24682,
-   "expectedDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
+   "submitted": true,
    "settle": {
-    "hash": "0x7b37fe84fd1005ddea572062d9a779699c7890126122111826f8325cd65b74de",
+    "hash": "0x265f2cdafd9e5de18621d8ba82636e5a76e9866f1efda26492131f236bef1eb5",
     "ok": true,
-    "gasUsed": 151077
+    "gasUsed": 150323
    }
   },
   {
    "model": "flywire-783-min5-ablate4",
-   "stimulus": "joLR",
-   "stimulusCount": 359,
-   "nonce": "0x28a51af39a325e688b9abccd8893fccc952f1b312f5f18a78a8e61ba508b892e",
+   "stimulusSet": "joLR",
    "taskId": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273",
-   "inputCommit": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3",
+   "expected": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
    "postTx": "0x9d81bc7301ca051e8eb0d56e2a9ee5138965ee5057478b9f26d8ed3e42578ca5",
    "executors": [
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
@@ -130,15 +126,16 @@
    "results": {
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
      "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12"
+     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+     "ok": true
     },
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12"
+     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+     "ok": true
     }
    },
-   "executeMs": 23740,
-   "expectedDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+   "submitted": true,
    "settle": {
     "hash": "0x68a46ef24d784881ade4b8949096abf924e1fd5be6ad977ba9003ab341f30677",
     "ok": true,
@@ -147,28 +144,27 @@
   },
   {
    "model": "flywire-783-min5-ablate4",
-   "stimulus": "joLR+gate",
-   "stimulusCount": 361,
-   "nonce": "0x4542a492068e6a398cca68e50f5f7385681bd30803abb86cee217506504c27d2",
+   "stimulusSet": "joLR+gate",
    "taskId": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c",
-   "inputCommit": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35",
+   "expected": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
    "postTx": "0x0138c0ff52ccb9dc6aded6a48e8bcbf7380a0f6bd92933fdaeb824811520c879",
    "executors": [
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
    ],
    "results": {
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
-     "execDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
-     "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778"
-    },
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
-     "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778"
+     "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778",
+     "ok": true
+    },
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
+     "execDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
+     "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778",
+     "ok": true
     }
    },
-   "executeMs": 23365,
-   "expectedDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
+   "submitted": true,
    "settle": {
     "hash": "0x391ac10ef5be232eb91a77c8393560072764d0eb6709a0325f8486b0b24a172c",
     "ok": true,
@@ -177,58 +173,56 @@
   },
   {
    "model": "flywire-783-min5-keep4",
-   "stimulus": "joLR",
-   "stimulusCount": 359,
-   "nonce": "0x443b93c00a8902a4e27bf47c2d8466471c4d581e4de52fd48417f4113e0aee6a",
+   "stimulusSet": "joLR",
    "taskId": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
-   "inputCommit": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3",
+   "expected": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
    "postTx": "0xce63dfbac6ae229b6dd689b4c816acb423f7a7b0340edf9b5b3579280433f391",
    "executors": [
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
    ],
    "results": {
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
-     "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12"
-    },
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12"
+     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+     "ok": true
+    },
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
+     "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+     "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
+     "ok": true
     }
    },
-   "executeMs": 23344,
-   "expectedDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
+   "submitted": true,
    "settle": {
-    "hash": "0xc34d0bd23668e5027d4b97b834d8fc20ef06637270e89caf13dabe95f0299693",
+    "hash": "0x7e1b461f2c78e7d9279014db02dabec19f7dc14a1086d75d11ef79f97866431a",
     "ok": true,
-    "gasUsed": 151832
+    "gasUsed": 150323
    }
   },
   {
    "model": "flywire-783-min5-keep4",
-   "stimulus": "joLR+gate",
-   "stimulusCount": 361,
-   "nonce": "0x01f67b33ce4c64ccad0d46868cec5cae1f5742b8ed1aba67aee1456c39b547cb",
+   "stimulusSet": "joLR+gate",
    "taskId": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
-   "inputCommit": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35",
+   "expected": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
    "postTx": "0xbab35b481655d3d03124635e9d78cab6b1106bc17e29c3c77328d571a21f4eac",
    "executors": [
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
    ],
    "results": {
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
-     "execDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
-     "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed"
-    },
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
-     "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed"
+     "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed",
+     "ok": true
+    },
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
+     "execDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
+     "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed",
+     "ok": true
     }
    },
-   "executeMs": 25028,
-   "expectedDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
+   "submitted": true,
    "settle": {
     "hash": "0xb6d6176b1208b8e4915110117281a223a81d25f0788282fc4c40900375ddf3a6",
     "ok": true,
@@ -248,12 +242,13 @@
   "relays": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
   "verifier": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
  },
- "finalBalanceA": "9999.529643946452401093",
+ "tasksMs": 133251,
+ "finalBalanceA": "9999.529629591167534015",
  "relayer": {
   "txs": 35,
   "txOk": 35,
   "errors": []
  },
- "finishedAt": "2026-09-17T21:29:07.627Z",
+ "finishedAt": "2026-09-17T21:41:26.331Z",
  "fails": 0
 }

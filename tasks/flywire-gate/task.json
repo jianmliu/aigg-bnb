@@ -850,11 +850,12 @@
    "anvil": {
     "taskId": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
     "executors": [
-     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
-     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
     ],
-    "executeMs": 24736,
-    "settled": true
+    "postTx": "0x484e73b34cbe32b0f2618601289394848d1fc6d1e2ac75af3d27c352d7bb08f7",
+    "settled": true,
+    "settleTx": "0x932e324b9c1101a0849d44c36ab9b22725fb6e2d5e67baab1e6b8e8ea80b176c"
    }
   },
   {
@@ -873,11 +874,12 @@
    "anvil": {
     "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
     "executors": [
-     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
-     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
     ],
-    "executeMs": 24682,
-    "settled": true
+    "postTx": "0x27818932565d2992599f7d93eceb445302d6d8e70d803dbdbf61dc0bc485bf0e",
+    "settled": true,
+    "settleTx": "0x265f2cdafd9e5de18621d8ba82636e5a76e9866f1efda26492131f236bef1eb5"
    }
   },
   {
@@ -899,8 +901,9 @@
      "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
      "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
     ],
-    "executeMs": 23740,
-    "settled": true
+    "postTx": "0x9d81bc7301ca051e8eb0d56e2a9ee5138965ee5057478b9f26d8ed3e42578ca5",
+    "settled": true,
+    "settleTx": "0x68a46ef24d784881ade4b8949096abf924e1fd5be6ad977ba9003ab341f30677"
    }
   },
   {
@@ -922,8 +925,9 @@
      "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
      "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
     ],
-    "executeMs": 23365,
-    "settled": true
+    "postTx": "0x0138c0ff52ccb9dc6aded6a48e8bcbf7380a0f6bd92933fdaeb824811520c879",
+    "settled": true,
+    "settleTx": "0x391ac10ef5be232eb91a77c8393560072764d0eb6709a0325f8486b0b24a172c"
    }
   },
   {
@@ -942,11 +946,12 @@
    "anvil": {
     "taskId": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
     "executors": [
-     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
     ],
-    "executeMs": 23344,
-    "settled": true
+    "postTx": "0xce63dfbac6ae229b6dd689b4c816acb423f7a7b0340edf9b5b3579280433f391",
+    "settled": true,
+    "settleTx": "0x7e1b461f2c78e7d9279014db02dabec19f7dc14a1086d75d11ef79f97866431a"
    }
   },
   {
@@ -965,29 +970,30 @@
    "anvil": {
     "taskId": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
     "executors": [
-     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
     ],
-    "executeMs": 25028,
-    "settled": true
+    "postTx": "0xbab35b481655d3d03124635e9d78cab6b1106bc17e29c3c77328d571a21f4eac",
+    "settled": true,
+    "settleTx": "0xb6d6176b1208b8e4915110117281a223a81d25f0788282fc4c40900375ddf3a6"
    }
   }
  ],
  "anvilRun": {
-  "startedAt": "2026-09-17T21:25:11.413Z",
-  "finishedAt": "2026-09-17T21:29:07.627Z",
+  "startedAt": "2026-09-17T21:37:49.559Z",
+  "finishedAt": "2026-09-17T21:41:26.331Z",
   "meps": {
    "flywire-783-min5": {
     "mepId": "0x1569abaaa3c688414fa4f5317a525c0df319666683cbadcc217ee56117234749",
-    "registerTx": "0x3bb8bec540e74407778320bdb4d81589be304ca23eade37d605cdf268535cae9"
+    "registerTx": "0x760def449da95288326aabc1f27ee54516b4541ba960e573a37393d8047a4bdd"
    },
    "flywire-783-min5-ablate4": {
     "mepId": "0xb831be529f12d196d4c484805ed9c320b37f60bde19b20f18448f1945eacfebf",
-    "registerTx": "0xa8f2a9c6bfa1df710df9b3dc829ecc1c32b0928cbdcd952ab7a4ceee1ed96d96"
+    "registerTx": "0x1d30aa2fcc6d1976312b6d1cf5a60026c0af4768fc249dde821c4e0fd8ed862e"
    },
    "flywire-783-min5-keep4": {
     "mepId": "0x08aa989d6899bf91cbde20a66b585a777924c565771e84ce2b60926e51c84562",
-    "registerTx": "0xe16c9c344f819a822e9b6eabbcac0d84695523208bb3bd0dd2cbebf7e5abdc95"
+    "registerTx": "0x0891293236172838b3a3728794f5f5d4f1b90ae83e5d3581c94627ccd3ba50fc"
    }
   },
   "relayerTxs": {
@@ -995,6 +1001,7 @@
    "txOk": 35,
    "errors": []
   },
+  "tasksMs": 133251,
   "fails": 0,
   "note": "local anvil (chain 31337) through aigg-bnb's harness: deploy, register, relayer, bond/delegate, epoch-1 claims, epoch-2 materialize, 6 tasks with redundancy 2, sponsored submitResult + settle; MEP ids on a public network differ only if the registry fields differ (they are the same fields), so mepId is network independent"
  },

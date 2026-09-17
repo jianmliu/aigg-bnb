@@ -5,6 +5,7 @@
  "tiles": 6864,
  "neurons": 139255,
  "synapse_records": 2700046,
+ "edit": "the other 467 output records of the 2 AN_multi_8 cells removed; only the 4 direct records onto DNge145 kept",
  "derived_from": "flywire-fafb-v783-min5 (sha256 fd246cc2c0ac74e8928cf5b0012c5d4c48a0a03475595213b301f85f5fe4e1da)",
  "sha256": "47285bdeb23101c21bdac9b412b5a044ba4cd07c33e947c51a00acb1219d6267"
 }
