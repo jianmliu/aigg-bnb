@@ -16,6 +16,9 @@ changes a PoRW scheme id and never forks the neutral contracts.
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
 | `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
+| `relayer/` | **the relayer service**: stage-1 relay hub + epoch aggregator (one root per MEP per epoch) + commit-reveal beacon participant / epoch roller + gas-sponsoring transaction submitter for bonded instances (`delegateBySig`, `materializeClaim`, `submitResult`, `settle`) with a small HTTP API |
+| `frontend/` | **the node page**: connect wallet → bond BNB → delegate a session key (one EIP-712 signature) → load the brain → run the node (claims every epoch, materialize when wanted, serve audits and tasks over the relay) |
+| `test/` | end-to-end on a local anvil: `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
 | `split.sh` | turns this staging directory into the standalone repository (`aigg-porw` becomes a git submodule) |
 
@@ -30,6 +33,26 @@ changes a PoRW scheme id and never forks the neutral contracts.
 3. **Browsers** hold the brain resident, prove it, execute tasks, and settle through relays;
    wallets (MetaMask/Binance Wallet) sign one EIP-712 delegation per session key.
 
+## Run it
+
+```sh
+npm install
+# contracts: deploy (writes deployments/<chainId>.json)
+NETWORK=bsc-testnet PK=0x... ./deploy.sh
+# register your MEP (model_id, exec kind, steps, synapseRoot, weightsDA=gnfd://bucket/object) — see test/harness.mjs registerSyntheticMep
+# relayer: copy relayer/config.example.json -> relayer/config.json (rpc, deployment file, relayer key, MEP ids, ports)
+npm run relayer
+# frontend: static page; point it at the relayer API (http://host:8788) in the first box
+npm run frontend -- --port 8790
+# tests (local anvil + Foundry; PW_CHROMIUM for the browser test)
+npm test              # js/test_greenfield.mjs + test/e2e_anvil.mjs
+npm run test:frontend # headless Chromium: wallet, bond, delegate, model, node, claims, materialize, task
+```
+
+The relayer sponsors gas only for calls that belong to a bonded instance (or its delegated session key) and
+that succeed in simulation; it is untrusted for correctness (envelopes are signed, roots are challengeable,
+omitted instances fall back to `submitClaim`), so anyone may run one and instances may use several.
+
 ## Claim posture per chain
 
 - **opBNB**: every instance may submit its own EIP-712 claim each epoch (`submitClaim`, ≈240k gas, negligible cost).
@@ -38,6 +61,16 @@ changes a PoRW scheme id and never forks the neutral contracts.
   inclusion proofs over the relay; only instances that compete for tasks that epoch, or are audited,
   `materializeClaim` (≈232k gas). Passive instances cost nothing on-chain; an omitted instance falls back to
   `submitClaim`. See `docs/DESIGN.md` §5 for the cost model.
+
+## What the end-to-end tests prove (local anvil, BNB parameters, commit-reveal beacon)
+
+`e2e_anvil.mjs`: deploy → MEP registered → relayer up → two wallets bond 0.5 BNB and delegate session keys
+through the relayer → relayer commits/reveals the beacon and rolls each epoch → nodes announce claims over the
+relay → relayer posts the epoch root → instances materialize through the relayer (≈285k gas) → both eligible
+→ a client posts a task, sortition picks both, results answered over the relay, submitted by the relayer,
+settled, fee split; the client re-executes and matches. 14 sponsored transactions, 0 errors.
+`e2e_frontend.mjs`: the same through the page in Chromium — the wallet is prompted exactly twice (the bond
+transaction and one `Delegation` typed-data signature); everything after that is the session key.
 
 ## Testnet deployment status
 

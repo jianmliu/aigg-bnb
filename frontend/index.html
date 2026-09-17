@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>PoRW fly-brain node · BNB</title>
+<script type="importmap">{ "imports": { "@noble/hashes/": "/node_modules/@noble/hashes/", "@noble/secp256k1": "/node_modules/@noble/secp256k1/index.js" } }</script>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; max-width: 900px; color: #1b1b1b; background: #fafafa; }
+  h1 { font-size: 18px; margin: 0 0 12px; } section { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+  h2 { font-size: 14px; margin: 0 0 8px; color: #444; } input[type=text], input[type=number] { padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; min-width: 220px; }
+  button { padding: 6px 12px; border-radius: 6px; border: 1px solid #999; background: #f3f3f3; cursor: pointer; margin-right: 6px; } button:hover { background: #e9e9e9; }
+  .kv { color: #333; margin-top: 6px; word-break: break-all; } pre { background: #111; color: #d8f0d8; padding: 10px; border-radius: 8px; height: 220px; overflow: auto; font-size: 12px; }
+  @media (prefers-color-scheme: dark) { body { background: #121212; color: #e8e8e8; } section { background: #1c1c1c; border-color: #333; } h2 { color: #bbb; } .kv { color: #ccc; } button { background: #2a2a2a; color: #eee; border-color: #555; } input { background: #222; color: #eee; border-color: #555; } }
+</style>
+<h1>PoRW fly-brain node on BNB Chain</h1>
+<section><h2>1 · Relayer</h2>
+  <input id="relayer" type="text" value="http://127.0.0.1:8788" placeholder="relayer API URL"> <button id="btnDep">Load deployment</button>
+  <div class="kv" id="dep">—</div><div class="kv" id="epoch">—</div></section>
+<section><h2>2 · Wallet and bond (BNB)</h2>
+  <button id="btnConnect">Connect wallet</button> <button id="btnRefresh">Refresh</button>
+  <div class="kv" id="wallet">not connected</div><div class="kv" id="bond">—</div>
+  <div style="margin-top:8px"><input id="amount" type="number" value="0.5" step="0.05" min="0"> BNB <button id="btnBond">Bond</button> <button id="btnExit">Request exit</button> <button id="btnFinalize">Finalize exit</button></div></section>
+<section><h2>3 · Session key (one wallet signature, EIP-712 Delegation)</h2>
+  expiry in blocks <input id="expiry" type="number" value="100000"> <button id="btnDelegate">Delegate session key</button>
+  <div class="kv" id="session">—</div></section>
+<section><h2>4 · Model</h2>
+  <input id="file" type="file"> or URL <input id="url" type="text" placeholder="https://…/flywire-783-min5.bin or /payload.bin"> steps <input id="steps" type="number" value="2" style="min-width:60px"> <button id="btnModel">Load</button>
+  <div class="kv" id="model">—</div></section>
+<section><h2>5 · Node</h2>
+  <button id="btnStart">Start node</button> <label><input id="auto" type="checkbox" checked> materialize claims automatically (when I want tasks)</label>
+  <pre id="log"></pre></section>
+<script type="module" src="./app.js"></script>

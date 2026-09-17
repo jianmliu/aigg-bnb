@@ -2,3 +2,5 @@ node_modules/
 contracts/out/
 contracts/cache/
 contracts/broadcast/
+deployments/31337.json
+deployments/relayer-test.json

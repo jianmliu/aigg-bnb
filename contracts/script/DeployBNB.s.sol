@@ -42,5 +42,15 @@ contract DeployBNB is Script {
         d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays));
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);
         console.log("claims", d.claims); console.log("market", d.market); console.log("disputes", d.disputes); console.log("relays", d.relays);
+        // deployments/<chainId>.json consumed by the relayer and the frontend
+        string memory j = "d";
+        vm.serializeUint(j, "chainId", block.chainid); vm.serializeUint(j, "epochBlocks", epochBlocks);
+        vm.serializeAddress(j, "verifier", d.verifier); vm.serializeAddress(j, "meps", d.meps); vm.serializeAddress(j, "instances", d.instances); vm.serializeAddress(j, "beacon", d.beacon);
+        vm.serializeAddress(j, "claims", d.claims); vm.serializeAddress(j, "market", d.market); vm.serializeAddress(j, "disputes", d.disputes);
+        string memory addrs = vm.serializeAddress(j, "relays", d.relays);
+        string memory root = "r"; vm.serializeUint(root, "chainId", block.chainid); vm.serializeUint(root, "epochBlocks", epochBlocks);
+        string memory out = vm.serializeString(root, "addresses", addrs);
+        string memory file = string.concat(vm.projectRoot(), "/../deployments/", vm.toString(block.chainid), ".json");
+        if (vm.envOr("WRITE_DEPLOYMENT", true)) vm.writeJson(out, file);
     }
 }

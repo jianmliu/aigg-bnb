@@ -86,6 +86,20 @@ audited): 10,000 passive instances then cost one root per epoch (≈ $0.04 on BS
 assumed price), and 500 active ones ≈ $70 per epoch. opBNB is therefore not required for
 mainnet; it remains the cheaper choice if every instance should carry an on-chain claim.
 
+## 5b. Relayer and frontend (implemented)
+
+- **Relayer** (`relayer/relayer.mjs`, viem): one process runs the relay hub, the aggregator for its MEPs,
+  the beacon participant (commit in the last `COMMIT_BLOCKS` of an epoch, reveal in the first
+  `REVEAL_BLOCKS` of the next, then `rollEpoch`), and a sponsor API. Sponsorship rules: the caller must be a
+  bonded instance or its delegated session key; the call must simulate successfully; roots are posted only
+  once per (MEP, epoch). The relayer is untrusted for correctness and replaceable for liveness (several may
+  run; instances fan out). Its cost per epoch: beacon commit + reveal + roll + one root per MEP, plus the
+  sponsored materializations and results, all recoverable from task fees / operator incentives.
+- **Frontend** (`frontend/`): no framework; neutral modules from aigg-porw; chain reads through the wallet
+  provider; two wallet interactions in total (bond tx, one EIP-712 Delegation). The session key lives in
+  `localStorage` (per-viewer convenience: it is worth nothing without the on-chain delegation, and
+  `revokeSessionKey` cuts it off).
+
 ## 6. Risks and limits specific to BNB
 
 - **Beacon bias** is deposit-bounded, not eliminated (§3). A VRF adapter removes it.

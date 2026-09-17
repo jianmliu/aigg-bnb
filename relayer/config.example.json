@@ -1,0 +1,11 @@
+{
+  "deployment": "deployments/97.json",
+  "rpc": "https://bsc-testnet-rpc.publicnode.com",
+  "privateKey": "0x<relayer key: pays gas for sponsored txs, posts epoch roots, participates in the beacon>",
+  "meps": ["0x<mep id>"],
+  "relayPort": 8787,
+  "apiPort": 8788,
+  "host": "0.0.0.0",
+  "pollMs": 2000,
+  "name": "bnb-relayer-1"
+}
