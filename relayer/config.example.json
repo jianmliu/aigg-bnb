@@ -1,12 +1,9 @@
 {
-  "deployment": "deployments/97.json",
-  "rpc": "https://bsc-testnet-rpc.publicnode.com",
-  "privateKey": "0x<relayer key: pays gas for sponsored txs, posts epoch roots, participates in the beacon>",
-  "meps": ["0x<mep id of the female FlyWire brain>", "0x<mep id of the male CNS brain>"],
-  "mepNames": { "0x<mep id>": "flywire-fafb-v783-min5" },
+  "_comment": "Optional. Addresses, RPC, the relayer key and the MEP ids come from the environment (source .env.<network> written by deploy.sh; add PORW_RELAYER_KEY and PORW_MEP_IDS). Environment always wins over this file. Never put keys or addresses in git.",
   "relayPort": 8787,
   "apiPort": 8788,
   "host": "0.0.0.0",
   "pollMs": 2000,
-  "name": "bnb-relayer-1"
+  "name": "bnb-relayer-1",
+  "mepNames": { "0x<mep id>": "flywire-fafb-v783-min5" }
 }

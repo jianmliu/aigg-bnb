@@ -2,5 +2,8 @@ node_modules/
 contracts/out/
 contracts/cache/
 contracts/broadcast/
-deployments/31337.json
-deployments/relayer-test.json
+# deployment addresses and keys live in environment files, never in git
+deployments/*.json
+.env
+.env.*
+relayer/config.json

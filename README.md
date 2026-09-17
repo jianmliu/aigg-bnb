@@ -37,11 +37,15 @@ changes a PoRW scheme id and never forks the neutral contracts.
 
 ```sh
 npm install
-# contracts: deploy (writes deployments/<chainId>.json)
+# contracts: deploy; the addresses are saved as environment variables in .env.<network> (gitignored, chmod 600)
 NETWORK=bsc-testnet PK=0x... ./deploy.sh
 # register your MEP (model_id, exec kind, steps, synapseRoot, weightsDA=gnfd://bucket/object) — see test/harness.mjs registerSyntheticMep
-# relayer: copy relayer/config.example.json -> relayer/config.json (rpc, deployment file, relayer key, MEP ids, ports)
-npm run relayer
+# relayer: addresses + RPC come from the env file; add the relayer key and the MEP ids to it (or export them)
+echo "PORW_RELAYER_KEY=0x...
+PORW_MEP_IDS=0x<mep id>,0x<mep id>
+PORW_RELAY_PORT=8787
+PORW_API_PORT=8788" >> .env.bsc-testnet
+source .env.bsc-testnet && npm run relayer      # or: node relayer/relayer.mjs --env .env.bsc-testnet
 # frontend: static page; point it at the relayer API (http://host:8788) in the first box
 npm run frontend -- --port 8790
 # tests (local anvil + Foundry; PW_CHROMIUM for the browser test)
@@ -74,10 +78,19 @@ synthetic "male" MEP): one bond covers both, wrong bytes for a brain are flagged
 claims and materializations run for both, a task on the male brain is executed by the tab and matches an
 independent re-execution. The wallet is prompted exactly twice (bond tx, one `Delegation`).
 
+## Where deployment addresses live
+
+Never in git. `deploy.sh` writes `.env.<network>` (`PORW_CHAIN_ID`, `PORW_RPC`, `PORW_EPOCH_BLOCKS`,
+`PORW_VERIFIER`, `PORW_MEP_REGISTRY`, `PORW_INSTANCES`, `PORW_BEACON`, `PORW_CLAIMS`, `PORW_MARKET`,
+`PORW_DISPUTES`, `PORW_RELAYS`); the relayer reads the environment (`relayer/env.mjs`) and serves the
+addresses to the frontend over `/deployment`, so the page needs nothing but the relayer URL. `deployments/*.json`,
+`.env*` and `relayer/config.json` are gitignored; keep the env files in your secret store. The end-to-end tests
+start the relayer through the same `PORW_*` variables.
+
 ## Testnet deployment status
 
 `deploy.sh` targets `bsc-testnet` (chain 97, default RPC on port 443) or `opbnb-testnet` (chain 5611). Not yet
-deployed: awaiting testnet funds on the deployer. Deployed addresses will be recorded in `deployments/<network>.json`.
+deployed: awaiting testnet funds on the deployer.
 
 ## Build and test (standalone layout)
 

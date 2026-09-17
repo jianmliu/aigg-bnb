@@ -3,19 +3,28 @@
 // epoch roller, (4) a gas-sponsoring transaction submitter for bonded instances (delegateBySig, materializeClaim,
 // submitResult, settle) — browser tabs hold session keys with no BNB, so someone must pay the gas; the relayer
 // only sponsors calls that succeed in simulation and belong to a bonded instance.
-//   node relayer/relayer.mjs --config relayer/config.json
+//   source .env.<network> && node relayer/relayer.mjs        (addresses + PORW_RELAYER_KEY + PORW_MEP_IDS from env)
+//   node relayer/relayer.mjs --env .env.bsc-testnet             (same, loading the env file itself)
+//   node relayer/relayer.mjs --config relayer/config.json       (optional file for ports/names; env wins for addresses/keys)
 // HTTP API (JSON): GET /deployment  GET /epoch?mep=0x..  GET /proof?mep&epoch&instance  GET /status
 //                  POST /tx/delegate {instance,session,expiry,sig}  POST /tx/materialize {mep,epoch,instance}
 //                  POST /tx/result {taskId,execDigest,execRoot,signature}  POST /tx/settle {taskId}
 import fs from "node:fs"; import http from "node:http"; import path from "node:path"; import { fileURLToPath } from "node:url";
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
+import { loadEnv, deploymentFromEnv, relayerFromEnv } from "./env.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser/", f));
 const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator } = await porw("aggregator.js"); const { keypair } = await porw("claim.js"); const V = await porw("verify.js"); const { makeMep, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => { if (v.startsWith("--")) a.push([v.slice(2), arr[i + 1]]); return a; }, []));
-const cfg = JSON.parse(fs.readFileSync(args.config || path.join(here, "config.json"), "utf8"));
-const dep = JSON.parse(fs.readFileSync(path.resolve(here, "..", cfg.deployment), "utf8")); dep.rpc = cfg.rpc || dep.rpc; if (!dep.rpc) throw new Error("config.rpc (or deployment.rpc) required");
+loadEnv(args.env || process.env.PORW_ENV_FILE);
+const fileCfg = args.config || fs.existsSync(path.join(here, "config.json")) ? JSON.parse(fs.readFileSync(args.config || path.join(here, "config.json"), "utf8")) : {};
+const envCfg = relayerFromEnv(); const cfg = { ...fileCfg, ...Object.fromEntries(Object.entries(envCfg).filter(([, v]) => v !== null)) };
+// deployment: environment first (never in git), else the file named in the config (local anvil runs)
+const dep = deploymentFromEnv() || (cfg.deployment ? JSON.parse(fs.readFileSync(path.resolve(here, "..", cfg.deployment), "utf8")) : null);
+if (!dep) throw new Error("no deployment: source the .env.<network> from deploy.sh (PORW_* variables) or set config.deployment");
+dep.rpc = process.env.PORW_RPC || cfg.rpc || dep.rpc; if (!dep.rpc) throw new Error("PORW_RPC (or config.rpc) required");
+if (!cfg.privateKey) throw new Error("PORW_RELAYER_KEY (or config.privateKey) required"); if (!cfg.meps || !cfg.meps.length) throw new Error("PORW_MEP_IDS (or config.meps) required");
 const ch = clients(dep, cfg.privateKey); const domains = eip712Domains(dep);
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
