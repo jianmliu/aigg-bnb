@@ -13,7 +13,8 @@
 <h1>PoRW fly-brain node on BNB Chain</h1>
 <section><h2>1 · Relayer</h2>
   <input id="relayer" type="text" value="http://127.0.0.1:8788" placeholder="relayer API URL"> <button id="btnDep">Load deployment</button>
-  <div class="kv" id="dep">—</div><div class="kv" id="epoch">—</div></section>
+  <div class="kv" id="dep">—</div><div class="kv" id="epoch">—</div>
+  <div style="margin-top:8px">brains to host: <div id="hosted" class="kv"></div></div></section>
 <section><h2>2 · Wallet and bond (BNB)</h2>
   <button id="btnConnect">Connect wallet</button> <button id="btnRefresh">Refresh</button>
   <div class="kv" id="wallet">not connected</div><div class="kv" id="bond">—</div>
@@ -21,8 +22,11 @@
 <section><h2>3 · Session key (one wallet signature, EIP-712 Delegation)</h2>
   expiry in blocks <input id="expiry" type="number" value="100000"> <button id="btnDelegate">Delegate session key</button>
   <div class="kv" id="session">—</div></section>
-<section><h2>4 · Model</h2>
-  <input id="file" type="file"> or URL <input id="url" type="text" placeholder="https://…/flywire-783-min5.bin or /payload.bin"> steps <input id="steps" type="number" value="2" style="min-width:60px"> <button id="btnModel">Load</button>
+<section><h2>4 · Model (per brain)</h2>
+  brain <select id="mep"></select>
+  <div class="kv" id="mepInfo">—</div><div class="kv" id="mepStatus">—</div>
+  <div style="margin-top:8px">Greenfield SP endpoint <input id="sp" type="text" placeholder="https://gnfd-testnet-sp1.bnbchain.org (optional; fills the URL from the MEP's gnfd:// pointer)"></div>
+  <div style="margin-top:8px"><input id="file" type="file"> or URL <input id="url" type="text" placeholder="https://…/flywire-783-min5.bin or /payload.bin"> steps <input id="steps" type="number" value="2" style="min-width:60px" disabled> <button id="btnModel">Load for this brain</button></div>
   <div class="kv" id="model">—</div></section>
 <section><h2>5 · Node</h2>
   <button id="btnStart">Start node</button> <label><input id="auto" type="checkbox" checked> materialize claims automatically (when I want tasks)</label>

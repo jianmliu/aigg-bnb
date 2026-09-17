@@ -7,10 +7,11 @@ const a = Object.fromEntries(process.argv.slice(2).reduce((acc, v, i, arr) => { 
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".wasm": "application/wasm", ".json": "application/json", ".bin": "application/octet-stream" };
 const ISO = { "cross-origin-opener-policy": "same-origin", "cross-origin-embedder-policy": "require-corp" };
 const roots = [["/porw/", path.join(root, "contracts/lib/aigg-porw/web/porw-browser")], ["/node_modules/", path.join(root, "node_modules")], ["/", here]];
-export function startFrontend(port = Number(a.port || 0), { payload = a.payload ? fs.readFileSync(a.payload) : null } = {}) {
+export function startFrontend(port = Number(a.port || 0), { payload = a.payload ? fs.readFileSync(a.payload) : null, payloads = {} } = {}) {
+  if (payload) payloads["/payload.bin"] = payload;
   const server = http.createServer((req, res) => {
     const u = new URL(req.url, "http://x"); let p = decodeURIComponent(u.pathname); if (p === "/") p = "/index.html";
-    if (p === "/payload.bin" && payload) { res.writeHead(200, { ...ISO, "content-type": "application/octet-stream" }); return res.end(Buffer.from(payload)); }
+    if (payloads[p]) { res.writeHead(200, { ...ISO, "content-type": "application/octet-stream" }); return res.end(Buffer.from(payloads[p])); }
     if (p === "/favicon.ico") { res.writeHead(204); return res.end(); }
     for (const [prefix, dir] of roots) { if (!p.startsWith(prefix)) continue; const f = path.join(dir, p.slice(prefix.length)); if (!f.startsWith(dir) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) break;
       res.writeHead(200, { ...ISO, "content-type": MIME[path.extname(f)] || "application/octet-stream" }); return res.end(fs.readFileSync(f)); }

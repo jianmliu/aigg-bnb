@@ -17,7 +17,7 @@ changes a PoRW scheme id and never forks the neutral contracts.
 | `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
 | `relayer/` | **the relayer service**: stage-1 relay hub + epoch aggregator (one root per MEP per epoch) + commit-reveal beacon participant / epoch roller + gas-sponsoring transaction submitter for bonded instances (`delegateBySig`, `materializeClaim`, `submitResult`, `settle`) with a small HTTP API |
-| `frontend/` | **the node page**: connect wallet → bond BNB → delegate a session key (one EIP-712 signature) → load the brain → run the node (claims every epoch, materialize when wanted, serve audits and tasks over the relay) |
+| `frontend/` | **the node page**: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
 | `test/` | end-to-end on a local anvil: `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
 | `split.sh` | turns this staging directory into the standalone repository (`aigg-porw` becomes a git submodule) |
@@ -69,8 +69,10 @@ through the relayer → relayer commits/reveals the beacon and rolls each epoch 
 relay → relayer posts the epoch root → instances materialize through the relayer (≈285k gas) → both eligible
 → a client posts a task, sortition picks both, results answered over the relay, submitted by the relayer,
 settled, fee split; the client re-executes and matches. 14 sponsored transactions, 0 errors.
-`e2e_frontend.mjs`: the same through the page in Chromium — the wallet is prompted exactly twice (the bond
-transaction and one `Delegation` typed-data signature); everything after that is the session key.
+`e2e_frontend.mjs`: the same through the page in Chromium with **two brains hosted at once** (female + a
+synthetic "male" MEP): one bond covers both, wrong bytes for a brain are flagged by the model_id check,
+claims and materializations run for both, a task on the male brain is executed by the tab and matches an
+independent re-execution. The wallet is prompted exactly twice (bond tx, one `Delegation`).
 
 ## Testnet deployment status
 

@@ -1,7 +1,8 @@
 // The frontend in headless Chromium against the anvil harness: an injected wallet (simulated OUTSIDE the page —
 // it signs and sends with viem on anvil) connects, bonds BNB, delegates a session key (one typed-data prompt),
 // loads the model, starts the node; epochs are driven with anvil_mine; the page announces claims, materializes
-// through the relayer, and executes a task posted by another client.
+// through the relayer, and executes a task posted by another client. TWO brains are hosted at once (the female
+// and a "male" synthetic MEP): the selector switches the model panel; claims, materialization and tasks run for both.
 import fs from "node:fs"; import path from "node:path";
 import { chromium } from "playwright";
 import { parseEther, keccak256, encodePacked } from "viem";
@@ -11,8 +12,9 @@ let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL 
 const anvil = await H.startAnvil(8556); let browser;
 try {
   const dep = await H.deploy(anvil.rpc); const { mep, mepId, payload, steps } = await H.registerSyntheticMep(dep, H.KEYS[0]);
-  const R = await H.startRelayer(dep, H.KEYS[3], [mepId]);
-  const fe = await startFrontend(0, { payload });
+  const M2 = await H.registerSyntheticMep(dep, H.KEYS[0], { name: "male-cns", neurons: 3000, synapses: 30000, steps: 3 }); const mepId2 = M2.mepId;
+  const R = await H.startRelayer(dep, H.KEYS[3], [mepId, mepId2]);
+  const fe = await startFrontend(0, { payloads: { "/payload.bin": payload, "/payload2.bin": M2.payload } });
   // the "wallet": anvil account 1, signing outside the page
   const W = H.clientsFor(dep, H.KEYS[1]); const E = await H.porw("eip712.js"); const localWallet = E.localWallet(H.KEYS[1]); const prompts = [];
   const launch = { headless: true }; if (process.env.PW_CHROMIUM) launch.executablePath = process.env.PW_CHROMIUM;
@@ -34,32 +36,38 @@ try {
   await page.goto(fe.url + "/"); await page.waitForFunction(() => window.__ready === true);
   await page.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
   await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.deployment !== null);
-  check("page loaded the deployment from the relayer", (await page.evaluate(() => window.app.state.deployment.meps[0])) === mepId.toLowerCase());
+  check("page loaded the deployment + two MEPs from the relayer", (await page.evaluate(() => window.app.state.meps.map((m) => m.mepId))).join() === [mepId, mepId2].map((x) => x.toLowerCase()).join());
+  await page.evaluate((id) => window.appActions.host(id, true), mepId2.toLowerCase()); check("hosting both brains", (await page.evaluate(() => window.app.state.hosted.size)) === 2);
   await page.click("#btnConnect"); await page.waitForFunction(() => window.app.state.wallet !== null);
   check("wallet connected on the right chain", (await page.evaluate(() => [window.app.state.wallet, window.app.state.chainOk]))[1] === true);
   await page.fill("#amount", "0.5"); await page.click("#btnBond"); await page.waitForFunction(() => window.app.state.bonded > 0n, null, { timeout: 60000 });
-  check("bonded 0.5 BNB through the wallet (10 votes)", (await W.instances.read.weightOf([W.account.address])) === 10n);
+  check("bonded 0.5 BNB through the wallet (10 votes) for BOTH MEPs", (await W.instances.read.weightOf([W.account.address])) === 10n && (await W.instances.read.isBondedFor([W.account.address, mepId2])));
   await page.click("#btnDelegate"); await page.waitForFunction(() => window.app.state.resolved !== null, null, { timeout: 60000 });
   check("session key delegated: one Delegation prompt, resolves to the wallet", (await page.evaluate(() => window.app.state.resolved)) === W.account.address.toLowerCase() && prompts.filter((p) => p === "Delegation").length === 1);
-  await page.fill("#url", "/payload.bin"); await page.click("#btnModel"); await page.waitForFunction(() => window.app.state.model !== null, null, { timeout: 60000 });
-  check("model loaded in the tab with a locally verified model_id", (await page.evaluate(() => window.app.state.model.modelId)) === H.hex(mep.modelId));
-  await page.click("#btnStart"); await page.waitForFunction(() => window.app.state.node !== null, null, { timeout: 120000 }); check("node started (relay connected, serving)", true);
+  await page.fill("#url", "/payload.bin"); await page.click("#btnModel"); await page.waitForFunction((id) => !!window.app.state.loaded[id], mepId.toLowerCase(), { timeout: 60000 });
+  check("female model loaded in the tab, model_id matches the MEP", (await page.evaluate((id) => window.app.state.loaded[id].ok, mepId.toLowerCase())) === true);
+  await page.evaluate((id) => window.appActions.setActive(id), mepId2.toLowerCase()); await page.fill("#url", "/payload.bin"); await page.click("#btnModel"); await page.waitForFunction((id) => !!window.app.state.loaded[id], mepId2.toLowerCase(), { timeout: 60000 });
+  check("switching to the male MEP and loading the WRONG bytes is flagged (model_id mismatch)", (await page.evaluate((id) => window.app.state.loaded[id].ok, mepId2.toLowerCase())) === false);
+  await page.fill("#url", "/payload2.bin"); await page.click("#btnModel"); await page.waitForFunction((id) => window.app.state.loaded[id].ok === true, mepId2.toLowerCase(), { timeout: 60000 }); check("male model loaded, model_id matches", true);
+  await page.click("#btnStart"); await page.waitForFunction(() => window.app.state.node !== null && window.app.state.node.models.size === 2, null, { timeout: 120000 }); check("node started hosting both brains", true);
   // epochs: commit / reveal / roll driven by anvil_mine; the page claims each epoch and materializes the previous one
   const EPOCH = dep.epochBlocks; const toBlock = async (b) => { const cur = await anvil.block(); if (b > cur) await anvil.mine(b - cur); };
   const waitFor = async (pred, ms = 30000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await pred()) return true; await H.sleep(400); } return false; };
   const enterEpoch = async (e) => { await toBlock(e * EPOCH - 5); await waitFor(async () => (await R.api("/status")).commits.includes(e)); await toBlock(e * EPOCH + 2); await waitFor(async () => (await R.api("/status")).reveals.includes(e)); await toBlock(e * EPOCH + 12); return waitFor(async () => (await R.api("/status")).epochsRolled.includes(e)); };
-  await enterEpoch(1); check("page announced its epoch-1 claim", await waitFor(() => page.evaluate(() => !!window.app.state.claims[1])));
-  await enterEpoch(2); check("page materialized its epoch-1 claim through the relayer", await waitFor(() => page.evaluate(() => window.app.state.materialized[1] === true), 40000));
-  check("on-chain: valid claim + eligible in epoch 2", (await W.claims.read.hasValidClaim([W.account.address, mepId, 1n])) && (await W.instances.read.isEligible([W.account.address, mepId, 2n])));
+  await enterEpoch(1); check("page announced epoch-1 claims for both MEPs", await waitFor(() => page.evaluate(([a, b]) => !!window.app.state.claims[a]?.[1] && !!window.app.state.claims[b]?.[1], [mepId.toLowerCase(), mepId2.toLowerCase()])));
+  await enterEpoch(2); check("page materialized both epoch-1 claims through the relayer", await waitFor(() => page.evaluate(([a, b]) => window.app.state.materialized[a]?.[1] === true && window.app.state.materialized[b]?.[1] === true, [mepId.toLowerCase(), mepId2.toLowerCase()]), 60000));
+  check("on-chain: valid claims + eligible in epoch 2 for both MEPs", (await W.instances.read.isEligible([W.account.address, mepId, 2n])) && (await W.instances.read.isEligible([W.account.address, mepId2, 2n])));
   // a task from another client: the page's session inbox gets the announcement, the relayer submits the page's result
   const C = H.clientsFor(dep, H.KEYS[0]); const nonce = "0x" + "41".repeat(32);
-  await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([{ mepId, stimulusSeed: 7, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 1 }, nonce], { value: parseEther("0.01") }) });
-  const taskId = keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [mepId, 7, nonce])); const ex = await C.market.read.executors([taskId]);
+  await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([{ mepId: mepId2, stimulusSeed: 7, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 1 }, nonce], { value: parseEther("0.01") }) });
+  const taskId = keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [mepId2, 7, nonce])); const ex = await C.market.read.executors([taskId]);
   check("the tab's wallet is the sortitioned executor", ex.length === 1 && ex[0].toLowerCase() === W.account.address.toLowerCase());
   const { RelayClient } = await H.porw("relay_client.js"); const { keypair } = await H.porw("claim.js"); const client = new RelayClient([(await R.api("/deployment")).relay], keypair(H.KEYS[0])); await client.connect();
   const session = await page.evaluate(() => document.getElementById("session").textContent.split(" ")[2]);
-  const resp = await client.request(session, "task-announce", mepId, { taskId, stimulusSeed: 7 }, { timeoutMs: 60000, responseType: "result" });
-  check("tab executed the task and returned a signed result", resp.payload.taskId === taskId);
+  const resp = await client.request(session, "task-announce", mepId2, { taskId, stimulusSeed: 7 }, { timeoutMs: 60000, responseType: "result" });
+  check("tab executed a task on the MALE brain and returned a signed result", resp.payload.taskId === taskId);
+  const Vf = await H.porw("verifier.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const re = Vf.reexecute(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), M2.payload, { stimulusSeed: 7, execDigest: H.unhex(resp.payload.execDigest) }, M2.mep);
+  check("the result matches an independent re-execution of the male brain (3 steps)", re.matches);
   check("relayer submitted the tab's result on-chain", await waitFor(async () => C.market.read.submitted([taskId, W.account.address])));
   const s = await R.api("/tx/settle", { taskId }); check("task settled, fee paid to the tab's wallet", s.ok);
   console.log(`wallet prompts: ${prompts.join(",")}`); console.log("page log tail:\n" + (await page.evaluate(() => document.getElementById("log").textContent)).split("\n").slice(-8).join("\n"));

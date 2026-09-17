@@ -24,13 +24,16 @@ const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).
 const relay = await startRelay({ port: cfg.relayPort || 0, host: cfg.host || "127.0.0.1", name: cfg.name || "bnb-relayer" });
 const relayKey = keypair(cfg.privateKey); const rc = new RelayClient([relay.url], relayKey); await rc.connect();
 // ---- MEPs served: read from chain, rebuild the MEP object the aggregator verifies claims against ----
-const meps = new Map(); // mepId -> { mep, aggregators: Map(epoch -> Aggregator), posted: Set(epoch) }
+const meps = new Map(); // mepId -> { mep, info, aggregators: Map(epoch -> Aggregator), posted: Set(epoch) }
 for (const id of cfg.meps) {
   const m = await ch.meps.read.getMEP([id]);
+  const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
+  const info = { mepId: id.toLowerCase(), modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", steps: Number(m.steps), clampQ16: Number(m.clampQ16), commitStride: isLif ? Number(m.clampQ16) : 1, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
+    weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || (cfg.mepNames || {})[id.toLowerCase()] || null };
   const execKind = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? lifExecKind() : EXEC_INT_SPMV_Q16;
   const mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), steps: Number(m.steps), clampQ16: Number(m.clampQ16), execKind, commitStride: Number(m.clampQ16) });
   if (hex(mep.mepId).toLowerCase() !== id.toLowerCase()) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind mismatch)`);
-  meps.set(id.toLowerCase(), { mep, aggregators: new Map(), posted: new Set() });
+  meps.set(id.toLowerCase(), { mep, info, aggregators: new Map(), posted: new Set() });
 }
 const EPOCH_BLOCKS = Number(await ch.claims.read.EPOCH_BLOCKS());
 const beaconOn = ch.beacon && (await ch.claims.read.beaconProvider()).toLowerCase() === dep.addresses.beacon.toLowerCase();
@@ -90,6 +93,7 @@ const api = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
     if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: relay.url, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, meps: [...meps.keys()] });
+    if (u.pathname === "/meps") return json(res, 200, [...meps.values()].map((M) => M.info));
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);
       return json(res, 200, { epoch: e, block: await ch.pub.getBlockNumber(), beacon: b, rolled: b !== "0x" + "0".repeat(64), challenge: id ? await ch.claims.read.epochChallenge([BigInt(e), id]) : null }); }
