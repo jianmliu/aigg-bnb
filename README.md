@@ -94,10 +94,21 @@ addresses to the frontend over `/deployment`, so the page needs nothing but the 
 `.env*` and `relayer/config.json` are gitignored; keep the env files in your secret store. The end-to-end tests
 start the relayer through the same `PORW_*` variables.
 
-## Testnet deployment status
+## Testnet deployment record (BSC testnet, chain 97)
 
-`deploy.sh` targets `bsc-testnet` (chain 97, default RPC on port 443) or `opbnb-testnet` (chain 5611). Not yet
-deployed: awaiting testnet funds on the deployer.
+Deployed 2026-09-17 with `deploy.sh` (parameters for 0.75 s blocks: epoch 800 blocks, commit/reveal windows 160,
+opening window 160, dispute round 400, exit delay 2400, task timeout 800; UNIT 0.05 BNB, slash 0.5 BNB, opening
+deposit 0.01 BNB, beacon deposit 0.1 BNB, relay bond 1 BNB). Deployer `0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa`;
+first deployment tx `0x999f6098374049fdb3abb8fc33da708fea3aff2e3a74936fad2a8af69a53d873` (the eight contract creations
+follow it in the same run). Contract addresses are distributed through the `.env.bsc-testnet` file, not this repo.
+
+Published brain: `gnfd://aigg-brains/flywire-fafb-v783-min5.bin` on Greenfield testnet (SP
+`https://gnfd-testnet-sp2.bnbchain.org`, public read; manifest next to it), 28,123,136 bytes, sha256
+`fd246cc2…e1da`. MEP `0x9b7dc2ba02a04ed1be9519d00d53323d581c0b496764c28edc071d8c841bef49` registered on the MEP
+registry (tx `0xb20e5fd164198ea293590adfbec61ab70c2d25b53af660a5041f78a0951f8d2e`): int-lif, 100 steps, stride 10,
+139,255 neurons, 2,700,513 synapse records, model_id `0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a`.
+
+Live run (`test/live_bsc.mjs` against a running relayer): see the "Live run" entry below once recorded.
 
 ## Build and test (standalone layout)
 

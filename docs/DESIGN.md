@@ -1,6 +1,6 @@
 # BNB Chain deployment design
 
-Status: design + reference contracts; not deployed. Numbers marked *assumed* are inputs to
+Status: deployed on BSC testnet (chain 97; see README "Testnet deployment record") with the FlyWire brain on Greenfield testnet. Numbers marked *assumed* are inputs to
 the cost model, not measurements; measured gas comes from `aigg-porw` (`benchmarks/evm/`,
 `contracts/evm/DESIGN-cross-audit.md` §5b/§5c).
 
