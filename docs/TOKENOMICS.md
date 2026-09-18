@@ -57,6 +57,23 @@ Three consequences, and they are what make a collection possible at all:
   is a real edit to a real connectome that a browser will really execute.
 - **The CDN story improves.** One hot object instead of N cold ones is exactly what an edge cache is for.
 
+**Update — procedural deltas (aigg-porw PRs #5, #6, merged).** An *individual* is not a 467-record edit: resampling
+a brain under a realistic inter-individual noise model changes almost every record, so an explicit `v1` delta of an
+individual would be ~27 MB. Two further formats carry the recipe instead of the edits, and both apply to an ordinary
+payload with an ordinary `model_id`:
+
+| format | what it is | size | apply (*measured*, real brain) |
+|---|---|---|---|
+| `FLYDELTAv2` | a synthetic individual: base `model_id` + u64 seed + noise model. Every synapse count is resampled by a deterministic integer sampler (negative binomial, Q256 fixed point) that JS and Python reproduce byte for byte | **202 bytes** | 0.9 s JS, 1.5 s Python |
+| `FLYDELTAv3` | a same-base cross: two parent delta ids + seed + inheritance granularity + mutation rate | **231 bytes** | 1.9 s with three ancestors |
+
+The noise model is *measured*, not chosen: it is fitted to the left/right mirror connections of the FlyWire brain
+itself (709,769 neuron-level mirror pairs), and two sampled individuals differ from each other the way the two
+hemispheres do (SD of the log count ratio 1.06 sampled vs 1.01 measured at 5–9 synapses, 0.63 vs 0.65 at 20–49). So
+the on-chain genome of an individual is ~200 bytes — about 3k gas as calldata, ~155k gas as seven storage slots
+(0.0000155 BNB at the *measured* 0.1 gwei) — and the statement above gets stronger: the recipe for a real,
+executable, statistically calibrated connectome variant fits in a single transaction's calldata many times over.
+
 **A delta cannot add or remove neurons** (`v1`), and its ops address neurons by array index into the base's
 root-id table. That matters in §4.
 
@@ -122,7 +139,38 @@ external data this project does not have yet, and it should compile down to an o
 `FLYDELTAv1` so the on-chain artefact stays what it already is and anyone can re-run the compile and check it
 reproduces the same delta and the same `model_id`.
 
-Recommendation: ship (a), specify (b), and treat the type table as its own piece of work.
+**Update — two of the premises above have moved.**
+
+*The type table exists.* The male CNS release carries its own cross-dataset match: the annotation table has a
+`flywireType` column (and a `dimorphism` column). *Measured* against the FlyWire v783 annotations: 7,784 shared type
+names (of 8,840 FlyWire types); 95.1% of female neurons sit in a shared type; **91.9% of the records of the published
+≥5-synapse female graph have both ends in a male-mapped type** (92.0% of synapses); 4,889 shared types have the same
+cell count in both sexes and 6,144 are within ±1; 1,258 male neurons are labelled male-specific and 270 female
+neurons female-specific. So (b) is limited by what a type-level projection can mean (it cannot address individual
+neurons, the male VNC third has no counterpart, the sex-specific cells stay in their own base), not by missing data.
+
+*There is a third option, and it is implemented.* **(c) Same-base cross with real inheritance** (`FLYDELTAv3`).
+Inheritance acts on the genotype (the count of every base record before the export threshold); per inheritance unit
+(record, or all outputs of a neuron, or all inputs of a neuron) a hash bit picks one parent; each record then mutates
+with a set probability into a fresh draw around the base count, which keeps the population stationary over any number
+of generations (no drift of record counts or of unrelated distances). *Measured* on the real brain, mutation 1/8,
+mean |ln ratio| over the 2.7 M published records: parent–child 0.36, siblings 0.40, grandparent–grandchild 0.52,
+unrelated 0.64 = founder–founder 0.64. Under (a) a child is no closer to its second parent than to a stranger; under
+(c) the pedigree is visible in the bytes. The constraint is the one this section already states: both parents must be
+individuals of the *same* base.
+
+How (c) fits "one of each sex": the child takes one parent's base; that parent contributes by inheritance (`v3`,
+crossed against the published base so half of the genotype is species-typical), and the other-sex parent contributes
+entropy — its `deltaId` goes into the seed — until (b) exists, at which point its projected genotype replaces the
+published base as the second `v3` parent. Nothing about the on-chain record changes between the two stages: it is
+parents + seed either way.
+
+One honest boundary for whichever rule ships: the left/right differences the noise model is fitted to are
+developmental noise under one genotype, not heritable variation. Treating an individual's realised noise as heritable
+is a modelling choice; the heritability of synapse counts in Drosophila has not been measured.
+
+Recommendation (revised): ship (c) with the other-sex parent as entropy, specify (b) as the projection that later
+replaces that entropy, and treat the male base export as the prerequisite it is. (Original: ship (a), specify (b).)
 
 ---
 
@@ -163,8 +211,36 @@ bounded by something else long before it is bounded by time. What binds instead:
 1. **Memory.** Each hosted brain is a 28 MB payload resident in wasm memory, plus its weights tree, its CSR
    commitments and its per-slot regions. That is the real ceiling on `h` for a laptop tab, and it is the number to
    measure next — the 200-individual figure this section used to give was a CPU figure and no longer applies.
+   *Measured* (Node, `sketch.wasm`, real 28 MB brain, wasm memory growth per `loadModel`):
+
+   | `maxSteps` the slot is sized for | per hosted brain | brains before failure |
+   |---|---|---|
+   | 1 | 75 MB | ≥ 12 (915 MB) |
+   | 100 | 83 MB | ≥ 12 (992 MB) |
+   | 1,000 | 142 MB | ≥ 12 (1.7 GB) |
+   | 5,000 | 408 MB | **5** — the sixth fails at 2.07 GB |
+
+   Two things follow. The payload is a third of the footprint at best; the rest is the weights tree, the CSR
+   commitments and, dominating at large `maxSteps`, the LIF checkpoints (one 2.2 MB state every 32 steps: 350 MB at
+   5,000 steps). And the ceiling is **2 GB, not the 4 GB of wasm32**: the sixth 5,000-step brain dies with
+   `Start offset -2128355728 is outside the bounds of the buffer`, a signed 32-bit offset in the JS glue, which is a
+   bug to fix rather than a bound to plan around. With today's node: about 25 resident brains at `maxSteps ≤ 100`,
+   14 at 1,000, 5 at 5,000. Sizing checkpoints lazily (on the first long task, not at load) would make the first two
+   rows the only ones that matter for hosting.
 2. **First load.** 28 MB over the network before a tab can claim anything, once per base.
 3. **Redundancy.** Still `N ≤ T · h / 2` in shape, with `h` now set by memory rather than seconds.
+
+4. **Standing gas — and it binds before memory does.** To be eligible in epoch `e` an instance needs a materialized
+   claim for `e−1` *per MEP*. *Measured* on anvil under v2: `materializeClaim` ≈ 285k gas, `postEpochRoot` ≈ 98k gas
+   per MEP per epoch, `submitResult` ≈ 180k. At the *measured* 0.1 gwei and the testnet's 10-minute epochs (144 a
+   day), keeping one brain continuously eligible on one instance costs 285k × 144 = 41M gas ≈ **0.0041 BNB a day** —
+   the 0.05 BNB bond's worth in twelve days — and redundancy 2 doubles it per individual. For a 200-individual
+   collection kept continuously eligible with two hosts each: ~1.6 BNB a day in materializations plus ~0.28 BNB a day
+   in epoch roots, all of it currently the relayer's. The sponsorship guard already expresses this: its default
+   budget of 1.5M gas per instance per epoch pays for **five** materializations and nothing else. In the gate run
+   (three brains, six tasks in one epoch) 8 of 12 results were sponsored and 4 were refused and paid by the executors.
+   So under sponsorship `h ≤ 5`, well below the memory bound — which is the quantitative case for "claims on demand"
+   (item 3) and for item 2, and the number the mint fee's treasury share has to be set against.
 
 This is why item 2 below is still the one that matters, but for a different reason than before. It is no longer
 about paying twenty dispute-commitment bills; it is about a tab holding twenty variants of one base as one 28 MB
@@ -172,7 +248,8 @@ payload plus twenty kilobyte deltas, instead of twenty resident payloads.
 
 1. ~~Register brains with a large stride.~~ Obsolete: stride is a task parameter now and a claim does not commit
    anything per stride. A task still chooses it, and `postTask` bounds the dispute rounds it implies.
-2. **Claim the base once, prove the delta.** Since `apply` is deterministic, residency of (base, delta) is
+2. **Claim the base once, prove the delta.** Since `apply` is deterministic (and takes about a second for a
+   procedural individual, so a variant need not even stay resident between tasks), residency of (base, delta) is
    residency of the variant, so one claim for the base plus a cheap proof of each delta would let a tab host a
    whole lineage from one payload. Still an upstream change to the claim scheme, still the highest-value one
    available.
@@ -222,9 +299,16 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
 
 ## 8. Still to decide
 
-1. Breeding rule: (a) or (b) from §4 — this blocks the contract.
-2. Genesis size and sex ratio, against the §5 bound — which needs the memory measurement §5 asks for before it
-   can be a number.
+1. Breeding rule: (a), (b) or (c) from §4 — this blocks the contract. (c) is implemented and measured; the on-chain
+   record (parents + seed) is the same for all three, so the contract need not wait for (b).
+2. Genesis size and sex ratio, against the §5 bounds. The memory measurement is in (§5.1: ~25 resident brains per tab
+   at short tasks); the tighter bound is standing gas (§5.4: five sponsored materializations per instance per epoch).
 3. `MINT_PRICE` split between bond and treasury, and what the treasury may spend on.
 4. Whether the token owner's share of task fees is a protocol rule or a social one.
-5. Who exports the male base, and when.
+5. Who exports the male base, and when. The source data (edges, annotations with `flywireType`, consensus
+   neurotransmitters) is already prepared in the flyaudio project; what is missing is a `FLYBRAINv2` exporter for it.
+6. Tile-local derivation. A procedural individual drops sub-threshold records and re-sorts, so tile `t` of a child
+   depends on every record before it and a wrong declared `model_id` is self-punishing but not provable. Keeping
+   dropped records in place as zero weights makes `child_tile[t] = G(parent tiles[t], seed)`, which admits a one-step
+   fraud proof on a single record (the sampler's Q256 arithmetic is the EVM's word size). It fixes the payload layout,
+   so it has to be decided before the first child is registered.
