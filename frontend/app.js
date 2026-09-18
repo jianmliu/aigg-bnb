@@ -106,6 +106,12 @@ async function loadModel() {
   renderActive(); log(`${m.name || m.mepId.slice(0, 10)}: model_id ${r.modelId.slice(0, 14)}… ${ok ? "matches the MEP" : "DOES NOT MATCH the MEP (claims would be rejected)"}`);
   $("file").value = ""; $("url").value = "";
 }
+// Leave room for the kernel heap, alignment, and execution/dispute scratch.
+const HOST_MEMORY_BUDGET = WASM32_MAX_BYTES - 64 * 1024 ** 2;
+const reservedBytes = (bytes) => Math.ceil(bytes * 1.01);
+function requireMemory(bytes) {
+  if (bytes > HOST_MEMORY_BUDGET) throw new Error(`Hosting these brains needs about ${MB(bytes)} of memory; the shared wasm heap must stay below 4 GB with room for execution. Reduce Max task steps or host fewer brains.`);
+}
 const MB = (b) => `${(b / 1024 / 1024).toFixed(0)} MB`;
 /** the shape `mem.js` costs a brain by; needs the model to have been prepared (nTiles and the header counts) */
 const shapeOf = (m) => { const l = state.loaded[m.mepId]; return l && { nTiles: Math.floor(l.bytes / 4096), neurons: l.neurons, synapses: l.synapses, exec: m.exec === "int-lif" ? "lif" : "spmv" }; };
@@ -122,26 +128,31 @@ function taskCapacity(m) {
   if (sh) {
     const bytes = modelMemoryBytes({ ...sh, maxSteps });
     // a wasm32 memory cannot grow past 4 GB on any device, so this one is impossible rather than merely large
-    if (bytes >= WASM32_MAX_BYTES) throw new Error(`${maxSteps} steps would need ${MB(bytes)} of memory for this brain, past the 4 GB a page can address. The most it can hold is ${maxStepsWithin(sh, WASM32_MAX_BYTES)} steps; a laptop wants far less.`);
+    if (reservedBytes(bytes) > HOST_MEMORY_BUDGET) throw new Error(`${maxSteps} steps would need ${MB(bytes)} of memory for this brain, above the hosting budget after reserving space in the 4 GB wasm heap. The most it can hold is ${maxStepsWithin(sh, Math.floor(HOST_MEMORY_BUDGET / 1.01))} steps; a laptop wants far less.`);
   }
   return maxSteps;
 }
 async function hostOnNode(m) {
   if (!state.hosted.has(m.mepId) || !state.prepared.has(m.mepId) || state.node.models.has(m.mepId)) return;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps: taskCapacity(m), exec: m.exec === "int-lif" ? "lif" : "spmv" });
+  const maxSteps = taskCapacity(m), bytes = reservedBytes(brainBytes(m, maxSteps));
+  requireMemory(state.node.memoryBytes + bytes);
+  // Reserve before awaiting: concurrent hot-adds, mismatched MEPs and failed loads still consume heap.
+  state.node.memoryBytes += bytes;
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv" });
   if (!r.matches) { log(`WARNING ${m.name || m.mepId.slice(0, 10)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
-  state.node.models.set(m.mepId, { neurons: r.neurons });
+  state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
   log(`${m.name || m.mepId.slice(0, 10)}: resident on the node, serving audits and tasks`);
 }
 async function startNode() {
   if (!state.delegation) throw new Error("delegate first"); const ready = [...state.hosted].filter((id) => state.prepared.has(id)); if (!ready.length) throw new Error("load a model for at least one hosted MEP");
   for (const id of ready) taskCapacity(mepById(id)); // validate before creating a worker or relay connection
-  { const total = ready.reduce((s, id) => s + brainBytes(mepById(id), taskCapacity(mepById(id))), 0);
+  { const total = ready.reduce((s, id) => s + reservedBytes(brainBytes(mepById(id), taskCapacity(mepById(id)))), 0);
+    requireMemory(total);
     if (total) log(`hosting ${ready.length} brain(s) will hold about ${MB(total)} of wasm memory resident${total > 1024 ** 3 ? " — over a gigabyte; a laptop tab may not survive it" : ""}`); }
   const k = sessionKey();
   await ask("init", { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
   await ask("relay", { url: state.deployment.relay });
-  state.node = { models: new Map() }; // the page's view of what the worker holds resident
+  state.node = { models: new Map(), memoryBytes: 0 }; // the page's view of what the worker holds resident
   for (const id of ready) await hostOnNode(mepById(id));
   log(`node running for ${state.node.models.size} MEP(s)`); setInterval(() => loop().catch((e) => log("loop error: " + (e.message || e))), 3000); renderActive();
 }
