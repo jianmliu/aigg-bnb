@@ -19,8 +19,8 @@ contract FlyCollectionTest is Test {
 
     function setUp() public {
         meps = new MEPRegistry();
-        // MINT_BOND 0: sponsored bonding needs InstanceRegistry.bondFor upstream (see the contract's NOTE)
-        c = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)));
+        // MINT_BOND 0 here; FlyCollectionBond.t.sol mints with a real InstanceRegistry and a bond
+        c = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0));
         vm.deal(alice, 10 ether); vm.deal(bob, 10 ether);
     }
 

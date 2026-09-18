@@ -1,6 +1,6 @@
 // Recompute every scheme-dependent id of this task from the real payload with an aigg-porw checkout (its SCHEME_ID,
 // weights Merkle root, synapse root, exec kind). Results are kept PER SCHEME in task.json (models[*].mepByScheme[schemeId]),
-// because the ids of one payload differ between schemes while execDigest / execRoot / inputCommit do not:
+// because the ids of one payload differ between schemes while execDigest / execRoot / initStateRoot do not:
 //   sketch-tile-keccak:v1  mep_id = keccak(scheme, modelId, execKind, steps, stride); taskId = keccak(mepId, seed, nonce)
 //   sketch-tile-keccak:v2  mep_id = keccak(scheme, modelId, execKind, neurons, synapses, synapseRoot); steps and stride are the
 //                          Task's; taskId = keccak(abi.encode(task, nonce)) covers fee and deadline, so it exists only at post time
@@ -23,7 +23,7 @@ for (const [name, m] of Object.entries(T.models)) {
   const fp = path.join(here, "fields", `${name}.${S.split(":").pop()}.json`); if (!check) fs.writeFileSync(fp, JSON.stringify({ name, sha256: m.payload.sha256, ...now }, null, 1));
 }
 const v1 = Object.values(T.models)[0].mepByScheme[S].steps !== undefined;
-for (const t of T.tasks) { t.taskIdByScheme = t.taskIdByScheme || {}; const id = v1 ? keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [T.models[t.model].mepByScheme[S].mepId, T.stimulusSeed, t.nonce])) : "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"; if (t.taskIdByScheme[S] !== id) stale.push(`task ${t.model}|${t.stimulusSet} [${S}] taskId`); t.taskIdByScheme[S] = id; }
+for (const t of T.tasks) { t.taskIdByScheme = t.taskIdByScheme || {}; const id = v1 ? keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [T.models[t.model].mepByScheme[S].mepId, T.stimulusSeed, t.nonce])) : "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"; if (t.taskIdByScheme[S] !== id) stale.push(`task ${t.model}|${t.stimulusSet} [${S}] taskId`); t.taskIdByScheme[S] = id; }
 console.log(stale.length ? `${stale.length} values new or changed for ${S}:\n  ` + stale.join("\n  ") : `every ${S} id in task.json matches the payload`);
 if (check) process.exit(stale.length ? 1 : 0);
 fs.writeFileSync(path.join(here, "task.json"), JSON.stringify(T, null, 1)); console.log("task.json and fields/*.<scheme version>.json written");

@@ -1,5 +1,5 @@
 {
- "startedAt": "2026-09-18T14:10:37.876Z",
+ "startedAt": "2026-09-18T16:45:54.942Z",
  "scheme": "aigg:porw:sketch-tile-keccak:v2",
  "steps": 5000,
  "commitStride": 500,
@@ -7,25 +7,25 @@
  "meps": {
   "flywire-783-min5": {
    "mepId": "0x29d28a9377e09b2a68f1446970a72c629dc59266fadba8e0cba45fba744aaf82",
-   "registerTx": "0xd47d8d9a78528ab98bd18596f079c0479bd2e9c305f6403d6fed6c3cd4332d98",
+   "registerTx": "0x9968fc526cfaaa2599a2d3d7844ef27cff8e5efb35ee8e5fc1c68d1f95e5d4f2",
    "gas": "227581",
    "fromDelta": false
   },
   "flywire-783-min5-ablate4": {
    "mepId": "0x365bec009e8e19df0e282841f1f1120b45efbe5e2ab992af6fd6327b4b129538",
-   "registerTx": "0xbf7a8f4930fb58c880e34a025f240cf3221304a5c42b49b6cb7865f59ce4ce7b",
+   "registerTx": "0x49db1920cb15b21a672be9415eb4f421081c533ebacd4f83c9e5614d7e7e0b25",
    "gas": "227677",
    "fromDelta": true
   },
   "flywire-783-min5-keep4": {
    "mepId": "0xd3b6a4b116af0abe74a8f7e4efccd0484f9dd706116a51bd9398a239cfe79713",
-   "registerTx": "0x66d2a811a17c17a365e3ce40fd26c8ea21ac2ba74ec0f74e863ff51026f94171",
+   "registerTx": "0x75768794bd84a14ba954723f843015d25e8e736e2da77934184d8b5efc60f22a",
    "gas": "227653",
    "fromDelta": true
   }
  },
  "epochs": {
-  "claimsMs": 127
+  "claimsMs": 122
  },
  "addresses": {
   "beacon": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
@@ -49,7 +49,7 @@
    "stimulusSet": "joLR",
    "taskId": "0x3bdfdb6a468c563a82323a35eb89087a9cebd259a56580680bb1c461981c79b3",
    "expected": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-   "postTx": "0x4ea99d719ddfb246446f3a331bd2a12758ca5c4981919b33c5b5b1706b43a814",
+   "postTx": "0xfa980670eefe14d16899ae7eba53a0384b75bef28c55ccf49b52bc550077bcba",
    "executors": [
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
@@ -69,8 +69,8 @@
    "submitted": true,
    "settle": {
     "ok": true,
-    "hash": "0x6015874d57557502a1f7a0c99e13c2d84fa799afb921f01c3b71cb8eb78f403d",
-    "gasUsed": "152368",
+    "hash": "0x0f11ef7355e2d3f0f5e00f714811c996079ea4d0ce4c4aec321ae6fc864dc35f",
+    "gasUsed": "151760",
     "paidBy": "client"
    }
   },
@@ -79,18 +79,18 @@
    "stimulusSet": "joLR+gate",
    "taskId": "0x6934742a702aa22b2bcd1001adaf48bef7bc148034f059f42e5ac29b9c48de7b",
    "expected": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
-   "postTx": "0x301bb3e38f914d7a8988456d16ed453c6592440bc3bcaf3e05b083c22434ca54",
+   "postTx": "0x86d18f7dca929881885fa9a51aa75803a33dfe126d8484e9c7301ef7b95a2b58",
    "executors": [
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
    ],
    "results": {
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
      "execDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
      "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
      "ok": true
     },
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
      "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
      "ok": true
@@ -99,8 +99,8 @@
    "submitted": true,
    "settle": {
     "ok": true,
-    "hash": "0x95abded5600ffdbc76d3ead4afe7be2bd933928d0214c70b759256d0f18303de",
-    "gasUsed": "150105",
+    "hash": "0xfabffd58dfdf2b3eb2218a59cb18a082ec17762787f9b9b4959a8014af7a736b",
+    "gasUsed": "151760",
     "paidBy": "client"
    }
   },
@@ -109,7 +109,7 @@
    "stimulusSet": "joLR",
    "taskId": "0xfef665480002674f087dffd0db8fc2fd14c91bafe477ecfc20a9785a349edb45",
    "expected": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-   "postTx": "0xb3fa5ce019cc699a6ea8158f3e1b71886398e79291b27e9b0fe53f6d016109f3",
+   "postTx": "0x97a3516be65f89f008b8043ded51318fba9d290c8987633132bd85372477da7a",
    "executors": [
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
@@ -129,8 +129,8 @@
    "submitted": true,
    "settle": {
     "ok": true,
-    "hash": "0xe7145446f2c3b53b7e18c62054de02a3da3a653ff7a871ef69bd4a314fa5eb78",
-    "gasUsed": "150847",
+    "hash": "0xb052e7e19085eb76a031ea0ca97255b07d751a20926dae89346af7ddd55403bd",
+    "gasUsed": "152502",
     "paidBy": "client"
    }
   },
@@ -139,18 +139,18 @@
    "stimulusSet": "joLR+gate",
    "taskId": "0xe4048777c11531b85f71025543eb9e6ad63d47b68b9d7765d1be8b0be71eef51",
    "expected": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
-   "postTx": "0x80bdff8304c9ffa268dcbb63b4af54cdc1f36ec82bbfae0afb0e441e3c591c19",
+   "postTx": "0x1cb948ea51e51a49232f48a783860d1da4a5ee2d18292b0e22ba9b73f8ccaac1",
    "executors": [
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
    ],
    "results": {
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
      "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778",
      "ok": true
     },
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
      "execDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
      "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778",
      "ok": true
@@ -159,8 +159,8 @@
    "submitted": true,
    "settle": {
     "ok": true,
-    "hash": "0x017013eb79ca7cd0b5ae7cf3bd3f330b13e32bbe9c1f75ffb52c748e93872b27",
-    "gasUsed": "153123",
+    "hash": "0xdcc444f9c95e78c6cf945ddf7a4eb15b463532b8291b6e1e3fa80ffeb55b19c1",
+    "gasUsed": "152514",
     "paidBy": "client"
    }
   },
@@ -169,18 +169,18 @@
    "stimulusSet": "joLR",
    "taskId": "0x8daa772a22d438fb03796575ba8b8687456f54dd51cb8a9a314fc02a887b5642",
    "expected": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
-   "postTx": "0xfc5cee64de92eacb175ad56ca2b36360629f768a98d9faa729771883629422e9",
+   "postTx": "0x0c4169473ad9633a9cd5ec8875855f8faf1edf91281fcf6b46272f7116d325b5",
    "executors": [
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
    ],
    "results": {
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
+    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
      "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
      "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
      "ok": true
     },
-    "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc": {
+    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8": {
      "execDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
      "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
      "ok": true
@@ -189,8 +189,8 @@
    "submitted": true,
    "settle": {
     "ok": true,
-    "hash": "0x9ddb06bbd08df63c8c444b6bca6a649fa6ca981096b535e8b266024a736cd5cf",
-    "gasUsed": "153123",
+    "hash": "0x6521c8993f4d6c9bed06ca6f271a0cb4f7f300cda464910b9c77eae23d33ba25",
+    "gasUsed": "151760",
     "paidBy": "client"
    }
   },
@@ -199,7 +199,7 @@
    "stimulusSet": "joLR+gate",
    "taskId": "0x4a2587430a6f49b43af1944a01455791f4871ca6e7c4ed88a96a29ba758336a8",
    "expected": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
-   "postTx": "0xac76536643a810f66fc219568dce034286d6a90c0ed6d56c9a4781534f4aa769",
+   "postTx": "0xdfe5579f2ac01de2c3474645c2003dbc19dead878072fd9730141f8e134893fd",
    "executors": [
     "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
     "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
@@ -219,13 +219,13 @@
    "submitted": true,
    "settle": {
     "ok": true,
-    "hash": "0x58cd3e301aefe5d90cb71e05648d727367c3f06148dbc0b537f61c130c175a3c",
-    "gasUsed": "150105",
+    "hash": "0xefa369805b66def5be1a814817928bfd7cc152fbd62459f748272c44fe2afe73",
+    "gasUsed": "153269",
     "paidBy": "client"
    }
   }
  ],
- "tasksMs": 133679,
+ "tasksMs": 127601,
  "sponsorship": {
   "epochGasLimit": 1500000,
   "refused": 0,
@@ -237,6 +237,6 @@
   "txOk": 27,
   "errors": []
  },
- "finishedAt": "2026-09-18T14:13:11.762Z",
+ "finishedAt": "2026-09-18T16:48:22.527Z",
  "fails": 0
 }

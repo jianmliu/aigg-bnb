@@ -109,6 +109,15 @@ Keep the purchase framing. Keep the slashable BNB underneath it.
 
 ---
 
+**Update — "one action, one price" now holds.** This section promised that a mint leaves its minter owning an individual
+*and* being a bonded instance, while the contract's own comment said `MINT_BOND` had to be 0 because `bond()` bonds
+`msg.sender`. That was not a constraint of the design, it was a function nobody had written: upstream now has
+`InstanceRegistry.bondFor(instance, mepIds)` (which `bond()` calls). A payer can only add to a bond; exit and withdrawal
+remain the instance's own calls. `FlyCollection.mint` bonds `MINT_BOND` for the minter and enrols them for the base
+brain's MEP in the same transaction (`contracts/test/FlyCollectionBond.t.sol`). Enrolling somebody else takes at least
+one `UNIT` upstream, so `MINT_BOND` is 0 or ≥ `UNIT` — which is what `MINT_PRICE = UNIT + fee` already meant. The same
+call is what a breeding endowment for a child's owner would use.
+
 ## 4. Two bases, two sexes, and what breeding can honestly mean
 
 The collection sits on two bases: the female FlyWire FAFB v783 export (139,255 neurons, 2,700,513 synapse

@@ -26,7 +26,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  *  so a squatter cannot take a client's id with different parameters (TaskMarket.postTask / PorwMeshHash.taskId). */
 export const taskIdOf = (t, nonce) => keccak256(encodeAbiParameters(
   [{ type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" },
-     { name: "inputCommit", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] }, { type: "bytes32" }],
+     { name: "initStateRoot", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] }, { type: "bytes32" }],
   [t, nonce]));
 
 /** the executor's current session key (its relay inbox): the latest SessionKeySet event of the instance registry for that wallet */
@@ -47,7 +47,7 @@ export async function runTasks(clients, clientKey, api, { taskJson = path.join(h
       // The task's own parameters: `steps` and `commitStride` ride on the task under scheme v2, and the id binds
       // the whole struct -- so it has to be built before it can be identified, deadline included.
       const block = await clients.pub.getBlockNumber();
-      const task = { mepId: mep.mepId, stimulusSeed: seed, steps: T.steps, commitStride: T.commitStride, inputCommit: t.inputCommit,
+      const task = { mepId: mep.mepId, stimulusSeed: seed, steps: T.steps, commitStride: T.commitStride, initStateRoot: t.initStateRoot,
         fee: parseEther(fee), deadline: block + BigInt(deadlineBlocks), redundancy: 2 };
       const taskId = taskIdOf(task, t.nonce); const r = { model: t.model, stimulusSet: t.stimulusSet, taskId, expected: t.expectedExecDigest };
       let ex = []; try { ex = (await clients.market.read.executors([taskId])).map((x) => x.toLowerCase()); } catch {}

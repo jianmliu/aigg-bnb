@@ -57,7 +57,7 @@ try {
   { const RK = H.clientsFor(dep, H.KEYS[3]); await RK.pub.waitForTransactionReceipt({ hash: await RK.wallet.sendTransaction({ to: H.KEYS[3] && RK.account.address, value: 0n }) }); }
   // ---- a task: posted by a client, announced over the relay to the executors' session inboxes, results sponsored, settled ----
   const C = H.clientsFor(dep, H.KEYS[0]); const nonce = "0x" + "31".repeat(32);
-  const task = { mepId, stimulusSeed: 9, steps, commitStride: 1, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 2 };
+  const task = { mepId, stimulusSeed: 9, steps, commitStride: 1, initStateRoot: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 2 };
   const h = await C.market.write.postTask([task, nonce], { value: parseEther("0.01") });
   await C.pub.waitForTransactionReceipt({ hash: h });
   const taskId = H.taskIdOf(task, nonce); const ex = (await C.market.read.executors([taskId])).map((x) => x.toLowerCase());

@@ -43,7 +43,7 @@ while (Date.now() < deadline && !settled) {
     // eligible this epoch (materialized claim for e-1)? post one task and execute it
     if (!taskId && materialized[prev] && (await c.instances.read.isEligible([wallet, mepId, BigInt(e.epoch)]))) {
       const nonce = keccak256(encodePacked(["uint64"], [BigInt(Date.now())]));
-      const task = { mepId, stimulusSeed: 7, steps: STEPS, commitStride: STRIDE, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.001"), deadline: BigInt(Number(await c.pub.getBlockNumber()) + 2000), redundancy: 1 };
+      const task = { mepId, stimulusSeed: 7, steps: STEPS, commitStride: STRIDE, initStateRoot: "0x" + "00".repeat(32), fee: parseEther("0.001"), deadline: BigInt(Number(await c.pub.getBlockNumber()) + 2000), redundancy: 1 };
       const h = await c.market.write.postTask([task, nonce], { value: parseEther("0.001") });
       await c.pub.waitForTransactionReceipt({ hash: h }); taskId = H.taskIdOf(task, nonce); evidence.txs.postTask = h; evidence.taskId = taskId;
       const ex = await c.market.read.executors([taskId]); log(`task ${taskId.slice(0, 12)}… posted ${h}; executors ${ex.join(",")}`);

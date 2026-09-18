@@ -23,7 +23,7 @@ the *same* digest (the removed records never carry a spike), which is the built-
 
 - `task.json` — the publication record: three payloads (sha256, FLYBRAINv2 sizes), their MEP fields (modelId,
   synapseRoot, execKind, steps 5000, commit stride 500, mepId), the two stimulus sets (payload indices) with their
-  `initStateRoot` (= the task's `inputCommit`), the six task nonces and expected digests, and the anvil run.
+  `initStateRoot` (the task's field of that name), the six task nonces and expected digests, and the anvil run.
 - `*.delta` + `*.delta.manifest.json` — the two edited models as **FLYDELTAv1 deltas** of the base (169 B and
   4.7 KB; aigg-porw `delta.js` / `flywire_delta.py`): applying them to `flywire-783-min5.bin` reproduces
   `ablate4` / `keep4` byte for byte, with the model ids in `task.json`. `*.manifest.json` describe the applied payloads.
@@ -70,7 +70,7 @@ this task needs the 5000-step / stride-500 MEPs below, registered by a funded de
    registered model id (`flywire_delta.py apply` reproduces the payload for anyone who wants the bytes);
 3. add the three MEP ids to the relayer's `PORW_MEP_IDS`; instances bond on them and claim for an epoch;
 4. `AIGG_BNB=/path/to/aigg-bnb node <flyaudio>/tasks/mesh-first-task/post_tasks.mjs --env /path/to/.env.bsc-testnet --relayer http://<relayer>:8788 --fee 0.001`
-   posts the six tasks (nonces and `inputCommit`s from `task.json`), announces them with the stimulus ids to the
+   posts the six tasks (nonces and `initStateRoot`s from `task.json`), announces them with the stimulus ids to the
    sortitioned executors over the relay, waits for the sponsored results, settles, and writes `posted-97.json`.
 
 A settled task whose digest equals `expectedExecDigest` is a third-party replication of that row of the table.
@@ -87,7 +87,7 @@ A settled task whose digest equals `expectedExecDigest` is a third-party replica
 | taskId | keccak(mepId, seed, nonce) | keccak(abi.encode(Task, nonce)): covers fee and deadline, exists only at post time |
 | residency claims, 3 brains x 2 executors | ~70 s (six 5000-step runs) | 0.11 s (no inference) |
 
-`modelId`, `synapseRoot`, `execKind`, and every `execDigest`, `execRoot` and `inputCommit` are the same under both schemes.
+`modelId`, `synapseRoot`, `execKind`, and every `execDigest`, `execRoot` and `initStateRoot` are the same under both schemes.
 
 ## End to end under v2 (`e2e_gate_task.mjs`, record in `e2e_anvil_log.json` / `e2e_anvil_run.log`)
 

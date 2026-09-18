@@ -76,7 +76,7 @@ try {
   // ---- now B starts lying about one neuron's accumulated input, and a task is posted ----
   B.nd.execLie = { step: S_LIE, neuron: NEURON, delta: DELTA, kind: "input" };
   const C = H.clientsFor(dep, H.KEYS[0]); const nonce = "0x" + "31".repeat(32);
-  const task = { mepId, stimulusSeed: SEED, steps: STEPS, commitStride: STRIDE, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 200), redundancy: 2 };
+  const task = { mepId, stimulusSeed: SEED, steps: STEPS, commitStride: STRIDE, initStateRoot: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 200), redundancy: 2 };
   await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([task, nonce], { value: parseEther("0.01") }) });
   const taskId = H.taskIdOf(task, nonce);
   const ex = (await C.market.read.executors([taskId])).map((x) => x.toLowerCase());

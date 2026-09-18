@@ -942,7 +942,6 @@
    "model": "flywire-783-min5",
    "stimulusSet": "joLR",
    "nonce": "0xae534eaf782c80e1c8946c932d5bc98d75c488e1c8bfe40d2effd9ed8130b9f1",
-   "inputCommit": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3",
    "expectedExecDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
@@ -964,14 +963,14 @@
    "taskId": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
-   }
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+   },
+   "initStateRoot": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3"
   },
   {
    "model": "flywire-783-min5",
    "stimulusSet": "joLR+gate",
    "nonce": "0x4915b7f50fec427349b59aa477571acb9b930093bba17af8e92008e031888e51",
-   "inputCommit": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35",
    "expectedExecDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
    "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
    "referenceRates_last2500steps_per100ms": {
@@ -993,14 +992,14 @@
    "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
-   }
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+   },
+   "initStateRoot": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35"
   },
   {
    "model": "flywire-783-min5-ablate4",
    "stimulusSet": "joLR",
    "nonce": "0x28a51af39a325e688b9abccd8893fccc952f1b312f5f18a78a8e61ba508b892e",
-   "inputCommit": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3",
    "expectedExecDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
@@ -1022,14 +1021,14 @@
    "taskId": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
-   }
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+   },
+   "initStateRoot": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3"
   },
   {
    "model": "flywire-783-min5-ablate4",
    "stimulusSet": "joLR+gate",
    "nonce": "0x4542a492068e6a398cca68e50f5f7385681bd30803abb86cee217506504c27d2",
-   "inputCommit": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35",
    "expectedExecDigest": "0x9a06ec1e4cc4110686d096f05a683fe606d08e64fd70b7796b9d9705cc682967",
    "execRoot": "0xa493d8fa1472b119fe16480a363fff150937e1869e1bbf300a3dcc1f723f2778",
    "referenceRates_last2500steps_per100ms": {
@@ -1051,14 +1050,14 @@
    "taskId": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
-   }
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+   },
+   "initStateRoot": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35"
   },
   {
    "model": "flywire-783-min5-keep4",
    "stimulusSet": "joLR",
    "nonce": "0x443b93c00a8902a4e27bf47c2d8466471c4d581e4de52fd48417f4113e0aee6a",
-   "inputCommit": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3",
    "expectedExecDigest": "0x8614eda1e74c604aa4dcebcd6cdcb664f29d90c74af1bb4025f6a3f4a04c2bbd",
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
@@ -1080,14 +1079,14 @@
    "taskId": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
-   }
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+   },
+   "initStateRoot": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3"
   },
   {
    "model": "flywire-783-min5-keep4",
    "stimulusSet": "joLR+gate",
    "nonce": "0x01f67b33ce4c64ccad0d46868cec5cae1f5742b8ed1aba67aee1456c39b547cb",
-   "inputCommit": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35",
    "expectedExecDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
    "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed",
    "referenceRates_last2500steps_per100ms": {
@@ -1109,8 +1108,9 @@
    "taskId": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
-   }
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+   },
+   "initStateRoot": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35"
   }
  ],
  "anvilRun": {
@@ -1139,5 +1139,5 @@
   "fails": 0,
   "note": "local anvil (chain 31337) through aigg-bnb's harness: deploy, register, relayer, bond/delegate, epoch-1 claims, epoch-2 materialize, 6 tasks with redundancy 2, sponsored submitResult + settle; MEP ids on a public network differ only if the registry fields differ (they are the same fields), so mepId is network independent"
  },
- "digestRule": "execDigest = keccak256(LE32 neurons || LE32 spike counts[neurons]); inputCommit = initStateRoot = merkle(state leaves with flags=1 on the stimulus set)"
+ "digestRule": "execDigest = keccak256(LE32 neurons || LE32 spike counts[neurons]); Task.initStateRoot = merkle(state leaves with flags=1 on the stimulus set)"
 }
