@@ -42,6 +42,8 @@ const relayKey = keypair(cfg.privateKey); let rc = null; let relayUrl = relay.ur
 // ---- MEPs served: read from chain, rebuild the MEP object the aggregator verifies claims against ----
 const meps = new Map(); // mepId -> { mep, info, aggregators: Map(epoch -> Aggregator), posted: Set(epoch) }
 const epochTrees = new Map(); // epoch -> EpochTree over every MEP's claims (null: an epoch nobody claimed in) -- the tree behind the one posted root
+// a valid claim keeps its instance eligible for this many epochs (older deployments have no such getter: 1)
+let CLAIM_VALIDITY = 1; try { CLAIM_VALIDITY = Number(await ch.instances.read.claimValidityEpochs()); } catch {}
 for (const id of cfg.meps) {
   const m = await ch.meps.read.getMEP([id]);
   const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
@@ -205,7 +207,7 @@ function sponsored(res, instance, label, simulate, send) {
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, meps: [...meps.keys()] });
     if (u.pathname === "/meps") return json(res, 200, [...meps.values()].map((M) => M.info));
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);

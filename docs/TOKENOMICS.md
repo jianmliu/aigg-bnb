@@ -294,6 +294,16 @@ bounded by something else long before it is bounded by time. What binds instead:
    where 4 were refused before. What remains proportional to the number of brains is the materialization itself, which
    base-inherited eligibility (item 2) or materialize-when-selected would remove.
 
+   **Update — the validity window is in (`CLAIM_VALIDITY_EPOCHS`).** A valid claim now keeps its instance eligible for
+   `k` epochs, set once at deployment; eligibility is a single storage read for any `k`. *Measured on anvil
+   (`test/e2e_validity.mjs`, `k = 3`):* one sponsored materialization (113k gas the first time an instance claims a brain,
+   ~97k afterwards) keeps the instance eligible and drawn in epochs 2, 3 and 4; it ages out in epoch 5; the relayer
+   sponsored one materialization across four epochs. The node page reads `k` from `/deployment` and materializes only when
+   its standing would lapse next epoch. With `k = 6` (one hour at 10-minute epochs) the 200-individual example is ~0.09 BNB
+   a day, down from ~1.9. What `k` trades away is how often residency is proven, not what is paid for: an instance that
+   dropped its model inside the window times out on its task, and a residency fraud verdict ends its standing for the whole
+   window at once.
+
 This is why item 2 below is still the one that matters, but for a different reason than before. It is no longer
 about paying twenty dispute-commitment bills; it is about a tab holding twenty variants of one base as one 28 MB
 payload plus twenty kilobyte deltas, instead of twenty resident payloads.

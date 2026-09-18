@@ -26,6 +26,9 @@ contract DeployBNB is Script {
         uint256 openingDeposit = vm.envOr("OPENING_DEPOSIT", uint256(0.01 ether));
         uint256 slashAmount = vm.envOr("SLASH_AMOUNT", uint256(0.5 ether));
         uint64 taskTimeout = uint64(vm.envOr("TASK_TIMEOUT", uint256(600)));
+        // how many epochs a valid residency claim keeps its instance eligible: staying eligible costs one materialization
+        // every k epochs. 1 = a claim for the previous epoch (the original rule). Set once, at wiring.
+        uint64 claimValidity = uint64(vm.envOr("CLAIM_VALIDITY_EPOCHS", uint256(1)));
         uint64 roundBlocks = uint64(vm.envOr("ROUND_BLOCKS", uint256(300)));
         uint256 relayBond = vm.envOr("RELAY_BOND", uint256(1 ether));
         vm.startBroadcast();
@@ -37,7 +40,7 @@ contract DeployBNB is Script {
         TaskMarket market = new TaskMarket(meps, inst, claims, taskTimeout);
         ExecutionDisputes disputes = new ExecutionDisputes(meps, inst, market, roundBlocks, slashAmount);
         RelayRegistry relays = new RelayRegistry(relayBond, exitDelay);
-        inst.setClaimManager(address(claims)); inst.setSlasher(address(disputes), true); market.setDisputes(address(disputes));
+        inst.setClaimManager(address(claims), claimValidity); inst.setSlasher(address(disputes), true); market.setDisputes(address(disputes));
         vm.stopBroadcast();
         d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays));
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);
@@ -48,7 +51,7 @@ contract DeployBNB is Script {
         vm.serializeAddress(j, "verifier", d.verifier); vm.serializeAddress(j, "meps", d.meps); vm.serializeAddress(j, "instances", d.instances); vm.serializeAddress(j, "beacon", d.beacon);
         vm.serializeAddress(j, "claims", d.claims); vm.serializeAddress(j, "market", d.market); vm.serializeAddress(j, "disputes", d.disputes);
         string memory addrs = vm.serializeAddress(j, "relays", d.relays);
-        string memory root = "r"; vm.serializeUint(root, "chainId", block.chainid); vm.serializeUint(root, "epochBlocks", epochBlocks);
+        string memory root = "r"; vm.serializeUint(root, "chainId", block.chainid); vm.serializeUint(root, "epochBlocks", epochBlocks); vm.serializeUint(root, "claimValidityEpochs", claimValidity);
         string memory out = vm.serializeString(root, "addresses", addrs);
         string memory file = string.concat(vm.projectRoot(), "/../deployments/", vm.toString(block.chainid), ".json");
         if (vm.envOr("WRITE_DEPLOYMENT", true)) vm.writeJson(out, file);
