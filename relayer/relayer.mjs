@@ -14,7 +14,7 @@ import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
 import { loadEnv, deploymentFromEnv, relayerFromEnv } from "./env.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser/", f));
-const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
+const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => { if (v.startsWith("--")) a.push([v.slice(2), arr[i + 1]]); return a; }, []));
 loadEnv(args.env || process.env.PORW_ENV_FILE);
@@ -41,6 +41,7 @@ const relay = await startRelay(relayPath ? { server: api, path: relayPath, name:
 const relayKey = keypair(cfg.privateKey); let rc = null; let relayUrl = relay.url, publicRelayUrl = relay.url; // set once the port is known
 // ---- MEPs served: read from chain, rebuild the MEP object the aggregator verifies claims against ----
 const meps = new Map(); // mepId -> { mep, info, aggregators: Map(epoch -> Aggregator), posted: Set(epoch) }
+const epochTrees = new Map(); // epoch -> EpochTree over every MEP's claims (null: an epoch nobody claimed in) -- the tree behind the one posted root
 for (const id of cfg.meps) {
   const m = await ch.meps.read.getMEP([id]);
   const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
@@ -135,15 +136,19 @@ async function tick() {
   // (2) aggregation: collect this epoch's claims once it is rolled -- but post the previous epoch's root either
   // way. An epoch with no beacon (nobody revealed, or a cold epoch under PORW_BEACON_LAZY) must not strand the
   // claims collected in the epoch before it: without that root nobody can materialize them.
-  for (const [id, M] of meps) {
-    if (rolled) { const chal = await ch.claims.read.epochChallenge([BigInt(e), id]); aggregatorFor(id, e, chal); }
-    const prev = e - 1;
-    if (prev >= 0 && M.aggregators.has(prev) && !M.posted.has(prev)) {
-      const A = M.aggregators.get(prev); if (A.claims.size === 0) { M.posted.add(prev); continue; }
-      const call = A.postRootCall(); const already = await ch.claims.read.epochRoots([id, BigInt(prev), ch.account.address]);
-      if (already[0] === "0x" + "0".repeat(64)) { const r = await tx(`claims.postEpochRoot(${id.slice(0, 10)}, ${prev}, ${call.count} claims)`, (o) => ch.claims.write.postEpochRoot([id, BigInt(prev), call.root, BigInt(call.count)], o)); if (r.ok) { M.posted.add(prev); status.rootsPosted.push({ mep: id, epoch: prev, root: call.root, count: call.count }); } }
-      else M.posted.add(prev);
-      A.stop && A.stop(); // stop collecting for a closed epoch
+  if (rolled) for (const [id] of meps) { const chal = await ch.claims.read.epochChallenge([BigInt(e), id]); aggregatorFor(id, e, chal); }
+  // ONE root for the previous epoch over the claims of every MEP served here (the leaf carries its mepId), so the
+  // cost of the root does not grow with the number of brains. Proofs are served from this shared tree.
+  const prev = e - 1;
+  if (prev >= 0 && !epochTrees.has(prev) && [...meps.values()].some((M) => M.aggregators.has(prev))) {
+    const As = [...meps.values()].map((M) => M.aggregators.get(prev)).filter((A) => A && A.claims.size > 0);
+    const markPosted = () => { for (const M of meps.values()) if (M.aggregators.has(prev)) { M.posted.add(prev); const A = M.aggregators.get(prev); A.stop && A.stop(); } }; // stop collecting for a closed epoch
+    if (As.length === 0) { epochTrees.set(prev, null); markPosted(); }
+    else {
+      const T = new EpochTree(As, prev); const call = T.postRootCall(); const already = await ch.claims.read.epochRoots([BigInt(prev), ch.account.address]);
+      let ok = already[0] !== ZERO32; // a root of ours from before a restart: the same claims give the same tree only if nothing was lost, so proofs may not verify -- instances then fall back to submitClaim
+      if (!ok) { const r = await tx(`claims.postEpochRoot(${prev}, ${call.count} claims of ${As.length} MEPs)`, (o) => ch.claims.write.postEpochRoot([BigInt(prev), call.root, BigInt(call.count)], o)); ok = r.ok; if (ok) status.rootsPosted.push({ epoch: prev, root: call.root, count: call.count, meps: As.length }); }
+      if (ok) { for (const A of As) A.epochTree = T; epochTrees.set(prev, T); markPosted(); }
     }
   }
   if (e !== lastEpoch) { log(`epoch ${e} (block ${bn})`); lastEpoch = e; }
@@ -205,7 +210,7 @@ api.on("request", async (req, res) => {
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);
       return json(res, 200, { epoch: e, block: await ch.pub.getBlockNumber(), beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? await ch.claims.read.epochChallenge([BigInt(e), id]) : null }); }
-    if (u.pathname === "/proof") { const id = (u.searchParams.get("mep") || "").toLowerCase(), e = Number(u.searchParams.get("epoch")), inst = u.searchParams.get("instance"); const M = meps.get(id); const A = M && M.aggregators.get(e); const p = A && A.proofFor(inst);
+    if (u.pathname === "/proof") { const id = (u.searchParams.get("mep") || "").toLowerCase(), e = Number(u.searchParams.get("epoch")), inst = u.searchParams.get("instance"); const M = meps.get(id); const T = epochTrees.get(e); const p = M && T && T.proofFor(id, inst);
       return p ? json(res, 200, { ...p.payload, aggregator: ch.account.address, posted: M.posted.has(e) }) : json(res, 404, { error: "no proof (not included, unknown epoch, or root not built)" }); }
     if (req.method !== "POST") return json(res, 404, { error: "not found" });
     const b = await body(req);
@@ -221,9 +226,9 @@ api.on("request", async (req, res) => {
     if (u.pathname === "/tx/delegate") { const args = [b.instance, b.session, BigInt(b.expiry), b.sig];
       return await sponsored(res, b.instance, `instances.delegateBySig(${String(b.instance).slice(0, 10)})`,
         () => ch.instances.simulate.delegateBySig(args, { account: ch.account }), (o) => ch.instances.write.delegateBySig(args, o)); }
-    if (u.pathname === "/tx/materialize") { const id = String(b.mep).toLowerCase(); const M = meps.get(id); const A = M && M.aggregators.get(Number(b.epoch)); const p = A && A.proofFor(b.instance);
-      if (!p) return json(res, 404, { error: "no proof" }); if (!M.posted.has(Number(b.epoch))) return json(res, 409, { error: "root not posted yet" });
-      const l = p.payload.leaf; const args = [id, BigInt(b.epoch), ch.account.address, BigInt(p.payload.index), { instance: l.instance, partialsRoot: l.partialsRoot, coverageBytes: BigInt(l.coverageBytes), deviceId: l.deviceId, signature: l.signature }, p.payload.proof];
+    if (u.pathname === "/tx/materialize") { const id = String(b.mep).toLowerCase(); const M = meps.get(id); const T = epochTrees.get(Number(b.epoch));
+      if (M && M.aggregators.has(Number(b.epoch)) && !T) return json(res, 409, { error: "root not posted yet" }); const p = M && T && T.proofFor(id, b.instance); if (!p) return json(res, 404, { error: "no proof" });
+      const l = p.payload.leaf; const args = [BigInt(b.epoch), ch.account.address, BigInt(p.payload.index), { mepId: l.mepId, instance: l.instance, partialsRoot: l.partialsRoot, coverageBytes: BigInt(l.coverageBytes), deviceId: l.deviceId, signature: l.signature }, p.payload.proof];
       return await sponsored(res, b.instance, `claims.materializeClaim(${String(b.instance).slice(0, 10)}, ${b.epoch})`,
         () => ch.claims.simulate.materializeClaim(args, { account: ch.account }), (o) => ch.claims.write.materializeClaim(args, o)); }
     if (u.pathname === "/tx/result") {

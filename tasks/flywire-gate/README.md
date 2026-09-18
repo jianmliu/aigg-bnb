@@ -99,9 +99,9 @@ Only the base payload is needed: the two edited brains are rebuilt from their de
 checked against the v2 ids in `task.json`. The six tasks go through `post_tasks.mjs` with `steps` and `commitStride`
 on the Task. All six settle with the expected digests. Two things the run records about the guarded relayer:
 
-- **Sponsorship budget.** With the default 1,500,000 gas per instance per epoch, three materializations (~285k each)
-  plus four `submitResult`s (~180k each) exhaust it: 8 of the 12 results are sponsored, the last 4 are refused (429)
-  and the executors submit them from their own wallets. An operator hosting several brains per instance should size
-  `PORW_SPONSOR_EPOCH_GAS` for materializations + expected results per epoch.
+- **Sponsorship budget.** With one root per epoch and one-word claims, a materialization costs ~92k gas as a sponsored
+  transaction (was ~285k), so the default 1,500,000 gas per instance per epoch covers the three materializations and
+  all six `submitResult`s: 12 of 12 results sponsored. Before that change the same run had 4 of 12 refused (429) and
+  paid by the executors themselves; the run keeps that fallback and records how many were needed.
 - **Settle.** The relayer sponsors `settle` only out of an executor's budget, so `post_tasks.mjs` has the client that
   posted the task settle it (permissionless on chain, paid by the party that wants the result).

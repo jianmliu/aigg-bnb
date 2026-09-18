@@ -21,7 +21,7 @@ export const InstanceRegistryAbi = parseAbi([
 ]);
 export const ClaimManagerAbi = parseAbi([
   "struct Claim { bytes32 mepId; bytes32 partialsRoot; uint64 coverageBytes; bytes32 challenge; bytes32 deviceId; }",
-  "struct ClaimLeaf { address instance; bytes32 partialsRoot; uint64 coverageBytes; bytes32 deviceId; bytes signature; }",
+  "struct ClaimLeaf { bytes32 mepId; address instance; bytes32 partialsRoot; uint64 coverageBytes; bytes32 deviceId; bytes signature; }",
   "function EPOCH_BLOCKS() view returns (uint64)",
   "function currentEpoch() view returns (uint64)",
   "function beacon(uint64) view returns (bytes32)",
@@ -30,13 +30,16 @@ export const ClaimManagerAbi = parseAbi([
   "function claimIdOf(address instance, bytes32 mepId, uint64 epoch) pure returns (bytes32)",
   "function hasValidClaim(address instance, bytes32 mepId, uint64 epoch) view returns (bool)",
   "function submitClaim(Claim c, bytes signature) returns (bytes32)",
-  "function postEpochRoot(bytes32 mepId, uint64 epoch, bytes32 root, uint64 count)",
-  "function epochRoots(bytes32, uint64, address) view returns (bytes32 root, uint64 count)",
-  "function materializeClaim(bytes32 mepId, uint64 epoch, address aggregator, uint64 index, ClaimLeaf l, bytes32[] proof) returns (bytes32)",
+  "function postEpochRoot(uint64 epoch, bytes32 root, uint64 count)", // one root per epoch over the claims of every MEP
+  "function epochRoots(uint64, address) view returns (bytes32 root, uint64 count)",
+  "function materializeClaim(uint64 epoch, address aggregator, uint64 index, ClaimLeaf l, bytes32[] proof) returns (bytes32)",
+  "function claimRecord(bytes32 claimId) view returns (bytes32)", // commitment to the claim's contents | valid
+  "function challengeOpening(address instance, bytes32 mepId, uint64 epoch, bytes32 partialsRoot, uint64 coverageBytes, bytes32 deviceId, uint64 tileIdx) payable returns (bytes32)",
   "function claimLeafHash(ClaimLeaf l) pure returns (bytes32)",
   "function beaconProvider() view returns (address)",
   "event ClaimSubmitted(bytes32 indexed claimId, address indexed instance, bytes32 indexed mepId, uint64 epoch)",
-  "event EpochRootPosted(bytes32 indexed mepId, uint64 indexed epoch, address indexed aggregator, bytes32 root, uint64 count)",
+  "event EpochRootPosted(uint64 indexed epoch, address indexed aggregator, bytes32 root, uint64 count)",
+  "event ClaimData(bytes32 indexed claimId, bytes32 partialsRoot, uint64 coverageBytes, bytes32 deviceId)",
 ]);
 export const TaskMarketAbi = parseAbi([
   "struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStride; bytes32 inputCommit; uint256 fee; uint64 deadline; uint8 redundancy; }",
