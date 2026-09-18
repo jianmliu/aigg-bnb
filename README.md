@@ -10,8 +10,14 @@ dispute contracts, the relay transport, EIP-712 wallet signing — lives in
 dependency. The canonical scheme definitions live in `aigg-spec`. This repository never
 changes a PoRW scheme id and never forks the neutral contracts.
 
+**What it is for: [FlyBnB](docs/flybnb/paper.md)** — a whole-brain perturbation atlas of the fly, re-tested across
+individuals, every row of which anybody can recompute bit for bit. The individuals are the brains hosted on this
+network, and the dataset acknowledges whoever holds one: the list on the page and in the paper's appendix is read from
+the chain and follows mints and transfers.
+
 | here | what |
 |---|---|
+| `docs/flybnb/` | **the FlyBnB paper, a living draft**: `paper.md` is prose plus generated blocks; `build.mjs` regenerates the pilot's numbers from `results/variance.json` and Appendix A (the acknowledgments) from the chain or a relayer; `.github/workflows/flybnb-paper.yml` re-runs it on a schedule once the repository variables name a deployment |
 | `docs/DESIGN.md` | the BNB-specific design: layering, beacon, parameters, costs, risks |
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
 | `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |

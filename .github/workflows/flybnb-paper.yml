@@ -1,0 +1,29 @@
+# Keeps the FlyBnB paper's acknowledgments (docs/flybnb/paper.md, Appendix A) in step with the chain: whoever holds
+# an individual at the block it runs at. Does nothing until the repository variables say where to read:
+#   FLYBNB_RELAYER                      a relayer's API base (its /flybnb/holders), or
+#   FLYBNB_RPC + FLYBNB_COLLECTION      an RPC endpoint and the FlyCollection address, with nobody in between
+# It commits only when the generated blocks changed. Prose is never touched (test/flybnb_build.mjs).
+name: flybnb-paper
+on:
+  schedule: [{ cron: "17 */6 * * *" }]
+  workflow_dispatch: {}
+permissions: { contents: write }
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    if: ${{ vars.FLYBNB_RELAYER != '' || (vars.FLYBNB_RPC != '' && vars.FLYBNB_COLLECTION != '') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci --ignore-scripts
+      - name: regenerate
+        env: { FLYBNB_RELAYER: "${{ vars.FLYBNB_RELAYER }}", FLYBNB_RPC: "${{ vars.FLYBNB_RPC }}", FLYBNB_COLLECTION: "${{ vars.FLYBNB_COLLECTION }}" }
+        run: |
+          if [ -n "$FLYBNB_RELAYER" ]; then node docs/flybnb/build.mjs --relayer "$FLYBNB_RELAYER"; else node docs/flybnb/build.mjs --rpc "$FLYBNB_RPC" --collection "$FLYBNB_COLLECTION"; fi
+      - name: commit if the list moved
+        run: |
+          # the block number changes on every read; a commit is worth making only when the holders did
+          if git diff --quiet -- docs/flybnb/results/holders.json || [ -z "$(git diff -U0 -- docs/flybnb/results/holders.json | grep -E '^[+-] ' | grep -vE '"(block|readAt)"')" ]; then echo "holders unchanged"; git checkout -- docs/flybnb; exit 0; fi
+          git config user.name "flybnb-bot"; git config user.email "flybnb-bot@users.noreply.github.com"
+          git add docs/flybnb && git commit -m "flybnb: acknowledgments at the current block" && git push

@@ -4,7 +4,8 @@
 // one resident in a browser tab and proves it every epoch is its HOST, and puts down a deposit (the bond) to be
 // one. A scientist BOOKS an experiment against a listing and pays the hosts that ran it. So the page has the three
 // places that kind of site has: Brains (browse the listings, open one, book an experiment on it), Host (the four
-// things it takes to become one, then the running node) and Flies (the individuals you own, and breeding). The
+// things it takes to become one, then the running node) and Flies (the individuals you own, and breeding) -- and a
+// fourth, Paper, which is what all of it is for: the FlyBnB atlas, its dataset, and the holders it acknowledges. The
 // capsule in the header is "where": which mesh -- which relayer -- all of it is read from.
 //
 // What is NOT borrowed is any softness about what is happening. Every technical word is still on the page next to
@@ -20,6 +21,7 @@ import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
 import { BrainCard } from "./BrainCard.jsx";
 import FliesView from "./FliesView.jsx";
+import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
 
 const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
 
@@ -43,7 +45,7 @@ function Logo() {
   );
 }
 
-const VIEWS = { "#/host": "host", "#/flies": "flies" };
+const VIEWS = { "#/host": "host", "#/flies": "flies", "#/flybnb": "flybnb" };
 const viewOf = () => VIEWS[window.location.hash] || "stay";
 
 /** the one-line health of the whole page, in the order things go wrong */
@@ -130,6 +132,7 @@ export default function App() {
           <a id="navStay" href="#/" data-active={view === "stay"}>Brains</a>
           <a id="navHost" href="#/host" data-active={view === "host"}>Host</a>
           <a id="navFlies" href="#/flies" data-active={view === "flies"}>Flies</a>
+          <a id="navFlyBnb" href="#/flybnb" data-active={view === "flybnb"}>Paper</a>
         </nav>
 
         <div className="me">
@@ -159,7 +162,9 @@ export default function App() {
         </div>
       </div>
 
+      {view !== "flybnb" && <FlyBnbBanner />}
       {view === "flies" && <FliesView />}
+      {view === "flybnb" && <FlyBnbView />}
 
       {/* ---------------- Brains: the listings, and booking an experiment on one ---------------- */}
       <div className="main stay" hidden={view !== "stay"}>
