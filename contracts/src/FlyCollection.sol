@@ -26,13 +26,20 @@ contract FlyCollection {
     // ---- the two bases ----
     uint8 public constant FEMALE = 0;
     uint8 public constant MALE = 1;
+    uint8 public constant UNHATCHED = 2; // a bred individual nobody has hatched yet: its seed, and so its sex, does not exist
     bytes32 public immutable BASE_FEMALE; // model_id of the female base payload
     bytes32 public immutable BASE_MALE;   // model_id of the male base payload
+    // The MEPs the two bases are registered as: what an adoption bond joins. A mep_id also folds in the scheme,
+    // the exec kind and the CSR root, none of which this contract can derive from a model_id, so they are given
+    // at deployment and checked against the registry there. Unused (and may be zero) while MINT_BOND is 0.
+    bytes32 public immutable BASE_FEMALE_MEP;
+    bytes32 public immutable BASE_MALE_MEP;
 
     // ---- economics, all immutable: no owner may move them after deployment ----
     uint256 public immutable MINT_PRICE;
     uint256 public immutable MINT_BOND;   // the part of MINT_PRICE that becomes the minter's bond
     uint256 public immutable BREED_FEE;
+    uint256 public immutable HATCH_BOUNTY; // the part of BREED_FEE held for whoever hatches the child
     address public immutable TREASURY;    // where the non-bond remainder goes; fixed at deployment
     bytes32 public immutable GENESIS_ROOT;
     uint32 public immutable GENESIS_SIZE;
@@ -50,6 +57,7 @@ contract FlyCollection {
         uint64 parentA;      // 0 for genesis
         uint64 parentB;
         bytes32 seed;        // breeding seed; the child's delta is derived from the parents' deltas and this
+        uint64 seedBlock;    // the block whose hash makes (made) the seed; 0 for genesis
     }
 
     mapping(uint256 => Individual) public individuals;
@@ -72,7 +80,9 @@ contract FlyCollection {
     event Approval(address indexed owner, address indexed spender, uint256 indexed id);
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
     event Minted(uint256 indexed id, address indexed to, uint8 sex, bytes32 deltaHash, uint32 genesisIndex);
-    event Bred(uint256 indexed id, uint256 indexed parentA, uint256 indexed parentB, bytes32 seed);
+    event Bred(uint256 indexed id, uint256 indexed parentA, uint256 indexed parentB, uint64 seedBlock);
+    event Rearmed(uint256 indexed id, uint64 seedBlock);
+    event Hatched(uint256 indexed id, bytes32 seed, uint8 sex);
     event Registered(uint256 indexed id, bytes32 indexed mepId, bytes32 modelId);
 
     function ownerOf(uint256 id) public view returns (address o) { o = _ownerOf[id]; require(o != address(0), "no token"); }
@@ -92,16 +102,23 @@ contract FlyCollection {
         transferFrom(from, to, id);
         require(to.code.length == 0 || IERC721Receiver(to).onERC721Received(msg.sender, from, id, data) == IERC721Receiver.onERC721Received.selector, "unsafe recipient");
     }
-    function supportsInterface(bytes4 i) external pure returns (bool) { return i == 0x01ffc9a7 || i == 0x80ac58cd || i == 0x5b5e139f; }
+    // ERC-165 and ERC-721, and not ERC721Metadata (0x5b5e139f): that id is name ^ symbol ^ tokenURI and there is no
+    // tokenURI here, so claiming it would send every indexer that believes ERC-165 into a revert. `name` and
+    // `symbol` are still there for anything that simply calls them. Claim it again in the change that adds tokenURI.
+    function supportsInterface(bytes4 i) external pure returns (bool) { return i == 0x01ffc9a7 || i == 0x80ac58cd; }
 
     constructor(
-        bytes32 baseFemale, bytes32 baseMale, bytes32 genesisRoot, uint32 genesisSize,
-        uint256 mintPrice, uint256 mintBond, uint256 breedFee, address treasury,
+        bytes32 baseFemale, bytes32 baseMale, bytes32 baseFemaleMep, bytes32 baseMaleMep, bytes32 genesisRoot, uint32 genesisSize,
+        uint256 mintPrice, uint256 mintBond, uint256 breedFee, uint256 hatchBounty, address treasury,
         IMEPRegistry meps, IInstanceBonding instances
     ) {
-        require(mintBond <= mintPrice, "bond > price"); require(treasury != address(0), "treasury");
+        require(mintBond <= mintPrice, "bond > price"); require(hatchBounty <= breedFee, "bounty > fee"); require(treasury != address(0), "treasury");
+        // A funded bond has to land in a MEP that really is that base: bonded for anything else, the adopter holds
+        // a stake and no sortition vote for the one brain they can host. getMEP reverts on an unregistered id.
+        if (mintBond > 0) require(meps.getMEP(baseFemaleMep).modelId == baseFemale && meps.getMEP(baseMaleMep).modelId == baseMale, "base mep");
+        BASE_FEMALE_MEP = baseFemaleMep; BASE_MALE_MEP = baseMaleMep;
         BASE_FEMALE = baseFemale; BASE_MALE = baseMale; GENESIS_ROOT = genesisRoot; GENESIS_SIZE = genesisSize;
-        MINT_PRICE = mintPrice; MINT_BOND = mintBond; BREED_FEE = breedFee; TREASURY = treasury;
+        MINT_PRICE = mintPrice; MINT_BOND = mintBond; BREED_FEE = breedFee; HATCH_BOUNTY = hatchBounty; TREASURY = treasury;
         MEPS = meps; INSTANCES = instances;
     }
 
@@ -125,21 +142,25 @@ contract FlyCollection {
         id = nextId++; totalSupply++;
         individuals[id] = Individual({
             baseModelId: sex == FEMALE ? BASE_FEMALE : BASE_MALE, deltaHash: deltaHash,
-            modelId: bytes32(0), mepId: bytes32(0), sex: sex, generation: 0, parentA: 0, parentB: 0, seed: bytes32(0)
+            modelId: bytes32(0), mepId: bytes32(0), sex: sex, generation: 0, parentA: 0, parentB: 0, seed: bytes32(0), seedBlock: 0
         });
         _balanceOf[msg.sender]++; _ownerOf[id] = msg.sender;
         emit Transfer(address(0), msg.sender, id); emit Minted(id, msg.sender, sex, deltaHash, genesisIndex);
 
-        if (MINT_BOND > 0) { bytes32[] memory none = new bytes32[](0); INSTANCES.bondFor{value: MINT_BOND}(msg.sender, none); }
+        if (MINT_BOND > 0) { bytes32[] memory base = new bytes32[](1); base[0] = sex == FEMALE ? BASE_FEMALE_MEP : BASE_MALE_MEP; INSTANCES.bondFor{value: MINT_BOND}(msg.sender, base); }
         (bool ok,) = TREASURY.call{value: MINT_PRICE - MINT_BOND}(""); require(ok, "treasury");
     }
 
     /// @notice Breed one female and one male individual. Both must be held (or approved) by the caller.
     /// @dev    The child is a variant of ONE base — a delta's ops are indices into one base's root-id table, and
     ///         the two bases index unrelated animals, so a merged edit list across bases is noise, not a hybrid.
-    ///         What is recorded here is the RECIPE, not the result: the parents and a seed. The child's delta is
-    ///         derived off-chain by the published deterministic function of (parent deltas, seed), and claimed
-    ///         with `register`. A wrong claim produces a `model_id` nobody can reproduce, so the MEP is simply
+    ///         What is recorded here is the RECIPE, not the result: the parents, and the block whose hash will
+    ///         seed the child. The seed itself does not exist yet, and that is the point. Anything a single
+    ///         transaction can read -- a past blockhash, the supply -- the caller can read first, so a seed made
+    ///         here could be simulated and the transaction sent only when the answer (the sex, for one) suited.
+    ///         The hash of the NEXT block is a value the caller does not hold while deciding to send this, and it
+    ///         exists a block later: `hatch` turns it into the seed, seconds after breeding rather than an epoch. The child's delta is then derived off-chain by the published
+    ///         deterministic function of (parent deltas, seed), and claimed with `register`. A wrong claim produces a `model_id` nobody can reproduce, so the MEP is simply
     ///         dead — self-punishing rather than trustless.
     ///         OPEN: which derivation. docs/TOKENOMICS.md §4 (a) pairing-as-entropy — implementable now — or (b)
     ///         pairing-as-projection through a cross-sex cell-type map, which needs external data this project
@@ -149,19 +170,53 @@ contract FlyCollection {
         require(msg.value == BREED_FEE, "fee");
         require(_may(a) && _may(b), "not authorised");
         Individual storage A = individuals[a]; Individual storage B = individuals[b];
+        // An unborn parent (bred, not yet registered) has no delta pinned: the child's seed would bind nothing of
+        // it, and its owner could pick which delta to claim after seeing that seed. Genesis deltas are pinned at mint.
+        require(A.deltaHash != bytes32(0) && B.deltaHash != bytes32(0), "unborn parent");
         require(A.sex != B.sex, "breeding needs one of each sex");
         // the child takes the female parent's base: one base, chosen by a rule, not a blend
         Individual storage dam = A.sex == FEMALE ? A : B;
-        bytes32 seed = keccak256(abi.encode(A.deltaHash, B.deltaHash, a, b, blockhash(block.number - 1), totalSupply));
+        uint64 seedBlock = uint64(block.number) + 1;
 
         id = nextId++; totalSupply++;
         individuals[id] = Individual({
             baseModelId: dam.baseModelId, deltaHash: bytes32(0), modelId: bytes32(0), mepId: bytes32(0),
-            sex: uint8(uint256(seed) & 1), generation: (A.generation > B.generation ? A.generation : B.generation) + 1,
-            parentA: uint64(a), parentB: uint64(b), seed: seed
+            sex: UNHATCHED, generation: (A.generation > B.generation ? A.generation : B.generation) + 1,
+            parentA: uint64(a), parentB: uint64(b), seed: bytes32(0), seedBlock: seedBlock
         });
         _balanceOf[msg.sender]++; _ownerOf[id] = msg.sender;
-        emit Transfer(address(0), msg.sender, id); emit Bred(id, a, b, seed);
+        emit Transfer(address(0), msg.sender, id); emit Bred(id, a, b, seedBlock);
+        (bool ok,) = TREASURY.call{value: BREED_FEE - HATCH_BOUNTY}(""); require(ok, "treasury"); // the bounty stays here until hatch
+    }
+
+    /// @notice Give a bred individual its seed, and with it its sex, from the hash of its seed block. Anyone may
+    ///         call this -- every input is on-chain and the caller supplies none -- and whoever does is paid
+    ///         HATCH_BOUNTY.
+    /// @dev    The EVM keeps 256 block hashes, so a seed block can expire, and an expiry is the one lever a
+    ///         grinder has: read the hash off-chain, dislike it, and wait it out. Two things take the lever away.
+    ///         The bounty makes hatching a race from the first block it is possible, which the grinder has to
+    ///         win against everyone for 256 blocks running; and `rearm` costs a whole BREED_FEE, so each redraw is
+    ///         priced like the breeding it replaces. Threat model: the breeder, not the chain. A block producer
+    ///         colluding with a breeder over one individual's seed is out of scope (docs/TOKENOMICS.md §4).
+    function hatch(uint256 id) external returns (bytes32 seed) {
+        Individual storage ind = individuals[id];
+        require(ind.seedBlock != 0 && ind.seed == bytes32(0), "nothing to hatch");
+        require(block.number > ind.seedBlock, "block pending");
+        bytes32 h = blockhash(ind.seedBlock); require(h != bytes32(0), "expired");
+        seed = keccak256(abi.encode(individuals[ind.parentA].deltaHash, individuals[ind.parentB].deltaHash, uint256(ind.parentA), uint256(ind.parentB), id, h));
+        ind.seed = seed; ind.sex = uint8(uint256(seed) & 1);
+        emit Hatched(id, seed, ind.sex);
+        if (HATCH_BOUNTY > 0) { (bool ok,) = msg.sender.call{value: HATCH_BOUNTY}(""); require(ok, "bounty"); } // after the state change: a re-entrant hatch finds nothing to hatch
+    }
+
+    /// @notice Point an egg whose seed block expired unhatched at the next block. Costs BREED_FEE, all of it to the
+    ///         treasury (the bounty paid at breeding is still held): a new block is a new draw.
+    function rearm(uint256 id) external payable {
+        require(msg.value == BREED_FEE, "fee");
+        Individual storage ind = individuals[id];
+        require(ind.seedBlock != 0 && ind.seed == bytes32(0), "nothing to hatch");
+        require(block.number > uint256(ind.seedBlock) + 256, "not expired");
+        ind.seedBlock = uint64(block.number) + 1; emit Rearmed(id, ind.seedBlock);
         (bool ok,) = TREASURY.call{value: msg.value}(""); require(ok, "treasury");
     }
 
@@ -173,6 +228,7 @@ contract FlyCollection {
         require(msg.sender == ownerOf(id), "not the owner");
         Individual storage ind = individuals[id];
         require(ind.mepId == bytes32(0), "already registered");
+        require(ind.seedBlock == 0 || ind.seed != bytes32(0), "not hatched"); // the delta is a function of the seed
         if (ind.deltaHash == bytes32(0)) ind.deltaHash = deltaHash; else require(ind.deltaHash == deltaHash, "delta");
         mepId = MEPS.registerMEP(m);
         ind.modelId = m.modelId; ind.mepId = mepId;
