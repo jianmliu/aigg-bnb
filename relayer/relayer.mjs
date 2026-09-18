@@ -44,6 +44,9 @@ const meps = new Map(); // mepId -> { mep, info, aggregators: Map(epoch -> Aggre
 const epochTrees = new Map(); // epoch -> EpochTree over every MEP's claims (null: an epoch nobody claimed in) -- the tree behind the one posted root
 // a valid claim keeps its instance eligible for this many epochs (older deployments have no such getter: 1)
 let CLAIM_VALIDITY = 1; try { CLAIM_VALIDITY = Number(await ch.instances.read.claimValidityEpochs()); } catch {}
+// what a replicator needs to know before it re-executes for a reason: how long a settled result stays challengeable
+// and the base deposit (0 blocks: off, or a deployment older than the feature). The relayer itself never challenges.
+let CHALLENGE = { windowBlocks: 0, depositWei: "0" }; try { CHALLENGE = { windowBlocks: Number(await ch.market.read.challengeWindow()), depositWei: String(await ch.market.read.challengeDepositWei()) }; } catch {}
 for (const id of cfg.meps) {
   const m = await ch.meps.read.getMEP([id]);
   const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
@@ -207,7 +210,7 @@ function sponsored(res, instance, label, simulate, send) {
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, meps: [...meps.keys()] });
     if (u.pathname === "/meps") return json(res, 200, [...meps.values()].map((M) => M.info));
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);

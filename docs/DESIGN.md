@@ -61,6 +61,9 @@ producer. The claim manager here takes an `IBeacon`:
 | `OPENING_WINDOW` | ≈ 2 minutes of blocks | an instance behind a censoring relay must be able to answer on-chain itself |
 | `ROUND_BLOCKS` (dispute) | ≈ 5 minutes of blocks | wallet / session key latency + one tree bisection round |
 | `TASK_TIMEOUT` | ≈ 10 minutes of blocks | replaces stragglers by the next sortition index |
+| `CHALLENGE_WINDOW` (replicator) | one epoch, never more than `EXIT_DELAY` | how long a settled result stays open to a non-executor; longer than the exit delay and a liar settles, exits, and is challenged with nothing left to slash (`TaskMarket` enforces it). 0 = off |
+| `CHALLENGE_DEPOSIT` | 0.02 BNB, doubling per thrown-out challenge of the same task | half goes to the defender and has to cover its side of a full bisection (≈ 1.75M of the ≈ 3.5M gas in §5: 0.01 BNB pays that up to ≈ 5.7 gwei) |
+| `CHALLENGE_SINK` | the deployer; the treasury on a real network | takes the other half, so an executor cannot shield its own result by challenging itself for free |
 | `RelayRegistry` bond | 1 BNB | operator identity; ≥ 2 relays per instance |
 | beacon `COMMIT/REVEAL_BLOCKS` | ≈ 2 / 2 minutes; committer deposit 0.1 BNB | RANDAO-style, deposit-bounded bias |
 

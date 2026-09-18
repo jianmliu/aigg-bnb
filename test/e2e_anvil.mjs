@@ -13,6 +13,8 @@ try {
   const { mep, mepId, payload, steps } = await H.registerSyntheticMep(dep, H.KEYS[0]);
   const R = await H.startRelayer(dep, H.KEYS[3], [mepId]); const d = await R.api("/deployment");
   check("relayer up: relay + api + domains + mep", d.relay.startsWith("ws://") && d.domains.claimManager.verifyingContract === dep.addresses.claims && d.meps[0] === mepId.toLowerCase());
+  // the harness deploys with EXIT_DELAY=5, so the default window (one epoch, 40) is cut to it; the deposit is the script's default
+  check("a settled result is challengeable: window inside the exit delay, deposit published", d.challenge.windowBlocks === 5 && d.challenge.depositWei === String(parseEther("0.02")) && dep.challengeWindow === 5);
   const domains = d.domains;
   // ---- wallets bond BNB; tabs get session keys delegated through the relayer (sponsored) ----
   const E = await H.porw("eip712.js"); const { keypair } = await H.porw("claim.js"); const { PorwNode } = await H.porw("node.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const { RelayClient } = await H.porw("relay_client.js"); const { NodeService, resultSigningHash } = await H.porw("node_service.js"); const V = await H.porw("verify.js"); const Vf = await H.porw("verifier.js");

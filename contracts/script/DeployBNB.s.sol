@@ -31,6 +31,18 @@ contract DeployBNB is Script {
         uint64 claimValidity = uint64(vm.envOr("CLAIM_VALIDITY_EPOCHS", uint256(1)));
         uint64 roundBlocks = uint64(vm.envOr("ROUND_BLOCKS", uint256(300)));
         uint256 relayBond = vm.envOr("RELAY_BOND", uint256(1 ether));
+        // Standing for a replicator: for CHALLENGE_WINDOW blocks after a task settles, anybody may put up
+        // CHALLENGE_DEPOSIT and a disagreeing result, and play the executors' bisection against the settled one.
+        //  - the window may not outlast EXIT_DELAY (TaskMarket enforces it: a liar could otherwise settle, exit, and be
+        //    challenged with nothing left to slash). The default is one epoch, cut down to EXIT_DELAY where that is
+        //    shorter; a value given explicitly is passed as is and reverts if it is too long. 0 leaves the feature off.
+        //  - the defender of a thrown-out challenge gets half the deposit, so half has to cover its side of a full
+        //    bisection: ~1.75M of the ~3.5M gas in docs/DESIGN.md §5, i.e. 0.01 BNB pays for that up to ~5.7 gwei.
+        //  - the other half goes to CHALLENGE_SINK, so that an executor cannot shield its own result by challenging
+        //    itself for free. It defaults to the deployer; point it at the treasury on a real network.
+        uint64 challengeWindow = uint64(vm.envOr("CHALLENGE_WINDOW", uint256(epochBlocks < exitDelay ? epochBlocks : exitDelay)));
+        uint256 challengeDeposit = vm.envOr("CHALLENGE_DEPOSIT", uint256(0.02 ether));
+        address challengeSink = vm.envOr("CHALLENGE_SINK", msg.sender);
         vm.startBroadcast();
         PorwVerifierKeccak verifier = new PorwVerifierKeccak();
         MEPRegistry meps = new MEPRegistry();
@@ -41,6 +53,7 @@ contract DeployBNB is Script {
         ExecutionDisputes disputes = new ExecutionDisputes(meps, inst, market, roundBlocks, slashAmount);
         RelayRegistry relays = new RelayRegistry(relayBond, exitDelay);
         inst.setClaimManager(address(claims), claimValidity); inst.setSlasher(address(disputes), true); market.setDisputes(address(disputes));
+        if (challengeWindow != 0) market.setChallengeParams(challengeDeposit, challengeWindow, challengeSink);
         vm.stopBroadcast();
         d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays));
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);
@@ -52,6 +65,7 @@ contract DeployBNB is Script {
         vm.serializeAddress(j, "claims", d.claims); vm.serializeAddress(j, "market", d.market); vm.serializeAddress(j, "disputes", d.disputes);
         string memory addrs = vm.serializeAddress(j, "relays", d.relays);
         string memory root = "r"; vm.serializeUint(root, "chainId", block.chainid); vm.serializeUint(root, "epochBlocks", epochBlocks); vm.serializeUint(root, "claimValidityEpochs", claimValidity);
+        vm.serializeUint(root, "challengeWindow", challengeWindow); vm.serializeUint(root, "challengeDeposit", challengeWindow == 0 ? 0 : challengeDeposit);
         string memory out = vm.serializeString(root, "addresses", addrs);
         string memory file = string.concat(vm.projectRoot(), "/../deployments/", vm.toString(block.chainid), ".json");
         if (vm.envOr("WRITE_DEPLOYMENT", true)) vm.writeJson(out, file);

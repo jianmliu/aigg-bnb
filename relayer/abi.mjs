@@ -54,6 +54,12 @@ export const TaskMarketAbi = parseAbi([
   "function resultOf(bytes32 taskId, address who) view returns (bytes32 execDigest, bytes32 execRoot)",
   "function taskInfo(bytes32 taskId) view returns (bytes32 mepId, uint32 stimulusSeed, address client, uint32 steps, uint32 commitStride)",
   "function submitted(bytes32, address) view returns (bool)",
+  // standing for a replicator: a non-executor disputes a SETTLED result (challengeWindow 0 = the deployment left it off)
+  "function challengeWindow() view returns (uint64)",
+  "function challengeDepositWei() view returns (uint256)",
+  "function requiredChallengeDeposit(bytes32 taskId) view returns (uint256)", // doubles with every challenge the task has thrown out
+  "function challengeResult(bytes32 taskId, Result r) payable",
+  "function settledRef(bytes32 taskId) view returns (address)",
   "event TaskPosted(bytes32 indexed taskId, bytes32 indexed mepId, uint8 redundancy)",
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",
 ]);
