@@ -8,7 +8,7 @@
 import { parseEther } from "viem";
 import * as H from "./harness.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
-const anvil = await H.startAnvil(8557);
+const anvil = await H.startAnvil(Number(process.env.SPONSOR_TEST_PORT || 8557));
 try {
   const dep = await H.deploy(anvil.rpc);
   const { mepId } = await H.registerSyntheticMep(dep, H.KEYS[0]);
@@ -71,5 +71,19 @@ try {
   console.log(`sponsored txs: ${st.txs.length} (all ok: ${st.txs.every((t) => t.ok)}), refusals: ${sp.refused.length}, day gas ${sp.dayGas}/${sp.dayGasLimit}`);
   check("exactly the two affordable calls were paid for, and the relayer logged no errors", st.txs.length === 2 && st.txs.every((t) => t.ok) && st.errors.length === 0);
   R.stop();
+
+  // Concurrent requests must not all pass the same unused budget while the first receipt is pending.
+  for (const [label, limits, wallets] of [
+    ["epoch", { PORW_SPONSOR_EPOCH_GAS: "50000", PORW_SPONSOR_DAY_GAS: "10000000" }, [A.wallet, A.wallet, A.wallet]],
+    ["daily", { PORW_SPONSOR_EPOCH_GAS: "10000000", PORW_SPONSOR_DAY_GAS: "50000" }, [A.wallet, B.wallet, C.wallet]],
+  ]) {
+    const Q = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", ...limits } });
+    try {
+      const dels = await Promise.all(wallets.map((w, i) => delegation(w, (label === "epoch" ? ["55", "66", "77"] : ["88", "99", "bb"])[i])));
+      const rs = await Promise.all(dels.map((del) => Q.api("/tx/delegate", { instance: del.instance, session: del.session, expiry: del.expiry, sig: del.sig })));
+      const qs = await Q.api("/status");
+      check(`concurrent requests respect the ${label} budget`, rs.filter((r) => r.ok).length === 1 && rs.filter((r) => new RegExp(label).test(r.error || "")).length === 2 && qs.txs.length === 1);
+    } finally { Q.stop(); }
+  }
 } catch (e) { console.error(e); fails++; } finally { anvil.stop(); }
 console.log(fails ? `${fails} FAILURES` : "ALL PASS"); process.exit(fails ? 1 : 0);

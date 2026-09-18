@@ -8,13 +8,13 @@
 //   node relayer/relayer.mjs --config relayer/config.json       (optional file for ports/names; env wins for addresses/keys)
 // HTTP API (JSON): GET /deployment  GET /epoch?mep=0x..  GET /proof?mep&epoch&instance  GET /status
 //                  POST /tx/delegate {instance,session,expiry,sig}  POST /tx/materialize {mep,epoch,instance}
-//                  POST /tx/result {taskId,execDigest,execRoot,signature}  POST /tx/settle {taskId}
+//                  POST /tx/result {taskId,execDigest,execRoot,signature}  POST /tx/settle {taskId,instance}
 import fs from "node:fs"; import http from "node:http"; import path from "node:path"; import { fileURLToPath } from "node:url";
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
 import { loadEnv, deploymentFromEnv, relayerFromEnv } from "./env.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser/", f));
-const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator } = await porw("aggregator.js"); const { keypair } = await porw("claim.js"); const V = await porw("verify.js"); const { makeMep, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
+const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => { if (v.startsWith("--")) a.push([v.slice(2), arr[i + 1]]); return a; }, []));
 loadEnv(args.env || process.env.PORW_ENV_FILE);
@@ -181,15 +181,21 @@ function budget(instance) {
 }
 const refuse = (res, code, label, why) => { status.sponsor.refused.push({ label, why, at: new Date().toISOString() }); if (status.sponsor.refused.length > 50) status.sponsor.refused.shift(); log(`${label} refused: ${why}`); return json(res, code, { error: why }); };
 /** bonded instance -> budget -> simulation -> only then sign and send. Nothing is broadcast before all three pass. */
-async function sponsored(res, instance, label, simulate, send) {
-  if (!instance || !/^0x[0-9a-fA-F]{40}$/.test(instance)) return refuse(res, 400, label, "no instance to charge this call to");
-  if (!(await hasWeight(instance))) return refuse(res, 403, label, "instance has no sortition weight (bond at least one UNIT)");
-  const inst = instance.toLowerCase();
-  const bud = budget(inst); if (!bud.ok) return refuse(res, 429, label, bud.why);
-  try { await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
-  const r = await tx(label, send);
-  if (r.gasUsed) bud.charge(r.gasUsed); // a revert that still got mined is charged too: it cost the relayer gas
-  return json(res, 200, r);
+// Queue the complete admission decision through receipt accounting, not only the broadcast. Otherwise a
+// concurrent burst can all observe an unused budget and simulate against the same stale chain state.
+let sponsorChain = Promise.resolve();
+function sponsored(res, instance, label, simulate, send) {
+  const run = async () => {
+    if (!instance || !/^0x[0-9a-fA-F]{40}$/.test(instance)) return refuse(res, 400, label, "no instance to charge this call to");
+    if (!(await hasWeight(instance))) return refuse(res, 403, label, "instance has no sortition weight (bond at least one UNIT)");
+    const inst = instance.toLowerCase();
+    const bud = budget(inst); if (!bud.ok) return refuse(res, 429, label, bud.why);
+    try { await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
+    const r = await tx(label, send);
+    if (r.gasUsed) bud.charge(r.gasUsed); // a revert that still got mined is charged too: it cost the relayer gas
+    return json(res, 200, r);
+  };
+  const p = sponsorChain.then(run, run); sponsorChain = p.catch(() => {}); return p;
 }
 api.on("request", async (req, res) => {
   try {
@@ -213,22 +219,29 @@ api.on("request", async (req, res) => {
       if (e + WAKE_EPOCHS > wakeUntil) { if (!(await hasWeight(b.instance))) return json(res, 403, { error: "instance has no sortition weight (bond at least one UNIT)" }); wakeUntil = e + WAKE_EPOCHS; status.beacon.wakeUntil = wakeUntil; }
       return json(res, 200, { ok: true, lazy: LAZY, epoch: e, wakeUntil }); }
     if (u.pathname === "/tx/delegate") { const args = [b.instance, b.session, BigInt(b.expiry), b.sig];
-      return sponsored(res, b.instance, `instances.delegateBySig(${String(b.instance).slice(0, 10)})`,
+      return await sponsored(res, b.instance, `instances.delegateBySig(${String(b.instance).slice(0, 10)})`,
         () => ch.instances.simulate.delegateBySig(args, { account: ch.account }), (o) => ch.instances.write.delegateBySig(args, o)); }
     if (u.pathname === "/tx/materialize") { const id = String(b.mep).toLowerCase(); const M = meps.get(id); const A = M && M.aggregators.get(Number(b.epoch)); const p = A && A.proofFor(b.instance);
       if (!p) return json(res, 404, { error: "no proof" }); if (!M.posted.has(Number(b.epoch))) return json(res, 409, { error: "root not posted yet" });
       const l = p.payload.leaf; const args = [id, BigInt(b.epoch), ch.account.address, BigInt(p.payload.index), { instance: l.instance, partialsRoot: l.partialsRoot, coverageBytes: BigInt(l.coverageBytes), deviceId: l.deviceId, execDigest: l.execDigest, stimulusSeed: l.stimulusSeed, signature: l.signature }, p.payload.proof];
-      return sponsored(res, b.instance, `claims.materializeClaim(${String(b.instance).slice(0, 10)}, ${b.epoch})`,
+      return await sponsored(res, b.instance, `claims.materializeClaim(${String(b.instance).slice(0, 10)}, ${b.epoch})`,
         () => ch.claims.simulate.materializeClaim(args, { account: ch.account }), (o) => ch.claims.write.materializeClaim(args, o)); }
-    if (u.pathname === "/tx/result") { const signer = await ch.instances.read.resolve([b.signer]); if (signer === "0x0000000000000000000000000000000000000000") return json(res, 403, { error: "signer not bonded/delegated" });
+    if (u.pathname === "/tx/result") {
+      // Only the signature identifies the payer; caller-supplied signer metadata is not authenticated.
+      const recovered = hex(recoverAddress(resultDigest(domains.market, unhex(b.taskId), unhex(b.execDigest), unhex(b.execRoot)), unhex(b.signature)));
+      const signer = await ch.instances.read.resolve([recovered]); if (signer === "0x0000000000000000000000000000000000000000") return json(res, 403, { error: "signer not bonded/delegated" });
       const args = [b.taskId, { execDigest: b.execDigest, execRoot: b.execRoot }, b.signature]; // charged to the instance the session key resolves to
-      return sponsored(res, signer, `market.submitResult(${String(b.taskId).slice(0, 10)})`,
+      return await sponsored(res, signer, `market.submitResult(${String(b.taskId).slice(0, 10)})`,
         () => ch.market.simulate.submitResult(args, { account: ch.account }), (o) => ch.market.write.submitResult(args, o)); }
     // settle is permissionless on-chain, so anyone may settle their own task by paying for it; the relayer only
-    // sponsors it for a bonded instance, which is who benefits from the fee split anyway.
+    // sponsors it for a selected executor, so callers cannot spend an unrelated instance's budget.
     if (u.pathname === "/tx/settle") { const args = [b.taskId];
-      return sponsored(res, b.instance, `market.settle(${String(b.taskId).slice(0, 10)})`,
-        () => ch.market.simulate.settle(args, { account: ch.account }), (o) => ch.market.write.settle(args, o)); }
+      return await sponsored(res, b.instance, `market.settle(${String(b.taskId).slice(0, 10)})`,
+        async () => {
+          const executors = await ch.market.read.executors(args);
+          if (!executors.some((a) => a.toLowerCase() === b.instance.toLowerCase())) throw new Error("instance is not a task executor");
+          return ch.market.simulate.settle(args, { account: ch.account });
+        }, (o) => ch.market.write.settle(args, o)); }
     json(res, 404, { error: "not found" });
   } catch (e) { json(res, 500, { error: String(e.shortMessage || e.message) }); }
 });

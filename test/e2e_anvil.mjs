@@ -24,7 +24,7 @@ try {
     const r = await R.api("/tx/delegate", { instance: del.instance, session: del.session, expiry: del.expiry, sig: del.sig });
     const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: "0x" + sessionByte.repeat(32), domains, delegation: del }); await nd.loadModel("flywire-female", payload, { maxSteps: steps });
     const rc = new RelayClient([d.relay], nd.key); await rc.connect(); const results = [];
-    const svc = new NodeService(nd, rc, { onResult: async (res) => { results.push(res); res.relayer = await R.api("/tx/result", res); } }); svc.serve(mep.mepId);
+    const svc = new NodeService(nd, rc, { onResult: async (res) => { results.push(res); res.relayer = await R.api("/tx/result", { ...res, signer: "0x000000000000000000000000000000000000dEaD" }); } }); svc.serve(mep.mepId);
     return { c, wallet, session, del, delegateTx: r, nd, rc, svc, results, addr: wallet.address.toLowerCase() };
   };
   const A = await mkInstance(H.KEYS[1], "11"), B = await mkInstance(H.KEYS[2], "22");
@@ -65,7 +65,11 @@ try {
   const client = new RelayClient([d.relay], keypair(H.KEYS[0])); await client.connect();
   const balA = await A.c.pub.getBalance({ address: A.wallet.address });
   for (const X of [A, B]) { const resp = await client.request(H.hex(X.session.address), "task-announce", mepId, { taskId, stimulusSeed: 9, steps, commitStride: 1 }, { timeoutMs: 20000, responseType: "result" }); check(`executor ${X.addr.slice(0, 8)} returned a signed result over the relay`, resp.payload.taskId === taskId); }
-  check("both results submitted on-chain by the relayer (sponsored)", await waitFor(async () => A.results[0]?.relayer?.ok && B.results[0]?.relayer?.ok) && (await C.market.read.submitted([taskId, A.wallet.address])) && (await C.market.read.submitted([taskId, B.wallet.address])));
+  check("result sponsorship recovers the signed executor instead of trusting spoofed signer metadata", await waitFor(async () => A.results[0]?.relayer?.ok && B.results[0]?.relayer?.ok) && (await C.market.read.submitted([taskId, A.wallet.address])) && (await C.market.read.submitted([taskId, B.wallet.address])));
+  await C.pub.waitForTransactionReceipt({ hash: await C.instances.write.bond([[mepId]], { value: parseEther("0.5") }) });
+  const txCount = (await R.api("/status")).txs.length;
+  const wrongPayer = await R.api("/tx/settle", { taskId, instance: C.account.address });
+  check("settlement cannot spend an unrelated bonded instance's budget", /executor/.test(wrongPayer.error || "") && (await R.api("/status")).txs.length === txCount);
   const s = await R.api("/tx/settle", { taskId, instance: A.addr }); check("settled: identical results, fee split to the executors", s.ok && (await A.c.pub.getBalance({ address: A.wallet.address })) === balA + parseEther("0.005"));
   const re = Vf.reexecute(await loadKernelFromBytes(wasm), payload, { stimulusSeed: 9, steps, execDigest: H.unhex(A.results[0].execDigest) }); check("the client re-executes and matches the settled digest", re.matches);
   const st = await R.api("/status"); console.log(`relayer txs: ${st.txs.length} (${st.txs.filter((t) => t.ok).length} ok), errors: ${st.errors.length}${st.errors.length ? " " + JSON.stringify(st.errors.slice(0, 3)) : ""}; nonce resyncs: ${st.nonce.resyncs}`);
