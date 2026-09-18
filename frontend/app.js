@@ -103,15 +103,23 @@ async function loadModel() {
   renderActive(); log(`${m.name || m.mepId.slice(0, 10)}: model_id ${r.modelId.slice(0, 14)}… ${ok ? "matches the MEP" : "DOES NOT MATCH the MEP (claims would be rejected)"}`);
   $("file").value = ""; $("url").value = "";
 }
+function taskCapacity(m) {
+  const maxSteps = Number($("steps").value);
+  // TaskMarket permits 512 SPMV roots, or 512 LIF segments of at most 512 steps each.
+  const limit = m.exec === "int-lif" ? 512 * 512 : 512;
+  if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > limit) throw new Error(`Max task steps must be a whole number from 1 to ${limit} for ${m.exec}`);
+  return maxSteps;
+}
 async function hostOnNode(m) {
   if (!state.hosted.has(m.mepId) || !state.prepared.has(m.mepId) || state.node.models.has(m.mepId)) return;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps: Number($("steps").value) || 100, exec: m.exec === "int-lif" ? "lif" : "spmv" });
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps: taskCapacity(m), exec: m.exec === "int-lif" ? "lif" : "spmv" });
   if (!r.matches) { log(`WARNING ${m.name || m.mepId.slice(0, 10)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons });
   log(`${m.name || m.mepId.slice(0, 10)}: resident on the node, serving audits and tasks`);
 }
 async function startNode() {
   if (!state.delegation) throw new Error("delegate first"); const ready = [...state.hosted].filter((id) => state.prepared.has(id)); if (!ready.length) throw new Error("load a model for at least one hosted MEP");
+  for (const id of ready) taskCapacity(mepById(id)); // validate before creating a worker or relay connection
   const k = sessionKey();
   await ask("init", { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
   await ask("relay", { url: state.deployment.relay });

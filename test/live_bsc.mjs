@@ -48,7 +48,7 @@ while (Date.now() < deadline && !settled) {
       await c.pub.waitForTransactionReceipt({ hash: h }); taskId = H.taskIdOf(task, nonce); evidence.txs.postTask = h; evidence.taskId = taskId;
       const ex = await c.market.read.executors([taskId]); log(`task ${taskId.slice(0, 12)}… posted ${h}; executors ${ex.join(",")}`);
       const client = new RelayClient([d.relay], keypair(null)); await client.connect();
-      const resp = await client.request(H.hex(session.address), "task-announce", mepId, { taskId, stimulusSeed: 7 }, { timeoutMs: 120000, responseType: "result" }); log(`executed over the relay: execDigest ${resp.payload.execDigest.slice(0, 14)}…`); client.close();
+      const resp = await client.request(H.hex(session.address), "task-announce", mepId, { taskId, stimulusSeed: task.stimulusSeed, steps: task.steps, commitStride: task.commitStride }, { timeoutMs: 120000, responseType: "result" }); log(`executed over the relay: execDigest ${resp.payload.execDigest.slice(0, 14)}…`); client.close();
     }
     if (taskId && results[0]?.relayer?.ok && !settled) { const s = await api("/tx/settle", { taskId, instance: wallet }); if (s.ok) { settled = true; evidence.txs.settle = s.hash; log(`settled ${s.hash}; fee paid to ${wallet}`); } }
   } catch (err) { log("loop error:", String(err.shortMessage || err.message).slice(0, 200)); }

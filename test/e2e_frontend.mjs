@@ -49,6 +49,13 @@ try {
   await page.evaluate((id) => window.appActions.setActive(id), mepId2.toLowerCase()); await page.fill("#url", "/payload.bin"); await page.click("#btnModel"); await page.waitForFunction((id) => !!window.app.state.loaded[id], mepId2.toLowerCase(), { timeout: 60000 });
   check("switching to the male MEP and loading the WRONG bytes is flagged (model_id mismatch)", (await page.evaluate((id) => window.app.state.loaded[id].ok, mepId2.toLowerCase())) === false);
   await page.fill("#url", "/payload2.bin"); await page.click("#btnModel"); await page.waitForFunction((id) => window.app.state.loaded[id].ok === true, mepId2.toLowerCase(), { timeout: 60000 }); check("male model loaded, model_id matches", true);
+  check("task capacity defaults to 100 and is editable", (await page.inputValue("#steps")) === "100" && await page.isEnabled("#steps"));
+  for (const value of ["", "0", "-1", "1.5", "513"]) {
+    await page.fill("#steps", value);
+    const error = await page.evaluate(async () => { try { await window.appActions.startNode(); return null; } catch (e) { return e.message; } });
+    check(`invalid SPMV task capacity ${JSON.stringify(value)} is rejected before starting the worker`, /Max task steps/.test(error || "") && await page.evaluate(() => window.app.state.node === null));
+  }
+  await page.fill("#steps", "3");
   await page.click("#btnStart"); await page.waitForFunction(() => window.app.state.node !== null && window.app.state.node.models.size === 2, null, { timeout: 120000 }); check("node started hosting both brains", true);
   // epochs: commit / reveal / roll driven by anvil_mine; the page claims each epoch and materializes the previous one
   const EPOCH = dep.epochBlocks; const toBlock = async (b) => { const cur = await anvil.block(); if (b > cur) await anvil.mine(b - cur); };
@@ -65,7 +72,7 @@ try {
   check("the tab's wallet is the sortitioned executor", ex.length === 1 && ex[0].toLowerCase() === W.account.address.toLowerCase());
   const { RelayClient } = await H.porw("relay_client.js"); const { keypair } = await H.porw("claim.js"); const client = new RelayClient([(await R.api("/deployment")).relay], keypair(H.KEYS[0])); await client.connect();
   const session = await page.evaluate(() => document.getElementById("session").textContent.split(" ")[2]);
-  const resp = await client.request(session, "task-announce", mepId2, { taskId, stimulusSeed: 7 }, { timeoutMs: 60000, responseType: "result" });
+  const resp = await client.request(session, "task-announce", mepId2, { taskId, stimulusSeed: task.stimulusSeed, steps: task.steps, commitStride: task.commitStride }, { timeoutMs: 60000, responseType: "result" });
   check("tab executed a task on the MALE brain and returned a signed result", resp.payload.taskId === taskId);
   const Vf = await H.porw("verifier.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const re = Vf.reexecute(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), M2.payload, { stimulusSeed: 7, steps: 3, execDigest: H.unhex(resp.payload.execDigest) });
   check("the result matches an independent re-execution of the male brain (3 steps)", re.matches);

@@ -111,7 +111,7 @@ const ex = (await cA.market.read.executors([taskId])).map((x) => x.toLowerCase()
 check(`sortition picked both instances (${ex.join(", ")})`, ex.length === 2 && ex.includes(A.addr) && ex.includes(B.addr));
 const { keypair } = await H.porw("claim.js");
 const client = new RelayClient([d.relay], keypair(null)); await client.connect();
-for (const [X, tag] of [[A, "A"], [B, "B"]]) { const resp = await client.request(H.hex(X.session.address), "task-announce", mepId, { taskId, stimulusSeed: SEED }, { timeoutMs: 180000, responseType: "result" }); log(`${tag} answered: execRoot ${resp.payload.execRoot.slice(0, 14)}…`); }
+for (const [X, tag] of [[A, "A"], [B, "B"]]) { const resp = await client.request(H.hex(X.session.address), "task-announce", mepId, { taskId, stimulusSeed: task.stimulusSeed, steps: task.steps, commitStride: task.commitStride }, { timeoutMs: 180000, responseType: "result" }); log(`${tag} answered: execRoot ${resp.payload.execRoot.slice(0, 14)}…`); }
 check("both results are on-chain and the two execRoots disagree", await waitFor(async () => A.results[0]?.relayer?.ok && B.results[0]?.relayer?.ok, 5 * 60000, "both results") && A.results[0].execRoot !== B.results[0].execRoot);
 evidence.txs.resultA = A.results[0]?.relayer?.hash; evidence.txs.resultB = B.results[0]?.relayer?.hash;
 

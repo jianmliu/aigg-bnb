@@ -27,7 +27,7 @@
   brain <select id="mep"></select>
   <div class="kv" id="mepInfo">—</div><div class="kv" id="mepStatus">—</div>
   <div style="margin-top:8px">Greenfield SP endpoint <input id="sp" type="text" placeholder="https://gnfd-testnet-sp1.bnbchain.org (optional; fills the URL from the MEP's gnfd:// pointer)"></div>
-  <div style="margin-top:8px"><input id="file" type="file"> or URL <input id="url" type="text" placeholder="https://…/flywire-783-min5.bin or /payload.bin"> steps <input id="steps" type="number" value="2" style="min-width:60px" disabled> <button id="btnModel">Load for this brain</button></div>
+  <div style="margin-top:8px"><input id="file" type="file"> or URL <input id="url" type="text" placeholder="https://…/flywire-783-min5.bin or /payload.bin"> <label for="steps">Max task steps</label> <input id="steps" type="number" value="100" min="1" max="262144" step="1" required style="min-width:60px" title="Capacity for each brain when it starts hosting; higher values use more memory"> <button id="btnModel">Load for this brain</button></div>
   <div class="kv" id="model">—</div></section>
 <section><h2>5 · Node</h2>
   <button id="btnStart">Start node</button> <label><input id="auto" type="checkbox" checked> materialize claims automatically (when I want tasks)</label>
