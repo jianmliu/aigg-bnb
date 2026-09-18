@@ -196,6 +196,30 @@ async function keep(bn) {
   }
   status.keeper.eggs = [...keeper.eggs].map(([id, egg]) => ({ id, seedBlock: egg.seedBlock }));
 }
+// ---- (6) FlyBnB acknowledgments (PORW_COLLECTION) ----
+// The FlyBnB dataset acknowledges whoever holds an individual: the list in the paper's appendix is this list at a
+// block, and the list on the page is this list now. It follows the chain and nothing else -- a mint adds an address,
+// a transfer moves a token from one address to another, and an address that holds nothing is not on it. Read by
+// walking ids 1..totalSupply (the contract keeps no owner index), at most once every HOLDERS_EVERY blocks and only
+// when somebody asks; past HOLDERS_MAX tokens this wants an indexer, and says so instead of going quiet.
+const HOLDERS_EVERY = 10n, HOLDERS_MAX = 2000;
+let holdersCache = null, holdersPass = null;
+async function holders() {
+  const bn = await ch.pub.getBlockNumber({ cacheTime: 0 }); // viem remembers the block number for seconds; this cache is counted in blocks
+  if (holdersCache && bn < BigInt(holdersCache.block) + HOLDERS_EVERY) return holdersCache;
+  return holdersPass ||= (async () => {
+    const n = Number(await ch.collection.read.totalSupply()); const tokens = []; const by = new Map();
+    for (let id = 1; id <= Math.min(n, HOLDERS_MAX); id++) {
+      const [owner, ind] = await Promise.all([ch.collection.read.ownerOf([BigInt(id)]), ch.collection.read.individuals([BigInt(id)])]);
+      const t = { id, owner, sex: ind[4], generation: ind[5], registered: ind[3] !== ZERO32 }; tokens.push(t);
+      if (!by.has(owner)) by.set(owner, []); by.get(owner).push(id);
+    }
+    // most individuals first, then the earliest token: a stable order, so a list that did not change does not move
+    const list = [...by].map(([address, ids]) => ({ address, tokens: ids })).sort((a, b) => b.tokens.length - a.tokens.length || a.tokens[0] - b.tokens[0]);
+    holdersCache = { collection: dep.addresses.collection, chainId: dep.chainId, block: Number(bn), totalSupply: n, truncated: n > HOLDERS_MAX, holders: list, tokens };
+    return holdersCache;
+  })().finally(() => { holdersPass = null; });
+}
 // ---- (4) HTTP API ----
 const json = (res, code, body) => { res.writeHead(code, { "content-type": "application/json", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" }); res.end(JSON.stringify(body, (k, v) => (typeof v === "bigint" ? v.toString() : v))); };
 const body = (req) => new Promise((r) => { let s = ""; req.on("data", (c) => (s += c)); req.on("end", () => r(s ? JSON.parse(s) : {})); });
@@ -249,6 +273,7 @@ api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
     if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, meps: [...meps.keys()] });
+    if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
     if (u.pathname === "/meps") return json(res, 200, [...meps.values()].map((M) => M.info));
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);

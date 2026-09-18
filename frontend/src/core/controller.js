@@ -63,7 +63,7 @@ export const send = async (to, sig, args = [], value = 0n) => { const hash = awa
 
 // The relayer URL is read from the DOM rather than from React state on purpose: the field is uncontrolled, so a
 // test (or a paste) that sets `#relayer.value` directly is what the next request uses.
-const relayer = () => $("relayer").value.replace(/\/$/, "");
+export const relayer = () => $("relayer").value.replace(/\/$/, "");
 const api = async (p, body) => (await fetch(relayer() + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
 
 export const mepById = (id) => state.meps.find((m) => m.mepId === id);
