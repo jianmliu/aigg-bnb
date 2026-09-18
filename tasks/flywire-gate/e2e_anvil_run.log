@@ -1,38 +1,38 @@
-  ok   deployed on anvil (chain 31337, 200-block epochs), scheme aigg:porw:sketch-tile-keccak:v2
-  ok   registered flywire-783-min5 0x29d28a9377… = the v2 id in task.json (gas 227581)
-  ok   registered flywire-783-min5-ablate4 0x365bec009e… = the v2 id in task.json (gas 227677, payload rebuilt from its delta)
-  ok   registered flywire-783-min5-keep4 0xd3b6a4b116… = the v2 id in task.json (gas 227653, payload rebuilt from its delta)
+  ok   deployed on anvil (chain 31337, 200-block epochs), scheme aigg:porw:sketch-tile-keccak:v3
+  ok   registered flywire-783-min5 0x312dda12d3… = the v3 id in task.json (gas 227581)
+  ok   registered flywire-783-min5-ablate4 0x37d237e39b… = the v3 id in task.json (gas 227677, payload rebuilt from its delta)
+  ok   registered flywire-783-min5-keep4 0x62e321e102… = the v3 id in task.json (gas 227653, payload rebuilt from its delta)
   ok   relayer up, serving the three MEPs
   ok   both executors bonded on the three MEPs and delegated (sponsored)
   ok   epoch 1: committed, revealed, rolled
-  ok   six residency claims in 122 ms (no inference; the v1 run needed ~70,000 ms), 2 per MEP collected
+  ok   six residency claims in 114 ms (no inference; the v1 run needed ~70,000 ms), 2 per MEP collected
   ok   epoch 2 entered
   ok   relayer posted ONE epoch-1 root over the six claims of the three MEPs
   ok   both executors eligible on all three MEPs in epoch 2
-       task 0x3bdfdb6a46… flywire-783-min5 | joLR: executors 0x3c44cd, 0x709979
+       task 0x3b05da3106… flywire-783-min5 | joLR: executors 0x3c44cd, 0x709979
          0x3c44cd -> 0x8614eda1e7… matches the expected digest
          0x709979 -> 0x8614eda1e7… matches the expected digest
-         settle: ok 0x0f11ef7355e2d3f0f5e00f714811c996079ea4d0ce4c4aec321ae6fc864dc35f
-       task 0x6934742a70… flywire-783-min5 | joLR+gate: executors 0x709979, 0x3c44cd
-         0x709979 -> 0x017258be33… matches the expected digest
+         settle: ok 0x076d09eb187a4bb0228c67f3e87e3307a87c57d0d9d4f4344d7797187681ce32
+       task 0xb090a7ee0a… flywire-783-min5 | joLR+gate: executors 0x3c44cd, 0x709979
          0x3c44cd -> 0x017258be33… matches the expected digest
-         settle: ok 0xfabffd58dfdf2b3eb2218a59cb18a082ec17762787f9b9b4959a8014af7a736b
-       task 0xfef6654800… flywire-783-min5-ablate4 | joLR: executors 0x3c44cd, 0x709979
-         0x3c44cd -> 0x8614eda1e7… matches the expected digest
+         0x709979 -> 0x017258be33… matches the expected digest
+         settle: ok 0x0170f9149dcd83ede181a527216e37252359ac698500ac8450111d5da19f80d1
+       task 0xd607352a43… flywire-783-min5-ablate4 | joLR: executors 0x709979, 0x3c44cd
          0x709979 -> 0x8614eda1e7… matches the expected digest
-         settle: ok 0xb052e7e19085eb76a031ea0ca97255b07d751a20926dae89346af7ddd55403bd
-       task 0xe4048777c1… flywire-783-min5-ablate4 | joLR+gate: executors 0x3c44cd, 0x709979
-         0x3c44cd -> 0x9a06ec1e4c… matches the expected digest
+         0x3c44cd -> 0x8614eda1e7… matches the expected digest
+         settle: ok 0x14ed348805e01542c049c46caee4500350e37e8240763ec9f6a8f0dde964a1bc
+       task 0x7c50a862d0… flywire-783-min5-ablate4 | joLR+gate: executors 0x709979, 0x3c44cd
          0x709979 -> 0x9a06ec1e4c… matches the expected digest
-         settle: ok 0xdcc444f9c95e78c6cf945ddf7a4eb15b463532b8291b6e1e3fa80ffeb55b19c1
-       task 0x8daa772a22… flywire-783-min5-keep4 | joLR: executors 0x3c44cd, 0x709979
+         0x3c44cd -> 0x9a06ec1e4c… matches the expected digest
+         settle: ok 0x8ddf4545d5bb5348a00bc7d6640c75aefcf9404ad4f0902aa344bdcd0c8bedb0
+       task 0xace750cfca… flywire-783-min5-keep4 | joLR: executors 0x3c44cd, 0x709979
          0x3c44cd -> 0x8614eda1e7… matches the expected digest
          0x709979 -> 0x8614eda1e7… matches the expected digest
-         settle: ok 0x6521c8993f4d6c9bed06ca6f271a0cb4f7f300cda464910b9c77eae23d33ba25
-       task 0x4a2587430a… flywire-783-min5-keep4 | joLR+gate: executors 0x709979, 0x3c44cd
-         0x709979 -> 0xd96bc436e5… matches the expected digest
+         settle: ok 0xaf131bf5bc98c8bd193a1bb72aeee282133348582eacfaa5cdd1c2526c66d6fd
+       task 0xf9ca7bbf52… flywire-783-min5-keep4 | joLR+gate: executors 0x3c44cd, 0x709979
          0x3c44cd -> 0xd96bc436e5… matches the expected digest
-         settle: ok 0xefa369805b66def5be1a814817928bfd7cc152fbd62459f748272c44fe2afe73
+         0x709979 -> 0xd96bc436e5… matches the expected digest
+         settle: ok 0x2c17ae6a176438a29b9c1c4ab3456f0f6d22509b7aa7f65854d8be849581f521
   ok   six tasks posted with steps and stride on the Task, sortition picked both executors each time
   ok   both executors returned the expected digest over the relay for every task
   ok   all six settled by the client; every result reached the chain

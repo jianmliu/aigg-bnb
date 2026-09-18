@@ -1,4 +1,4 @@
-// Select the v2 profile from mepByScheme; the legacy mep block is retained only as a v1 record.
+// Select the profile of the checkout's scheme from mepByScheme; the legacy mep block is retained only as a v1 record.
 // Execution steps and commit stride come from task.json, independently of the residency profile.
 //
 // Post the tasks of task.json on a deployed mesh and drive them to settlement: postTask (skipped when the task id
@@ -14,7 +14,7 @@ const bnb = process.env.AIGG_BNB || (fs.existsSync(path.join(here, "../../relaye
 const { parseEther, keccak256, encodeAbiParameters, parseAbiItem } = await import(createRequire(path.join(bnb, "package.json")).resolve("viem"));
 const porw = (f) => import(path.join(bnb, "contracts/lib/aigg-porw/web/porw-browser", f));
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
-const TASK_SCHEME = "aigg:porw:sketch-tile-keccak:v2";
+const TASK_SCHEME = (await porw("verify.js")).SCHEME_ID; // the scheme of the checkout this runs against: its MEP ids are the ones a registry there holds
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * @param clients   aigg-bnb `clients`/`clientsFor` object of the paying client (pub, market, ...)

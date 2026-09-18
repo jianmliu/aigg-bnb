@@ -60,7 +60,7 @@ contract FlyCollectionTest is Test {
 
     function test_registration_binds_the_mep_once_and_only_by_the_owner() public {
         uint256 id = mintF(alice);
-        IMEPRegistry.MEP memory m = IMEPRegistry.MEP({ modelId: keccak256("applied"), schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V2, execKind: keccak256("aigg:exec:int-lif:v1"),
+        IMEPRegistry.MEP memory m = IMEPRegistry.MEP({ modelId: keccak256("applied"), schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V3, execKind: keccak256("aigg:exec:int-lif:v1"),
             neurons: 139255, synapses: 2700513, synapseRoot: keccak256("syn"), weightsDA: bytes("gnfd://aigg-brains/x.bin") });
         vm.prank(bob); vm.expectRevert(bytes("not the owner")); c.register(id, DF, m); // nobody can bind someone else's individual to a dead MEP
         vm.prank(alice); bytes32 mepId = c.register(id, DF, m);

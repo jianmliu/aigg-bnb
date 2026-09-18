@@ -1,4 +1,4 @@
-// The gate experiment end to end on a local anvil under the scheme of this checkout (sketch-tile-keccak:v2): deploy ->
+// The gate experiment end to end on a local anvil under the scheme of this checkout (sketch-tile-keccak:v3 today): deploy ->
 // register the three real-payload MEPs (profile only: steps and stride are the Task's) -> relayer -> two executors bond,
 // delegate session keys, load the three brains (the edited ones from their FLYDELTAv1 deltas) -> epoch-1 residency claims
 // (no inference) -> epoch-2 materialize -> the six tasks through post_tasks.mjs (5000 steps, stride 500 on the Task,

@@ -205,7 +205,8 @@ The node runs in the user's browser, single-threaded (the page loads `sketch.was
 to `PorwNode`; as of the worker refactor it runs off the main thread, but still on one core).
 
 This section used to say a residency claim cost **5.1 s** and that CPU was the scarce resource. Scheme
-`sketch-tile-keccak:v2` removed the reason for that. Breaking the old claim down on the real brain
+`sketch-tile-keccak:v2` removed the reason for that (the current scheme is `:v3`, which additionally drops the claim's
+self-declared `deviceId`). Breaking the old claim down on the real brain
 (139,255 neurons, 2,700,513 synapse records, 100 steps, stride 10):
 
 | phase | time | what it is | still in a claim? |

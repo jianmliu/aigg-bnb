@@ -53,6 +53,17 @@
      "synapses": 2700513,
      "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
      "note": "steps and commit stride belong to the Task under this scheme"
+    },
+    "aigg:porw:sketch-tile-keccak:v3": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v3",
+     "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+     "mepId": "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a",
+     "modelId": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700513,
+     "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
+     "note": "steps and commit stride belong to the Task under this scheme"
     }
    }
   },
@@ -115,6 +126,17 @@
      "synapses": 2700509,
      "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
      "note": "steps and commit stride belong to the Task under this scheme"
+    },
+    "aigg:porw:sketch-tile-keccak:v3": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v3",
+     "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+     "mepId": "0x37d237e39b97ee529818903b0d2bb49a29c9afebb3daa481101b06a7ec618698",
+     "modelId": "0x2c05fc989a1c651181c787b58e67982709d72c2aac6b72ebf7545fef20163781",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700509,
+     "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
+     "note": "steps and commit stride belong to the Task under this scheme"
     }
    }
   },
@@ -171,6 +193,17 @@
      "schemeId": "aigg:porw:sketch-tile-keccak:v2",
      "schemeDigest": "0x743502825425e31852a0adb96c797d7ac839afdef315e8c24b68db6e58d4be2e",
      "mepId": "0xd3b6a4b116af0abe74a8f7e4efccd0484f9dd706116a51bd9398a239cfe79713",
+     "modelId": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700046,
+     "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
+     "note": "steps and commit stride belong to the Task under this scheme"
+    },
+    "aigg:porw:sketch-tile-keccak:v3": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v3",
+     "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+     "mepId": "0x62e321e10262c9fed28d696d885cc7505d58f56ff402282b7001f3d4738718d7",
      "modelId": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
      "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
      "neurons": 139255,
@@ -963,7 +996,8 @@
    "taskId": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))",
+    "aigg:porw:sketch-tile-keccak:v3": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
    },
    "initStateRoot": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3"
   },
@@ -992,7 +1026,8 @@
    "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))",
+    "aigg:porw:sketch-tile-keccak:v3": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
    },
    "initStateRoot": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35"
   },
@@ -1021,7 +1056,8 @@
    "taskId": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))",
+    "aigg:porw:sketch-tile-keccak:v3": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
    },
    "initStateRoot": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3"
   },
@@ -1050,7 +1086,8 @@
    "taskId": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))",
+    "aigg:porw:sketch-tile-keccak:v3": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
    },
    "initStateRoot": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35"
   },
@@ -1079,7 +1116,8 @@
    "taskId": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))",
+    "aigg:porw:sketch-tile-keccak:v3": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
    },
    "initStateRoot": "0x5a7cd54933b3ba5a2e73794e737187cd99d020394c5e1c42219bfcd175daf2c3"
   },
@@ -1108,7 +1146,8 @@
    "taskId": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
    "taskIdByScheme": {
     "aigg:porw:sketch-tile-keccak:v1": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
-    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))",
+    "aigg:porw:sketch-tile-keccak:v3": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, initStateRoot, fee, deadline, redundancy}, nonce))"
    },
    "initStateRoot": "0x23acda6be55dcba887b1b3f68927d62c8b3a329821872ff5a3f0384294e3ac35"
   }
