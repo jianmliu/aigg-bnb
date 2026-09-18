@@ -16,7 +16,14 @@ let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const API = process.env.PORW_RELAYER_API || "http://127.0.0.1:8799";
-const api = async (p, body) => (await fetch(API + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
+// A run spans tens of minutes and dozens of calls while the relayer is also signing transactions; one dropped
+// keep-alive socket must not end it. Retries the transport, never a call that actually reached the relayer.
+const api = async (p, body, tries = 4) => {
+  for (let i = 1; ; i++) {
+    try { return await (await fetch(API + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json(); }
+    catch (e) { if (i >= tries) throw e; log(`relayer API ${p}: ${String(e.message || e)} — retry ${i}/${tries - 1}`); await sleep(2000 * i); }
+  }
+};
 const [payloadPath, bKey] = process.argv.slice(2);
 if (!payloadPath || !bKey) { console.log("usage: PORW_RELAYER_API=... live_dispute.mjs <payload.bin> <B private key>"); process.exit(2); }
 
@@ -28,18 +35,24 @@ const SEED = 11, S_LIE = 18; const FEE = parseEther("0.0002"); const evidence = 
 log(`relayer ${d.relayer} at ${API}; A ${cA.account.address}; B ${cB.account.address}; disputes ${disputes}`);
 
 // ---- 0. can anybody afford this? the beacon deposit is what actually gates the relayer ----
-const DEPOSIT = parseEther("0.1");
+// The stakes come from the deployment, not from constants here: UNIT and the beacon deposit are immutables
+// chosen at deploy time, and a run against a differently-parameterised chain must not silently over-spend.
+const UNIT = await cA.instances.read.UNIT();
+const DEPOSIT = cA.beacon ? await cA.beacon.read.DEPOSIT() : 0n;
+const BOND = UNIT * 2n;                      // weight 2, so a slash of one UNIT still leaves the instance bonded
+const FUND_B = BOND + parseEther("0.01");    // its bond plus gas for its own dispute moves
 const bal = async (a) => cA.pub.getBalance({ address: a });
 const [balR, balA, balB] = await Promise.all([bal(d.relayer), bal(cA.account.address), bal(cB.account.address)]);
+log(`stakes: UNIT ${formatEther(UNIT)}, bond ${formatEther(BOND)}, beacon deposit ${formatEther(DEPOSIT)} BNB`);
 log(`balances: relayer ${formatEther(balR)}, A ${formatEther(balA)}, B ${formatEther(balB)} BNB`);
-check(`the relayer can cover a beacon deposit (needs > 0.1 BNB, has ${formatEther(balR)})`, balR > DEPOSIT);
-if (balB < parseEther("0.052")) { log(`funding B with 0.055 from A…`); const h = await cA.wallet.sendTransaction({ to: cB.account.address, value: parseEther("0.055") }); await cA.pub.waitForTransactionReceipt({ hash: h }); evidence.txs.fundB = h; }
+check(`the relayer can cover a beacon deposit (needs > ${formatEther(DEPOSIT)} BNB, has ${formatEther(balR)})`, balR > DEPOSIT);
+if (balB < FUND_B) { const top = FUND_B - balB; log(`funding B with ${formatEther(top)} from A…`); const h = await cA.wallet.sendTransaction({ to: cB.account.address, value: top }); await cA.pub.waitForTransactionReceipt({ hash: h }); evidence.txs.fundB = h; }
 if (fails) { console.log("\nfund the relayer key before running this: with a lazy beacon it looks healthy at zero balance until the first wake."); process.exit(1); }
 
 // ---- 1. both instances bonded and delegated ----
 const mkInstance = async (c, key, tag) => {
   const E = await H.porw("eip712.js"); const { keypair } = await H.porw("claim.js");
-  if ((await c.instances.read.weightOf([c.account.address])) === 0n) { log(`${tag}: bonding 0.05…`); const h = await c.instances.write.bond([[mepId]], { value: parseEther("0.05") }); await c.pub.waitForTransactionReceipt({ hash: h }); evidence.txs["bond" + tag] = h; }
+  if ((await c.instances.read.weightOf([c.account.address])) === 0n) { log(`${tag}: bonding ${formatEther(BOND)}…`); const h = await c.instances.write.bond([[mepId]], { value: BOND }); await c.pub.waitForTransactionReceipt({ hash: h }); evidence.txs["bond" + tag] = h; }
   const session = keypair(null); const wallet = E.localWallet(key);
   const del = await E.makeDelegation(wallet, domains.registry, H.hex(session.address), Number(await c.pub.getBlockNumber()) + 200000);
   const r = await api("/tx/delegate", { instance: del.instance, session: del.session, expiry: del.expiry, sig: del.sig });
