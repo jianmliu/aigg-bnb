@@ -36,11 +36,14 @@ the cost model, not measurements; measured gas comes from `aigg-porw` (`benchmar
 beacon `keccak(prevrandao ‖ blockNumber)` is predictable and partly grindable by the block
 producer. The claim manager here takes an `IBeacon`:
 
-- **`CommitRevealBeacon`** (`contracts/src/CommitRevealBeacon.sol`): bonded participants
-  (instances or relays) commit `keccak(secret ‖ sender)` during the first `COMMIT_BLOCKS` of an
-  epoch and reveal during the next `REVEAL_BLOCKS`; `beaconFor(e) = keccak(all revealed
-  secrets ‖ e)` once the reveal window closes; a committer who does not reveal is slashed
-  (its deposit goes to the pool) and its commitment is excluded. With ≥ 1 honest revealer the
+- **`CommitRevealBeacon`** (`contracts/src/CommitRevealBeacon.sol`): for epoch `e`, anyone who
+  posts the `DEPOSIT` with it (in practice the relayers; the contract checks the deposit, not a
+  bond in `InstanceRegistry`) commits `keccak(secret ‖ sender)` during the **last**
+  `COMMIT_BLOCKS` of epoch `e − 1`, and reveals during the first `REVEAL_BLOCKS` of `e`, which
+  refunds the deposit. `beaconFor(e) = keccak(acc ‖ e)` once the reveal window closes, where
+  `acc` is the running keccak of the revealed secrets in reveal order; with no reveal at all
+  there is no beacon and the epoch is skipped. A committer who does not reveal forfeits its
+  deposit to the pool (anyone may sweep it with `forfeit`) and its commitment is excluded. With ≥ 1 honest revealer the
   beacon is unpredictable to everyone before the reveal window; the last revealer can bias by
   withholding at the cost of its deposit (standard RANDAO trade-off, bounded by the deposit).
 - **VRF**: where a VRF service is available on the target chain, an adapter contract that

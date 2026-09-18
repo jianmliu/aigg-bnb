@@ -4,10 +4,13 @@ pragma solidity ^0.8.20;
 import "aigg-porw/interfaces/IBeacon.sol";
 
 /// @notice Epoch beacon for PoSA chains (BSC / opBNB), where block.prevrandao is a constant.
-///         Per epoch: bonded committers commit keccak(secret || sender) during the first COMMIT_BLOCKS,
-///         reveal during the next REVEAL_BLOCKS; beaconFor(e) = keccak(revealed secrets in reveal order || e)
-///         after the reveal window. Not revealing forfeits the committer's deposit to the pool and excludes
-///         its commitment (RANDAO trade-off: the last revealer can bias by withholding, bounded by the deposit).
+///         For epoch e: anyone posting DEPOSIT commits keccak(secret || sender) during the LAST COMMIT_BLOCKS
+///         of epoch e-1, and reveals during the first REVEAL_BLOCKS of e (which refunds the deposit);
+///         beaconFor(e) = keccak(running keccak of the secrets in reveal order || e) after the reveal window.
+///         The deposit is the only admission: there is no InstanceRegistry bond check here, so what bounds a
+///         committer's influence is DEPOSIT and nothing else. Not revealing forfeits the deposit to the pool and
+///         excludes the commitment (RANDAO trade-off: the last revealer can bias by withholding, bounded by the
+///         deposit).
 ///         The claim manager only rolls an epoch whose beacon is ready, so claims never precede the beacon.
 contract CommitRevealBeacon is IBeacon {
     uint64 public immutable EPOCH_BLOCKS;
