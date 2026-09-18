@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "aigg-porw/interfaces/PorwMesh.sol";
+import "./LineageRegistry.sol";
 
 /// @title FlyCollection — a fixed collection of fly-brain individuals
 /// @notice An individual is a FLYDELTAv1 edit of one of two released brains (a female and a male base). The token
@@ -39,6 +40,8 @@ contract FlyCollection {
 
     IMEPRegistry public immutable MEPS;
     IInstanceBonding public immutable INSTANCES;
+    /// @notice where a derived brain's model_id is declared, challenged and finalized. address(0): the legacy, self-punishing `register`.
+    LineageRegistry public immutable LINEAGE;
 
     struct Individual {
         bytes32 baseModelId; // which base this varies
@@ -97,12 +100,12 @@ contract FlyCollection {
     constructor(
         bytes32 baseFemale, bytes32 baseMale, bytes32 genesisRoot, uint32 genesisSize,
         uint256 mintPrice, uint256 mintBond, uint256 breedFee, address treasury,
-        IMEPRegistry meps, IInstanceBonding instances
+        IMEPRegistry meps, IInstanceBonding instances, LineageRegistry lineage
     ) {
         require(mintBond <= mintPrice, "bond > price"); require(treasury != address(0), "treasury");
         BASE_FEMALE = baseFemale; BASE_MALE = baseMale; GENESIS_ROOT = genesisRoot; GENESIS_SIZE = genesisSize;
         MINT_PRICE = mintPrice; MINT_BOND = mintBond; BREED_FEE = breedFee; TREASURY = treasury;
-        MEPS = meps; INSTANCES = instances;
+        MEPS = meps; INSTANCES = instances; LINEAGE = lineage;
     }
 
     /// @notice Mint a genesis individual. The whole genesis set is committed at deployment as a Merkle root over
@@ -150,6 +153,7 @@ contract FlyCollection {
         require(_may(a) && _may(b), "not authorised");
         Individual storage A = individuals[a]; Individual storage B = individuals[b];
         require(A.sex != B.sex, "breeding needs one of each sex");
+        require(A.deltaHash != bytes32(0) && B.deltaHash != bytes32(0), "parents must have their deltas claimed"); // a child's recipe names them
         // the child takes the female parent's base: one base, chosen by a rule, not a blend
         Individual storage dam = A.sex == FEMALE ? A : B;
         bytes32 seed = keccak256(abi.encode(A.deltaHash, B.deltaHash, a, b, blockhash(block.number - 1), totalSupply));
@@ -170,12 +174,38 @@ contract FlyCollection {
     ///         is a separate act from minting because computing `model_id` means applying the delta to a 28 MB
     ///         base and hashing the result, which no contract can do.
     function register(uint256 id, bytes32 deltaHash, IMEPRegistry.MEP calldata m) external returns (bytes32 mepId) {
+        require(address(LINEAGE) == address(0), "use registerDerived");
         require(msg.sender == ownerOf(id), "not the owner");
         Individual storage ind = individuals[id];
         require(ind.mepId == bytes32(0), "already registered");
         if (ind.deltaHash == bytes32(0)) ind.deltaHash = deltaHash; else require(ind.deltaHash == deltaHash, "delta");
         mepId = MEPS.registerMEP(m);
         ind.modelId = m.modelId; ind.mepId = mepId;
+        emit Registered(id, mepId, m.modelId);
+    }
+
+    /// @notice Register an individual through the lineage registry: the delta is an in-place FLYDELTAv3 cross whose
+    ///         `model_id` was declared there, survived its challenge window and is final — so the MEP bound here is the
+    ///         one the recipe really produces, not merely the one its owner says it does. For a bred token the recipe is
+    ///         not the owner's to choose: it must name the parents this contract recorded and carry the seed drawn at
+    ///         breeding (docs/TOKENOMICS.md §4 (c)):
+    ///         - parents on the same base: a true cross, `parentA` / `parentB` = the two parents' deltas;
+    ///         - parents on different bases (one of each sex): the child sits on the dam's base, inherits from the dam
+    ///           crossed with the published base, and the sire contributes entropy — its delta is inside the seed.
+    function registerDerived(uint256 id, bytes calldata delta, IMEPRegistry.MEP calldata m) external returns (bytes32 mepId) {
+        require(address(LINEAGE) != address(0), "no lineage registry"); require(msg.sender == ownerOf(id), "not the owner");
+        Individual storage ind = individuals[id]; require(ind.mepId == bytes32(0), "already registered");
+        bytes32 deltaHash = keccak256(delta);
+        if (ind.deltaHash == bytes32(0)) ind.deltaHash = deltaHash; else require(ind.deltaHash == deltaHash, "delta");
+        require(LINEAGE.finalModelId(deltaHash) == m.modelId, "model id"); // reverts unless final
+        FlyDeltaRecordVerifier.Cross memory x = LINEAGE.VERIFIER().decodeCross(delta); require(x.baseModelId == ind.baseModelId, "base");
+        if (ind.generation > 0) {
+            Individual storage A = individuals[ind.parentA]; Individual storage B = individuals[ind.parentB];
+            require(x.recipe.seed == uint64(uint256(ind.seed)), "seed");
+            if (A.baseModelId == B.baseModelId) require(x.parentA == A.deltaHash && x.parentB == B.deltaHash, "parents");
+            else { Individual storage dam = A.baseModelId == ind.baseModelId ? A : B; require(x.parentA == dam.deltaHash && x.parentB == bytes32(0), "dam x base"); }
+        }
+        mepId = MEPS.registerMEP(m); ind.modelId = m.modelId; ind.mepId = mepId;
         emit Registered(id, mepId, m.modelId);
     }
 
