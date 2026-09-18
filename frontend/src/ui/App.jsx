@@ -13,6 +13,7 @@ import { useNodeState } from "../core/store.js";
 import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
 import { BrainCard } from "./BrainCard.jsx";
+import FliesView from "./FliesView.jsx";
 
 const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
 
@@ -61,6 +62,12 @@ export default function App() {
   const [taskFee, setTaskFee] = useState("0.01");
   const [taskDeadline, setTaskDeadline] = useState("50");
 
+  // Two views, one page: the node console and the colony. The hash is the route, so a link to #/flies works. The
+  // node view is hidden rather than unmounted -- the controller writes into #log and reads #relayer whichever
+  // view is showing, and a running node must not lose its console because someone went to look at their flies.
+  const [view, setView] = useState(() => (window.location.hash === "#/flies" ? "flies" : "node"));
+  useEffect(() => { const on = () => setView(window.location.hash === "#/flies" ? "flies" : "node"); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
+
   // the MEP's gnfd:// pointer plus an SP endpoint is a fetchable URL; fill the box rather than make anyone paste it
   useEffect(() => { C.autofillUrl(); }, [s.active]);
   // after the first commit, not before: #relayer and #log have to exist before anything drives the page
@@ -94,6 +101,10 @@ export default function App() {
           <h1>Fly-brain network</h1>
           <span className="sub">node · BNB Chain</span>
         </div>
+        <nav className="views">
+          <a id="navNode" href="#/" data-active={view === "node"}>Node</a>
+          <a id="navFlies" href="#/flies" data-active={view === "flies"}>Flies</a>
+        </nav>
         <Pill tone={st.tone}>{st.text}</Pill>
         <div className="telemetry">
           <Chip k="epoch" v={e ? e.epoch : "—"} tone="cyan" />
@@ -105,7 +116,8 @@ export default function App() {
         </div>
       </header>
 
-      <div className="main">
+      {view === "flies" && <FliesView />}
+      <div className="main" hidden={view !== "node"}>
         <div className="col">
           <Panel step={1} title="Relayer" note="read-only">
             <Field label="Relayer API URL" htmlFor="relayer">

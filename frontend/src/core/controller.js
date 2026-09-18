@@ -22,6 +22,8 @@ const $ = (id) => document.getElementById(id);
 // subscriber (the React root), and under `vm` it has to be harmless to call with nobody listening.
 let onChange = () => {};
 export const setOnChange = (fn) => { onChange = fn || (() => {}); };
+/** for the modules that keep their own slice of `state` (flies.js): say that it moved */
+export const notify = () => onChange();
 
 export const log = (m) => {
   const el = $("log"); const stamp = new Date().toISOString().slice(11, 19);
@@ -31,7 +33,8 @@ export const log = (m) => {
 
 export const state = { deployment: null, meps: [], hosted: new Set(), active: null, wallet: null, chainId: null, chainOk: false,
   balance: 0n, bonded: 0n, weight: 0n, exitAt: 0n, inMep: [], session: null, delegation: null, resolved: null, epochInfo: null,
-  prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null };
+  prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null,
+  flies: null }; // the collection, as flies.js reads it: null until a deployment that names one is loaded
 
 // ---- the worker that actually runs the node ----
 let worker = null, nextReq = 1; const waiting = new Map();
@@ -54,9 +57,9 @@ async function onTaskResult(res) {
   const r = await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
   log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
 }
-const eth = () => window.ethereum;
-const call = async (to, sig, args = []) => eth().request({ method: "eth_call", params: [{ to, data: encode(sig, args) }, "latest"] });
-const send = async (to, sig, args = [], value = 0n) => { const hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: state.wallet, to, data: encode(sig, args), value: "0x" + value.toString(16) }] }); log(`tx ${hash.slice(0, 12)}… sent`); for (let i = 0; i < 120; i++) { const r = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] }); if (r) { log(`tx ${hash.slice(0, 12)}… ${r.status === "0x1" ? "confirmed" : "REVERTED"}`); return r; } await new Promise((x) => setTimeout(x, 500)); } throw new Error("receipt timeout"); };
+export const eth = () => window.ethereum;
+export const call = async (to, sig, args = []) => eth().request({ method: "eth_call", params: [{ to, data: encode(sig, args) }, "latest"] });
+export const send = async (to, sig, args = [], value = 0n) => { const hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: state.wallet, to, data: encode(sig, args), value: "0x" + value.toString(16) }] }); log(`tx ${hash.slice(0, 12)}… sent`); for (let i = 0; i < 120; i++) { const r = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] }); if (r) { log(`tx ${hash.slice(0, 12)}… ${r.status === "0x1" ? "confirmed" : "REVERTED"}`); return r; } await new Promise((x) => setTimeout(x, 500)); } throw new Error("receipt timeout"); };
 
 // The relayer URL is read from the DOM rather than from React state on purpose: the field is uncontrolled, so a
 // test (or a paste) that sets `#relayer.value` directly is what the next request uses.

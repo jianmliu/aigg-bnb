@@ -111,6 +111,12 @@ sponsorship budgets, and anyone may run the same loop -- whoever lands first tak
 `PORW_KEEPER=0` keeps naming the collection to the page over `/deployment` without hatching for it.
 `test/e2e_keeper.mjs` covers startup backfill, a live egg, and a bounty too small to be worth it.
 
+The page has a second view for that collection, **Flies** (`#/flies`; `src/core/flies.js` + `src/ui/FliesView.jsx`): the
+colony, the pairing (one female, one male, the base the child will vary, and the fee as what it buys), and the egg. One
+block after breeding the page computes the child's seed and sex itself from the seed block's hash, and shows them while
+the chain catches up; Hatch and Re-arm are there for when no keeper is running. `test/e2e_flies.mjs` checks that
+preview against `FlyCollection.hatch` bit for bit, hatched by the page, by the keeper, and after a re-arm.
+
 ## Claim posture per chain
 
 - **opBNB**: every instance may submit its own EIP-712 claim each epoch (`submitClaim`, ≈240k gas, negligible cost).
