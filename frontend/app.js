@@ -11,6 +11,7 @@
 import { encode, decodeUint, decodeAddress, hex, unhex } from "./abi.js";
 import { keypair } from "/porw/claim.js";
 import * as E from "/porw/eip712.js";
+import { modelMemoryBytes, maxStepsWithin, WASM32_MAX_BYTES } from "/porw/mem.js";
 
 const $ = (id) => document.getElementById(id); const log = (m) => { const el = $("log"); el.textContent += `[${new Date().toISOString().slice(11, 19)}] ${m}\n`; el.scrollTop = el.scrollHeight; };
 const state = { deployment: null, meps: [], hosted: new Set(), active: null, wallet: null, chainOk: false, bonded: 0n, weight: 0n, exitAt: 0n, session: null, delegation: null, resolved: null,
@@ -58,7 +59,9 @@ function renderActive() {
   const m = mepById(state.active); if (!m) return;
   $("mepInfo").textContent = `${m.mepId} · model_id ${m.modelId.slice(0, 14)}… · ${m.neurons.toLocaleString()} neurons · ${m.synapses.toLocaleString()} synapses · ${m.weightsDA}`;
   if (!$("url").value && m.weightsDA.startsWith("gnfd://") && $("sp").value) $("url").value = $("sp").value.replace(/\/$/, "") + "/view/" + m.weightsDA.slice(7);
-  const l = state.loaded[m.mepId]; $("model").textContent = l ? `${l.name}: ${l.neurons} neurons, ${l.synapses} synapses, model_id ${l.modelId.slice(0, 14)}… (${l.ok ? "matches the MEP" : "DOES NOT MATCH the MEP's model_id"})` : "not loaded";
+  const l = state.loaded[m.mepId]; const steps = Number($("steps").value);
+  const cost = l && Number.isInteger(steps) && steps >= 1 ? ` · ~${MB(brainBytes(m, steps))} resident at ${steps} steps` : "";
+  $("model").textContent = l ? `${l.name}: ${l.neurons} neurons, ${l.synapses} synapses, model_id ${l.modelId.slice(0, 14)}… (${l.ok ? "matches the MEP" : "DOES NOT MATCH the MEP's model_id"})${cost}` : "not loaded";
   const claimed = Object.entries(state.claims[m.mepId] || {}).map(([e]) => e).join(","); $("mepStatus").textContent = `hosted: ${state.hosted.has(m.mepId) ? "yes" : "no"} · claims: epochs ${claimed || "—"} · materialized: ${Object.entries(state.materialized[m.mepId] || {}).filter(([, v]) => v).map(([e]) => e).join(",") || "—"}`;
 }
 async function loadDeployment() {
@@ -98,16 +101,29 @@ async function loadModel() {
   log(`${m.name || m.mepId.slice(0, 10)}: ${(bytes.length / 1e6).toFixed(1)} MB downloaded, checking its model_id…`);
   const r = await ask("prepare", { mepId: m.mepId, bytes: bytes.buffer }, [bytes.buffer]); // transferred, not copied
   const ok = r.modelId.toLowerCase() === m.modelId.toLowerCase();
-  state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, modelId: r.modelId, ok };
+  state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, bytes: r.bytes, modelId: r.modelId, ok };
   if (state.node) await hostOnNode(m); // hot-add to a running node
   renderActive(); log(`${m.name || m.mepId.slice(0, 10)}: model_id ${r.modelId.slice(0, 14)}… ${ok ? "matches the MEP" : "DOES NOT MATCH the MEP (claims would be rejected)"}`);
   $("file").value = ""; $("url").value = "";
 }
+const MB = (b) => `${(b / 1024 / 1024).toFixed(0)} MB`;
+/** the shape `mem.js` costs a brain by; needs the model to have been prepared (nTiles and the header counts) */
+const shapeOf = (m) => { const l = state.loaded[m.mepId]; return l && { nTiles: Math.floor(l.bytes / 4096), neurons: l.neurons, synapses: l.synapses, exec: m.exec === "int-lif" ? "lif" : "spmv" }; };
+/** projected wasm memory for one hosted brain at the capacity the page is asking for */
+const brainBytes = (m, maxSteps) => { const sh = shapeOf(m); return sh ? modelMemoryBytes({ ...sh, maxSteps }) : 0; };
 function taskCapacity(m) {
   const maxSteps = Number($("steps").value);
-  // TaskMarket permits 512 SPMV roots, or 512 LIF segments of at most 512 steps each.
+  // TaskMarket permits 512 SPMV roots, or 512 LIF segments of at most 512 steps each — but that bounds the
+  // arrays a DISPUTE round must post, not this tab's memory, and memory binds first by orders of magnitude:
+  // the real brain at 5000 int-lif steps is 408 MB resident, and at the contract's own limit it is 17 GB.
   const limit = m.exec === "int-lif" ? 512 * 512 : 512;
   if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > limit) throw new Error(`Max task steps must be a whole number from 1 to ${limit} for ${m.exec}`);
+  const sh = shapeOf(m);
+  if (sh) {
+    const bytes = modelMemoryBytes({ ...sh, maxSteps });
+    // a wasm32 memory cannot grow past 4 GB on any device, so this one is impossible rather than merely large
+    if (bytes >= WASM32_MAX_BYTES) throw new Error(`${maxSteps} steps would need ${MB(bytes)} of memory for this brain, past the 4 GB a page can address. The most it can hold is ${maxStepsWithin(sh, WASM32_MAX_BYTES)} steps; a laptop wants far less.`);
+  }
   return maxSteps;
 }
 async function hostOnNode(m) {
@@ -120,6 +136,8 @@ async function hostOnNode(m) {
 async function startNode() {
   if (!state.delegation) throw new Error("delegate first"); const ready = [...state.hosted].filter((id) => state.prepared.has(id)); if (!ready.length) throw new Error("load a model for at least one hosted MEP");
   for (const id of ready) taskCapacity(mepById(id)); // validate before creating a worker or relay connection
+  { const total = ready.reduce((s, id) => s + brainBytes(mepById(id), taskCapacity(mepById(id))), 0);
+    if (total) log(`hosting ${ready.length} brain(s) will hold about ${MB(total)} of wasm memory resident${total > 1024 ** 3 ? " — over a gigabyte; a laptop tab may not survive it" : ""}`); }
   const k = sessionKey();
   await ask("init", { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
   await ask("relay", { url: state.deployment.relay });
@@ -148,5 +166,6 @@ const wrap = (fn) => async () => { try { await fn(); } catch (e) { state.errors.
 $("btnDep").onclick = wrap(loadDeployment); $("btnConnect").onclick = wrap(connect); $("btnBond").onclick = wrap(bond); $("btnExit").onclick = wrap(requestExit); $("btnFinalize").onclick = wrap(finalizeExit);
 $("btnDelegate").onclick = wrap(delegate); $("btnModel").onclick = wrap(loadModel); $("btnStart").onclick = wrap(startNode); $("btnRefresh").onclick = wrap(refreshBond);
 $("mep").onchange = () => { state.active = $("mep").value; $("url").value = ""; renderActive(); };
+$("steps").oninput = () => renderActive(); // the memory a capacity buys, as it is typed
 window.appActions = { loadDeployment, connect, bond, delegate, loadModel, startNode, refreshBond, loop, setActive: (id) => { state.active = id; renderMeps(); }, host: (id, on) => { on ? state.hosted.add(id) : state.hosted.delete(id); renderMeps(); } };
 window.__ready = true;

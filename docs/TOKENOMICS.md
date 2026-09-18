@@ -222,11 +222,38 @@ bounded by something else long before it is bounded by time. What binds instead:
 
    Two things follow. The payload is a third of the footprint at best; the rest is the weights tree, the CSR
    commitments and, dominating at large `maxSteps`, the LIF checkpoints (one 2.2 MB state every 32 steps: 350 MB at
-   5,000 steps). And the ceiling is **2 GB, not the 4 GB of wasm32**: the sixth 5,000-step brain dies with
-   `Start offset -2128355728 is outside the bounds of the buffer`, a signed 32-bit offset in the JS glue, which is a
-   bug to fix rather than a bound to plan around. With today's node: about 25 resident brains at `maxSteps ≤ 100`,
-   14 at 1,000, 5 at 5,000. Sizing checkpoints lazily (on the first long task, not at load) would make the first two
-   rows the only ones that matter for hosting.
+   5,000 steps). And the ceiling *was* **2 GB, not the 4 GB of wasm32**: the sixth 5,000-step brain died with
+   `Start offset -2128355728 is outside the bounds of the buffer`, a signed 32-bit offset in the JS glue.
+
+   *That one is fixed.* A wasm `i32` result reaches JS signed, and `porw.js` handed the pointers from `alloc` and
+   `mark` straight to `new Uint8Array(buffer, ptr, n)`, so every heap address past 2 GiB arrived negative. Coerced
+   with `>>> 0` where a pointer crosses out of the module; *measured* after the fix, allocation and readback run
+   through **2.13 GiB**, where before they threw at exactly 2 GiB. So the second column is the wasm32 4 GB, and with
+   it about 25 resident brains at `maxSteps ≤ 100`, 14 at 1,000, 10 at 5,000. Sizing checkpoints lazily (on the first
+   long task, not at load) would still make the first two rows the only ones that matter for hosting.
+
+   The same measurement now exists as code rather than a one-off: `mem.js` states the per-brain cost as a closed form
+   of (tiles, neurons, synapses, `maxSteps`, exec) — every allocation in `loadModel` is sized by the shape, never by
+   the weight values — and `test_mem.mjs` holds it against the real bump allocator, whose mark is an exact
+   high-water mark. They agree to 0.00%, and the test fails if a new allocation appears in `loadModel`. It
+   independently reproduces this table (82.6 MB at `maxSteps` 100, 407.7 MB at 5,000). `maxStepsWithin(shape, budget)`
+   is the bound a host needs; the frontend was bounding its capacity input by `TaskMarket`'s dispute-round limit
+   instead, which for int-lif admits `maxSteps` 262,144 — **17.5 GB for one brain**. Those are different bounds and
+   memory binds first by orders of magnitude, so the page now projects the real figure and refuses the impossible.
+
+   **The male base is not the same size, and §4's two bases have to be priced together** (aigg-porw PR #11:
+   `malecns-v1.0-min5`, 166,700 neurons, 6,242,118 records, 63.8 MB, 15,566 tiles). Priced with the model above:
+
+   | brain | `maxSteps` 100 | `maxSteps` 5,000 |
+   |---|---|---|
+   | female `min5` | 83 MB | 408 MB |
+   | male `min5` | **145 MB** | 534 MB |
+   | male `min1` (the sampling base) | 439 MB | 829 MB |
+
+   A tab holding one of each at short tasks is 227 MB before any individual — so `h` counted in *brains* hides that
+   the two sexes are not interchangeable units. The male `min1` export exists to sample individuals from and is 439 MB
+   resident on its own; if sampling has to happen in the tab rather than ahead of it, that is the number that decides
+   whether a laptop can breed.
 2. **First load.** 28 MB over the network before a tab can claim anything, once per base.
 3. **Redundancy.** Still `N ≤ T · h / 2` in shape, with `h` now set by memory rather than seconds.
 
