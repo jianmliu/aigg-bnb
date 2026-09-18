@@ -21,7 +21,7 @@ try {
   await page.goto(fe.url); await page.waitForFunction(() => window.__ready === true);
   await page.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
 
-  check("the banner is on the home page, above the node console", await page.locator("#flybnbBanner").isVisible() && /FlyBnB/.test(await page.locator("#flybnbBanner").innerText()));
+  check("the banner is on the home page, above the listings", await page.locator("#flybnbBanner").isVisible() && /FlyBnB/.test(await page.locator("#flybnbBanner").innerText()));
   if (process.env.FLYBNB_SHOTS) await page.screenshot({ path: process.env.FLYBNB_SHOTS + "/home.png" });
   await page.click("#flybnbBanner");
   check("it leads to the FlyBnB view", await waitFor(() => page.locator("#flybnb").isVisible()) && (await page.evaluate(() => location.hash)) === "#/flybnb");
@@ -31,7 +31,7 @@ try {
   check("by address, with the tokens held", (await page.locator("#flybnbHolders li").count()) === 1 && (await page.locator("#flybnbHolders").innerText()).includes(short(a)) && /#1 #2/.test(await page.locator("#flybnbHolders").innerText()));
 
   await H.sendTo(A, C, "FlyCollection", "transferFrom", [a, b, 2n]); await anvil.mine(12);
-  await page.click("#navNode"); await page.click("#navFlyBnb"); // the view reads the list when it opens (and every 30 s while open)
+  await page.click("#navStay"); await page.click("#navFlyBnb"); // the view reads the list when it opens (and every 30 s while open)
   check("after a transfer the acknowledgment has moved with the token", await waitFor(async () => { const t = await page.locator("#flybnbHolders").innerText().catch(() => ""); return /2 holders/.test(await page.locator("#flybnbHoldersSummary").innerText().catch(() => "")) && t.includes(short(a)) && t.includes(short(b)); }));
   if (process.env.FLYBNB_SHOTS) await page.screenshot({ path: process.env.FLYBNB_SHOTS + "/flybnb.png" });
 } catch (e) { console.error(e); fails++; }

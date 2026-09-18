@@ -1,60 +1,81 @@
-/* The page reads as instrumentation, not as a form: a dark field, translucent panels over it, monospace for every
-   number, and colour reserved for state that changes. Accents are the four the telemetry actually uses --
-   green = resident and proving, cyan = chain, amber = BNB and money, pink = wrong. */
+/* flybnb. A bed-and-breakfast for fruit-fly brains: warm paper, white cards, a lot of air, one loud colour.
+   The loud colour is BNB gold -- this is organised on BNB Chain and paid in BNB, and the name says so -- and the
+   sharp one is the red of a Drosophila eye. Everything else is ink on paper. The four meanings the page has always
+   had keep their variable names, because the components speak in them:
+     --green = resident and proving   --cyan = chain / information   --amber = BNB and money   --pink = wrong
+   Numbers and hashes are monospace everywhere: they are read digit by digit. */
+@import "@fontsource-variable/bricolage-grotesque/index.css";
+@import "@fontsource-variable/figtree/index.css";
+@import "@fontsource-variable/jetbrains-mono/index.css";
+
 :root {
-  --bg: #05070b;
-  --bg-lift: #0a0e14;
-  --panel: rgba(10, 14, 20, 0.72);
-  --panel-solid: #0b1017;
-  --line: rgba(120, 160, 200, 0.16);
-  --line-strong: rgba(120, 160, 200, 0.32);
-  --text: #e8eef5;
-  --muted: #8a98a8;
-  --faint: #5d6b7a;
+  --bg: #fffdf8;
+  --bg-lift: #ffffff;
+  --panel: #ffffff;
+  --panel-solid: #ffffff;
+  --wash: #faf5e9;           /* the inside of a well: inputs at rest, the status strip, quiet fills */
+  --line: #eee7d6;
+  --line-strong: #d8cfb9;
+  --text: #1b1a17;
+  --muted: #6b675f;
+  --faint: #9c968a;
 
-  --green: #39ff88;
-  --cyan: #4cc9f0;
-  --pink: #ff4d8d;
-  --amber: #ffb020;
+  --gold: #f0b90b;           /* BNB. Fills and marks only: it is too light to be text on paper */
+  --gold-deep: #d9a400;
+  --gold-soft: #fff4cc;
+  --eye: #d7263d;            /* the eye of the fly */
+  --eye-soft: #fde8eb;
 
-  --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
-  --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --green: #15803d;
+  --cyan: #0e7490;
+  --pink: var(--eye);
+  --amber: #8a6400;          /* gold, dark enough to read */
 
-  --r-sm: 8px;
-  --r-md: 10px;
-  --r-lg: 14px;
+  --display: "Bricolage Grotesque Variable", "Figtree Variable", ui-rounded, system-ui, sans-serif;
+  --sans: "Figtree Variable", ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --pad: 14px;
-  --gap: 10px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-pill: 999px;
 
-  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px rgba(0, 0, 0, 0.35);
-  --focus: 0 0 0 3px rgba(76, 201, 240, 0.22);
+  --pad: 20px;
+  --gap: 12px;
 
-  color-scheme: dark;
+  --shadow: 0 1px 2px rgba(27, 26, 23, 0.05), 0 8px 24px rgba(27, 26, 23, 0.07);
+  --shadow-lift: 0 2px 4px rgba(27, 26, 23, 0.06), 0 16px 40px rgba(27, 26, 23, 0.12);
+  --focus: 0 0 0 3px rgba(240, 185, 11, 0.4);
+
+  color-scheme: light;
 }
 
-/* Daylight. The neon does not survive a white field, so the accents step down to ink versions of themselves --
-   same meanings, same positions, readable contrast. The log console stays dark in both: it is a terminal. */
-@media (prefers-color-scheme: light) {
+/* Lights out. Same house, same furniture: the paper becomes a dark oak, the gold stays gold (it was always a fill),
+   and the inks step up to versions of themselves that read on it. */
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #eef1f6;
-    --bg-lift: #ffffff;
-    --panel: rgba(255, 255, 255, 0.86);
-    --panel-solid: #ffffff;
-    --line: rgba(24, 40, 60, 0.12);
-    --line-strong: rgba(24, 40, 60, 0.26);
-    --text: #16202b;
-    --muted: #55677a;
-    --faint: #7d8c9c;
+    --bg: #14130f;
+    --bg-lift: #1c1a15;
+    --panel: #1c1a15;
+    --panel-solid: #1c1a15;
+    --wash: #24211a;
+    --line: #2e2a21;
+    --line-strong: #453f31;
+    --text: #f6f1e4;
+    --muted: #b0a995;
+    --faint: #7d7766;
 
-    --green: #0a8f4a;
-    --cyan: #0b6fa4;
-    --pink: #c2185b;
-    --amber: #a86a00;
+    --gold-soft: #3a2f08;
+    --eye: #ff5c70;
+    --eye-soft: #3d1419;
 
-    --shadow: 0 1px 2px rgba(16, 32, 48, 0.06), 0 10px 26px rgba(16, 32, 48, 0.08);
-    --focus: 0 0 0 3px rgba(11, 111, 164, 0.18);
+    --green: #4ade80;
+    --cyan: #5ec8d0;
+    --amber: #f0b90b;
 
-    color-scheme: light;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.5);
+
+    color-scheme: dark;
   }
 }

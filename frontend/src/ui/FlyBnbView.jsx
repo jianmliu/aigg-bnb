@@ -36,7 +36,7 @@ export default function FlyBnbView() {
     let live = true;
     const pull = async () => {
       try { const r = await fetch(C.relayer() + "/flybnb/holders"); const j = await r.json(); if (!live) return; if (j.error) { setErr(j.error); setH(null); } else { setH(j); setErr(null); } }
-      catch (e) { if (live) setErr("the relayer is not reachable: load a deployment on the Node view first"); }
+      catch (e) { if (live) setErr("the relayer is not reachable: put its address in the Mesh capsule above and press the arrow"); }
     };
     pull(); const t = setInterval(pull, EVERY_MS); return () => { live = false; clearInterval(t); };
   }, [s.deployment]);

@@ -19,7 +19,7 @@ export { rewriteBareImports } from "./build/runtime.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(here, "dist");
 const a = Object.fromEntries(process.argv.slice(2).reduce((acc, v, i, arr) => { if (v.startsWith("--")) acc.push([v.slice(2), arr[i + 1]]); return acc; }, []));
-const MIME = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".json": "application/json", ".bin": "application/octet-stream", ".svg": "image/svg+xml", ".map": "application/json" };
+const MIME = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".json": "application/json", ".bin": "application/octet-stream", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".map": "application/json" };
 const ISO = {};
 export function startFrontend(port = Number(a.port || 0), { payload = a.payload ? fs.readFileSync(a.payload) : null, payloads = {} } = {}) {
   if (payload) payloads["/payload.bin"] = payload;

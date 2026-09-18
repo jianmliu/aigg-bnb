@@ -8,6 +8,7 @@ import { useState } from "react";
 import * as C from "../core/controller.js";
 import * as F from "../core/flies.js";
 import { Panel, Button } from "./primitives.jsx";
+import { Portrait } from "./Portrait.jsx";
 
 const bnb = (wei) => { const s = (Number(wei) / 1e18).toFixed(5).replace(/0+$/, "").replace(/\.$/, ""); return s === "" ? "0" : s; };
 const STAGE = {
@@ -24,6 +25,9 @@ function FlyCard({ fly, byId, slot, onPick }) {
     <div className="brain fly" data-active={!!slot} data-dim={!fly.mine} role={pickable ? "button" : undefined} tabIndex={pickable ? 0 : undefined}
          id={`fly-${fly.id}`} onClick={pickable ? onPick : undefined}
          onKeyDown={(e) => { if (pickable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onPick(); } }}>
+      {/* an egg is drawn as an egg; everything else from what pins it -- its delta, or until it has one, its seed */}
+      <div className="photo"><Portrait egg={stage === "egg"} seed={stage === "egg" ? "0x" + fly.seedBlock.toString(16).padStart(16, "0") : stage === "unborn" ? fly.seed : fly.deltaHash} label={`portrait of fly #${fly.id}`} /></div>
+      <div className="about">
       <div className="name">
         <span>{F.lineage(fly, byId)}</span>
         {slot && <span className="exec">{slot}</span>}
@@ -44,6 +48,7 @@ function FlyCard({ fly, byId, slot, onPick }) {
                 <Button id={`btnRearm-${fly.id}`} tone="money" onClick={C.wrap(() => F.rearm(fly.id))} title="A new block is a new draw, priced like the breeding it replaces">Re-arm</Button></div>}
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -52,7 +57,7 @@ export default function FliesView() {
   const s = C.state; const flies = s.flies;
   const [dam, setDam] = useState(null); const [sire, setSire] = useState(null);
 
-  if (!s.deployment) return <div className="main single"><Panel title="Flies"><p className="hint">Load a deployment in the Node view first: the relayer names the collection this page reads.</p></Panel></div>;
+  if (!s.deployment) return <div className="main single"><Panel title="Flies"><p className="hint">Put a relayer’s address in the <b>Mesh</b> capsule above first: it names the collection this page reads.</p></Panel></div>;
   if (!flies) return <div className="main single"><Panel title="Flies"><div className="row tight"><Button id="btnFlies" tone="chain" onClick={C.wrap(F.loadFlies)}>Load the colony</Button></div></Panel></div>;
   if (flies.missing) return <div className="main single"><Panel title="Flies"><p className="hint" id="noCollection">This deployment names no collection (the relayer has no <code>PORW_COLLECTION</code>), so there are no flies to read here.</p></Panel></div>;
 
@@ -63,10 +68,15 @@ export default function FliesView() {
 
   return (
     <div className="main single">
+      <section className="hosthead">
+        <p className="kicker">Your flies</p>
+        <h2>A colony, and its pedigree.</h2>
+        <p className="lede">Each individual is a real variant of a released brain. What one is worth is what has been measured about it — so there are no trait badges here, only lineage, and the experiments run against it.</p>
+      </section>
       <Panel title="Colony" note={`${mine.length} yours · ${others} others`}>
         <div className="row tight center">
           <Button id="btnFlies" tone="chain" onClick={C.wrap(F.loadFlies)}>Refresh</Button>
-          <span className="kv" id="fliesInfo">collection {flies.address.slice(0, 10)}… · block {flies.block}{s.wallet ? "" : " · connect a wallet in the Node view to see which are yours"}</span>
+          <span className="kv" id="fliesInfo">collection {flies.address.slice(0, 10)}… · block {flies.block}{s.wallet ? "" : " · connect your wallet (top right) to see which are yours"}</span>
         </div>
         {flies.all.length === 0 && <p className="hint">Nobody has adopted a fly from this collection yet.</p>}
         <div className="brains" id="colony">
@@ -94,7 +104,7 @@ export default function FliesView() {
         <div className="row tight center">
           <Button id="btnBreed" tone="money" disabled={!s.wallet || !!problem}
                   onClick={C.wrap(async () => { await F.breed(dam, sire); setDam(null); setSire(null); })}>Breed</Button>
-          <span className="kv empty" id="breedProblem">{!s.wallet ? "connect a wallet in the Node view" : problem || "ready"}</span>
+          <span className="kv empty" id="breedProblem">{!s.wallet ? "connect your wallet (top right)" : problem || "ready"}</span>
         </div>
         <p className="hint">This creates the child’s lineage entry; it does not yet create its brain. The child’s seed — and its sex — is the hash of the block after this transaction, so nobody, including you, knows it when you press the button. The page shows it a block later; the chain records it when someone calls <code>hatch</code> (the relayer’s keeper does, for the bounty). After that the brain still has to be computed from the parents and the seed, and registered.</p>
       </Panel>

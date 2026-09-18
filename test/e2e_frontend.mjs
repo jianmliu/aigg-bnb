@@ -36,6 +36,7 @@ try {
   await page.goto(fe.url + "/"); await page.waitForFunction(() => window.__ready === true);
   await page.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
   await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.deployment !== null);
+  await page.click("#navHost"); // the deposit, the key, the model and the node are the Host view
   check("page loaded the deployment + two MEPs from the relayer", (await page.evaluate(() => window.app.state.meps.map((m) => m.mepId))).join() === [mepId, mepId2].map((x) => x.toLowerCase()).join());
   await page.evaluate((id) => window.appActions.host(id, true), mepId2.toLowerCase()); check("hosting both brains", (await page.evaluate(() => window.app.state.hosted.size)) === 2);
   await page.click("#btnConnect"); await page.waitForFunction(() => window.app.state.wallet !== null);
