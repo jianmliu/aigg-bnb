@@ -142,7 +142,7 @@ contract FlyCollectionTest is Test {
         vm.expectEmit(true, true, false, true); emit WeightsHint(id, first, bytes("gnfd://aigg-brains/x.bin"));
         vm.prank(alice); bytes32 mepId = c.register(id, DF, m);
         assertEq(mepId, first, "the same MEP: every field a verdict depends on is inside the id");
-        (,, bytes32 modelId, bytes32 stored,,,,,) = c.individuals(id); assertEq(modelId, m.modelId); assertEq(stored, mepId);
+        (,, bytes32 modelId, bytes32 stored,,,,,,) = c.individuals(id); assertEq(modelId, m.modelId); assertEq(stored, mepId);
         vm.prank(alice); vm.expectRevert(bytes("already registered")); c.register(id, DF, m);
     }
     event WeightsHint(uint256 indexed id, bytes32 indexed mepId, bytes weightsDA);
