@@ -108,6 +108,7 @@ window on startup), hatches on the first tick after the seed block, and is not a
 when the bounty covers the gas at the current price, and one that does not stays listed in `/status.keeper` with
 the reason, since the price may fall inside the window. These are the relayer's own transactions, outside the
 sponsorship budgets, and anyone may run the same loop -- whoever lands first takes the bounty.
+`PORW_KEEPER=0` keeps naming the collection to the page over `/deployment` without hatching for it.
 `test/e2e_keeper.mjs` covers startup backfill, a live egg, and a bounty too small to be worth it.
 
 ## Claim posture per chain

@@ -22,5 +22,7 @@ export function relayerFromEnv() {
     sponsorDayGas: e.PORW_SPONSOR_DAY_GAS ? Number(e.PORW_SPONSOR_DAY_GAS) : null,
     // hosting: serve the relay hub on the API's own port under this path (single-port hosts), and tell browsers
     // the URL they can actually reach us on rather than whatever address we happened to bind
-    relayPath: e.PORW_RELAY_PATH || null, publicRelayUrl: e.PORW_PUBLIC_RELAY_URL || null };
+    relayPath: e.PORW_RELAY_PATH || null, publicRelayUrl: e.PORW_PUBLIC_RELAY_URL || null,
+    // PORW_KEEPER=0 still names PORW_COLLECTION to the page over /deployment, but leaves its eggs to somebody else
+    keeper: e.PORW_KEEPER == null ? null : !(e.PORW_KEEPER === "0" || e.PORW_KEEPER === "false") };
 }

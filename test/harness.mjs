@@ -1,7 +1,7 @@
 // Local end-to-end harness: anvil + DeployBNB (small epoch parameters) + a registered MEP over a synthetic
 // brain + the relayer as a child process. Blocks are advanced with anvil_mine so epochs are deterministic.
-import { spawn, fork } from "node:child_process"; import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
-import { createPublicClient, createWalletClient, http, defineChain, getContract, parseEther, keccak256, encodeAbiParameters } from "viem";
+import { spawn, fork, spawnSync } from "node:child_process"; import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
+import { createPublicClient, createWalletClient, http, defineChain, getContract, parseEther, keccak256, encodeAbiParameters, encodePacked } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { MEPRegistryAbi, InstanceRegistryAbi, ClaimManagerAbi, TaskMarketAbi } from "../relayer/abi.mjs";
 import { eip712Domains } from "../relayer/chain.mjs";
@@ -54,5 +54,31 @@ export async function startRelayer(dep, key, mepIds, { relayPort = 0, apiPort = 
   const api = async (p, body) => (await fetch(info.api + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
   return { ...info, apiBase: info.api, child, api, log: () => log, stop: () => child.kill() };
 }
+// ---- a mesh deployed from the build artifacts, and a two-fly collection ----
+// DeployBNB deploys everything, ExecutionDisputes included. The collection tests need only what the relayer reads
+// at startup, and should not wait on a contract they never touch -- so this deploys that part, from contracts/out.
+const ZERO_ADDR = "0x" + "0".repeat(40), ZERO_WORD = "0x" + "0".repeat(64);
+export function forgeBuild() { const r = spawnSync(path.join(FOUNDRY, "forge"), ["build"], { cwd: path.join(root, "contracts"), env: { ...process.env, PATH: `${FOUNDRY}:${process.env.PATH}` }, encoding: "utf8" }); if (r.status !== 0) throw new Error("forge build failed: " + (r.stderr || r.stdout).slice(-600)); }
+export const artifact = (name) => JSON.parse(fs.readFileSync(path.join(root, `contracts/out/${name}.sol/${name}.json`), "utf8"));
+export async function create(c, name, args = []) { const a = artifact(name); const hash = await c.wallet.deployContract({ abi: a.abi, bytecode: a.bytecode.object, args }); return (await c.pub.waitForTransactionReceipt({ hash })).contractAddress; }
+export async function sendTo(c, address, name, functionName, args = [], value = 0n) { const hash = await c.wallet.writeContract({ address, abi: artifact(name).abi, functionName, args, value }); return c.pub.waitForTransactionReceipt({ hash }); }
+export const readFrom = (c, address, name, functionName, args = []) => c.pub.readContract({ address, abi: artifact(name).abi, functionName, args });
+export async function deployMesh(rpc, key = KEYS[0]) {
+  const c = clientsFor({ chainId: 31337, rpc, addresses: {} }, key); const a = { disputes: ZERO_ADDR, relays: ZERO_ADDR };
+  a.verifier = await create(c, "PorwVerifierKeccak"); a.meps = await create(c, "MEPRegistry"); a.instances = await create(c, "InstanceRegistry", [parseEther("0.05"), 5n]);
+  a.beacon = await create(c, "CommitRevealBeacon", [40n, 10n, 10n, parseEther("0.1")]);
+  a.claims = await create(c, "PoRWClaimManager", [a.meps, a.instances, a.verifier, 40n, 10n, parseEther("0.01"), parseEther("0.5"), a.beacon]);
+  a.market = await create(c, "TaskMarket", [a.meps, a.instances, a.claims, 30n]);
+  await sendTo(c, a.instances, "InstanceRegistry", "setClaimManager", [a.claims]);
+  return { chainId: 31337, rpc, epochBlocks: 40, addresses: a };
+}
+/** a genesis set of two: index 0 female, index 1 male (ids 1 and 2 once adopted, in that order) */
+export const GENESIS = (() => { const DF = keccak256("0x01"), DM = keccak256("0x02"); const leaf = (i, sex, d) => keccak256(encodeAbiParameters([{ type: "uint32" }, { type: "uint8" }, { type: "bytes32" }], [i, sex, d]));
+  const L0 = leaf(0, 0, DF), L1 = leaf(1, 1, DM); return { DF, DM, L0, L1, root: keccak256(encodePacked(["bytes32", "bytes32"], BigInt(L0) < BigInt(L1) ? [L0, L1] : [L1, L0])) }; })();
+export const FLY_PRICE = parseEther("0.06"), FLY_BREED_FEE = parseEther("0.01"), FLY_TREASURY = "0x0000000000000000000000000000000000007ea5";
+export const deployCollection = (dep, bounty, key = KEYS[0]) => create(clientsFor(dep, key), "FlyCollection", [keccak256("0x0f"), keccak256("0x0e"), ZERO_WORD, ZERO_WORD, GENESIS.root, 2, FLY_PRICE, 0n, FLY_BREED_FEE, bounty, FLY_TREASURY, dep.addresses.meps, ZERO_ADDR]);
+export async function adoptBoth(c, collection) { await sendTo(c, collection, "FlyCollection", "mint", [0, 0, GENESIS.DF, [GENESIS.L1]], FLY_PRICE); await sendTo(c, collection, "FlyCollection", "mint", [1, 1, GENESIS.DM, [GENESIS.L0]], FLY_PRICE); }
+/** the seed FlyCollection.hatch computes for child `id` of 1 x 2, given the hash of its seed block */
+export const flySeed = (id, blockHash) => keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }, { type: "uint256" }, { type: "uint256" }, { type: "uint256" }, { type: "bytes32" }], [GENESIS.DF, GENESIS.DM, 1n, 2n, BigInt(id), blockHash]));
 export const domainsOf = eip712Domains;
 export { sleep };

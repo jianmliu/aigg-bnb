@@ -162,7 +162,7 @@ async function tick() {
 // bounty it collects. Anyone else may run the same loop, and whoever lands first takes the bounty; losing that
 // race costs one reverted estimate, not a transaction.
 const WINDOW = 256n;
-const keeper = ch.collection ? { eggs: new Map(), scanned: null, bounty: await ch.collection.read.HATCH_BOUNTY() } : null;
+const keeper = ch.collection && cfg.keeper !== false ? { eggs: new Map(), scanned: null, bounty: await ch.collection.read.HATCH_BOUNTY() } : null;
 status.keeper = keeper ? { collection: dep.addresses.collection, bounty: keeper.bounty, eggs: [], hatched: [], skipped: [] } : null;
 const note = (list, entry) => { list.push(entry); if (list.length > 50) list.shift(); };
 async function keep(bn) {
