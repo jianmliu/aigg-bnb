@@ -73,7 +73,7 @@ What the pilot does not show. It says nothing about narrow-sense heritability un
 
 ## 4. The dataset
 
-One row per run: brain, individual (recipe hash and `model_id`), perturbation, stimulus, seed, steps, digest, total spikes, active neurons, and the sparse spike-count vector. The pilot split is the runs of Section 3. The dataset is prepared for the Hugging Face Hub; the card, the schema and the export script are in the source repository.
+One row per run: brain, individual (recipe hash and `model_id`), perturbation, stimulus, seed, steps, digest, total spikes, active neurons, and the sparse spike-count vector. The pilot split is the runs of Section 3. The dataset is prepared for the Hugging Face Hub; the card, the schema and the export script are in [`flybnb/dataset/`](../../flybnb/dataset/).
 
 ## 5. Planned analyses
 
@@ -91,7 +91,7 @@ The simulator has no neuromodulation, no gap junctions and no cell-type-specific
 
 ## 7. Data and code availability
 
-Contracts, relayer and the browser node: `jianmliu/aigg-bnb` and `jianmliu/aigg-porw`. Payload formats, the individual sampler and its test vectors: `aigg-porw`. The analysis code and the dataset export will be released with the dataset.
+Everything the pilot needs is public. The pilot's code, its results (every run with its digest) and the dataset export are in [`flybnb/`](../../flybnb/) of this repository, with the content addresses of the two brain payloads and how to export them from the FlyWire release. Contracts, relayer and the browser node: `jianmliu/aigg-bnb` and `jianmliu/aigg-porw`. Payload formats, the individual sampler and its test vectors: `aigg-porw`. The research proposal is [`proposal.md`](proposal.md).
 
 ## Appendix A. Acknowledgments
 

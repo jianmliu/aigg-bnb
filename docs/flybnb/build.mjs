@@ -2,7 +2,7 @@
 //
 //   node docs/flybnb/build.mjs [--results path/to/variance.json] [--relayer http://host:8788 | --rpc URL --collection 0x…]
 //
-//   --results     copy an analysis output into docs/flybnb/results/variance.json first (flyaudio: results/individual/phenotype/variance.json)
+//   --results     copy an analysis output into docs/flybnb/results/variance.json first (flybnb/results/pilot/variance.json)
 //   --relayer     read the holders from a relayer's /flybnb/holders
 //   --rpc/--collection   or straight from the chain, with nobody in between
 // Without a holders source the acknowledgments block keeps the list it has and says when it was read.
