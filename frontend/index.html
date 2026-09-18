@@ -1,7 +1,8 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>PoRW fly-brain node · BNB</title>
-<script type="importmap">{ "imports": { "@noble/hashes/": "/node_modules/@noble/hashes/", "@noble/secp256k1": "/node_modules/@noble/secp256k1/index.js" } }</script>
+<!-- no import map: a module worker does not inherit one, and the node runs in a worker. Bare specifiers are
+     rewritten to /vendor/ paths when the modules are served (frontend/serve.mjs) or copied (the Pages build). -->
 <style>
   body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; max-width: 900px; color: #1b1b1b; background: #fafafa; }
   h1 { font-size: 18px; margin: 0 0 12px; } section { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }

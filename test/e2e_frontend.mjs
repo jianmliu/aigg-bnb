@@ -69,7 +69,7 @@ try {
   const Vf = await H.porw("verifier.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const re = Vf.reexecute(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), M2.payload, { stimulusSeed: 7, execDigest: H.unhex(resp.payload.execDigest) }, M2.mep);
   check("the result matches an independent re-execution of the male brain (3 steps)", re.matches);
   check("relayer submitted the tab's result on-chain", await waitFor(async () => C.market.read.submitted([taskId, W.account.address])));
-  const s = await R.api("/tx/settle", { taskId }); check("task settled, fee paid to the tab's wallet", s.ok);
+  const s = await R.api("/tx/settle", { taskId, instance: W.account.address }); check("task settled, fee paid to the tab's wallet", s.ok);
   console.log(`wallet prompts: ${prompts.join(",")}`); console.log("page log tail:\n" + (await page.evaluate(() => document.getElementById("log").textContent)).split("\n").slice(-8).join("\n"));
   client.close(); R.stop(); fe.server.close();
 } catch (e) { console.error(e); fails++; } finally { if (browser) await browser.close(); anvil.stop(); }
