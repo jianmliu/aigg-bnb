@@ -1,9 +1,5 @@
-// NOTE: the `mep` block of each model in task.json still carries scheme sketch-tile-keccak:v1 values. Under v2 a
-// mep_id binds (scheme, model_id, exec kind, neurons, synapses, synapseRoot) and no longer binds steps or the
-// stride, so `schemeDigest` and `mepId` there must be regenerated with `web/porw-browser/model_id.mjs
-// <payload.bin>` against the real payloads before this runs on a v2 deployment. Nothing else in the file moves:
-// `model_id`, `synapseRoot`, the sha256s and every `delta` block are unaffected — the scheme bump changed what the
-// mesh signs, not how bytes are committed. `steps` and `clampQ16` stay too: they are the task's parameters now.
+// Select the v2 profile from mepByScheme; the legacy mep block is retained only as a v1 record.
+// Execution steps and commit stride come from task.json, independently of the residency profile.
 //
 // Post the tasks of task.json on a deployed mesh and drive them to settlement: postTask (skipped when the task id
 // already exists), task-announce with the stimulus ids to the sortitioned executors over the relayer's relay, wait
@@ -16,6 +12,7 @@ const here = path.dirname(new URL(import.meta.url).pathname); const bnb = proces
 const { parseEther, keccak256, encodeAbiParameters, parseAbiItem } = await import(createRequire(path.join(bnb, "package.json")).resolve("viem"));
 const porw = (f) => import(path.join(bnb, "contracts/lib/aigg-porw/web/porw-browser", f));
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+const TASK_SCHEME = "aigg:porw:sketch-tile-keccak:v2";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * @param clients   aigg-bnb `clients`/`clientsFor` object of the paying client (pub, market, ...)
@@ -42,11 +39,13 @@ export async function runTasks(clients, clientKey, api, { taskJson = path.join(h
   try {
     for (const t of T.tasks) {
       if (only && !only.some((o) => t.model.endsWith(o) || (o === "full" && t.model === "flywire-783-min5"))) continue;
-      const mep = T.models[t.model].mep; const ids = T.stimulusSets[t.stimulusSet].payloadIndices; const seed = T.stimulusSeed;
+      const mep = T.models[t.model].mepByScheme?.[TASK_SCHEME];
+      if (!mep) throw new Error(`missing ${TASK_SCHEME} profile for ${t.model}; run recompute_ids.mjs`);
+      const ids = T.stimulusSets[t.stimulusSet].payloadIndices; const seed = T.stimulusSeed;
       // The task's own parameters: `steps` and `commitStride` ride on the task under scheme v2, and the id binds
       // the whole struct -- so it has to be built before it can be identified, deadline included.
       const block = await clients.pub.getBlockNumber();
-      const task = { mepId: mep.mepId, stimulusSeed: seed, steps: mep.steps, commitStride: mep.clampQ16, inputCommit: t.inputCommit,
+      const task = { mepId: mep.mepId, stimulusSeed: seed, steps: T.steps, commitStride: T.commitStride, inputCommit: t.inputCommit,
         fee: parseEther(fee), deadline: block + BigInt(deadlineBlocks), redundancy: 2 };
       const taskId = taskIdOf(task, t.nonce); const r = { model: t.model, stimulusSet: t.stimulusSet, taskId, expected: t.expectedExecDigest };
       let ex = []; try { ex = (await clients.market.read.executors([taskId])).map((x) => x.toLowerCase()); } catch {}
