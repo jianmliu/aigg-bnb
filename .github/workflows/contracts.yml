@@ -1,0 +1,54 @@
+# Compiles the contracts and runs the tests that need no chain, on every pull request and on main.
+#
+# It runs on `pull_request`, not on branch pushes, and the difference is the point: a pull_request run checks
+# out the merge of the branch into main, so it tests what main will be rather than what the branch is. Two
+# branches that are each green can still merge into something that does not compile -- one added a tenth field
+# to `Individual` while the other was destructuring nine -- and git will merge that without a conflict.
+#
+# The anvil and Playwright end-to-end tests are deliberately not run here.
+name: contracts
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    steps:
+      # aigg-porw and forge-std are submodules under contracts/lib, and aigg-porw carries a forge-std of its own
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - run: forge test
+        working-directory: contracts
+
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      # the memory test imports mem.js out of the aigg-porw submodule, so this job needs it too
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: node test/env_mapping.mjs
+
+      - run: node test/frontend_memory.mjs
