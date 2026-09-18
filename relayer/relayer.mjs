@@ -6,6 +6,7 @@
 //   source .env.<network> && node relayer/relayer.mjs        (addresses + PORW_RELAYER_KEY + PORW_MEP_IDS from env)
 //   node relayer/relayer.mjs --env .env.bsc-testnet             (same, loading the env file itself)
 //   node relayer/relayer.mjs --config relayer/config.json       (optional file for ports/names; env wins for addresses/keys)
+// With PORW_COLLECTION set it is also (5) the hatch keeper for that FlyCollection.
 // HTTP API (JSON): GET /deployment  GET /epoch?mep=0x..  GET /proof?mep&epoch&instance  GET /status
 //                  POST /tx/delegate {instance,session,expiry,sig}  POST /tx/materialize {mep,epoch,instance}
 //                  POST /tx/result {taskId,execDigest,execRoot,signature}  POST /tx/settle {taskId,instance}
@@ -147,6 +148,43 @@ async function tick() {
     }
   }
   if (e !== lastEpoch) { log(`epoch ${e} (block ${bn})`); lastEpoch = e; }
+  // after the mesh's own work, and never in its way: a collection that misbehaves must not stop an epoch rolling
+  if (keeper) try { await keep(bn); } catch (err) { status.errors.push({ label: "keeper", msg: String(err.shortMessage || err.message).slice(0, 200) }); log("keeper error", String(err.shortMessage || err.message).slice(0, 160)); }
+}
+// ---- (5) hatch keeper (PORW_COLLECTION) ----
+// FlyCollection.breed fixes the recipe and a seed block -- the block after the one it lands in -- and hatch(id),
+// which anyone may call, turns that block's hash into the child's seed and pays the caller HATCH_BOUNTY. The EVM
+// forgets a hash after 256 blocks, and an egg nobody hatched in time costs its owner a whole BREED_FEE to re-arm,
+// so breeding is only "seconds" if somebody is standing there. This is somebody: it follows Bred and Rearmed,
+// and hatches from the first tick after the seed block. It is not a subsidy -- an egg is hatched only when the
+// bounty covers the gas at the current price, and one that does not stays listed, because the price may fall
+// inside the window. Not sponsored and not budgeted: this is the relayer's own transaction, paid for by the
+// bounty it collects. Anyone else may run the same loop, and whoever lands first takes the bounty; losing that
+// race costs one reverted estimate, not a transaction.
+const WINDOW = 256n;
+const keeper = ch.collection ? { eggs: new Map(), scanned: null, bounty: await ch.collection.read.HATCH_BOUNTY() } : null;
+status.keeper = keeper ? { collection: dep.addresses.collection, bounty: keeper.bounty, eggs: [], hatched: [], skipped: [] } : null;
+const note = (list, entry) => { list.push(entry); if (list.length > 50) list.shift(); };
+async function keep(bn) {
+  // on the first pass look back exactly one window: an egg older than that has expired whoever was watching
+  const from = keeper.scanned === null ? (bn > WINDOW ? bn - WINDOW : 0n) : keeper.scanned + 1n;
+  if (from <= bn) {
+    for (const l of await ch.pub.getContractEvents({ address: ch.collection.address, abi: ch.collection.abi, fromBlock: from, toBlock: bn })) {
+      if (l.eventName === "Bred" || l.eventName === "Rearmed") keeper.eggs.set(l.args.id, { seedBlock: l.args.seedBlock, skipped: false });
+      else if (l.eventName === "Hatched") keeper.eggs.delete(l.args.id);
+    }
+    keeper.scanned = bn;
+  }
+  for (const [id, egg] of keeper.eggs) {
+    if (bn <= egg.seedBlock) continue; // its hash does not exist yet
+    if (bn > egg.seedBlock + WINDOW) { keeper.eggs.delete(id); note(status.keeper.skipped, { id, why: `seed block ${egg.seedBlock} expired unhatched: it needs rearm()` }); log(`egg ${id}: expired unhatched`); continue; }
+    let gas; try { gas = await ch.collection.estimateGas.hatch([id], { account: ch.account }); } catch { keeper.eggs.delete(id); continue; } // somebody else got there
+    const cost = gas * (await ch.pub.getGasPrice());
+    if (cost > keeper.bounty) { if (!egg.skipped) { egg.skipped = true; note(status.keeper.skipped, { id, why: `bounty ${keeper.bounty} wei does not cover ${gas} gas (${cost} wei)` }); log(`egg ${id}: not hatched, the bounty does not cover the gas`); } continue; }
+    const r = await tx(`collection.hatch(${id})`, (o) => ch.collection.write.hatch([id], o));
+    if (r.ok) { keeper.eggs.delete(id); note(status.keeper.hatched, { id, seedBlock: egg.seedBlock, hash: r.hash, gas: r.gasUsed }); } // a failure is re-examined next tick by the estimate above
+  }
+  status.keeper.eggs = [...keeper.eggs].map(([id, egg]) => ({ id, seedBlock: egg.seedBlock }));
 }
 // ---- (4) HTTP API ----
 const json = (res, code, body) => { res.writeHead(code, { "content-type": "application/json", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" }); res.end(JSON.stringify(body, (k, v) => (typeof v === "bigint" ? v.toString() : v))); };

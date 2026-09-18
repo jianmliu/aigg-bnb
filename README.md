@@ -56,6 +56,7 @@ PORW_BEACON_LAZY=1
 PORW_BEACON_WAKE_EPOCHS=2
 PORW_SPONSOR_EPOCH_GAS=1500000
 PORW_SPONSOR_DAY_GAS=50000000
+PORW_COLLECTION=0x<FlyCollection, optional: hatch its eggs for the bounty>
 PORW_RELAY_PATH=/relay
 PORW_PUBLIC_RELAY_URL=wss://api.example.org/relay" >> .env.bsc-testnet
 source .env.bsc-testnet && npm run relayer      # or: node relayer/relayer.mjs --env .env.bsc-testnet
@@ -97,6 +98,17 @@ instance that announced itself (`POST /wake`, which the node page sends once per
 and costs nothing; a node arriving into a cold mesh waits one epoch for a beacon and a second to become eligible,
 and `/status` reports `beacon.warm` with the reason. Spamming `/wake` cannot amplify the bill — the beacon fires
 at most once per epoch either way. Default off: with it unset the relayer behaves exactly as before.
+
+`PORW_COLLECTION` makes the relayer the **hatch keeper** for that `FlyCollection`. `breed` fixes only the recipe and
+a seed block -- the block after the one it lands in -- and `hatch(id)`, which anyone may call, turns that block's
+hash into the child's seed and pays the caller `HATCH_BOUNTY`. The EVM forgets a hash after 256 blocks (about three
+minutes on BSC) and an egg nobody hatched in time costs its owner a whole `BREED_FEE` to re-arm, so breeding takes
+seconds only if somebody is standing there. The keeper follows `Bred` and `Rearmed` (looking back one 256-block
+window on startup), hatches on the first tick after the seed block, and is not a subsidy: an egg is hatched only
+when the bounty covers the gas at the current price, and one that does not stays listed in `/status.keeper` with
+the reason, since the price may fall inside the window. These are the relayer's own transactions, outside the
+sponsorship budgets, and anyone may run the same loop -- whoever lands first takes the bounty.
+`test/e2e_keeper.mjs` covers startup backfill, a live egg, and a bounty too small to be worth it.
 
 ## Claim posture per chain
 

@@ -65,3 +65,11 @@ export const BeaconAbi = parseAbi([
 export const RelayRegistryAbi = parseAbi([
   "function register(string url) payable", "function relays() view returns (address[] ops, string[] urls)", "function BOND() view returns (uint256)",
 ]);
+// the collection, as far as the hatch keeper is concerned (relayer.mjs section 5)
+export const FlyCollectionAbi = parseAbi([
+  "function hatch(uint256 id) returns (bytes32)",
+  "function HATCH_BOUNTY() view returns (uint256)",
+  "event Bred(uint256 indexed id, uint256 indexed parentA, uint256 indexed parentB, uint64 seedBlock)",
+  "event Rearmed(uint256 indexed id, uint64 seedBlock)",
+  "event Hatched(uint256 indexed id, bytes32 seed, uint8 sex)",
+]);
