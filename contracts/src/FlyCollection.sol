@@ -79,6 +79,8 @@ contract FlyCollection {
     event Minted(uint256 indexed id, address indexed to, uint8 sex, bytes32 deltaHash, uint32 genesisIndex);
     event Bred(uint256 indexed id, uint256 indexed parentA, uint256 indexed parentB, bytes32 seed);
     event Registered(uint256 indexed id, bytes32 indexed mepId, bytes32 modelId);
+    /// the owner's location hint, when the MEP was already in the registry under somebody else's (see _bindMEP)
+    event WeightsHint(uint256 indexed id, bytes32 indexed mepId, bytes weightsDA);
 
     function ownerOf(uint256 id) public view returns (address o) { o = _ownerOf[id]; require(o != address(0), "no token"); }
     function balanceOf(address a) public view returns (uint256) { require(a != address(0), "zero"); return _balanceOf[a]; }
@@ -184,9 +186,23 @@ contract FlyCollection {
         Individual storage ind = individuals[id];
         require(ind.mepId == bytes32(0), "already registered");
         if (ind.deltaHash == bytes32(0)) ind.deltaHash = deltaHash; else require(ind.deltaHash == deltaHash, "delta");
-        mepId = MEPS.registerMEP(m);
+        mepId = _bindMEP(id, m);
         ind.modelId = m.modelId; ind.mepId = mepId;
         emit Registered(id, mepId, m.modelId);
+    }
+
+    /// @dev The MEP this profile IS, registered here if nobody has yet. `MEPRegistry.registerMEP` is permissionless and
+    ///      reverts on an id that exists, and an individual's profile is no secret (its delta is on-chain), so calling it
+    ///      unconditionally let anybody who registered the same profile first leave the token unable to bind, for good.
+    ///      An id that exists is the same MEP -- every field a verdict depends on is inside it -- so there is nothing to
+    ///      check and nothing to lose by binding to it. The one field outside the id is `weightsDA`, a location hint: the
+    ///      registry then carries whatever the first registrant wrote, so the owner's is put on record here. Bytes fetched
+    ///      through a wrong hint fail the `model_id` check before they load; the hint can waste a fetch, not corrupt one.
+    function _bindMEP(uint256 id, IMEPRegistry.MEP calldata m) internal returns (bytes32 mepId) {
+        require(m.schemeDigest == SCHEME_SKETCH_TILE_KECCAK_V3, "scheme");
+        mepId = PorwMeshHash.mepId(m.schemeDigest, m.modelId, m.execKind, m.neurons, m.synapses, m.synapseRoot);
+        if (IMEPExists(address(MEPS)).exists(mepId)) emit WeightsHint(id, mepId, m.weightsDA);
+        else require(MEPS.registerMEP(m) == mepId, "mep id");
     }
 
     /// @notice Register an individual through the lineage registry: the delta is an in-place FLYDELTAv3 cross whose
@@ -210,7 +226,7 @@ contract FlyCollection {
             if (A.baseModelId == B.baseModelId) require(x.parentA == A.deltaHash && x.parentB == B.deltaHash, "parents");
             else { Individual storage dam = A.baseModelId == ind.baseModelId ? A : B; require(x.parentA == dam.deltaHash && x.parentB == bytes32(0), "dam x base"); }
         }
-        mepId = MEPS.registerMEP(m); ind.modelId = m.modelId; ind.mepId = mepId;
+        mepId = _bindMEP(id, m); ind.modelId = m.modelId; ind.mepId = mepId;
         emit Registered(id, mepId, m.modelId);
     }
 
@@ -228,4 +244,5 @@ contract FlyCollection {
 interface IERC721Receiver { function onERC721Received(address, address, uint256, bytes calldata) external returns (bytes4); }
 
 /// @notice The sponsored-bonding call of aigg-porw's `InstanceRegistry`: a payer adds to someone else's bond (and only adds).
+interface IMEPExists { function exists(bytes32 mepId) external view returns (bool); }
 interface IInstanceBonding { function bondFor(address instance, bytes32[] calldata mepIds) external payable; }

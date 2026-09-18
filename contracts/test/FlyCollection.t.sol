@@ -69,6 +69,23 @@ contract FlyCollectionTest is Test {
         vm.prank(alice); vm.expectRevert(bytes("already registered")); c.register(id, DF, m);
     }
 
+    /// The registry is permissionless and an individual's profile is public, so anybody can register it first. That used
+    /// to leave the token unable to bind, for good. An id that exists is the same MEP, so the token binds to it.
+    function test_a_profile_somebody_registered_first_still_binds() public {
+        uint256 id = mintF(alice);
+        IMEPRegistry.MEP memory m = IMEPRegistry.MEP({ modelId: keccak256("applied"), schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V3, execKind: keccak256("aigg:exec:int-lif:v1"),
+            neurons: 139255, synapses: 2700513, synapseRoot: keccak256("syn"), weightsDA: bytes("gnfd://aigg-brains/x.bin") });
+        IMEPRegistry.MEP memory squat = m; squat.weightsDA = bytes("nowhere");
+        vm.prank(bob); bytes32 first = meps.registerMEP(squat); // the front-runner, straight at the registry
+        squat.weightsDA = bytes("gnfd://aigg-brains/x.bin"); // (m and squat alias in memory: put the owner's hint back)
+        vm.expectEmit(true, true, false, true); emit WeightsHint(id, first, bytes("gnfd://aigg-brains/x.bin"));
+        vm.prank(alice); bytes32 mepId = c.register(id, DF, m);
+        assertEq(mepId, first, "the same MEP: every field a verdict depends on is inside the id");
+        (,, bytes32 modelId, bytes32 stored,,,,,) = c.individuals(id); assertEq(modelId, m.modelId); assertEq(stored, mepId);
+        vm.prank(alice); vm.expectRevert(bytes("already registered")); c.register(id, DF, m);
+    }
+    event WeightsHint(uint256 indexed id, bytes32 indexed mepId, bytes weightsDA);
+
     function test_transfer_moves_the_subject_and_nothing_else() public {
         uint256 id = mintF(alice);
         vm.prank(alice); c.transferFrom(alice, bob, id);

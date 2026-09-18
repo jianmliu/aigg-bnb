@@ -43,6 +43,15 @@ contract FlyCollectionLineageTest is Test {
         vm.prank(alice); bytes32 mepId = c.registerDerived(f, FX.deltaFounderA(), mep(FX.ROOT_A));
         (,, bytes32 modelId, bytes32 stored,,,,,) = c.individuals(f); assertEq(modelId, FX.ROOT_A); assertEq(stored, mepId); assertTrue(meps.exists(mepId));
     }
+    /// the same front-run against the lineage path: every check still runs, and the token binds to the MEP that exists
+    function test_a_front_run_registration_cannot_strand_a_derived_individual() public {
+        vm.prank(alice); uint256 f = c.mint{value: PRICE}(0, 0, FX.DELTA_ID_A, proofFor(0));
+        _final(FX.deltaFounderA(), FX.ROOT_A);
+        vm.prank(address(0xB0B)); bytes32 first = meps.registerMEP(mep(FX.ROOT_A)); // anybody can derive this profile: the delta is on-chain
+        vm.prank(alice); vm.expectRevert(bytes("model id")); c.registerDerived(f, FX.deltaFounderA(), mep(FX.ROOT_B));
+        vm.prank(alice); bytes32 mepId = c.registerDerived(f, FX.deltaFounderA(), mep(FX.ROOT_A));
+        assertEq(mepId, first); (,, bytes32 modelId, bytes32 stored,,,,,) = c.individuals(f); assertEq(modelId, FX.ROOT_A); assertEq(stored, mepId);
+    }
     function test_a_bred_individual_must_carry_the_recipe_the_contract_recorded() public {
         vm.startPrank(alice); uint256 f = c.mint{value: PRICE}(0, 0, FX.DELTA_ID_A, proofFor(0)); uint256 m = c.mint{value: PRICE}(1, 1, FX.DELTA_ID_B, proofFor(1)); vm.stopPrank();
         _final(FX.deltaFounderA(), FX.ROOT_A); _final(FX.deltaFounderB(), FX.ROOT_B);
