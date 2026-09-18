@@ -1,0 +1,103 @@
+# The relayer on Render, as a Blueprint: what the service is, and every setting of it that is not a secret.
+#
+# Why this file exists. The contract addresses the relayer serves used to live only in the Render dashboard. On
+# 2026-09-18 the testnet moved to scheme v3 and ten values had to be retyped there by hand, with nothing to review and
+# nothing to diff. Here they are a commit: a redeployment of the contracts is a pull request that changes this block.
+# (The Render CLI cannot do it either -- `render services update` has no flag for environment variables.)
+#
+# What is deliberately NOT here:
+#   - PORW_RELAYER_KEY, and PORW_RPC (a provider URL may carry an API key). Both are `sync: false`: Render asks for
+#     them once, when the Blueprint is first created, and ignores them on every later sync. They stay in the dashboard.
+#   - the sponsorship budgets and the beacon's wake window (PORW_SPONSOR_EPOCH_GAS, PORW_SPONSOR_DAY_GAS,
+#     PORW_BEACON_WAKE_EPOCHS). A key listed here OVERWRITES the dashboard's value on every sync, and a key that is not
+#     listed is left alone. These are an operator's knobs, so they are left alone; unset, the code's defaults apply.
+#
+# The service block mirrors the live service exactly (read with `render services -o json`, 2026-09-18): plan, region,
+# commands, health check, auto-deploy OFF. Render's own warning is the reason: an option omitted from a Blueprint falls
+# back to a default that "almost definitely differs" from what a hand-made service has.
+#
+# ADOPTING THE EXISTING SERVICE -- read before the first sync. A new Blueprint whose service name matches one already
+# in the workspace does not take that service over: Render creates a second one with a suffixed name. To put the
+# running service under this file, add it to the Blueprint from the dashboard (or use Generate Blueprint on it and
+# compare with this file); if the first sync offers to CREATE a web service, stop. Removing a service from this file
+# never deletes it.
+services:
+  - type: web
+    name: aigg-bnb-relayer-testnet
+    runtime: node
+    # Never `free`: a free instance sleeps when idle, a sleeping relayer misses its beacon commit and reveal, and with
+    # one committer the epoch then never rolls -- the whole mesh stalls (docs/DEPLOY-MAINNET.md, "Host: Render").
+    plan: 0.5c-512mb
+    region: oregon
+    numInstances: 1
+    branch: main
+    # Deploys are manual, on purpose. A restart drops the beacon secret the relayer committed for the next epoch, so
+    # that epoch gets no reveal from it; a deploy is something to time, not something every merge should cause.
+    # (`checksPass` is the alternative once that is solved: it waits for the `contracts` workflow on main.)
+    autoDeployTrigger: "off"
+    # aigg-porw is a submodule and the relayer imports its runtime out of it (contracts/lib/aigg-porw/web/porw-browser)
+    buildCommand: git submodule update --init --recursive && npm ci
+    startCommand: npm run relayer
+    healthCheckPath: /status
+    previews:
+      generation: off
+    envVars:
+      # `process.loadEnvFile` and the rest need Node 22; Render's default moves with the date a service was created
+      - key: NODE_VERSION
+        value: 22.12.0
+
+      # ---- hosting: one port for the API and the relay hub, and the address browsers are told ----
+      - key: PORW_HOST
+        value: 0.0.0.0
+      - key: PORW_RELAY_PATH
+        value: /relay
+      - key: PORW_PUBLIC_RELAY_URL
+        value: wss://aigg-bnb-relayer-testnet.onrender.com/relay
+
+      # ---- the deployment: BSC testnet, scheme v3, deployed 2026-09-18 from main at 79af654 ----
+      - key: PORW_NETWORK
+        value: bsc-testnet
+      - key: PORW_CHAIN_ID
+        value: "97"
+      - key: PORW_EPOCH_BLOCKS
+        value: "200"
+      - key: PORW_VERIFIER
+        value: "0xf7658b853601DC80B5911393131303aB55C976EF"
+      - key: PORW_MEP_REGISTRY
+        value: "0xb499Fa3513BF35977F2c10B1BE601Ef44A2d0d26"
+      - key: PORW_INSTANCES
+        value: "0x8dDc7878BD1E1339f2751B8e67a73CAF15977dB1"
+      - key: PORW_BEACON
+        value: "0x2152472fB068994dE3c8B7b0b1194cd62f9505a1"
+      - key: PORW_CLAIMS
+        value: "0xCF892eB4890815f92845D4deD2C35f516B07DEc4"
+      - key: PORW_MARKET
+        value: "0x3f8d937B0365a775e48aFA37e627dc9D8E5A84C6"
+      - key: PORW_DISPUTES
+        value: "0x9ddD585bB936bd7b307A563e3d7aF8846487D570"
+      - key: PORW_RELAYS
+        value: "0x927d745e7E505Dd89D0f369C0eC5F09cC924C058"
+      - key: PORW_CLAIM_VALIDITY_EPOCHS
+        value: "6"
+
+      # ---- the brains it serves: FlyWire female, FAFB v783, the scheme-v3 profile (no terms) ----
+      - key: PORW_MEP_IDS
+        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a"
+      - key: PORW_MEP_NAMES
+        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a=FlyWire female (FAFB v783)"
+
+      # ---- the beacon follows demand: a cold epoch never rolls and costs nothing ----
+      - key: PORW_BEACON_LAZY
+        value: "1"
+
+      # ---- the collection: not deployed on this network yet. With an address here the relayer names it to the page
+      # (the Flies view, the Paper view's acknowledgments) and hatches its eggs for the bounty; PORW_KEEPER=0 keeps the
+      # first and drops the second.
+      # - key: PORW_COLLECTION
+      #   value: "0x…"
+
+      # ---- secrets: asked for once, never synced, never in git ----
+      - key: PORW_RELAYER_KEY
+        sync: false
+      - key: PORW_RPC
+        sync: false

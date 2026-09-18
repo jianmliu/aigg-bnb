@@ -156,6 +156,11 @@ refuse for its scheme even if the host were right. It broke on any hosted deploy
 because locally it happened to be correct. `/deployment` now returns `PORW_PUBLIC_RELAY_URL` when set, while the
 relayer's own aggregator client keeps dialling the local address. `test/e2e_hosting.mjs` covers both.
 
+The testnet service is described by `render.yaml` at the repository root -- plan, region, commands, health check,
+auto-deploy off, and every environment variable that is not a secret -- and it mirrors what is live. Mainnet should
+start from it. What follows is the stricter arrangement intended for mainnet, where not even the addresses need to
+sit in plain environment variables.
+
 Config on Render: a **Secret File** holding the env file, and `PORW_ENV_FILE` pointing at its mount path, so the
 existing `--env` / `loadEnv` path is reused unchanged and the key never appears in the dashboard's plain
 environment variables. Health check path `/status` — it already exists and is cheap.

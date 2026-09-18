@@ -150,7 +150,17 @@ independent re-execution. The wallet is prompted exactly twice (bond tx, one `De
 
 ## Where deployment addresses live
 
-Never in git. `deploy.sh` writes `.env.<network>` (`PORW_CHAIN_ID`, `PORW_RPC`, `PORW_EPOCH_BLOCKS`,
+Keys: never in git, anywhere. Addresses: in one tracked place, **`render.yaml`**, and only for the hosted testnet
+relayer. They were kept out of git altogether until the testnet moved to scheme v3 (below) and ten values had to be
+retyped in the Render dashboard by hand, with nothing to review and nothing to diff. They are public the moment they
+are deployed and the relayer serves them to anyone over `/deployment`, so what the old rule protected was the habit of
+not committing env files, and that habit stays: `render.yaml` carries addresses and ids only, marks
+`PORW_RELAYER_KEY` and `PORW_RPC` `sync: false` (Render asks once and never syncs them), and
+`test/render_blueprint.mjs` fails the build if a secret ever gets a value in it or a stray 32-byte hex string shows up.
+A redeployment is now a pull request that changes that block, followed by a manual deploy (the Blueprint keeps
+auto-deploy off: a restart drops the beacon secret committed for the next epoch).
+
+Everything else is as before. `deploy.sh` writes `.env.<network>` (`PORW_CHAIN_ID`, `PORW_RPC`, `PORW_EPOCH_BLOCKS`,
 `PORW_VERIFIER`, `PORW_MEP_REGISTRY`, `PORW_INSTANCES`, `PORW_BEACON`, `PORW_CLAIMS`, `PORW_MARKET`,
 `PORW_DISPUTES`, `PORW_RELAYS`, plus the deployer that owns the registries: `PORW_DEPLOYER`, `PORW_DEPLOYER_KEY`); the relayer reads the environment (`relayer/env.mjs`) and serves the
 addresses to the frontend over `/deployment`, so the page needs nothing but the relayer URL. `deployments/*.json`,
@@ -170,6 +180,28 @@ Published brain: `gnfd://aigg-brains/flywire-fafb-v783-min5.bin` on Greenfield t
 `fd246cc2…e1da`. MEP `0x9b7dc2ba02a04ed1be9519d00d53323d581c0b496764c28edc071d8c841bef49` registered on the MEP
 registry (tx `0xb20e5fd164198ea293590adfbec61ab70c2d25b53af660a5041f78a0951f8d2e`): int-lif, 100 steps, stride 10,
 139,255 neurons, 2,700,513 synapse records, model_id `0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a`.
+
+### Redeployed for scheme v3 — 2026-09-18
+
+`main` had moved to scheme v3 (`sketch-tile-keccak:v3`: no `deviceId`, the sketch seeded by the claiming instance;
+`Task.initStateRoot`; `bondFor`; the claim validity window) while the testnet still ran the v2 contracts, and a v3 page
+cannot host a v2 MEP: the scheme digest is inside `mep_id`. The eight contracts were redeployed from `main` at
+`79af654` (aigg-porw `0e47e0b`) by the same deployer, with the parameters the network already had -- epoch 200 blocks,
+commit/reveal 40/40, opening window 200 and deposit 0.002, UNIT 0.005, slash 0.01, beacon deposit 0.005, exit delay
+200, task timeout 400, dispute round 400, relay bond 0.001, claim validity 6 epochs -- plus the replicator's challenge
+window (200 blocks, deposit 0.02). Cost: 0.0016 tBNB at 0.1 gwei. Every parameter and every wire
+(`claimManager`, `slasher`, `disputes`, `beaconProvider`) was read back from the chain afterwards.
+
+The brain is the same object on Greenfield (`gnfd://aigg-brains/flywire-fafb-v783-min5.bin`): its `model_id`,
+`synapseRoot` and exec kind are unchanged, so only the scheme digest and therefore the id moved. MEP
+`0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a` (`tasks/flywire-gate/fields/flywire-783-min5.v3.json`,
+recomputed independently before registering), tx `0x1cf28f6feca5869ba5dd9aab360c87f9babd19e21f441f9b25ed3814adf3a833`,
+227,653 gas. The addresses are in `render.yaml`. The old contracts held no bonds and no fees when they were left.
+
+Not on this deployment: MEP terms (royalties) and batched tasks, which reached `main` with aigg-porw `f04411b` while
+the contracts were being deployed. They are additive -- a royalty-free MEP keeps its id, the silence flag acts only
+when a task carries one -- so the `f04411b` runtime serves this deployment unchanged; using them needs one more
+redeploy.
 
 ### Live run record — 2026-09-17, BSC testnet (chain 97)
 
