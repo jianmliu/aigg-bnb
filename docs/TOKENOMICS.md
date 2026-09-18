@@ -13,13 +13,14 @@ purchase, and pays for the one role in the mesh that currently earns nothing.
 
 ## 1. What already exists
 
-Four stakes, four different jobs. Only the first is the user's.
+Five stakes, five different jobs. Only the first is the user's.
 
 | who | how much | what it is |
 |---|---|---|
 | **instance** (a browser tab) | `UNIT` 0.05 BNB per sortition vote, capped at `MAX_WEIGHT` 16 | the real bond: slashable, exit delay. The Sybil cost |
 | **beacon committer** | 0.1 BNB per epoch | not a stake — a revolving deposit, refunded on reveal, forfeited if you never reveal |
 | **challenger** | `OPENING_DEPOSIT` 0.01 BNB | anti-griefing; the honest responder wins it |
+| **replicator** (anyone who re-executes a settled task) | `CHALLENGE_DEPOSIT` 0.02 BNB, doubling per challenge the task has already thrown out | standing, not a bond: it opens the executors' bisection against a settled result for `CHALLENGE_WINDOW` blocks. Right: deposit back plus the slash of every executor that signed the wrong digest. Wrong: half to the defender, half to the sink |
 | **relay operator** | `RelayRegistry` bond 1 BNB | operator identity. Note the testnet relayer has never registered |
 
 Two things about this are worth stating plainly before changing anything.

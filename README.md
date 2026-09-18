@@ -42,6 +42,8 @@ changes a PoRW scheme id and never forks the neutral contracts.
 npm install
 # contracts: deploy; the addresses are saved as environment variables in .env.<network> (gitignored, chmod 600)
 NETWORK=bsc-testnet PK=0x... ./deploy.sh          # CLAIM_VALIDITY_EPOCHS=6 keeps a claim good for six epochs: one materialization an hour, not six
+#   settled results stay challengeable by anybody for CHALLENGE_WINDOW blocks (default: one epoch, at most EXIT_DELAY; 0 = off) against
+#   CHALLENGE_DEPOSIT (0.02 BNB); set CHALLENGE_SINK to the treasury -- it defaults to the deployer
 # publish a brain: fund the deployer on Greenfield (TokenHub.transferOut on BSC testnet: 0xED8e5C546F84442219A5a987EE1D820698528E04,
 # value = amount + relayFee + minAckRelayFee from CrossChain.getRelayFees()), upload, then register the MEP
 source .env.bsc-testnet
