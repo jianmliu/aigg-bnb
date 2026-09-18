@@ -8,7 +8,7 @@ import {FlyDeltaFixtures as FX} from "../lib/aigg-porw/contracts/evm/test/fixtur
 
 /// a bred token's seed comes from a block hash; the fixture child was derived with seed 101, so the test pins it
 contract FlyCollectionHarness is FlyCollection {
-    constructor(bytes32 f, bytes32 m, bytes32 g, uint32 n, uint256 p, uint256 b, uint256 fee, address t, IMEPRegistry meps, IInstanceBonding i, LineageRegistry l) FlyCollection(f, m, g, n, p, b, fee, t, meps, i, l, bytes32(0), bytes32(0)) {}
+    constructor(bytes32 f, bytes32 m, bytes32 g, uint32 n, uint256 p, uint256 b, uint256 fee, address t, IMEPRegistry meps, IInstanceBonding i, LineageRegistry l) FlyCollection(f, m, g, n, p, b, fee, 0, t, meps, i, l, bytes32(0), bytes32(0)) {}
     function setSeed(uint256 id, bytes32 seed) external { individuals[id].seed = seed; }
 }
 
@@ -41,16 +41,18 @@ contract FlyCollectionLineageTest is Test {
         vm.prank(alice); vm.expectRevert(bytes("model id")); c.registerDerived(f, FX.deltaFounderA(), mep(FX.ROOT_B)); // final, but not as this model
         vm.prank(alice); vm.expectRevert(bytes("delta")); c.registerDerived(f, FX.deltaFounderB(), mep(FX.ROOT_B)); // not the delta this token was minted with
         vm.prank(alice); bytes32 mepId = c.registerDerived(f, FX.deltaFounderA(), mep(FX.ROOT_A));
-        (,, bytes32 modelId, bytes32 stored,,,,,) = c.individuals(f); assertEq(modelId, FX.ROOT_A); assertEq(stored, mepId); assertTrue(meps.exists(mepId));
+        (,, bytes32 modelId, bytes32 stored,,,,,,) = c.individuals(f); assertEq(modelId, FX.ROOT_A); assertEq(stored, mepId); assertTrue(meps.exists(mepId));
     }
     function test_a_bred_individual_must_carry_the_recipe_the_contract_recorded() public {
         vm.startPrank(alice); uint256 f = c.mint{value: PRICE}(0, 0, FX.DELTA_ID_A, proofFor(0)); uint256 m = c.mint{value: PRICE}(1, 1, FX.DELTA_ID_B, proofFor(1)); vm.stopPrank();
         _final(FX.deltaFounderA(), FX.ROOT_A); _final(FX.deltaFounderB(), FX.ROOT_B);
         vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m); _final(FX.deltaChild(), FX.ROOT_C);
+        vm.prank(alice); vm.expectRevert(bytes("not hatched")); c.registerDerived(kid, FX.deltaChild(), mep(FX.ROOT_C)); // an egg has no seed yet for a recipe to carry
+        vm.roll(block.number + 2); c.hatch(kid); // the seed is the hash of the block after the breed
         vm.prank(alice); vm.expectRevert(bytes("seed")); c.registerDerived(kid, FX.deltaChild(), mep(FX.ROOT_C)); // the recipe's seed is the contract's, not the owner's
         c.setSeed(kid, bytes32(uint256(101))); // (test only) the seed the fixture child was derived with
         vm.prank(alice); bytes32 mepId = c.registerDerived(kid, FX.deltaChild(), mep(FX.ROOT_C));
-        (bytes32 base, bytes32 dh, bytes32 modelId, bytes32 stored,,,,,) = c.individuals(kid);
+        (bytes32 base, bytes32 dh, bytes32 modelId, bytes32 stored,,,,,,) = c.individuals(kid);
         assertEq(base, FX.ROOT_BASE); assertEq(dh, FX.DELTA_ID_CHILD); assertEq(modelId, FX.ROOT_C); assertEq(stored, mepId);
     }
     function test_a_recipe_naming_other_parents_is_refused() public {
@@ -62,7 +64,7 @@ contract FlyCollectionLineageTest is Test {
     }
     function test_breeding_needs_parents_whose_deltas_are_known() public {
         vm.startPrank(alice); uint256 f = c.mint{value: PRICE}(0, 0, FX.DELTA_ID_A, proofFor(0)); uint256 m = c.mint{value: PRICE}(1, 1, FX.DELTA_ID_B, proofFor(1)); uint256 kid = c.breed{value: FEE}(f, m); vm.stopPrank();
-        (,,,, uint8 sex,,,,) = c.individuals(kid); uint256 mate = sex == 0 ? m : f; // the unregistered kid has no delta yet
+        (,,,, uint8 sex,,,,,) = c.individuals(kid); uint256 mate = sex == 0 ? m : f; // the unregistered kid has no delta yet
         vm.prank(alice); vm.expectRevert(bytes("parents must have their deltas claimed")); c.breed{value: FEE}(kid, mate);
     }
 }

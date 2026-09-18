@@ -23,7 +23,6 @@ changes a PoRW scheme id and never forks the neutral contracts.
 | `frontend/` | **the node page**: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
 | `test/` | end-to-end on a local anvil: `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
-| `split.sh` | turns this staging directory into the standalone repository (`aigg-porw` becomes a git submodule) |
 
 ## Layering (short version)
 
@@ -60,6 +59,7 @@ PORW_BEACON_LAZY=1
 PORW_BEACON_WAKE_EPOCHS=2
 PORW_SPONSOR_EPOCH_GAS=1500000
 PORW_SPONSOR_DAY_GAS=50000000
+PORW_COLLECTION=0x<FlyCollection, optional: hatch its eggs for the bounty>
 PORW_RELAY_PATH=/relay
 PORW_PUBLIC_RELAY_URL=wss://api.example.org/relay" >> .env.bsc-testnet
 source .env.bsc-testnet && npm run relayer      # or: node relayer/relayer.mjs --env .env.bsc-testnet
@@ -101,6 +101,24 @@ instance that announced itself (`POST /wake`, which the node page sends once per
 and costs nothing; a node arriving into a cold mesh waits one epoch for a beacon and a second to become eligible,
 and `/status` reports `beacon.warm` with the reason. Spamming `/wake` cannot amplify the bill — the beacon fires
 at most once per epoch either way. Default off: with it unset the relayer behaves exactly as before.
+
+`PORW_COLLECTION` makes the relayer the **hatch keeper** for that `FlyCollection`. `breed` fixes only the recipe and
+a seed block -- the block after the one it lands in -- and `hatch(id)`, which anyone may call, turns that block's
+hash into the child's seed and pays the caller `HATCH_BOUNTY`. The EVM forgets a hash after 256 blocks (about three
+minutes on BSC) and an egg nobody hatched in time costs its owner a whole `BREED_FEE` to re-arm, so breeding takes
+seconds only if somebody is standing there. The keeper follows `Bred` and `Rearmed` (looking back one 256-block
+window on startup), hatches on the first tick after the seed block, and is not a subsidy: an egg is hatched only
+when the bounty covers the gas at the current price, and one that does not stays listed in `/status.keeper` with
+the reason, since the price may fall inside the window. These are the relayer's own transactions, outside the
+sponsorship budgets, and anyone may run the same loop -- whoever lands first takes the bounty.
+`PORW_KEEPER=0` keeps naming the collection to the page over `/deployment` without hatching for it.
+`test/e2e_keeper.mjs` covers startup backfill, a live egg, and a bounty too small to be worth it.
+
+The page has a second view for that collection, **Flies** (`#/flies`; `src/core/flies.js` + `src/ui/FliesView.jsx`): the
+colony, the pairing (one female, one male, the base the child will vary, and the fee as what it buys), and the egg. One
+block after breeding the page computes the child's seed and sex itself from the seed block's hash, and shows them while
+the chain catches up; Hatch and Re-arm are there for when no keeper is running. `test/e2e_flies.mjs` checks that
+preview against `FlyCollection.hatch` bit for bit, hatched by the page, by the keeper, and after a re-arm.
 
 ## Claim posture per chain
 
@@ -209,12 +227,11 @@ What this run did **not** exercise: the relay hub and both clients were on one m
 position to cut an idle WebSocket and the keepalive was never actually put to the test. That, along with
 `PORW_RELAY_PATH` and `PORW_PUBLIC_RELAY_URL`, waits for a deployment with a proxy in front of it.
 
-## Build and test (standalone layout)
+## Build and test
 
 ```sh
+git submodule update --init --recursive   # aigg-porw and forge-std, pinned under contracts/lib/
 cd contracts && forge test          # remappings point at contracts/lib/aigg-porw (pinned submodule)
 cd .. && npm install && npm test    # js/test_greenfield.mjs (a local server stands in for the storage provider)
 NETWORK=anvil ./deploy.sh           # deploy the BNB-parameterized mesh to a local anvil (or opbnb-testnet / bsc-testnet)
 ```
-
-After `./split.sh /path/to/aigg-bnb`, the same commands run against the pinned submodule `contracts/lib/aigg-porw`.
