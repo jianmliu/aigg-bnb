@@ -106,11 +106,17 @@ authority.
 
 What it buys, concretely:
 
-- **Removes the CORS unknown.** Under `require-corp` the page cannot load the payload from a host that does not
-  do CORS. Whether Greenfield SPs do is unverified (see §8); with the mirror it does not matter.
 - **Removes the read-quota failure mode** that `docs/DESIGN.md` §6 names as a risk: 1,000 bootstraps is ~28 GB of
   Greenfield egress that the publisher pre-pays per release. On R2 with Cloudflare caching, egress is free.
 - **Faster first load.** 28 MB from an edge cache beats 28 MB from one SP.
+- **Gets under the Pages file cap**, which the payload exceeds outright (§2).
+
+One argument for the mirror turned out not to hold: CORS. The worry was that under `require-corp` the page could
+not fetch the payload from a host that does not do CORS. Checked against the live SP,
+`gnfd-testnet-sp2.bnbchain.org` returns `access-control-allow-origin: *` and `access-control-expose-headers: *`
+on the object, and a CORS-successful fetch satisfies `require-corp`. **The direct `gnfd://` path works from a
+browser**, so the mirror is a CDN decision — quota, latency, and not depending on one SP — not a correctness one,
+and the fallback path is genuinely usable rather than theoretical.
 
 Greenfield stays: `MEP.weightsDA` is immutable on-chain and points at `gnfd://`, it is the record of where the
 brain officially lives, and it is the fallback when the mirror is down. Keep the bucket funded.
@@ -394,7 +400,9 @@ testnet relayer reachable behind a toggle.
   `@noble/hashes/*` and `@noble/secp256k1`, both already covered by the importmap, so §2(c) is a straight vendor
   copy. (`relay.js` imports `ws` and is Node-only; it will be copied into `dist/` and simply never imported by
   the page.)
-- **Greenfield SP CORS behaviour** — untested. Moot for the mirror path, decisive for the fallback path.
+- ~~Greenfield SP CORS behaviour~~ — checked against the live SP and fine; see §3. `js/fetch_brain.mjs` fetches
+  and verifies the published brain against the MEP's `model_id` (28,123,136 bytes, matches, ~5 s), which is also
+  the check to re-run against the mainnet copy before anyone is told to load it.
 - **Current BSC gas price and BNB price** (§5).
 - **Cloudflare's per-file and WebSocket idle limits, and Render's single-port, sleep and pricing behaviour**, as
   cited here are from general knowledge rather than from the vendors' current docs. Re-read both before the
