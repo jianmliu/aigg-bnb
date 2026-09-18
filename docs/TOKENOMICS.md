@@ -175,6 +175,24 @@ entropy — its `deltaId` goes into the seed — until (b) exists, at which poin
 published base as the second `v3` parent. Nothing about the on-chain record changes between the two stages: it is
 parents + seed either way.
 
+Where the seed comes from is not a detail. `breed` does not make it: anything one transaction can read — a past
+blockhash, the supply — the caller can read first, so a seed made at breeding could be simulated and the transaction
+sent only when the answer suited (the sex is one bit of it). `breed` records the parents and a **seed block**, the one
+after the block it lands in; `hatch(id)`, which anyone may call and which takes no input, turns that block's hash into
+`seed = keccak(deltaHash_A, deltaHash_B, a, b, id, blockhash)` and the sex. The page can show the child a block after
+breeding; until `hatch` lands it is `UNHATCHED` and cannot be registered, and a bred individual cannot itself breed
+until it is registered, so both deltas are pinned before they go into a seed.
+
+The EVM keeps 256 block hashes (about three minutes on BSC), and that expiry is the one lever left to a grinder: read
+the hash off-chain, dislike it, wait it out. Two rules take it away. `HATCH_BOUNTY`, a part of `BREED_FEE` held by the
+collection, is paid to whoever hatches, so hatching is a race from the first block it is possible and the grinder has
+to win it against everyone for 256 blocks running — the relayer is the obvious standing entrant. And `rearm`, the only
+way forward for an expired egg, costs a whole `BREED_FEE`: a new block is a new draw, priced like the breeding it
+replaces. The threat model is the breeder, not the chain: a BSC block producer colluding with a breeder over one
+individual's seed is out of scope, which is what buys hatching in seconds instead of an epoch. (The mesh's own epoch
+beacon was implemented first and replaced for exactly that wait; it or a VRF would slot into `hatch` without changing
+the on-chain record, if that assumption ever stops being comfortable.)
+
 One honest boundary for whichever rule ships: the left/right differences the noise model is fitted to are
 developmental noise under one genotype, not heritable variation. Treating an individual's realised noise as heritable
 is a modelling choice; the heritability of synapse counts in Drosophila has not been measured.
@@ -271,16 +289,38 @@ bounded by something else long before it is bounded by time. What binds instead:
    **The male base is not the same size, and §4's two bases have to be priced together** (aigg-porw PR #11:
    `malecns-v1.0-min5`, 166,700 neurons, 6,242,118 records, 63.8 MB, 15,566 tiles). Priced with the model above:
 
-   | brain | `maxSteps` 100 | `maxSteps` 5,000 |
-   |---|---|---|
-   | female `min5` | 83 MB | 408 MB |
-   | male `min5` | **145 MB** | 534 MB |
-   | male `min1` (the sampling base) | 439 MB | 829 MB |
+   | brain | `maxSteps` 100 | `maxSteps` 5,000 | |
+   |---|---|---|---|
+   | female `min5` | 83 MB | 408 MB | |
+   | male `min5` | **145 MB** | 534 MB | |
+   | male `min1` | 439 MB | 829 MB | *not hosted — it is `applyDelta`'s input, see below* |
 
    A tab holding one of each at short tasks is 227 MB before any individual — so `h` counted in *brains* hides that
-   the two sexes are not interchangeable units. The male `min1` export exists to sample individuals from and is 439 MB
-   resident on its own; if sampling has to happen in the tab rather than ahead of it, that is the number that decides
-   whether a laptop can breed.
+   the two sexes are not interchangeable units.
+
+   **Sampling is a mint-time step, off-line** (decided), so `min1` is never a hosted MEP and that row is not a hosting
+   cost — it is the input to `applyDelta`. And the collection is **two bases and N deltas**, so what gets published
+   per individual is the 202 bytes, not a payload. At the sizes this is aiming for the alternative is not close:
+
+   | N individuals | publish each payload | publish two bases + N deltas |
+   |---|---|---|
+   | 200 | 12.8 GB | 514 MB + 40 KB |
+   | 1,000 | 64 GB | 514 MB + 202 KB |
+
+   Two *hot* objects that every tab fetches and an edge cache serves once, against N cold ones fetched by one tab
+   each. That is §2's argument and at these N it is not a trade-off.
+
+   **What it costs is paid by the tab, not the CDN, and §5.1's table does not contain it.** *Measured* (this host,
+   one thread, `FLYDELTAv2` apply at the male base's neuron count): 2.5 s at 6.0 M records, 4.7 s at 12.0 M — linear,
+   so **~10 s at `min1`'s 25.6 M records**. (Consistent with §2's 0.9 s, which is the same apply over the female
+   `min5` base's 2.7 M records.) And `applyDelta` takes the base as a JS `Uint8Array`: the base sits in the **JS
+   heap**, outside the wasm memory `mem.js` prices, and a tab that hosts more than one individual keeps it there
+   rather than re-fetching 257 MB per individual. So the real budget for a tab hosting `h` individuals of one sex is
+
+   > **257 MB of JS heap (the base) + 145·h MB of wasm + 10·h s of startup**
+
+   and one of each sex is 514 MB of JS heap before any individual. That is stricter than the table above, not looser,
+   and it is the shape of the cost that suggests the fix: see item 2 below.
 2. **First load.** 28 MB over the network before a tab can claim anything, once per base.
 3. **Redundancy.** Still `N ≤ T · h / 2` in shape, with `h` now set by memory rather than seconds.
 
@@ -315,18 +355,22 @@ bounded by something else long before it is bounded by time. What binds instead:
    dropped its model inside the window times out on its task, and a residency fraud verdict ends its standing for the whole
    window at once.
 
-This is why item 2 below is still the one that matters, but for a different reason than before. It is no longer
-about paying twenty dispute-commitment bills; it is about a tab holding twenty variants of one base as one 28 MB
-payload plus twenty kilobyte deltas, instead of twenty resident payloads.
+Items 2 and 3 below are both about the same fact — a tab holds one base and many deltas — and item 2 is now the
+near one: it is a change to where `applyDelta` runs, not to the claim scheme.
 
 1. ~~Register brains with a large stride.~~ Obsolete: stride is a task parameter now and a claim does not commit
    anything per stride. A task still chooses it, and `postTask` bounds the dispute rounds it implies.
-2. **Claim the base once, prove the delta.** Since `apply` is deterministic (and takes about a second for a
-   procedural individual, so a variant need not even stay resident between tasks), residency of (base, delta) is
-   residency of the variant, so one claim for the base plus a cheap proof of each delta would let a tab host a
-   whole lineage from one payload. Still an upstream change to the claim scheme, still the highest-value one
-   available.
-3. **Claims on demand**, or a longer epoch — noting that with a lazy beacon the epoch length is now the cold-start
+2. **Apply in wasm, not in the JS heap.** The base is already the one payload a tab keeps for a whole lineage, but
+   `applyDelta(baseBytes, deltaBytes)` takes it as a JS array and returns another, so the path is: base in the JS
+   heap (257 MB, kept), applied bytes in the JS heap (64 MB, transient), then a copy into wasm. Putting the base in
+   wasm once and applying there removes both JS copies, and — the part that matters for this section — it makes the
+   base something `mem.js` prices instead of something invisible to it. No scheme change, no new on-chain artefact.
+3. **Claim the base once, prove the delta.** Since `apply` is deterministic (and takes about a second for a
+   procedural individual over the female base, so a variant need not even stay resident between tasks), residency of
+   (base, delta) is residency of the variant, so one claim for the base plus a cheap proof of each delta would let a
+   tab host a whole lineage from one payload. An upstream change to the claim scheme, and the one with the most
+   behind it.
+4. **Claims on demand**, or a longer epoch — noting that with a lazy beacon the epoch length is now the cold-start
    latency, so it cannot be stretched freely.
 
 ## 6. Parameters
@@ -374,13 +418,23 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
 
 1. Breeding rule: (a), (b) or (c) from §4 — this blocks the contract. (c) is implemented and measured; the on-chain
    record (parents + seed) is the same for all three, so the contract need not wait for (b).
-2. Genesis size and sex ratio, against the §5 bounds. The memory measurement is in (§5.1: ~25 resident brains per tab
-   at short tasks); the tighter bound is standing gas (§5.4: five sponsored materializations per instance per epoch).
+2. Genesis size and sex ratio, against the §5 bounds. The memory measurement is in (§5.1) — but read it as the
+   per-tab budget for *individuals*, `257 MB of JS heap + 145·h MB of wasm`, not as the ~25-brain figure, which
+   counts only wasm and predates the decision that individuals arrive as deltas. The tighter bound either way is
+   standing gas (§5.4: five sponsored materializations per instance per epoch).
 3. `MINT_PRICE` split between bond and treasury, and what the treasury may spend on.
 4. Whether the token owner's share of task fees is a protocol rule or a social one.
-5. Who exports the male base, and when. The source data (edges, annotations with `flywireType`, consensus
-   neurotransmitters) is already prepared in the flyaudio project; what is missing is a `FLYBRAINv2` exporter for it.
-6. ~~Tile-local derivation.~~ Decided and implemented upstream (in-place layout, one-record verifier) and here
+5. ~~Who exports the male base, and when.~~ Done: aigg-porw PR #11 (`malecns_export.py`, Janelia MaleCNS v1.0 as
+   `FLYBRAINv2`; `min5` 6.24 M records / 63.8 MB, `min1` 25.58 M / 257 MB). One thing it raises for §4: the exec kind
+   pins a single weight unit calibrated on FlyWire counts, and this dataset reports more synapses per connection, so
+   the male brain is markedly more excitable under the same exec kind. A per-dataset weight unit is a **new exec
+   kind** — which under scheme v2 means a different `mep_id` family and its own residency set, since `execKind` is
+   bound into the id. That fragmentation is correct here (two different computations), unlike the step-count
+   fragmentation v2 removed.
+6. ~~How an individual reaches a host.~~ Decided: two bases and N deltas, so the base plus the 202 bytes, applied in
+   the tab (§5.1). What is left of it is an implementation question, not a design one — §5's item 2, moving the apply
+   into wasm so the base stops being 257 MB of JS heap that nothing prices.
+7. ~~Tile-local derivation.~~ Decided and implemented upstream (in-place layout, one-record verifier) and here
    (`LineageRegistry`). What is left to decide: `REGISTRATION_BOND`, `CHALLENGE_BLOCKS`, the sink, and whether the
    breeding fee should sit in the registration bond while the claim is at risk. Original text: Tile-local derivation. A procedural individual drops sub-threshold records and re-sorts, so tile `t` of a child
    depends on every record before it and a wrong declared `model_id` is self-punishing but not provable. Keeping

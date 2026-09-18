@@ -36,11 +36,14 @@ the cost model, not measurements; measured gas comes from `aigg-porw` (`benchmar
 beacon `keccak(prevrandao ‖ blockNumber)` is predictable and partly grindable by the block
 producer. The claim manager here takes an `IBeacon`:
 
-- **`CommitRevealBeacon`** (`contracts/src/CommitRevealBeacon.sol`): bonded participants
-  (instances or relays) commit `keccak(secret ‖ sender)` during the first `COMMIT_BLOCKS` of an
-  epoch and reveal during the next `REVEAL_BLOCKS`; `beaconFor(e) = keccak(all revealed
-  secrets ‖ e)` once the reveal window closes; a committer who does not reveal is slashed
-  (its deposit goes to the pool) and its commitment is excluded. With ≥ 1 honest revealer the
+- **`CommitRevealBeacon`** (`contracts/src/CommitRevealBeacon.sol`): for epoch `e`, anyone who
+  posts the `DEPOSIT` with it (in practice the relayers; the contract checks the deposit, not a
+  bond in `InstanceRegistry`) commits `keccak(secret ‖ sender)` during the **last**
+  `COMMIT_BLOCKS` of epoch `e − 1`, and reveals during the first `REVEAL_BLOCKS` of `e`, which
+  refunds the deposit. `beaconFor(e) = keccak(acc ‖ e)` once the reveal window closes, where
+  `acc` is the running keccak of the revealed secrets in reveal order; with no reveal at all
+  there is no beacon and the epoch is skipped. A committer who does not reveal forfeits its
+  deposit to the pool (anyone may sweep it with `forfeit`) and its commitment is excluded. With ≥ 1 honest revealer the
   beacon is unpredictable to everyone before the reveal window; the last revealer can bias by
   withholding at the cost of its deposit (standard RANDAO trade-off, bounded by the deposit).
 - **VRF**: where a VRF service is available on the target chain, an adapter contract that
@@ -99,8 +102,12 @@ mainnet; it remains the cheaper choice if every instance should carry an on-chai
   nonce errors), because public RPC pools return stale nonces right after a mined transaction. The relayer is
   untrusted for correctness and replaceable for liveness (several may run; instances fan out). Its cost per epoch: beacon commit + reveal + roll + one root per MEP, plus the
   sponsored materializations and results, all recoverable from task fees / operator incentives.
-- **Frontend** (`frontend/`): no framework; neutral modules from aigg-porw; chain reads through the wallet
-  provider; two wallet interactions in total (bond tx, one EIP-712 Delegation). The session key lives in
+- **Frontend** (`frontend/`): Vite + React, for rendering only. `src/core/controller.js` is framework-free and
+  holds all of the page's state, the wallet and chain calls and the memory arithmetic (which is why
+  `test/frontend_memory.mjs` can run it in a `vm`); the node itself runs in `public/node_worker.js`. The neutral
+  modules from aigg-porw are served unbundled under `/porw/`, because the module worker imports the same URLs.
+  Chain reads go through the wallet provider; running a node takes two wallet interactions in total (bond tx,
+  one EIP-712 Delegation), and posting an experiment is one more transaction, from whoever pays its fee. The session key lives in
   `localStorage` (per-viewer convenience: it is worth nothing without the on-chain delegation, and
   `revokeSessionKey` cuts it off).
 
