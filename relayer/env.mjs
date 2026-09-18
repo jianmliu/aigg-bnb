@@ -6,7 +6,8 @@ const need = (k) => { const v = process.env[k]; if (!v) throw new Error(`missing
 export function deploymentFromEnv() {
   const e = process.env; if (!e.PORW_CLAIMS) return null;
   return { chainId: Number(need("PORW_CHAIN_ID")), rpc: need("PORW_RPC"), epochBlocks: Number(e.PORW_EPOCH_BLOCKS || 0), network: e.PORW_NETWORK || String(e.PORW_CHAIN_ID),
-    addresses: { verifier: e.PORW_VERIFIER || null, meps: need("PORW_MEP_REGISTRY"), instances: need("PORW_INSTANCES"), beacon: e.PORW_BEACON || null, claims: need("PORW_CLAIMS"), market: need("PORW_MARKET"), disputes: e.PORW_DISPUTES || null, relays: e.PORW_RELAYS || null } };
+    addresses: { verifier: e.PORW_VERIFIER || null, meps: need("PORW_MEP_REGISTRY"), instances: need("PORW_INSTANCES"), beacon: e.PORW_BEACON || null, claims: need("PORW_CLAIMS"), market: need("PORW_MARKET"), disputes: e.PORW_DISPUTES || null, relays: e.PORW_RELAYS || null,
+      collection: e.PORW_COLLECTION || null } }; // FlyCollection: set it and the relayer hatches its eggs (the keeper)
 }
 export function relayerFromEnv() {
   const e = process.env; return { privateKey: e.PORW_RELAYER_KEY || null, meps: e.PORW_MEP_IDS ? e.PORW_MEP_IDS.split(",").map((s) => s.trim()).filter(Boolean) : null,

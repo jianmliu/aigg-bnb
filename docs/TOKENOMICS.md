@@ -165,6 +165,24 @@ entropy — its `deltaId` goes into the seed — until (b) exists, at which poin
 published base as the second `v3` parent. Nothing about the on-chain record changes between the two stages: it is
 parents + seed either way.
 
+Where the seed comes from is not a detail. `breed` does not make it: anything one transaction can read — a past
+blockhash, the supply — the caller can read first, so a seed made at breeding could be simulated and the transaction
+sent only when the answer suited (the sex is one bit of it). `breed` records the parents and a **seed block**, the one
+after the block it lands in; `hatch(id)`, which anyone may call and which takes no input, turns that block's hash into
+`seed = keccak(deltaHash_A, deltaHash_B, a, b, id, blockhash)` and the sex. The page can show the child a block after
+breeding; until `hatch` lands it is `UNHATCHED` and cannot be registered, and a bred individual cannot itself breed
+until it is registered, so both deltas are pinned before they go into a seed.
+
+The EVM keeps 256 block hashes (about three minutes on BSC), and that expiry is the one lever left to a grinder: read
+the hash off-chain, dislike it, wait it out. Two rules take it away. `HATCH_BOUNTY`, a part of `BREED_FEE` held by the
+collection, is paid to whoever hatches, so hatching is a race from the first block it is possible and the grinder has
+to win it against everyone for 256 blocks running — the relayer is the obvious standing entrant. And `rearm`, the only
+way forward for an expired egg, costs a whole `BREED_FEE`: a new block is a new draw, priced like the breeding it
+replaces. The threat model is the breeder, not the chain: a BSC block producer colluding with a breeder over one
+individual's seed is out of scope, which is what buys hatching in seconds instead of an epoch. (The mesh's own epoch
+beacon was implemented first and replaced for exactly that wait; it or a VRF would slot into `hatch` without changing
+the on-chain record, if that assumption ever stops being comfortable.)
+
 One honest boundary for whichever rule ships: the left/right differences the noise model is fitted to are
 developmental noise under one genotype, not heritable variation. Treating an individual's realised noise as heritable
 is a modelling choice; the heritability of synapse counts in Drosophila has not been measured.

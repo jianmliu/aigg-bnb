@@ -10,7 +10,7 @@ contract FlyCollectionTest is Test {
     address alice = address(0xA11CE); address bob = address(0xB0B); address treasury = address(0x7EA);
     bytes32 constant BASE_F = keccak256("female-base"); bytes32 constant BASE_M = keccak256("male-base");
     bytes32 constant DF = keccak256("delta-female-0"); bytes32 constant DM = keccak256("delta-male-1");
-    uint256 constant PRICE = 0.06 ether; uint256 constant FEE = 0.01 ether;
+    uint256 constant PRICE = 0.06 ether; uint256 constant FEE = 0.01 ether; uint256 constant BOUNTY = 0.002 ether;
 
     // a two-leaf genesis set: index 0 female, index 1 male
     function leaf(uint32 i, uint8 sex, bytes32 d) internal pure returns (bytes32) { return keccak256(abi.encode(i, sex, d)); }
@@ -20,7 +20,7 @@ contract FlyCollectionTest is Test {
     function setUp() public {
         meps = new MEPRegistry();
         // MINT_BOND 0: sponsored bonding needs InstanceRegistry.bondFor upstream (see the contract's NOTE)
-        c = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)));
+        c = new FlyCollection(BASE_F, BASE_M, bytes32(0), bytes32(0), root(), 2, PRICE, 0, FEE, BOUNTY, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)));
         vm.deal(alice, 10 ether); vm.deal(bob, 10 ether);
     }
 
@@ -30,7 +30,7 @@ contract FlyCollectionTest is Test {
     function test_genesis_is_fixed_at_deployment() public {
         uint256 id = mintF(alice);
         assertEq(c.ownerOf(id), alice); assertEq(treasury.balance, PRICE, "the whole price went to the treasury when MINT_BOND is 0");
-        (bytes32 base,,,, uint8 sex, uint32 gen,,,) = c.individuals(id);
+        (bytes32 base,,,, uint8 sex, uint32 gen,,,,) = c.individuals(id);
         assertEq(base, BASE_F); assertEq(sex, 0); assertEq(gen, 0);
         vm.prank(bob); vm.expectRevert(bytes("index")); c.mint{value: PRICE}(0, 0, DF, proofFor(0)); // no minting the same individual twice
         vm.prank(bob); vm.expectRevert(bytes("not in the genesis set")); c.mint{value: PRICE}(1, 1, keccak256("invented"), proofFor(1)); // nor one nobody committed to
@@ -40,18 +40,79 @@ contract FlyCollectionTest is Test {
     function test_breeding_needs_one_of_each_sex_and_the_child_sits_on_one_base() public {
         uint256 f = mintF(alice); uint256 m = mintM(alice);
         vm.prank(alice); vm.expectRevert(bytes("breeding needs one of each sex")); c.breed{value: FEE}(f, f);
-        vm.roll(block.number + 1);
+        vm.roll(50);
         vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m);
-        (bytes32 base, bytes32 dh,,, , uint32 gen, uint64 pa, uint64 pb, bytes32 seed) = c.individuals(kid);
+        (bytes32 base, bytes32 dh,,, uint8 sex, uint32 gen, uint64 pa, uint64 pb, bytes32 seed, uint64 seedBlock) = c.individuals(kid);
         assertEq(base, BASE_F, "the child is a variant of one base, not a blend of two");
         assertEq(dh, bytes32(0), "the recipe is recorded; the delta is claimed at registration");
-        assertTrue(seed != bytes32(0)); assertEq(gen, 1); assertEq(pa, uint64(f)); assertEq(pb, uint64(m));
-        assertEq(c.ownerOf(kid), alice); assertEq(treasury.balance, 2 * PRICE + FEE);
+        assertEq(gen, 1); assertEq(pa, uint64(f)); assertEq(pb, uint64(m));
+        // nothing the breeder could have simulated: the seed and the sex do not exist until the NEXT block does
+        assertEq(seed, bytes32(0)); assertEq(sex, c.UNHATCHED()); assertEq(seedBlock, 51);
+        assertEq(c.ownerOf(kid), alice); assertEq(treasury.balance, 2 * PRICE + FEE - BOUNTY); assertEq(address(c).balance, BOUNTY, "held for whoever hatches it");
+    }
+
+    function test_an_unborn_child_cannot_breed_until_its_delta_is_pinned() public {
+        uint256 f = mintF(alice); uint256 m = mintM(alice);
+        vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m);
+        // bred but not registered: its deltaHash is still zero, so a grandchild's seed would bind nothing of this
+        // parent -- and its owner could choose the delta to claim AFTER seeing the grandchild's seed
+        vm.prank(alice); vm.expectRevert(bytes("unborn parent")); c.breed{value: FEE}(kid, f);
+        vm.prank(alice); vm.expectRevert(bytes("unborn parent")); c.breed{value: FEE}(m, kid);
+        vm.roll(block.number + 2); vm.prank(bob); c.hatch(kid);
+        vm.prank(alice); c.register(kid, keccak256("delta-kid"), baseMep(keccak256("applied-kid")));
+        (,,,, uint8 sex,,,,,) = c.individuals(kid);
+        vm.prank(alice); c.breed{value: FEE}(kid, sex == 0 ? m : f); // born: it breeds like anyone else
+    }
+
+    function test_the_seed_comes_from_a_block_that_did_not_exist_at_breeding() public {
+        uint256 f = mintF(alice); uint256 m = mintM(alice);
+        vm.roll(100); vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m); // bred in block 100: the seed block is 101
+        (,,,,,,,,, uint64 seedBlock) = c.individuals(kid); assertEq(seedBlock, 101);
+        vm.expectRevert(bytes("block pending")); c.hatch(kid);                 // same block
+        vm.roll(101); vm.expectRevert(bytes("block pending")); c.hatch(kid);   // the seed block itself: its hash does not exist inside it
+        vm.roll(102); bytes32 h = keccak256("block"); vm.setBlockhash(101, h);
+        vm.prank(bob); c.hatch(kid); // anyone may: there is nothing to choose, and being first is paid
+        (,,,, uint8 sex,,,, bytes32 seed,) = c.individuals(kid);
+        assertEq(seed, keccak256(abi.encode(DF, DM, f, m, kid, h)), "the recipe and the block hash, nothing the caller supplies");
+        assertEq(sex, uint8(uint256(seed) & 1));
+        assertEq(bob.balance, 10 ether + BOUNTY, "the bounty is what makes waiting out the window a race the grinder loses"); assertEq(address(c).balance, 0);
+        vm.expectRevert(bytes("nothing to hatch")); c.hatch(kid); // once
+        vm.expectRevert(bytes("nothing to hatch")); c.hatch(f);   // and a genesis individual was never an egg
+    }
+
+    function test_the_last_block_of_the_window_still_hatches() public {
+        uint256 f = mintF(alice); uint256 m = mintM(alice);
+        vm.roll(100); vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m); // bred in block 100: the seed block is 101
+        vm.roll(101 + 256); vm.setBlockhash(101, keccak256("block")); // the EVM keeps 256 hashes
+        vm.prank(alice); vm.expectRevert(bytes("not expired")); c.rearm{value: FEE}(kid);
+        vm.prank(bob); c.hatch(kid);
+    }
+
+    function test_an_expired_egg_is_rearmed_at_the_price_of_breeding_again() public {
+        uint256 f = mintF(alice); uint256 m = mintM(alice);
+        vm.roll(100); vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m); // bred in block 100: the seed block is 101
+        vm.roll(101 + 257); // nobody hatched it for 256 blocks and the hash is gone
+        vm.expectRevert(bytes("expired")); c.hatch(kid);
+        // a fresh block is a fresh draw, so it is not free: letting a seed one dislikes expire costs a whole BREED_FEE
+        vm.prank(alice); vm.expectRevert(bytes("fee")); c.rearm{value: FEE - 1}(kid);
+        uint256 before = treasury.balance;
+        vm.prank(bob); c.rearm{value: FEE}(kid); // anyone who pays
+        (,,,,,,,, bytes32 seed, uint64 armed) = c.individuals(kid);
+        assertEq(seed, bytes32(0)); assertEq(armed, 359, "the block after the one it was re-armed in"); assertEq(treasury.balance, before + FEE, "all of it: the bounty from breeding is still held");
+        vm.roll(360); bytes32 h = keccak256("block-2"); vm.setBlockhash(359, h); vm.prank(alice); c.hatch(kid);
+        (,,,,,,,, seed,) = c.individuals(kid);
+        assertEq(seed, keccak256(abi.encode(DF, DM, f, m, kid, h))); assertEq(address(c).balance, 0, "one bounty, paid once");
+    }
+
+    function test_an_egg_cannot_be_registered() public {
+        uint256 f = mintF(alice); uint256 m = mintM(alice);
+        vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m);
+        // the delta is a function of the seed: claiming one before the seed exists is claiming something else
+        vm.prank(alice); vm.expectRevert(bytes("not hatched")); c.register(kid, keccak256("delta-kid"), baseMep(keccak256("applied-kid")));
     }
 
     function test_breeding_requires_holding_or_approval_of_both_parents() public {
         uint256 f = mintF(alice); uint256 m = mintM(bob);
-        vm.roll(block.number + 1);
         vm.prank(alice); vm.expectRevert(bytes("not authorised")); c.breed{value: FEE}(f, m);
         vm.prank(bob); c.approve(alice, m);
         vm.prank(alice); uint256 kid = c.breed{value: FEE}(f, m);
@@ -64,7 +125,7 @@ contract FlyCollectionTest is Test {
             neurons: 139255, synapses: 2700513, synapseRoot: keccak256("syn"), weightsDA: bytes("gnfd://aigg-brains/x.bin") });
         vm.prank(bob); vm.expectRevert(bytes("not the owner")); c.register(id, DF, m); // nobody can bind someone else's individual to a dead MEP
         vm.prank(alice); bytes32 mepId = c.register(id, DF, m);
-        (,, bytes32 modelId, bytes32 stored,,,,,) = c.individuals(id);
+        (,, bytes32 modelId, bytes32 stored,,,,,,) = c.individuals(id);
         assertEq(modelId, m.modelId); assertEq(stored, mepId); assertTrue(meps.exists(mepId));
         vm.prank(alice); vm.expectRevert(bytes("already registered")); c.register(id, DF, m);
     }
@@ -77,9 +138,49 @@ contract FlyCollectionTest is Test {
         vm.prank(alice); vm.expectRevert(bytes("not authorised")); c.transferFrom(bob, alice, id);
     }
 
+    function baseMep(bytes32 modelId) internal pure returns (IMEPRegistry.MEP memory) {
+        return IMEPRegistry.MEP({ modelId: modelId, schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V2, execKind: keccak256("aigg:exec:int-lif:v1"),
+            neurons: 139255, synapses: 2700513, synapseRoot: keccak256("syn"), weightsDA: bytes("gnfd://aigg-brains/base.bin") });
+    }
+
+    function test_the_adoption_bond_joins_the_base_brain_of_that_sex() public {
+        // a bond that joins no MEP buys no sortition vote anywhere: isBondedFor() needs inMep, and joining later
+        // costs the adopter a second bond() -- the two-step flow MINT_BOND exists to remove
+        bytes32 mepF = meps.registerMEP(baseMep(BASE_F)); bytes32 mepM = meps.registerMEP(baseMep(BASE_M));
+        RecordingBonding reg = new RecordingBonding(); uint256 BOND = 0.05 ether;
+        FlyCollection b = new FlyCollection(BASE_F, BASE_M, mepF, mepM, root(), 2, PRICE, BOND, FEE, BOUNTY, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(reg)));
+        vm.prank(alice); b.mint{value: PRICE}(0, 0, DF, proofFor(0));
+        assertEq(reg.lastInstance(), alice); assertEq(reg.lastValue(), BOND); assertEq(reg.lastCount(), 1); assertEq(reg.lastMep(), mepF, "a female individual bonds its adopter for the female base");
+        vm.prank(bob); b.mint{value: PRICE}(1, 1, DM, proofFor(1));
+        assertEq(reg.lastInstance(), bob); assertEq(reg.lastCount(), 1); assertEq(reg.lastMep(), mepM, "and a male one for the male base");
+        assertEq(treasury.balance, 2 * (PRICE - BOND), "the treasury takes the remainder");
+    }
+
+    function test_a_funded_bond_needs_base_meps_that_pin_the_bases() public {
+        bytes32 mepF = meps.registerMEP(baseMep(BASE_F)); bytes32 mepM = meps.registerMEP(baseMep(BASE_M));
+        RecordingBonding reg = new RecordingBonding();
+        vm.expectRevert(bytes("base mep")); // swapped: each id names a real MEP, but not the one for that base
+        new FlyCollection(BASE_F, BASE_M, mepM, mepF, root(), 2, PRICE, 0.05 ether, FEE, BOUNTY, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(reg)));
+    }
+
+    function test_erc165_claims_only_what_is_implemented() public view {
+        assertTrue(c.supportsInterface(0x01ffc9a7), "ERC-165"); assertTrue(c.supportsInterface(0x80ac58cd), "ERC-721");
+        // ERC721Metadata is name ^ symbol ^ tokenURI, and there is no tokenURI: an indexer told otherwise calls it and reverts
+        assertEq(bytes4(0x5b5e139f), bytes4(keccak256("name()")) ^ bytes4(keccak256("symbol()")) ^ bytes4(keccak256("tokenURI(uint256)")));
+        assertFalse(c.supportsInterface(0x5b5e139f), "ERC721Metadata"); assertFalse(c.supportsInterface(0xffffffff));
+    }
+
     function test_the_price_is_exact_and_the_economics_have_no_admin() public {
         vm.prank(alice); vm.expectRevert(bytes("price")); c.mint{value: PRICE - 1}(0, 0, DF, proofFor(0));
         assertEq(c.MINT_PRICE(), PRICE); assertEq(c.TREASURY(), treasury);
         // every economic parameter is immutable: there is no setter to call
+    }
+}
+
+/// stands in for InstanceRegistry.bondFor (not upstream yet): records what adoption asked it to bond
+contract RecordingBonding is IInstanceBonding {
+    address public lastInstance; uint256 public lastValue; uint256 public lastCount; bytes32 public lastMep;
+    function bondFor(address instance, bytes32[] calldata mepIds) external payable {
+        lastInstance = instance; lastValue = msg.value; lastCount = mepIds.length; lastMep = mepIds.length > 0 ? mepIds[0] : bytes32(0);
     }
 }
