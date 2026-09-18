@@ -92,13 +92,24 @@ audited): 10,000 passive instances then cost one root per epoch (≈ $0.04 on BS
 assumed price), and 500 active ones ≈ $70 per epoch. opBNB is therefore not required for
 mainnet; it remains the cheaper choice if every instance should carry an on-chain claim.
 
-**Update — batches (aigg-porw `f04411b`).** The per-task figures above are for one run per task. Measured since, as a
-receipt would give them: one task costs 628,519 / 864,187 / 1,110,651 gas at redundancy 1 / 2 / 3, and a **batch** of
-1,000 runs of one brain (`TaskMarket.postBatch`) costs 860,709 at redundancy 2, i.e. 860 gas per run; a disagreement is
-bisected to the run first (about 1.1M gas for one party, on the dispute path only). Two things measured at the same time
-are not fixed: a task costs about 55,000 gas more per instance enrolled for the brain, because the executor list is
-rebuilt from all of them, and a single task whose two results differ only in the digest is decided by who reveals first.
-The relayer and the page do not speak batches yet.
+**Update — measured gas, batches, and a sortition that does not scan (aigg-porw `d7dd788`).** The per-task figures
+above are for one run per task and predate a measurement. As a receipt would give them, at the pinned upstream:
+
+| | gas |
+|---|---|
+| one task, redundancy 1 / 2 / 3 | 579,287 / 782,170 / 991,106 |
+| of which `postTask` at redundancy 2 (paid by the client; it draws and stores the executors) | 327,009 |
+| the same task with 30 instances enrolled for the brain instead of 3 | 782,170 |
+| a **batch** of 1,000 runs of one brain (`TaskMarket.postBatch`), redundancy 2 | 831,777, i.e. 831 per run |
+| finding the run in a disputed batch of 1,000 (one party, dispute path only) | about 1.1M |
+
+The third row used to be 2,358,050: the executor list was rebuilt from every enrolled instance on every call, about
+55,000 gas per enrolled instance per task. A draw is constant time now and the roster is drawn once, when the task is
+posted, which also makes it a fact about the task instead of a live view; a task nobody can execute is refused at post.
+Agreement between results is on the execution root only. The digest is not bound to the root by anything the chain can
+check, and a digest-only disagreement used to be won by whoever revealed first; now it is no dispute, and a task
+endorses the digest a strict majority of its paid executors gave, or none (`settledDigest`, and `TaskSettled`, can be
+zero). The relayer and the page do not speak batches yet.
 
 ## 5b. Relayer and frontend (implemented)
 

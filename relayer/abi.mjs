@@ -61,6 +61,9 @@ export const TaskMarketAbi = parseAbi([
   "function challengeResult(bytes32 taskId, Result r) payable",
   "function settledRef(bytes32 taskId) view returns (address)",
   "event TaskPosted(bytes32 indexed taskId, bytes32 indexed mepId, uint8 redundancy)",
+  // the digest a settled task endorses: a strict majority of its paid executors', or zero when they split (agreement is on
+  // the execRoot; the digest is not bound to it). TaskSettled carries the same value, so it can be zero too
+  "function settledDigest(bytes32 taskId) view returns (bytes32)",
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",
 ]);
 export const MEPRegistryAbi = parseAbi([
