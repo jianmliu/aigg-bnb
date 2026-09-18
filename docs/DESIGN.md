@@ -92,6 +92,14 @@ audited): 10,000 passive instances then cost one root per epoch (≈ $0.04 on BS
 assumed price), and 500 active ones ≈ $70 per epoch. opBNB is therefore not required for
 mainnet; it remains the cheaper choice if every instance should carry an on-chain claim.
 
+**Update — batches (aigg-porw `f04411b`).** The per-task figures above are for one run per task. Measured since, as a
+receipt would give them: one task costs 628,519 / 864,187 / 1,110,651 gas at redundancy 1 / 2 / 3, and a **batch** of
+1,000 runs of one brain (`TaskMarket.postBatch`) costs 860,709 at redundancy 2, i.e. 860 gas per run; a disagreement is
+bisected to the run first (about 1.1M gas for one party, on the dispute path only). Two things measured at the same time
+are not fixed: a task costs about 55,000 gas more per instance enrolled for the brain, because the executor list is
+rebuilt from all of them, and a single task whose two results differ only in the digest is decided by who reveals first.
+The relayer and the page do not speak batches yet.
+
 ## 5b. Relayer and frontend (implemented)
 
 - **Relayer** (`relayer/relayer.mjs`, viem): one process runs the relay hub, the aggregator for its MEPs,
