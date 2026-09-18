@@ -17,6 +17,7 @@ the chain and follows mints and transfers.
 
 | here | what |
 |---|---|
+| `flybnb/` | **the FlyBnB pilot, reproducible**: the variance pilot's code (a sparse int-lif runner checked against the published digests), its results with a digest per run, and the Hugging Face dataset card and export. `docs/flybnb/proposal.md` is the research proposal |
 | `docs/flybnb/` | **the FlyBnB paper, a living draft**: `paper.md` is prose plus generated blocks; `build.mjs` regenerates the pilot's numbers from `results/variance.json` and Appendix A (the acknowledgments) from the chain or a relayer; `.github/workflows/flybnb-paper.yml` re-runs it on a schedule once the repository variables name a deployment |
 | `docs/DESIGN.md` | the BNB-specific design: layering, beacon, parameters, costs, risks |
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
