@@ -15,9 +15,14 @@ the measurement wins.
 
 | name | serves | how |
 |---|---|---|
-| `ai.gg` | the node page (static) | Pages project, custom domain on the apex (CNAME flattening) |
+| `fly.ai.gg` | the node page (static) — **the name in use today** | Pages project `aigg-fly`, custom domain on the subdomain |
+| `ai.gg` | the node page, once it is not a testnet page | same Pages project, custom domain on the apex (CNAME flattening) |
 | `api.ai.gg` | relayer HTTP API (`/deployment`, `/meps`, `/epoch`, `/proof`, `/status`, `/tx/*`) and the WebSocket relay hub at `/relay` | CNAME → the Render service, proxied |
 | `brains.ai.gg` | the model payload mirror | R2 bucket, custom domain binding |
+
+The page went up on a subdomain first on purpose. A Pages project can carry both names, so promoting it to the
+apex later is adding a custom domain, not a migration — and until the §6 blockers are closed, the apex is better
+left not resolving at all than resolving to something that says testnet.
 
 One hostname covers both relayer roles because **Render exposes exactly one port per service** and the relayer
 currently opens two (§4). Keeping the relay hub on a path of the same origin is the smaller change and has a
@@ -30,58 +35,111 @@ specific name — substitute freely.
 
 ## 2. The page on Pages
 
-`frontend/serve.mjs` currently does three things Pages will not do on its own. Each needs a build step.
+The page is a Vite + React build (`frontend/`), and what Pages serves is `frontend/dist` — a directory of static
+files, no build image, nothing rewritten on the way out. `npm run build:frontend` produces it; `npm run
+preview:frontend` (`frontend/serve.mjs`) serves that same directory over plain HTTP, and so does the end-to-end
+test, which means `test/e2e_frontend.mjs` exercises the bytes that ship rather than a dev-only assembly of them.
 
-**(a) COOP/COEP.** The server sends `cross-origin-opener-policy: same-origin` and
-`cross-origin-embedder-policy: require-corp` so the node's shared-memory workers get `SharedArrayBuffer`. On
-Pages this becomes a `_headers` file at the output root:
+**What the build has to do beyond bundling.** Two directories are served as URLs rather than bundled:
+`/porw/` (the aigg-porw browser modules) and `/vendor/` (the two noble packages). `frontend/vite.config.mjs`
+marks both external and `frontend/build/runtime.mjs` copies real files to those paths — serving them from the
+repo in dev, writing them into `dist/` on build, rewriting `@noble/…` to `/vendor/@noble/…` as it goes, since a
+bare specifier means nothing to a browser.
 
-```
-/*
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Embedder-Policy: require-corp
-```
-
-`require-corp` has a consequence that reaches everything else on this page: **every cross-origin resource the
-page fetches must be CORS-clean or carry `Cross-Origin-Resource-Policy: cross-origin`**, or the browser refuses
-it. That covers the payload mirror (§3) and any Greenfield SP fallback.
-
-**(b) `/porw/` — the neutral browser modules.** Served today from
-`contracts/lib/aigg-porw/web/porw-browser`. Now that `aigg-porw` is public, Cloudflare Pages' own git
-integration *can* clone the submodule, so a Pages git build is viable. Prefer GitHub Actions +
-`wrangler pages deploy dist` anyway:
-
-- `actions/checkout` with `submodules: recursive`, a build script that assembles `dist/`, then a direct upload
-- the built artifact is inspectable and reproducible, rather than produced inside Pages' build image
-- it pins exactly which `aigg-porw` commit is live — which matters, because `mep_id` is derived from the scheme
-  and exec kind that code implements, and a silent submodule drift would make every claim from the page get
-  rejected against the registered MEP
-
-**(c) `/node_modules/` — the importmap.** `index.html` maps `@noble/hashes/` and `@noble/secp256k1` into
-`/node_modules/…`, and those two are the *only* bare specifiers anywhere in `porw-browser`, so the build script
-just copies those two packages into `dist/vendor/` and rewrites the importmap. Shipping all of `node_modules` to
-Pages would be wrong (file count, junk) and is unnecessary.
-
-Build output:
+They stay external because of the worker. `public/node_worker.js` is a module worker and imports the same
+`/porw/` modules the document does, and **a module worker does not inherit the document's import map**. Earlier
+drafts of this section described an import map in `index.html`; there is none, and there cannot usefully be one,
+for that reason. Bundling `/porw/` fails the same test from the other side — it would give the document a
+private copy the worker could not reach. Real files at real URLs are the only arrangement both of them resolve
+identically, and it happens to be exactly the arrangement Pages wants.
 
 ```
 dist/
-  index.html          _headers
-  app.js  abi.js
-  porw/               <- contracts/lib/aigg-porw/web/porw-browser (incl. sketch.wasm)
+  index.html
+  assets/index-<hash>.js      <- the page: React, the controller, the ABI helpers
+  assets/index-<hash>.css
+  node_worker.js              <- verbatim from frontend/public; imports /porw/ by URL
+  porw/                       <- contracts/lib/aigg-porw/web/porw-browser (incl. sketch.wasm)
   vendor/@noble/...
 ```
 
-**Two edits to the page itself:**
+**No COOP/COEP, and therefore no `_headers` for it.** The node runs the single-memory kernel in a plain worker
+and never touches `SharedArrayBuffer`, so the page does not need `cross-origin-opener-policy: same-origin` and
+`cross-origin-embedder-policy: require-corp`, and `frontend/serve.mjs` sends neither. That is worth keeping:
+`require-corp` would force **every cross-origin resource the page fetches to be CORS-clean or carry
+`Cross-Origin-Resource-Policy: cross-origin`** — including a 28 MB brain fetched from the mirror (§3) or from a
+Greenfield SP, neither of which is under our control. Restoring the multi-threaded kernel means taking those
+headers back on deliberately, and at that point the mirror and every SP fallback have to be CORP-clean before
+the page works at all.
 
-- `index.html` defaults the relayer box to `http://127.0.0.1:8788`. On `https://ai.gg` that is blocked as mixed
-  content before it is anything else. Default it to `https://api.ai.gg`, keep the field editable so anyone can
-  point the page at their own relayer — which is the whole reason the relayer is replaceable.
-- `renderActive()` fills the payload URL from the `sp` field only. Add the mirror as the default source (§3) so a
-  first-time visitor does not have to know what a storage provider is.
+**Caching — `frontend/public/_headers`.** Vite hashes `assets/*`, so those are immutable, but `index.html`,
+`node_worker.js`, `porw/` and `vendor/` ship at fixed paths and change contents whenever the submodule moves.
+The failure mode is specific: a browser holding a cached `/porw/` module against a freshly deployed bundle,
+producing a `mep_id` that no longer matches what the registry has — a silent claim rejection rather than an
+error anyone would notice. So the unhashed paths get `max-age=300, must-revalidate` and `/assets/*` gets a year.
+Five minutes of freshness costs a conditional request per deploy and removes that failure entirely. The file
+lives in `public/`, so Vite copies it to the output root where Pages looks for it.
 
-Pages caps an individual file at 25 MiB. The payload is **28,123,136 bytes** — over the cap. It could not live in
-`dist/` even if we wanted it to, which settles §3 on its own.
+**Deploy: GitHub Actions + `wrangler`, not a Pages git build.** `aigg-porw` is public now, so Pages' own git
+integration *can* clone the submodule and build there. It builds here instead — `.github/workflows/pages.yml`,
+on pushes to `main` that touch `frontend/`, the submodule or the lockfile:
+
+- the artifact is inspectable and reproducible, rather than produced inside Pages' build image
+- it pins exactly which `aigg-porw` commit is live, which matters more here than it looks: `mep_id` is derived
+  from the scheme and exec kind that code implements, so a silent submodule drift makes every claim the page
+  produces get rejected against the registered MEP
+- it gates the deploy on `test/frontend_memory.mjs`, which needs neither a browser nor a chain. The full
+  end-to-end test needs anvil and Foundry and is not run there
+
+The workflow needs three repository settings: secrets `CLOUDFLARE_API_TOKEN` (a token with **Cloudflare Pages:
+Edit** on this account) and `CLOUDFLARE_ACCOUNT_ID`, and the variable `RELAYER_URL`, which is baked into the
+build as the relayer box's default (`VITE_RELAYER_URL`). Leave `RELAYER_URL` unset and the build falls back to
+`http://127.0.0.1:8788`, which an https origin blocks as mixed content — so setting it is not optional for a
+deployed page.
+
+By hand, from a checkout with the submodule initialised:
+
+```
+wrangler login                  # once; the browser flow, on your own account
+npm run deploy:frontend         # build:frontend, then wrangler pages deploy frontend/dist
+```
+
+`--branch=main` is explicit in both paths. Pages serves the *production* branch at the custom domain; a deploy
+from any other branch becomes a preview URL and `fly.ai.gg` does not move. The first `wrangler pages deploy`
+creates the `aigg-fly` project; the custom domain is attached once, in the dashboard (Pages → aigg-fly → Custom
+domains → `fly.ai.gg`), and Cloudflare writes the DNS record itself because the zone is already there.
+
+**The page and the relayer are two different origins, and always will be.** The page is static files on Pages
+(`fly.ai.gg`); the relayer is a long-running process on Render (§4) — stateful, holding aggregation state in
+memory and signing with a hot key, which is exactly the shape Pages cannot host. Nothing about that is
+temporary, so three things have to line up across the two deployments:
+
+| what | set where | to what |
+|---|---|---|
+| `VITE_RELAYER_URL` | the Pages build (repo variable `RELAYER_URL`, or the local environment) | the relayer's **https** origin — `https://api.ai.gg` once that CNAME exists, the Render hostname directly before it does |
+| `PORW_PUBLIC_RELAY_URL` | the relayer's env on Render (§4(3)) | `wss://…/relay` — what `/deployment` hands to browsers. An `https://fly.ai.gg` page refuses a `ws://` hub on scheme alone |
+| `PORW_RELAY_PATH=/relay`, `PORW_HOST=0.0.0.0` | same | one port serves both the API and the hub, because Render routes exactly one (§4(2)) |
+
+Only the first of those is a frontend concern; the page hard-codes nothing else about the relayer, because
+everything else — chain id, contract addresses, the relay URL — arrives from `/deployment` at runtime. Which is
+also why pointing the box at a different relayer is a complete reconfiguration of the page.
+
+CORS is already handled and should stay that way: `relayer.mjs` answers every response with
+`access-control-allow-origin: *` and replies to `OPTIONS` preflights, which the `/tx/*` POSTs need because they
+send `content-type: application/json`. It is not an oversight that the origin is `*` — the relayer is
+deliberately replaceable and anyone may run one, so locking it to `fly.ai.gg` would be locking the wrong door.
+What protects those endpoints is the sponsorship guard (§4), not the origin header.
+
+**Edits to the page itself:**
+
+- ~~the relayer box defaults to `http://127.0.0.1:8788`~~ — done: the default is `VITE_RELAYER_URL` at build
+  time (`frontend/src/ui/App.jsx`), falling back to `http://127.0.0.1:8788` for local development. The field
+  stays editable, which is the whole reason the relayer is replaceable.
+- `autofillUrl()` (`frontend/src/core/controller.js`) fills the payload URL from the `sp` field only. Add the
+  mirror as the default source (§3) so a first-time visitor does not have to know what a storage provider is.
+
+**The payload does not live here.** Pages caps an individual file at 25 MiB and the payload is **28,123,136
+bytes** — over the cap. It could not live in `dist/` even if we wanted it to, which settles §3 on its own.
 
 ---
 
@@ -100,7 +158,7 @@ CORS: allow https://ai.gg (GET, HEAD)
 `0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a`.
 
 **The mirror is untrusted, and nothing about the trust model changes.** `js/greenfield.js` and `loadModel()` in
-`frontend/app.js` both recompute the keccak weights root over 4 KiB tiles and compare it with the MEP's
+`frontend/src/core/controller.js` both recompute the keccak weights root over 4 KiB tiles and compare it with the MEP's
 `model_id`; a wrong or stale mirror is rejected exactly as a wrong or stale SP is. The mirror is a CDN, not an
 authority.
 
@@ -374,8 +432,8 @@ fixed and covered by `npm test` (greenfield + `e2e_anvil` + `e2e_lazy_beacon` + 
 pre-deployment step is `test/live_bsc.mjs` against the existing BSC testnet deployment, which is also the first
 real exercise of the keepalive over a long-lived connection.
 
-**Phase 1 — `ai.gg` serves testnet.** Pages build pipeline (GitHub Actions + `wrangler pages deploy`), `_headers`,
-R2 mirror of the testnet payload, relayer on Render behind `api.ai.gg`, still pointed at chain 97. Everything
+**Phase 1 — `fly.ai.gg` serves testnet.** Pages project `aigg-fly`, deployed by `.github/workflows/pages.yml`
+(§2), R2 mirror of the testnet payload, relayer on Render behind `api.ai.gg`, still pointed at chain 97. Everything
 that can break in production breaks here, where it costs testnet BNB — and the two §6(i) blockers surface
 immediately rather than on mainnet.
 
@@ -402,8 +460,8 @@ testnet relayer reachable behind a toggle.
   missing), `startRelay` binds its own port and cannot take an existing server (confirmed), and the aggregator
   is pure JS — `verify.js` states it "never uses the wasm kernel" — so the relayer needs no wasm at runtime.
   The `node_modules` question is answered too: the only bare specifiers across `web/porw-browser` are
-  `@noble/hashes/*` and `@noble/secp256k1`, both already covered by the importmap, so §2(c) is a straight vendor
-  copy. (`relay.js` imports `ws` and is Node-only; it will be copied into `dist/` and simply never imported by
+  `@noble/hashes/*` and `@noble/secp256k1`, so vendoring them is a straight copy — which is what
+  `frontend/build/runtime.mjs` now does, rewriting the specifier to `/vendor/@noble/…` as it copies (§2). (`relay.js` imports `ws` and is Node-only; it will be copied into `dist/` and simply never imported by
   the page.)
 - ~~Greenfield SP CORS behaviour~~ — checked against the live SP and fine; see §3. `js/fetch_brain.mjs` fetches
   and verifies the published brain against the MEP's `model_id` (28,123,136 bytes, matches, ~5 s), which is also

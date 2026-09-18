@@ -1,0 +1,54 @@
+# Builds the node page and deploys it to Cloudflare Pages (project `aigg-fly`, custom domain fly.ai.gg).
+#
+# Deliberately not a Pages git build. Doing it here pins exactly which aigg-porw commit is live, which matters
+# more than it looks: mep_id is derived from the scheme and exec kind that submodule implements, so a silent
+# drift would make every claim the page produces get rejected against the registered MEP. It also means the
+# artifact is inspectable and reproducible rather than produced inside Pages' build image.
+name: page
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "contracts/lib/aigg-porw/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The memory arithmetic runs without a browser or a chain, so it is cheap enough to gate a deploy on.
+      # The full end-to-end test needs anvil and Foundry and is not run here.
+      - run: node test/frontend_memory.mjs
+
+      - run: npm run build:frontend
+        env:
+          VITE_RELAYER_URL: ${{ vars.RELAYER_URL }}
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/dist --project-name=aigg-fly --branch=main
