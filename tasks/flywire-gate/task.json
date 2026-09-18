@@ -14,7 +14,7 @@
     "bytes": 28123136,
     "tiles": 6866,
     "sha256": "fd246cc2c0ac74e8928cf5b0012c5d4c48a0a03475595213b301f85f5fe4e1da",
-    "weightsDA": "gnfd://aigg-brains/flywire-783-min5.bin (to be uploaded; see README)"
+    "weightsDA": "gnfd://aigg-brains/flywire-fafb-v783-min5.bin (published on Greenfield testnet 2026-09-17, same model_id)"
    },
    "mep": {
     "mepId": "0x1569abaaa3c688414fa4f5317a525c0df319666683cbadcc217ee56117234749",
@@ -51,7 +51,20 @@
     "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
     "tiles": 6866
    },
-   "edit": "the 4 direct AN_multi_8 -> DNge145 records removed (weights -22, -33, -29, -30 in 0.275 mV units)"
+   "edit": "the 4 direct AN_multi_8 -> DNge145 records removed (weights -22, -33, -29, -30 in 0.275 mV units)",
+   "delta": {
+    "file": "flywire-783-min5-ablate4.delta",
+    "format": "FLYDELTAv1",
+    "bytes": 169,
+    "ops": 4,
+    "deletes": 4,
+    "sets": 0,
+    "base_model_id": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+    "base_da": "gnfd://aigg-brains/flywire-fafb-v783-min5.bin",
+    "delta_id": "0x4e248caf185ffcec61d9774923a86c5f8cd409fc7ff59bd0011a1d51b51ecdcf",
+    "sha256": "0819273566b42162aa67f940634e8a310088cc4d04819ffc6273569694305ea9",
+    "note": "apply to the base payload (flywire_delta.py apply / PorwNode.loadDelta) to obtain this model byte for byte"
+   }
   },
   "flywire-783-min5-keep4": {
    "payload": {
@@ -74,7 +87,20 @@
     "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
     "tiles": 6864
    },
-   "edit": "the other 467 output records of the 2 AN_multi_8 cells removed; only the 4 direct records onto DNge145 kept"
+   "edit": "the other 467 output records of the 2 AN_multi_8 cells removed; only the 4 direct records onto DNge145 kept",
+   "delta": {
+    "file": "flywire-783-min5-keep4.delta",
+    "format": "FLYDELTAv1",
+    "bytes": 4797,
+    "ops": 467,
+    "deletes": 467,
+    "sets": 0,
+    "base_model_id": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+    "base_da": "gnfd://aigg-brains/flywire-fafb-v783-min5.bin",
+    "delta_id": "0xa36995461918ea743e25a9166baa0ce1460815e91e37cc6c8624ea452525affb",
+    "sha256": "79bce4ea1d917ea8e3e66260af3b34a6abecb5a8f0e7a52c4a172c1d7f812092",
+    "note": "apply to the base payload (flywire_delta.py apply / PorwNode.loadDelta) to obtain this model byte for byte"
+   }
   }
  },
  "stimulusSets": {

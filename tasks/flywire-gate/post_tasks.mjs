@@ -1,7 +1,9 @@
-// NOTE: task.json's `models` block still carries scheme sketch-tile-keccak:v1 ids. Under v2 a mep_id binds
-// (scheme, model_id, exec kind, neurons, synapses, synapseRoot) and no longer binds steps or the stride, so those
-// entries must be regenerated with `web/porw-browser/model_id.mjs <payload.bin>` against the real payloads before
-// this runs on a v2 deployment. `steps` and `clampQ16` stay in the file: they are the task's parameters now.
+// NOTE: the `mep` block of each model in task.json still carries scheme sketch-tile-keccak:v1 values. Under v2 a
+// mep_id binds (scheme, model_id, exec kind, neurons, synapses, synapseRoot) and no longer binds steps or the
+// stride, so `schemeDigest` and `mepId` there must be regenerated with `web/porw-browser/model_id.mjs
+// <payload.bin>` against the real payloads before this runs on a v2 deployment. Nothing else in the file moves:
+// `model_id`, `synapseRoot`, the sha256s and every `delta` block are unaffected — the scheme bump changed what the
+// mesh signs, not how bytes are committed. `steps` and `clampQ16` stay too: they are the task's parameters now.
 //
 // Post the tasks of task.json on a deployed mesh and drive them to settlement: postTask (skipped when the task id
 // already exists), task-announce with the stimulus ids to the sortitioned executors over the relayer's relay, wait
