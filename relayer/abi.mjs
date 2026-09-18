@@ -20,8 +20,8 @@ export const InstanceRegistryAbi = parseAbi([
   "function DOMAIN_SEPARATOR() view returns (bytes32)",
 ]);
 export const ClaimManagerAbi = parseAbi([
-  "struct Claim { bytes32 mepId; bytes32 partialsRoot; uint64 coverageBytes; bytes32 challenge; bytes32 deviceId; bytes32 execDigest; uint32 stimulusSeed; }",
-  "struct ClaimLeaf { address instance; bytes32 partialsRoot; uint64 coverageBytes; bytes32 deviceId; bytes32 execDigest; uint32 stimulusSeed; bytes signature; }",
+  "struct Claim { bytes32 mepId; bytes32 partialsRoot; uint64 coverageBytes; bytes32 challenge; bytes32 deviceId; }",
+  "struct ClaimLeaf { address instance; bytes32 partialsRoot; uint64 coverageBytes; bytes32 deviceId; bytes signature; }",
   "function EPOCH_BLOCKS() view returns (uint64)",
   "function currentEpoch() view returns (uint64)",
   "function beacon(uint64) view returns (bytes32)",
@@ -39,20 +39,20 @@ export const ClaimManagerAbi = parseAbi([
   "event EpochRootPosted(bytes32 indexed mepId, uint64 indexed epoch, address indexed aggregator, bytes32 root, uint64 count)",
 ]);
 export const TaskMarketAbi = parseAbi([
-  "struct Task { bytes32 mepId; uint32 stimulusSeed; bytes32 inputCommit; uint256 fee; uint64 deadline; uint8 redundancy; }",
+  "struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStride; bytes32 inputCommit; uint256 fee; uint64 deadline; uint8 redundancy; }",
   "struct Result { bytes32 execDigest; bytes32 execRoot; }",
   "function postTask(Task t, bytes32 nonce) payable returns (bytes32)",
   "function executors(bytes32 taskId) view returns (address[])",
   "function submitResult(bytes32 taskId, Result r, bytes signature)",
   "function settle(bytes32 taskId)",
   "function resultOf(bytes32 taskId, address who) view returns (bytes32 execDigest, bytes32 execRoot)",
-  "function taskInfo(bytes32 taskId) view returns (bytes32 mepId, uint32 stimulusSeed, address client)",
+  "function taskInfo(bytes32 taskId) view returns (bytes32 mepId, uint32 stimulusSeed, address client, uint32 steps, uint32 commitStride)",
   "function submitted(bytes32, address) view returns (bool)",
   "event TaskPosted(bytes32 indexed taskId, bytes32 indexed mepId, uint8 redundancy)",
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",
 ]);
 export const MEPRegistryAbi = parseAbi([
-  "struct MEP { bytes32 modelId; bytes32 schemeDigest; bytes32 execKind; uint32 steps; uint32 clampQ16; uint32 neurons; uint32 synapses; bytes32 synapseRoot; bytes weightsDA; }",
+  "struct MEP { bytes32 modelId; bytes32 schemeDigest; bytes32 execKind; uint32 neurons; uint32 synapses; bytes32 synapseRoot; bytes weightsDA; }",
   "function registerMEP(MEP m) returns (bytes32)",
   "function getMEP(bytes32 id) view returns (MEP)",
   "function exists(bytes32) view returns (bool)",

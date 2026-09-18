@@ -16,6 +16,7 @@ changes a PoRW scheme id and never forks the neutral contracts.
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
 | `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
+| `js/fetch_brain.mjs` | the other half of publishing: fetch a registered MEP's payload from a storage provider and verify it against the on-chain `model_id` before it lands on disk |
 | `js/greenfield_admin.mjs` / `js/register_mep.mjs` | publisher tools: bridge-funded deployer account → create a public-read bucket, upload the payload (SDK, Reed-Solomon checksums), then register the MEP on-chain after verifying the SP serves bytes with the pinned `model_id` |
 | `relayer/` | **the relayer service**: stage-1 relay hub + epoch aggregator (one root per MEP per epoch) + commit-reveal beacon participant / epoch roller + gas-sponsoring transaction submitter for bonded instances (`delegateBySig`, `materializeClaim`, `submitResult`, `settle`) with a small HTTP API |
 | `frontend/` | **the node page**: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
@@ -51,7 +52,13 @@ node js/register_mep.mjs fields.json gnfd://aigg-brains/flywire-fafb-v783-min5.b
 echo "PORW_RELAYER_KEY=0x...
 PORW_MEP_IDS=0x<mep id>,0x<mep id>
 PORW_RELAY_PORT=8787
-PORW_API_PORT=8788" >> .env.bsc-testnet
+PORW_API_PORT=8788
+PORW_BEACON_LAZY=1
+PORW_BEACON_WAKE_EPOCHS=2
+PORW_SPONSOR_EPOCH_GAS=1500000
+PORW_SPONSOR_DAY_GAS=50000000
+PORW_RELAY_PATH=/relay
+PORW_PUBLIC_RELAY_URL=wss://api.example.org/relay" >> .env.bsc-testnet
 source .env.bsc-testnet && npm run relayer      # or: node relayer/relayer.mjs --env .env.bsc-testnet
 # frontend: static page; point it at the relayer API (http://host:8788) in the first box
 npm run frontend -- --port 8790
@@ -63,6 +70,34 @@ npm run test:frontend # headless Chromium: wallet, bond, delegate, model, node, 
 The relayer sponsors gas only for calls that belong to a bonded instance (or its delegated session key) and
 that succeed in simulation; it is untrusted for correctness (envelopes are signed, roots are challengeable,
 omitted instances fall back to `submitClaim`), so anyone may run one and instances may use several.
+
+Every `/tx/*` call therefore passes three gates before anything is signed: it must **name a bonded instance** to
+charge (`/tx/result` derives it from the session key the signature resolves to; `/tx/settle` needs one in the
+body -- settling is permissionless on-chain, so a client who is not bonded can always settle their own task by
+paying for it), it must **simulate successfully** from the relayer's account, because a reverted transaction
+still costs gas, and it must **fit a budget**: `PORW_SPONSOR_EPOCH_GAS` per instance per epoch (default 1,500,000)
+and `PORW_SPONSOR_DAY_GAS` across everyone per rolling day (default 50,000,000). Both are finite by default so an
+operator raises them knowingly rather than inheriting an unbounded hot wallet; `/status.sponsor` shows the limits,
+the day's spend and the last refusals with their reasons. `test/e2e_sponsor_guard.mjs` covers all three gates,
+including that a call which would revert broadcasts nothing at all.
+
+Running it behind a proxy needs two more settings. `PORW_RELAY_PATH` serves the relay hub on the API's own port
+under that path instead of giving it a port of its own, which is what a host that routes one port per service
+allows; leave it unset and the hub takes its own port as before. `PORW_PUBLIC_RELAY_URL` is the URL browsers are
+told to connect to -- the address the process bound is an implementation detail, and `ws://127.0.0.1:8787` is
+wrong for every tab that is not on the same machine (and refused outright by an `https://` page). Keepalive is
+handled in `aigg-porw`: the hub pings its peers and reaps the ones that stop answering, and `RelayClient` redials
+with backoff and replays its subscriptions, because a relay connection is idle across whole epochs and anything
+in front of it will cut it. `test/e2e_hosting.mjs` covers the single-port and announced-URL behaviour.
+
+`PORW_BEACON_LAZY=1` makes the beacon follow demand instead of the clock. Producing one costs about 366k gas per
+epoch (commit + reveal + `rollEpoch` + one root) whether or not a single instance is online, and an epoch's beacon
+is only ever consumed by that epoch's claims, sortition and audits. In lazy mode the relayer commits for the next
+epoch only when there is demand: a verified claim collected in this epoch or the previous one, or a bonded
+instance that announced itself (`POST /wake`, which the node page sends once per epoch). A cold epoch never rolls
+and costs nothing; a node arriving into a cold mesh waits one epoch for a beacon and a second to become eligible,
+and `/status` reports `beacon.warm` with the reason. Spamming `/wake` cannot amplify the bill — the beacon fires
+at most once per epoch either way. Default off: with it unset the relayer behaves exactly as before.
 
 ## Claim posture per chain
 
@@ -139,6 +174,37 @@ carries an explicit, locally tracked pending nonce on every send (serialized sen
 errors; `/status.nonce` shows the counter and resync count), covered by `e2e_anvil.mjs` with concurrent sponsored
 sends and a deliberate external desync. Wall clock from bond to
 settlement: 10.5 minutes, dominated by waiting for epoch boundaries (800 blocks ≈ 10 min).
+
+### Live run record — second run, with the lazy beacon on (BSC testnet, chain 97)
+
+`test/live_bsc.mjs` again, this time against a relayer started with `PORW_BEACON_LAZY=1`, so the beacon followed
+demand instead of the clock. Every transaction below was sponsored through the guard described above (bonded
+caller, simulation, gas budget) and nothing was refused. Gas price on the day: **0.1 gwei**.
+
+**The mesh was asleep and it cost nothing.** Beacon logs over epochs 164580–164586 — seven consecutive epochs,
+about seventy minutes — contain no `Committed` and no `Revealed`: not one transaction, because nobody had asked
+for a beacon. The first commit of the day was the one the arriving instance triggered.
+
+| step | epoch | tx | gas |
+|---|---|---|---|
+| `/wake` from the bonded instance, then `delegateBySig` | 164587 | `0xc2b3a74b2111a11f08dc7d5702712deb2939d465c9871168ab2d306251eb2203` | 54,911 |
+| beacon commit for 164588 (the first spend after seven idle epochs) | 164587 | — | — |
+| reveal 164588, commit 164589 | 164588 | — | — |
+| claim for 164588 announced over the relay | 164588 | claimHash `0x44c0156d19…` | — |
+| `materializeClaim(164588)` with the relayer's inclusion proof | 164589 | `0x7510d42aae5919f76997582128cf1b67fd76b359f9358aaf1edd3fde0df79f96` | 284,571 |
+| `postTask` (fee 0.001 BNB, redundancy 1) | 164589 | `0xa4bd3f738ebddcf3654a034499de0dbc14a6f56c6a50bf58ac6d46c00fbffd51` | 194,460 |
+| `submitResult` (EIP-712, session key) | 164589 | `0x36f1d8bfa9172ae7f8b9366359704478f368af8ea6c45e889f11c55254380863` | 146,463 |
+| `settle` → fee paid to the instance | 164589 | `0x5f5d379a5e90515815971baad03d772475665f1ab97eeb48961168508dc1cb03` | 92,250 |
+
+**The cold start was exactly the predicted two epochs.** Wake and delegate in 164587, beacon for 164588, claim in
+164588, root posted and materialized in 164589, eligible and executing a task in the same 164589 — 10.3 minutes
+of wall clock from `delegateBySig` to `settle`, essentially all of it waiting for epoch boundaries.
+`materializeClaim` came in at 284,571 gas, the same figure as the first run and as `e2e_lazy_beacon.mjs` on
+anvil. Evidence: `tasks/live-bsc-20260917.json`.
+
+What this run did **not** exercise: the relay hub and both clients were on one machine, so nothing was in a
+position to cut an idle WebSocket and the keepalive was never actually put to the test. That, along with
+`PORW_RELAY_PATH` and `PORW_PUBLIC_RELAY_URL`, waits for a deployment with a proxy in front of it.
 
 ## Build and test (standalone layout)
 

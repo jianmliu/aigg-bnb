@@ -1,24 +1,43 @@
 // The BNB fly-brain node page: wallet -> bond BNB for the MEPs you host -> delegate a session key (one signature)
 // -> load a brain per MEP -> run the node against the relayer (a claim per MEP per epoch, materialize when wanted,
-// audits and tasks for every hosted MEP over the relay). Neutral modules come from aigg-porw (served under /porw/);
-// chain state is read through the wallet's provider. Several MEPs (e.g. the female and the male brain) can be hosted
-// at once; the selector switches which one the model panel and the details refer to.
+// audits and tasks for every hosted MEP over the relay). Chain state is read through the wallet's provider.
+// Several MEPs (e.g. the female and the male brain) can be hosted at once; the selector switches which one the
+// model panel and the details refer to.
+//
+// This file is the page: UI, wallet, chain calls, the relayer's HTTP API. The node -- the kernel, the resident
+// brains, the relay connection, the claims -- runs in node_worker.js, because proving residency is seconds of
+// single-threaded wasm per brain per epoch and on this thread that is seconds of frozen page. The page never
+// holds a payload: the bytes are transferred to the worker and the model_id is recomputed there.
 import { encode, decodeUint, decodeAddress, hex, unhex } from "./abi.js";
-import { loadKernel } from "/porw/porw.js";
-import { PorwNode } from "/porw/node.js";
-import { RelayClient } from "/porw/relay_client.js";
-import { NodeService } from "/porw/node_service.js";
 import { keypair } from "/porw/claim.js";
 import * as E from "/porw/eip712.js";
-import { decodeHeader } from "/porw/model.js";
-import * as V from "/porw/verify.js";
-import { makeMep } from "/porw/mep.js";
-import { lifExecKind } from "/porw/lif.js";
 
 const $ = (id) => document.getElementById(id); const log = (m) => { const el = $("log"); el.textContent += `[${new Date().toISOString().slice(11, 19)}] ${m}\n`; el.scrollTop = el.scrollHeight; };
 const state = { deployment: null, meps: [], hosted: new Set(), active: null, wallet: null, chainOk: false, bonded: 0n, weight: 0n, exitAt: 0n, session: null, delegation: null, resolved: null,
-  models: {}, loaded: {}, node: null, svc: null, relay: null, claims: {}, materialized: {}, results: [], errors: [] }; // models/loaded/claims/materialized keyed by mepId
+  prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [] }; // loaded/claims/materialized keyed by mepId
 window.app = { state, log };
+
+// ---- the worker that actually runs the node ----
+let worker = null, nextReq = 1; const waiting = new Map();
+function ensureWorker() {
+  if (worker) return worker;
+  worker = new Worker("./node_worker.js", { type: "module" });
+  worker.onmessage = (ev) => {
+    const m = ev.data;
+    if (m.op === "log") return log(m.msg);
+    if (m.op === "result") return onTaskResult(m.res);
+    const w = waiting.get(m.reqId); if (!w) return;
+    waiting.delete(m.reqId); m.ok ? w.res(m) : w.rej(new Error(m.error));
+  };
+  worker.onerror = (e) => log("node worker error: " + (e.message || e));
+  return worker;
+}
+const ask = (op, data = {}, transfer = []) => new Promise((res, rej) => { const reqId = nextReq++; waiting.set(reqId, { res, rej }); ensureWorker().postMessage({ op, reqId, ...data }, transfer); });
+/** a task the node answered over the relay: the page is what talks to the relayer's API */
+async function onTaskResult(res) {
+  const r = await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
+  log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
+}
 const eth = () => window.ethereum;
 const call = async (to, sig, args = []) => eth().request({ method: "eth_call", params: [{ to, data: encode(sig, args) }, "latest"] });
 const send = async (to, sig, args = [], value = 0n) => { const hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: state.wallet, to, data: encode(sig, args), value: "0x" + value.toString(16) }] }); log(`tx ${hash.slice(0, 12)}… sent`); for (let i = 0; i < 120; i++) { const r = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] }); if (r) { log(`tx ${hash.slice(0, 12)}… ${r.status === "0x1" ? "confirmed" : "REVERTED"}`); return r; } await new Promise((x) => setTimeout(x, 500)); } throw new Error("receipt timeout"); };
@@ -37,8 +56,8 @@ function renderMeps() {
 }
 function renderActive() {
   const m = mepById(state.active); if (!m) return;
-  $("mepInfo").textContent = `${m.mepId} · model_id ${m.modelId.slice(0, 14)}… · steps ${m.steps}${m.exec === "int-lif" ? " · stride " + m.commitStride : ""} · ${m.synapses.toLocaleString()} synapses · ${m.weightsDA}`;
-  $("steps").value = m.steps; if (!$("url").value && m.weightsDA.startsWith("gnfd://") && $("sp").value) $("url").value = $("sp").value.replace(/\/$/, "") + "/view/" + m.weightsDA.slice(7);
+  $("mepInfo").textContent = `${m.mepId} · model_id ${m.modelId.slice(0, 14)}… · ${m.neurons.toLocaleString()} neurons · ${m.synapses.toLocaleString()} synapses · ${m.weightsDA}`;
+  if (!$("url").value && m.weightsDA.startsWith("gnfd://") && $("sp").value) $("url").value = $("sp").value.replace(/\/$/, "") + "/view/" + m.weightsDA.slice(7);
   const l = state.loaded[m.mepId]; $("model").textContent = l ? `${l.name}: ${l.neurons} neurons, ${l.synapses} synapses, model_id ${l.modelId.slice(0, 14)}… (${l.ok ? "matches the MEP" : "DOES NOT MATCH the MEP's model_id"})` : "not loaded";
   const claimed = Object.entries(state.claims[m.mepId] || {}).map(([e]) => e).join(","); $("mepStatus").textContent = `hosted: ${state.hosted.has(m.mepId) ? "yes" : "no"} · claims: epochs ${claimed || "—"} · materialized: ${Object.entries(state.materialized[m.mepId] || {}).filter(([, v]) => v).map(([e]) => e).join(",") || "—"}`;
 }
@@ -70,39 +89,56 @@ async function delegate() {
   const r = await api("/tx/delegate", { instance: state.delegation.instance, session: state.delegation.session, expiry: state.delegation.expiry, sig: state.delegation.sig }); log(`relayer submitted delegateBySig: ${r.ok ? "ok" : "FAILED " + r.error}`);
   state.resolved = decodeAddress(await call(state.deployment.addresses.instances, "resolve(address)", [hex(k.address)])); $("session").textContent = `session key ${hex(k.address)} → instance ${state.resolved}`;
 }
-/** load the ACTIVE MEP's model (file or URL); verified locally: the bytes must reproduce the MEP's model_id */
+/** load the ACTIVE MEP's brain (file or URL). The bytes go straight to the worker, which recomputes the keccak
+ *  weights root over every 4 KiB tile and reports it back: a brain is accepted only if that reproduces the
+ *  model_id the MEP pins on-chain, so a wrong or hostile source can only waste the download. */
 async function loadModel() {
   const m = mepById(state.active); let bytes; const f = $("file").files[0];
   if (f) bytes = new Uint8Array(await f.arrayBuffer()); else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = new Uint8Array(await (await fetch(url)).arrayBuffer()); }
-  const nT = Math.floor(bytes.length / 4096); const lv = []; for (let t = 0; t < nT; t++) lv.push(V.weightsLeaf(t, bytes.subarray(t * 4096, (t + 1) * 4096)));
-  const modelId = hex(V.merkleRoot(lv)); const ok = modelId.toLowerCase() === m.modelId.toLowerCase(); const hdr = decodeHeader(bytes);
-  state.models[m.mepId] = bytes; state.loaded[m.mepId] = { name: hdr.name, neurons: hdr.neurons, synapses: hdr.synapses, modelId, ok };
+  log(`${m.name || m.mepId.slice(0, 10)}: ${(bytes.length / 1e6).toFixed(1)} MB downloaded, checking its model_id…`);
+  const r = await ask("prepare", { mepId: m.mepId, bytes: bytes.buffer }, [bytes.buffer]); // transferred, not copied
+  const ok = r.modelId.toLowerCase() === m.modelId.toLowerCase();
+  state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, modelId: r.modelId, ok };
   if (state.node) await hostOnNode(m); // hot-add to a running node
-  renderActive(); log(`${m.name || m.mepId.slice(0, 10)}: model loaded, model_id ${modelId.slice(0, 14)}… ${ok ? "matches the MEP" : "DOES NOT MATCH the MEP (claims would be rejected)"}`);
+  renderActive(); log(`${m.name || m.mepId.slice(0, 10)}: model_id ${r.modelId.slice(0, 14)}… ${ok ? "matches the MEP" : "DOES NOT MATCH the MEP (claims would be rejected)"}`);
   $("file").value = ""; $("url").value = "";
 }
+function taskCapacity(m) {
+  const maxSteps = Number($("steps").value);
+  // TaskMarket permits 512 SPMV roots, or 512 LIF segments of at most 512 steps each.
+  const limit = m.exec === "int-lif" ? 512 * 512 : 512;
+  if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > limit) throw new Error(`Max task steps must be a whole number from 1 to ${limit} for ${m.exec}`);
+  return maxSteps;
+}
 async function hostOnNode(m) {
-  if (!state.hosted.has(m.mepId) || !state.models[m.mepId] || state.node.models.has(m.mepId)) return;
-  const st = await state.node.loadModel(state.loaded[m.mepId].name, state.models[m.mepId], { steps: m.steps, exec: m.exec === "int-lif" ? "lif" : "spmv", commitStride: m.commitStride });
-  if (hex(st.mep.mepId).toLowerCase() !== m.mepId) { log(`WARNING ${m.name || m.mepId.slice(0, 10)}: local MEP id ${hex(st.mep.mepId).slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model/steps/exec kind mismatch)`); return; }
-  state.svc.serve(st.mep.mepId); log(`${m.name || m.mepId.slice(0, 10)}: resident on the node, serving audits and tasks`);
+  if (!state.hosted.has(m.mepId) || !state.prepared.has(m.mepId) || state.node.models.has(m.mepId)) return;
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps: taskCapacity(m), exec: m.exec === "int-lif" ? "lif" : "spmv" });
+  if (!r.matches) { log(`WARNING ${m.name || m.mepId.slice(0, 10)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
+  state.node.models.set(m.mepId, { neurons: r.neurons });
+  log(`${m.name || m.mepId.slice(0, 10)}: resident on the node, serving audits and tasks`);
 }
 async function startNode() {
-  if (!state.delegation) throw new Error("delegate first"); const ready = [...state.hosted].filter((id) => state.models[id]); if (!ready.length) throw new Error("load a model for at least one hosted MEP");
-  const kernel = await loadKernel("/porw/sketch.wasm"); const k = sessionKey();
-  state.node = new PorwNode(kernel, { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
-  const rc = new RelayClient([state.deployment.relay], k); await rc.connect(); state.relay = rc;
-  state.svc = new NodeService(state.node, rc, { onResult: async (res) => { const r = await api("/tx/result", res); res.submitted = r.ok; state.results.push(res); log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`); } });
+  if (!state.delegation) throw new Error("delegate first"); const ready = [...state.hosted].filter((id) => state.prepared.has(id)); if (!ready.length) throw new Error("load a model for at least one hosted MEP");
+  for (const id of ready) taskCapacity(mepById(id)); // validate before creating a worker or relay connection
+  const k = sessionKey();
+  await ask("init", { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
+  await ask("relay", { url: state.deployment.relay });
+  state.node = { models: new Map() }; // the page's view of what the worker holds resident
   for (const id of ready) await hostOnNode(mepById(id));
-  log(`node running for ${state.node.models.size} MEP(s)`); setInterval(loop, 3000); renderActive();
+  log(`node running for ${state.node.models.size} MEP(s)`); setInterval(() => loop().catch((e) => log("loop error: " + (e.message || e))), 3000); renderActive();
 }
-async function refreshEpoch() { try { const e = await api("/epoch"); state.epochInfo = e; $("epoch").textContent = `epoch ${e.epoch} · block ${e.block} · beacon ${e.rolled ? "rolled" : "pending"}`; return e; } catch (err) { return null; } }
+async function refreshEpoch() { try { const e = await api("/epoch"); state.epochInfo = e; $("epoch").textContent = `epoch ${e.epoch} · block ${e.block} · beacon ${e.rolled ? "rolled" : e.lazy && !e.warm ? "cold (waking up)" : "pending"}`; return e; } catch (err) { return null; } }
 /** every hosted + resident MEP: one claim per epoch, materialize the previous epoch once its root is posted */
 async function loop() {
-  const e = await refreshEpoch(); if (!e || !e.rolled || !state.svc) return;
+  const e = await refreshEpoch(); if (!e || !state.node) return;
+  // tell the relayer we are here, once per epoch: where the beacon is lazy, a mesh nobody is using stops
+  // producing one, and this is what wakes it and keeps it awake while this tab hosts a brain.
+  const me = state.resolved || state.wallet;
+  if (me && state.wokeEpoch !== e.epoch) { state.wokeEpoch = e.epoch; api("/wake", { instance: me }).catch(() => {}); }
+  if (!e.rolled) return;
   for (const id of state.hosted) {
-    const m = mepById(id); if (!state.node.models.has(id)) continue; state.claims[id] ||= {}; state.materialized[id] ||= {};
-    if (!state.claims[id][e.epoch]) { const info = await api("/epoch?mep=" + id); const { r } = await state.svc.announce(unhex(id), unhex(info.challenge), { stimulusSeed: 1 }); state.claims[id][e.epoch] = hex(r.claimHash); log(`${m.name || id.slice(0, 10)} epoch ${e.epoch}: claim announced (slot ${(r.timings.sketchMs + r.timings.commitMs + r.timings.inferMs + (r.timings.disputeCommitMs || 0)).toFixed(0)} ms)`); }
+    const m = mepById(id); if (!state.node || !state.node.models.has(id)) continue; state.claims[id] ||= {}; state.materialized[id] ||= {};
+    if (!state.claims[id][e.epoch]) { const info = await api("/epoch?mep=" + id); const r = await ask("announce", { mepId: id, challenge: info.challenge }); state.claims[id][e.epoch] = r.claimHash; log(`${m.name || id.slice(0, 10)} epoch ${e.epoch}: claim announced (slot ${r.slotMs} ms)`); }
     const prev = e.epoch - 1;
     if ($("auto").checked && state.claims[id][prev] && !state.materialized[id][prev]) { const p = await api(`/proof?mep=${id}&epoch=${prev}&instance=${state.resolved}`); if (p.posted) { const r = await api("/tx/materialize", { mep: id, epoch: prev, instance: state.resolved }); state.materialized[id][prev] = r.ok; log(`${m.name || id.slice(0, 10)} epoch ${prev}: materialized via relayer ${r.ok ? "ok (gas " + r.gasUsed + ")" : "FAILED " + r.error}`); } }
   }

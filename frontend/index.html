@@ -1,7 +1,8 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>PoRW fly-brain node · BNB</title>
-<script type="importmap">{ "imports": { "@noble/hashes/": "/node_modules/@noble/hashes/", "@noble/secp256k1": "/node_modules/@noble/secp256k1/index.js" } }</script>
+<!-- no import map: a module worker does not inherit one, and the node runs in a worker. Bare specifiers are
+     rewritten to /vendor/ paths when the modules are served (frontend/serve.mjs) or copied (the Pages build). -->
 <style>
   body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; max-width: 900px; color: #1b1b1b; background: #fafafa; }
   h1 { font-size: 18px; margin: 0 0 12px; } section { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
@@ -26,7 +27,7 @@
   brain <select id="mep"></select>
   <div class="kv" id="mepInfo">—</div><div class="kv" id="mepStatus">—</div>
   <div style="margin-top:8px">Greenfield SP endpoint <input id="sp" type="text" placeholder="https://gnfd-testnet-sp1.bnbchain.org (optional; fills the URL from the MEP's gnfd:// pointer)"></div>
-  <div style="margin-top:8px"><input id="file" type="file"> or URL <input id="url" type="text" placeholder="https://…/flywire-783-min5.bin or /payload.bin"> steps <input id="steps" type="number" value="2" style="min-width:60px" disabled> <button id="btnModel">Load for this brain</button></div>
+  <div style="margin-top:8px"><input id="file" type="file"> or URL <input id="url" type="text" placeholder="https://…/flywire-783-min5.bin or /payload.bin"> <label for="steps">Max task steps</label> <input id="steps" type="number" value="100" min="1" max="262144" step="1" required style="min-width:60px" title="Capacity for each brain when it starts hosting; higher values use more memory"> <button id="btnModel">Load for this brain</button></div>
   <div class="kv" id="model">—</div></section>
 <section><h2>5 · Node</h2>
   <button id="btnStart">Start node</button> <label><input id="auto" type="checkbox" checked> materialize claims automatically (when I want tasks)</label>
