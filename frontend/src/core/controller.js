@@ -187,7 +187,14 @@ export async function startNode() {
 }
 export async function refreshEpoch() { try { state.epochInfo = await api("/epoch"); onChange(); return state.epochInfo; } catch (err) { return null; } }
 /** every hosted + resident MEP: one claim per epoch, materialize the previous epoch once its root is posted */
-export async function loop() {
+// One pass at a time. The interval is 3 s and a pass can outlast it -- a residency claim on the real brain is ~5 s
+// of wasm, a sponsored materialize waits for a receipt -- and `claims` / `materialized` are only written after
+// those awaits. A second pass would announce the same claim again, and its materialize, which by then reverts in
+// the relayer's simulation, would overwrite the first one's success and retry every tick until the epoch ends.
+// A tick that lands mid-pass gets the pass already running, so a caller awaiting `loop()` still waits for the work.
+let pass = null;
+export function loop() { return pass ||= runPass().finally(() => { pass = null; }); }
+async function runPass() {
   const e = await refreshEpoch(); if (!e || !state.node) return;
   // tell the relayer we are here, once per epoch: where the beacon is lazy, a mesh nobody is using stops
   // producing one, and this is what wakes it and keeps it awake while this tab hosts a brain.
