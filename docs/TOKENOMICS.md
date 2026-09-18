@@ -169,6 +169,22 @@ One honest boundary for whichever rule ships: the left/right differences the noi
 developmental noise under one genotype, not heritable variation. Treating an individual's realised noise as heritable
 is a modelling choice; the heritability of synapse counts in Drosophila has not been measured.
 
+**Update — the trust gap of "record the recipe, declare the result" is closed (`contracts/src/LineageRegistry.sol`).**
+§3 and the `breed` comment call a wrong declared `model_id` self-punishing rather than trustless. With the in-place
+layout (aigg-porw `proposals/flydelta-inplace`) a declared payload can be contradicted from one record, and the registry
+makes the declaration accountable: `register(delta, model_id)` posts a bond and opens a challenge window;
+`challengeRecord` / `challengeStatic` run aigg-porw's `FlyDeltaRecordVerifier` on a few 4 KB tiles (*measured:* 231k
+execution gas for a fraud verdict with four tiles opened), strike the registration down and split the bond between the
+challenger and a sink — half, so that a registrant cannot squat a recipe by striking down its own wrong claim for free.
+An unchallenged registration becomes final, the bond returns, and only then can a child name it as a parent: a child's
+check reads its parents' committed tiles, so lineages become final one generation at a time. A base is not declared but
+proven from its first tile. `FlyCollection.registerDerived` binds a token to a MEP only through a *final* registration,
+and for a bred token the recipe is not the owner's to choose: it must carry the seed drawn at breeding and name the
+recorded parents — a true cross when both sit on one base, dam × base with the sire inside the seed otherwise.
+What stays optimistic: a wrong claim nobody challenges within the window becomes final. The window and the bond are
+immutable constructor parameters and should be sized against how long a watcher needs to rebuild a payload (seconds) and
+what a fraud proof costs (well under 0.001 BNB at 0.1 gwei).
+
 Recommendation (revised): ship (c) with the other-sex parent as entropy, specify (b) as the projection that later
 replaces that entropy, and treat the male base export as the prerequisite it is. (Original: ship (a), specify (b).)
 
@@ -343,7 +359,9 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
 4. Whether the token owner's share of task fees is a protocol rule or a social one.
 5. Who exports the male base, and when. The source data (edges, annotations with `flywireType`, consensus
    neurotransmitters) is already prepared in the flyaudio project; what is missing is a `FLYBRAINv2` exporter for it.
-6. Tile-local derivation. A procedural individual drops sub-threshold records and re-sorts, so tile `t` of a child
+6. ~~Tile-local derivation.~~ Decided and implemented upstream (in-place layout, one-record verifier) and here
+   (`LineageRegistry`). What is left to decide: `REGISTRATION_BOND`, `CHALLENGE_BLOCKS`, the sink, and whether the
+   breeding fee should sit in the registration bond while the claim is at risk. Original text: Tile-local derivation. A procedural individual drops sub-threshold records and re-sorts, so tile `t` of a child
    depends on every record before it and a wrong declared `model_id` is self-punishing but not provable. Keeping
    dropped records in place as zero weights makes `child_tile[t] = G(parent tiles[t], seed)`, which admits a one-step
    fraud proof on a single record (the sampler's Q256 arithmetic is the EVM's word size). It fixes the payload layout,
