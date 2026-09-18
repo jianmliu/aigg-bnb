@@ -2,6 +2,8 @@
 // weights Merkle root, synapse root, exec kind). Results are kept PER SCHEME in task.json (models[*].mepByScheme[schemeId]),
 // because the ids of one payload differ between schemes while execDigest / execRoot / initStateRoot do not:
 //   sketch-tile-keccak:v1  mep_id = keccak(scheme, modelId, execKind, steps, stride); taskId = keccak(mepId, seed, nonce)
+//   sketch-tile-keccak:v3  as v2, but the Claim has no deviceId (the sketch seed is the claiming instance's); only the scheme
+//                          digest inside mep_id differs from v2
 //   sketch-tile-keccak:v2  mep_id = keccak(scheme, modelId, execKind, neurons, synapses, synapseRoot); steps and stride are the
 //                          Task's; taskId = keccak(abi.encode(task, nonce)) covers fee and deadline, so it exists only at post time
 // The two edited models are rebuilt from their FLYDELTAv1 deltas when the checkout has delta.js, else read as <name>.bin

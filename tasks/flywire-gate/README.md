@@ -77,19 +77,22 @@ A settled task whose digest equals `expectedExecDigest` is a third-party replica
 
 ## Schemes
 
-| | `sketch-tile-keccak:v1` | `sketch-tile-keccak:v2` (this repo's submodule) |
-|---|---|---|
-| mep_id | keccak(scheme, modelId, execKind, steps, stride) | keccak(scheme, modelId, execKind, neurons, synapses, synapseRoot) |
-| full | 0x1569abaa… | 0x29d28a93… |
-| ablate4 | 0xb831be52… | 0x365bec00… |
-| keep4 | 0x08aa989d… | 0xd3b6a4b1… |
-| steps 5000, stride 500 | in the MEP | on the Task (and in the `task-announce`) |
-| taskId | keccak(mepId, seed, nonce) | keccak(abi.encode(Task, nonce)): covers fee and deadline, exists only at post time |
-| residency claims, 3 brains x 2 executors | ~70 s (six 5000-step runs) | 0.11 s (no inference) |
+| | `sketch-tile-keccak:v1` | `:v2` | `:v3` (this repo's submodule) |
+|---|---|---|---|
+| mep_id | keccak(scheme, modelId, execKind, steps, stride) | keccak(scheme, modelId, execKind, neurons, synapses, synapseRoot) | as v2 |
+| the Claim | with `execDigest`, `stimulusSeed`, `deviceId` | residency only, with `deviceId` | residency only; the sketch seed is the claiming instance's |
+| full | 0x1569abaa… | 0x29d28a93… | 0x312dda12… |
+| ablate4 | 0xb831be52… | 0x365bec00… | 0x37d237e3… |
+| keep4 | 0x08aa989d… | 0xd3b6a4b1… | 0x62e321e1… |
+| steps 5000, stride 500 | in the MEP | on the Task (and in the `task-announce`) | on the Task |
+| taskId | keccak(mepId, seed, nonce) | keccak(abi.encode(Task, nonce)): exists only at post time | as v2 |
+| residency claims, 3 brains x 2 executors | ~70 s (six 5000-step runs) | 0.11 s | 0.11 s |
 
-`modelId`, `synapseRoot`, `execKind`, and every `execDigest`, `execRoot` and `initStateRoot` are the same under both schemes.
+`modelId`, `synapseRoot`, `execKind`, and every `execDigest`, `execRoot` and `initStateRoot` are the same under all three:
+only the scheme digest inside `mep_id` moves. `fields/<model>.v1|v2|v3.json` are the registration inputs per scheme, and
+`post_tasks.mjs` picks the profile of the scheme of the checkout it runs against.
 
-## End to end under v2 (`e2e_gate_task.mjs`, record in `e2e_anvil_log.json` / `e2e_anvil_run.log`)
+## End to end under the checkout's scheme (`e2e_gate_task.mjs`, record in `e2e_anvil_log.json` / `e2e_anvil_run.log`)
 
 ```bash
 FOUNDRY_BIN=$HOME/.foundry/bin node tasks/flywire-gate/e2e_gate_task.mjs /path/to/flywire-783-min5.bin

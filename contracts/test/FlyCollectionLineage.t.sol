@@ -22,7 +22,7 @@ contract FlyCollectionLineageTest is Test {
     function leaf(uint32 i, uint8 sex, bytes32 d) internal pure returns (bytes32) { return keccak256(abi.encode(i, sex, d)); }
     function root() internal pure returns (bytes32) { bytes32 a = leaf(0, 0, FX.DELTA_ID_A); bytes32 b = leaf(1, 1, FX.DELTA_ID_B); return a < b ? keccak256(abi.encodePacked(a, b)) : keccak256(abi.encodePacked(b, a)); }
     function proofFor(uint32 i) internal pure returns (bytes32[] memory p) { p = new bytes32[](1); p[0] = i == 0 ? leaf(1, 1, FX.DELTA_ID_B) : leaf(0, 0, FX.DELTA_ID_A); }
-    function mep(bytes32 modelId) internal pure returns (IMEPRegistry.MEP memory) { return IMEPRegistry.MEP({ modelId: modelId, schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V2, execKind: keccak256("aigg:exec:int-lif:v1"), neurons: 3000, synapses: 30000, synapseRoot: keccak256(abi.encode("syn", modelId)), weightsDA: bytes("gnfd://aigg-brains/x.delta") }); }
+    function mep(bytes32 modelId) internal pure returns (IMEPRegistry.MEP memory) { return IMEPRegistry.MEP({ modelId: modelId, schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V3, execKind: keccak256("aigg:exec:int-lif:v1"), neurons: 3000, synapses: 30000, synapseRoot: keccak256(abi.encode("syn", modelId)), weightsDA: bytes("gnfd://aigg-brains/x.delta") }); }
     function _final(bytes memory delta, bytes32 modelId) internal { vm.prank(alice); bytes32 id = R.register{value: BOND}(delta, modelId); vm.roll(block.number + WINDOW + 1); R.finalize(id); }
 
     function setUp() public {
