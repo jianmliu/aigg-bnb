@@ -8,3 +8,4 @@ deployments/*.json
 .env.*
 relayer/config.json
 env.*.txt
+frontend/dist/
