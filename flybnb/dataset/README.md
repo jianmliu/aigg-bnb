@@ -52,7 +52,7 @@ The simulator has no neuromodulation, gap junctions or cell-type-specific parame
 
 ## Source data and licence
 
-The wiring comes from the FlyWire connectome (v783). This dataset contains simulation results and recipes, not the connectome; the base payload is identified by its content address. It is released under CC BY-NC 4.0 to stay within the terms of the source data. Cite FlyWire when you use it.
+The wiring comes from the FlyWire connectome (v783), whose public release data is under CC BY-NC 4.0 (<https://flywire.ai/guidelines>). This dataset contains simulation results and recipes, not the connectome; the base payload is identified by its content address. As an adaptation it is released under **CC BY-NC 4.0**: share and adapt with attribution, not for commercial use. Cite FlyWire as its guidelines ask.
 
 ## Acknowledgments
 

@@ -56,4 +56,8 @@ regenerates the pilot block of `docs/flybnb/paper.md`. Prose is never touched.
 
 ## Licence of the data
 
-The wiring comes from the FlyWire connectome. The results and recipes here are released under CC BY-NC 4.0 to stay within the terms of the source data; cite FlyWire when you use them. This repository has no licence file yet (the contracts carry 0BSD headers); until it has one, the code here has no stated licence.
+FlyWire's public release data (v783 included) is under **CC BY-NC 4.0**: "FlyWire's public release data is made available under license CC BY-NC 4.0" (<https://flywire.ai/guidelines>, read 2026-09-18). The results and recipes here are adaptations of that wiring, so they are released under CC BY-NC 4.0 too: share and adapt with attribution, **not for commercial use**. Cite FlyWire as its guidelines ask. The male brain, when it is added, comes under different terms: "The Male CNS is licensed under CC-BY" (4.0; <https://male-cns.janelia.org/download/>), which allows commercial use.
+
+That distinction matters beyond the dataset. Minting an individual of the female brain for a price, or charging a fee for a task against it, is plausibly a commercial use of FlyWire-derived data. This is not legal advice and nobody here has asked FlyWire; it should be asked before either happens on a public network.
+
+This repository has no licence file yet (the contracts carry 0BSD headers); until it has one, the code here has no stated licence.
