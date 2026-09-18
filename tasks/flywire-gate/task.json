@@ -26,7 +26,8 @@
     "neurons": 139255,
     "synapses": 2700513,
     "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
-    "tiles": 6866
+    "tiles": 6866,
+    "schemeId": "aigg:porw:sketch-tile-keccak:v1"
    },
    "edit": "none: the FlyWire v783 female connectome, connections with >= 5 synapses (analysis/fw_import.py MIN_SYN=5), exported by aigg-porw's flywire_export.py"
   },
@@ -49,7 +50,8 @@
     "neurons": 139255,
     "synapses": 2700509,
     "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
-    "tiles": 6866
+    "tiles": 6866,
+    "schemeId": "aigg:porw:sketch-tile-keccak:v1"
    },
    "edit": "the 4 direct AN_multi_8 -> DNge145 records removed (weights -22, -33, -29, -30 in 0.275 mV units)",
    "delta": {
@@ -85,7 +87,8 @@
     "neurons": 139255,
     "synapses": 2700046,
     "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
-    "tiles": 6864
+    "tiles": 6864,
+    "schemeId": "aigg:porw:sketch-tile-keccak:v1"
    },
    "edit": "the other 467 output records of the 2 AN_multi_8 cells removed; only the 4 direct records onto DNge145 kept",
    "delta": {
@@ -869,7 +872,7 @@
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
     "DNge145": 2.8,
-    "DNp12": 6.0,
+    "DNp12": 6,
     "GF": 10.4,
     "locked38": 104.4
    },
@@ -882,7 +885,8 @@
     "postTx": "0x484e73b34cbe32b0f2618601289394848d1fc6d1e2ac75af3d27c352d7bb08f7",
     "settled": true,
     "settleTx": "0x932e324b9c1101a0849d44c36ab9b22725fb6e2d5e67baab1e6b8e8ea80b176c"
-   }
+   },
+   "taskId": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93"
   },
   {
    "model": "flywire-783-min5",
@@ -892,10 +896,10 @@
    "expectedExecDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
    "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
    "referenceRates_last2500steps_per100ms": {
-    "DNge145": 0.0,
+    "DNge145": 0,
     "DNp12": 3.2,
     "GF": 12.4,
-    "locked38": 112.0
+    "locked38": 112
    },
    "anvil": {
     "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
@@ -906,7 +910,8 @@
     "postTx": "0x27818932565d2992599f7d93eceb445302d6d8e70d803dbdbf61dc0bc485bf0e",
     "settled": true,
     "settleTx": "0x265f2cdafd9e5de18621d8ba82636e5a76e9866f1efda26492131f236bef1eb5"
-   }
+   },
+   "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955"
   },
   {
    "model": "flywire-783-min5-ablate4",
@@ -917,7 +922,7 @@
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
     "DNge145": 2.8,
-    "DNp12": 6.0,
+    "DNp12": 6,
     "GF": 10.4,
     "locked38": 104.4
    },
@@ -930,7 +935,8 @@
     "postTx": "0x9d81bc7301ca051e8eb0d56e2a9ee5138965ee5057478b9f26d8ed3e42578ca5",
     "settled": true,
     "settleTx": "0x68a46ef24d784881ade4b8949096abf924e1fd5be6ad977ba9003ab341f30677"
-   }
+   },
+   "taskId": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273"
   },
   {
    "model": "flywire-783-min5-ablate4",
@@ -954,7 +960,8 @@
     "postTx": "0x0138c0ff52ccb9dc6aded6a48e8bcbf7380a0f6bd92933fdaeb824811520c879",
     "settled": true,
     "settleTx": "0x391ac10ef5be232eb91a77c8393560072764d0eb6709a0325f8486b0b24a172c"
-   }
+   },
+   "taskId": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c"
   },
   {
    "model": "flywire-783-min5-keep4",
@@ -965,7 +972,7 @@
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
     "DNge145": 2.8,
-    "DNp12": 6.0,
+    "DNp12": 6,
     "GF": 10.4,
     "locked38": 104.4
    },
@@ -978,7 +985,8 @@
     "postTx": "0xce63dfbac6ae229b6dd689b4c816acb423f7a7b0340edf9b5b3579280433f391",
     "settled": true,
     "settleTx": "0x7e1b461f2c78e7d9279014db02dabec19f7dc14a1086d75d11ef79f97866431a"
-   }
+   },
+   "taskId": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98"
   },
   {
    "model": "flywire-783-min5-keep4",
@@ -988,7 +996,7 @@
    "expectedExecDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
    "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed",
    "referenceRates_last2500steps_per100ms": {
-    "DNge145": 0.0,
+    "DNge145": 0,
     "DNp12": 7.2,
     "GF": 11.2,
     "locked38": 111.6
@@ -1002,7 +1010,8 @@
     "postTx": "0xbab35b481655d3d03124635e9d78cab6b1106bc17e29c3c77328d571a21f4eac",
     "settled": true,
     "settleTx": "0xb6d6176b1208b8e4915110117281a223a81d25f0788282fc4c40900375ddf3a6"
-   }
+   },
+   "taskId": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60"
   }
  ],
  "anvilRun": {

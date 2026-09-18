@@ -10,5 +10,6 @@
  "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
  "name": "flywire-783-min5-keep4",
  "sha256": "47285bdeb23101c21bdac9b412b5a044ba4cd07c33e947c51a00acb1219d6267",
- "note": "register with aigg-bnb js/register_mep.mjs <this file> gnfd://<bucket>/<object>; the pointer must serve bytes with this sha256 / modelId"
+ "note": "register with aigg-bnb js/register_mep.mjs <this file> gnfd://<bucket>/<object>; the pointer must serve bytes with this sha256 / modelId",
+ "schemeId": "aigg:porw:sketch-tile-keccak:v1"
 }

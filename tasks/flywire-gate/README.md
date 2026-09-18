@@ -33,6 +33,9 @@ the *same* digest (the removed records never carry a spike), which is the built-
 - `post_tasks.mjs` — posts the tasks of `task.json` on any deployed mesh and drives them to settlement (executor
   session keys resolved from the instance registry's `SessionKeySet` logs); the anvil run goes through it too.
 - `fields/*.json` — the three MEP field files for aigg-bnb's `js/register_mep.mjs`.
+- `recompute_ids.mjs` — recomputes every scheme-dependent id (modelId, synapseRoot, schemeDigest, execKind, mepId, task ids) from
+  the real base payload with the aigg-porw code of this checkout; `--check` exits 1 when `task.json` is stale. Run it after any
+  scheme or exec-kind change in the submodule. Note `model_id.mjs` alone prints the MEP id for commit stride 10; this task uses 500.
 - `build_variants.py`, `bench_real_payload.mjs`, `wasm_digests.mjs`, `init_state_roots.mjs`, `assemble_task.py` — the tooling.
 
 ## Reproduce
