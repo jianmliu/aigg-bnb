@@ -54,9 +54,9 @@ try {
 
   // ---- 5. a claim in epoch 2, and the beacon now keeps itself going without another wake ----
   const wasm = fs.readFileSync(path.join(H.porwDir, "sketch.wasm"));
-  const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: "0x" + "11".repeat(32), domains, delegation: del }); await nd.loadModel("flywire-female", payload, { steps });
+  const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: "0x" + "11".repeat(32), domains, delegation: del }); await nd.loadModel("flywire-female", payload, { maxSteps: steps });
   const rc = new RelayClient([d.relay], nd.key); await rc.connect(); const svc = new NodeService(nd, rc, {}); svc.serve(mep.mepId);
-  await svc.announce(mep.mepId, H.unhex(ep2.challenge), { stimulusSeed: 1 });
+  await svc.announce(mep.mepId, H.unhex(ep2.challenge));
   check("the relayer's aggregator collected the epoch-2 claim", await waitFor(async () => (await R.api("/status")).aggregators[0].epochs.some((x) => x.epoch === 2 && x.claims === 1)));
   await toBlock(113); check("beacon committed for epoch 3, kept warm by the epoch-2 claim", await waitFor(async () => (await S()).commits.includes(3)));
   // epoch 3 is skipped past its reveal window on purpose: this is what a relayer that restarted, or whose commit

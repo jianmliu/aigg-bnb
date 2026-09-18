@@ -20,15 +20,15 @@ try {
 
   // ---- register the LIF MEP ----
   const probe = new PorwNode(await loadKernelFromBytes(wasm), { privHex: H.KEYS[4] });
-  const pst = await probe.loadModel("lif-dispute", payload, { steps: STEPS, exec: "lif", commitStride: STRIDE });
+  const pst = await probe.loadModel("lif-dispute", payload, { maxSteps: STEPS, exec: "lif" });
   const mep = pst.mep, mepId = H.hex(mep.mepId); const n = pst.hdr.neurons;
   { const c = H.clientsFor(dep, H.KEYS[0]);
-    await c.pub.waitForTransactionReceipt({ hash: await c.meps.write.registerMEP([{ modelId: H.hex(mep.modelId), schemeDigest: H.hex(mep.schemeDigest), execKind: H.hex(mep.execKind), steps: mep.steps, clampQ16: mep.clampQ16, neurons: pst.hdr.neurons, synapses: pst.hdr.synapses, synapseRoot: H.hex(pst.csr.synapseRoot), weightsDA: "0x" + Buffer.from("gnfd://aigg-brains/lif-dispute.bin").toString("hex") }]) }); }
+    await c.pub.waitForTransactionReceipt({ hash: await c.meps.write.registerMEP([{ modelId: H.hex(mep.modelId), schemeDigest: H.hex(mep.schemeDigest), execKind: H.hex(mep.execKind), neurons: pst.hdr.neurons, synapses: pst.hdr.synapses, synapseRoot: H.hex(pst.csr.synapseRoot), weightsDA: "0x" + Buffer.from("gnfd://aigg-brains/lif-dispute.bin").toString("hex") }]) }); }
   check(`LIF MEP registered: ${n} neurons, ${STEPS} steps, stride ${STRIDE}`, await (await H.clientsFor(dep, H.KEYS[0])).meps.read.exists([mepId]));
 
   // ---- pick a neuron where lying about the input actually changes the state ----
   const challengeBytes = new Uint8Array(32).fill(7);
-  await probe.challenge(mep.mepId, challengeBytes, { stimulusSeed: SEED });
+  await probe.challenge(mep.mepId, challengeBytes, { steps: STEPS, commitStride: STRIDE, stimulusSeed: SEED });
   const S_LIE = 8; const prevStates = await probe.lifStates(mep.mepId, S_LIE - 1);
   let NEURON = -1, inDeg = 0, DELTA = 40;
   for (let i = 1; i < n; i++) {
@@ -49,7 +49,7 @@ try {
     const del = await E.makeDelegation(wallet, domains.registry, H.hex(session.address), 100000);
     await R.api("/tx/delegate", { instance: del.instance, session: del.session, expiry: del.expiry, sig: del.sig });
     const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: "0x" + sessionByte.repeat(32), domains, delegation: del });
-    await nd.loadModel("lif-dispute", payload, { steps: STEPS, exec: "lif", commitStride: STRIDE });
+    await nd.loadModel("lif-dispute", payload, { maxSteps: STEPS, exec: "lif" });
     const rc = new RelayClient([d0.relay], nd.key); await rc.connect(); const results = [];
     const svc = new NodeService(nd, rc, { onResult: async (res) => { results.push(res); res.relayer = await R.api("/tx/result", res); } }); svc.serve(mep.mepId);
     return { c, wallet, session, nd, rc, svc, results, addr: wallet.address.toLowerCase() };
@@ -66,7 +66,7 @@ try {
     await toBlock(e * EPOCH + REVEAL + 2); return waitFor(async () => (await R.api("/status")).epochsRolled.includes(e)); };
   check("epoch 1 rolled", await enterEpoch(1));
   const ep = await R.api("/epoch?mep=" + mepId);
-  for (const X of [A, B]) await X.svc.announce(mep.mepId, H.unhex(ep.challenge), { stimulusSeed: 1 });
+  for (const X of [A, B]) await X.svc.announce(mep.mepId, H.unhex(ep.challenge));
   check("both residency claims collected", await waitFor(async () => (await R.api("/status")).aggregators[0].epochs.some((x) => x.epoch === 1 && x.claims === 2)));
   check("epoch 2 rolled", await enterEpoch(2));
   check("epoch-1 root posted", await waitFor(async () => (await R.api("/status")).rootsPosted.some((r) => r.epoch === 1 && r.count === 2)));
@@ -76,17 +76,18 @@ try {
   // ---- now B starts lying about one neuron's accumulated input, and a task is posted ----
   B.nd.execLie = { step: S_LIE, neuron: NEURON, delta: DELTA, kind: "input" };
   const C = H.clientsFor(dep, H.KEYS[0]); const nonce = "0x" + "31".repeat(32);
-  await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([{ mepId, stimulusSeed: SEED, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 200), redundancy: 2 }, nonce], { value: parseEther("0.01") }) });
-  const taskId = keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [mepId, SEED, nonce]));
+  const task = { mepId, stimulusSeed: SEED, steps: STEPS, commitStride: STRIDE, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 200), redundancy: 2 };
+  await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([task, nonce], { value: parseEther("0.01") }) });
+  const taskId = H.taskIdOf(task, nonce);
   const ex = (await C.market.read.executors([taskId])).map((x) => x.toLowerCase());
   check("sortition picked both executors", ex.length === 2 && ex.includes(A.addr) && ex.includes(B.addr));
   const client = new RelayClient([d0.relay], keypair(H.KEYS[0])); await client.connect();
-  for (const X of [A, B]) await client.request(H.hex(X.session.address), "task-announce", mepId, { taskId, stimulusSeed: SEED }, { timeoutMs: 40000, responseType: "result" });
+  for (const X of [A, B]) await client.request(H.hex(X.session.address), "task-announce", mepId, { taskId, stimulusSeed: SEED, steps: STEPS, commitStride: STRIDE }, { timeoutMs: 40000, responseType: "result" });
   const bothIn = await waitFor(async () => A.results[0]?.relayer?.ok && B.results[0]?.relayer?.ok);
   console.log(`  A execDigest ${A.results[0]?.execDigest} (relayer ${JSON.stringify(A.results[0]?.relayer)?.slice(0, 80)})`);
   console.log(`  B execDigest ${B.results[0]?.execDigest} (relayer ${JSON.stringify(B.results[0]?.relayer)?.slice(0, 80)})`);
-  // execDigest is the canonical residency digest and is the same for both; the task run shows up in execRoot,
-  // the Merkle root over the per-segment state roots, and settle() compares both.
+  // both executors ran the same stimulus, so execDigest (the spike-count digest) agrees; B's lie shows up in
+  // execRoot, the Merkle root over the per-segment state roots, and settle() compares both.
   check("both results submitted on-chain, and their execRoots disagree", bothIn && A.results[0].execRoot !== B.results[0].execRoot);
 
   // ---- settle finds the disagreement and opens the dispute instead of paying ----

@@ -1,3 +1,8 @@
+// NOTE: task.json's `models` block still carries scheme sketch-tile-keccak:v1 ids. Under v2 a mep_id binds
+// (scheme, model_id, exec kind, neurons, synapses, synapseRoot) and no longer binds steps or the stride, so those
+// entries must be regenerated with `web/porw-browser/model_id.mjs <payload.bin>` against the real payloads before
+// this runs on a v2 deployment. `steps` and `clampQ16` stay in the file: they are the task's parameters now.
+//
 // Post the tasks of task.json on a deployed mesh and drive them to settlement: postTask (skipped when the task id
 // already exists), task-announce with the stimulus ids to the sortitioned executors over the relayer's relay, wait
 // for the sponsored submitResult transactions, settle through the relayer API, and compare the settled digests with
@@ -6,7 +11,7 @@
 //   AIGG_BNB=/path/to/aigg-bnb node post_tasks.mjs --env /path/to/.env.bsc-testnet --relayer http://host:8788 [--only full,ablate4,keep4] [--fee 0.001] [--deadline 600]
 import fs from "node:fs"; import path from "node:path"; import { createRequire } from "node:module";
 const here = path.dirname(new URL(import.meta.url).pathname); const bnb = process.env.AIGG_BNB || "/Volumes/T7-Data/rspeech/aigg-bnb-work";
-const { parseEther, keccak256, encodePacked, parseAbiItem } = await import(createRequire(path.join(bnb, "package.json")).resolve("viem"));
+const { parseEther, keccak256, encodeAbiParameters, parseAbiItem } = await import(createRequire(path.join(bnb, "package.json")).resolve("viem"));
 const porw = (f) => import(path.join(bnb, "contracts/lib/aigg-porw/web/porw-browser", f));
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -16,6 +21,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * @param api       async (path, body?) => JSON, the relayer HTTP API
  * @param opts      { taskJson, fee, deadlineBlocks, only: [model names], sessionOf: async wallet -> session address, log }
  */
+/** taskId = keccak256(abi.encode(Task, nonce)) -- the id binds every field of the task, deadline and fee included,
+ *  so a squatter cannot take a client's id with different parameters (TaskMarket.postTask / PorwMeshHash.taskId). */
+export const taskIdOf = (t, nonce) => keccak256(encodeAbiParameters(
+  [{ type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" },
+     { name: "inputCommit", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] }, { type: "bytes32" }],
+  [t, nonce]));
+
 /** the executor's current session key (its relay inbox): the latest SessionKeySet event of the instance registry for that wallet */
 export async function sessionFromLogs(clients, instancesAddress, wallet) {
   const logs = await clients.pub.getLogs({ address: instancesAddress, event: parseAbiItem("event SessionKeySet(address indexed instance, address indexed session, uint64 expiry)"), args: { instance: wallet }, fromBlock: 0n });
@@ -29,11 +41,15 @@ export async function runTasks(clients, clientKey, api, { taskJson = path.join(h
     for (const t of T.tasks) {
       if (only && !only.some((o) => t.model.endsWith(o) || (o === "full" && t.model === "flywire-783-min5"))) continue;
       const mep = T.models[t.model].mep; const ids = T.stimulusSets[t.stimulusSet].payloadIndices; const seed = T.stimulusSeed;
-      const taskId = keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [mep.mepId, seed, t.nonce])); const r = { model: t.model, stimulusSet: t.stimulusSet, taskId, expected: t.expectedExecDigest };
+      // The task's own parameters: `steps` and `commitStride` ride on the task under scheme v2, and the id binds
+      // the whole struct -- so it has to be built before it can be identified, deadline included.
+      const block = await clients.pub.getBlockNumber();
+      const task = { mepId: mep.mepId, stimulusSeed: seed, steps: mep.steps, commitStride: mep.clampQ16, inputCommit: t.inputCommit,
+        fee: parseEther(fee), deadline: block + BigInt(deadlineBlocks), redundancy: 2 };
+      const taskId = taskIdOf(task, t.nonce); const r = { model: t.model, stimulusSet: t.stimulusSet, taskId, expected: t.expectedExecDigest };
       let ex = []; try { ex = (await clients.market.read.executors([taskId])).map((x) => x.toLowerCase()); } catch {}
       if (!ex.length) {
-        const block = await clients.pub.getBlockNumber();
-        const h = await clients.market.write.postTask([{ mepId: mep.mepId, stimulusSeed: seed, inputCommit: t.inputCommit, fee: parseEther(fee), deadline: block + BigInt(deadlineBlocks), redundancy: 2 }, t.nonce], { value: parseEther(fee) });
+        const h = await clients.market.write.postTask([task, t.nonce], { value: parseEther(fee) });
         const rc = await clients.pub.waitForTransactionReceipt({ hash: h }); r.postTx = h; if (rc.status !== "success") { r.error = "postTask reverted"; out.push(r); log(`FAIL ${t.model} | ${t.stimulusSet}: postTask reverted ${h}`); continue; }
         ex = (await clients.market.read.executors([taskId])).map((x) => x.toLowerCase());
       } else r.postTx = "(already posted)";
@@ -42,7 +58,7 @@ export async function runTasks(clients, clientKey, api, { taskJson = path.join(h
       r.results = {};
       for (const x of ex) {
         let session; try { session = sessionOf ? await sessionOf(x) : await sessionFromLogs(clients, d.addresses.instances, x); } catch (e) { r.results[x] = { error: String(e) }; log(`  ${x.slice(0, 8)}: ${e.message}`); continue; }
-        try { const resp = await client.request(session, "task-announce", mep.mepId, { taskId, stimulusSeed: seed, stimulusIds: ids }, { timeoutMs: 600000, responseType: "result" }); r.results[x] = { execDigest: resp.payload.execDigest, execRoot: resp.payload.execRoot, ok: resp.payload.execDigest === t.expectedExecDigest }; log(`  ${x.slice(0, 8)} -> ${resp.payload.execDigest.slice(0, 12)}… ${r.results[x].ok ? "matches" : "DIFFERS FROM"} the expected digest`); }
+        try { const resp = await client.request(session, "task-announce", mep.mepId, { taskId, stimulusSeed: seed, steps: task.steps, commitStride: task.commitStride, stimulusIds: ids }, { timeoutMs: 600000, responseType: "result" }); r.results[x] = { execDigest: resp.payload.execDigest, execRoot: resp.payload.execRoot, ok: resp.payload.execDigest === t.expectedExecDigest }; log(`  ${x.slice(0, 8)} -> ${resp.payload.execDigest.slice(0, 12)}… ${r.results[x].ok ? "matches" : "DIFFERS FROM"} the expected digest`); }
         catch (e) { r.results[x] = { error: String(e) }; log(`  ${x.slice(0, 8)} no result: ${e}`); }
       }
       const t0 = Date.now(); let all = false; while (Date.now() - t0 < 300000) { const s = await Promise.all(ex.map((x) => clients.market.read.submitted([taskId, x]))); if (s.every(Boolean)) { all = true; break; } await sleep(1000); }

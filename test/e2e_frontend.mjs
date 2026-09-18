@@ -59,14 +59,15 @@ try {
   check("on-chain: valid claims + eligible in epoch 2 for both MEPs", (await W.instances.read.isEligible([W.account.address, mepId, 2n])) && (await W.instances.read.isEligible([W.account.address, mepId2, 2n])));
   // a task from another client: the page's session inbox gets the announcement, the relayer submits the page's result
   const C = H.clientsFor(dep, H.KEYS[0]); const nonce = "0x" + "41".repeat(32);
-  await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([{ mepId: mepId2, stimulusSeed: 7, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 1 }, nonce], { value: parseEther("0.01") }) });
-  const taskId = keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [mepId2, 7, nonce])); const ex = await C.market.read.executors([taskId]);
+  const task = { mepId: mepId2, stimulusSeed: 7, steps: 3, commitStride: 1, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 1 };
+  await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([task, nonce], { value: parseEther("0.01") }) });
+  const taskId = H.taskIdOf(task, nonce); const ex = await C.market.read.executors([taskId]);
   check("the tab's wallet is the sortitioned executor", ex.length === 1 && ex[0].toLowerCase() === W.account.address.toLowerCase());
   const { RelayClient } = await H.porw("relay_client.js"); const { keypair } = await H.porw("claim.js"); const client = new RelayClient([(await R.api("/deployment")).relay], keypair(H.KEYS[0])); await client.connect();
   const session = await page.evaluate(() => document.getElementById("session").textContent.split(" ")[2]);
   const resp = await client.request(session, "task-announce", mepId2, { taskId, stimulusSeed: 7 }, { timeoutMs: 60000, responseType: "result" });
   check("tab executed a task on the MALE brain and returned a signed result", resp.payload.taskId === taskId);
-  const Vf = await H.porw("verifier.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const re = Vf.reexecute(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), M2.payload, { stimulusSeed: 7, execDigest: H.unhex(resp.payload.execDigest) }, M2.mep);
+  const Vf = await H.porw("verifier.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const re = Vf.reexecute(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), M2.payload, { stimulusSeed: 7, steps: 3, execDigest: H.unhex(resp.payload.execDigest) });
   check("the result matches an independent re-execution of the male brain (3 steps)", re.matches);
   check("relayer submitted the tab's result on-chain", await waitFor(async () => C.market.read.submitted([taskId, W.account.address])));
   const s = await R.api("/tx/settle", { taskId, instance: W.account.address }); check("task settled, fee paid to the tab's wallet", s.ok);

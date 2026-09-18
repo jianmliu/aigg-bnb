@@ -55,11 +55,11 @@ const { PorwNode } = await H.porw("node.js"); const { loadKernelFromBytes } = aw
 const { RelayClient } = await H.porw("relay_client.js"); const { NodeService } = await H.porw("node_service.js");
 const V = await H.porw("verify.js"), D = await H.porw("dispute.js"), L = await H.porw("lif.js");
 const payload = new Uint8Array(fs.readFileSync(payloadPath)); const wasm = fs.readFileSync(path.join(H.porwDir, "sketch.wasm"));
-const m = await cA.meps.read.getMEP([mepId]); const STEPS = Number(m.steps), STRIDE = Number(m.clampQ16);
+const m = await cA.meps.read.getMEP([mepId]); const STEPS = Number(process.env.PORW_STEPS || 100), STRIDE = Number(process.env.PORW_STRIDE || 10); // the task's now, not the MEP's
 for (const [X, tag] of [[A, "A"], [B, "B"]]) {
   const t0 = Date.now();
   X.nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: H.hex(X.session.priv), domains, delegation: X.del });
-  X.st = await X.nd.loadModel("flywire", payload, { steps: STEPS, exec: "lif", commitStride: STRIDE });
+  X.st = await X.nd.loadModel("flywire", payload, { maxSteps: STEPS, exec: "lif" });
   if (H.hex(X.st.mep.mepId).toLowerCase() !== mepId) throw new Error(`${tag}: local mep_id does not match the registered MEP`);
   X.rc = new RelayClient([d.relay], X.nd.key, { onLog: (s) => log(`${tag} relay: ${s}`) }); await X.rc.connect();
   X.results = []; X.svc = new NodeService(X.nd, X.rc, { onResult: async (res) => { X.results.push(res); res.relayer = await api("/tx/result", res); } }); X.svc.serve(X.st.mep.mepId);
@@ -70,7 +70,7 @@ check(`the registered brain is resident in both nodes (${n} neurons, ${STEPS} st
 
 // ---- 3. pick a neuron where inflating one input term changes the outcome ----
 log("running the task stimulus once to choose a neuron to lie about…");
-await A.nd.challenge(mepIdBytes, challengeBytes, { stimulusSeed: SEED });
+await A.nd.challenge(mepIdBytes, challengeBytes, { steps: STEPS, commitStride: STRIDE, stimulusSeed: SEED });
 const prev = await A.nd.lifStates(mepIdBytes, S_LIE - 1);
 let NEURON = -1, DELTA = 0, inDeg = 0;
 for (let i = 1; i < n; i++) {
@@ -91,7 +91,7 @@ log("waking the relayer and waiting for a rolled epoch (up to two epochs ~20 min
 let ep = await tick();
 check("the relayer produced a beacon and rolled an epoch", await waitFor(async () => { ep = await tick(); return ep.rolled; }, 45 * 60000, "a rolled epoch"));
 const claimEpoch = ep.epoch;
-for (const X of [A, B]) { const { r } = await X.svc.announce(mepIdBytes, H.unhex(ep.challenge), { stimulusSeed: 1 }); log(`claim announced for epoch ${claimEpoch}: ${H.hex(r.claimHash).slice(0, 14)}…`); }
+for (const X of [A, B]) { const { r } = await X.svc.announce(mepIdBytes, H.unhex(ep.challenge)); log(`claim announced for epoch ${claimEpoch}: ${H.hex(r.claimHash).slice(0, 14)}…`); }
 evidence.claimEpoch = claimEpoch;
 check(`both residency claims collected for epoch ${claimEpoch}`, await waitFor(async () => { await tick(); const s = await api("/status"); return s.aggregators?.[0]?.epochs?.some((x) => x.epoch === claimEpoch && x.claims === 2); }, 10 * 60000, "the aggregator"));
 check(`the epoch-${claimEpoch} root was posted in the next epoch`, await waitFor(async () => { await tick(); const s = await api("/status"); return s.rootsPosted?.some((r) => r.epoch === claimEpoch && r.count === 2); }, 30 * 60000, "the epoch root"));
@@ -103,9 +103,10 @@ check("both instances are eligible to be picked for a task", (await cA.instances
 B.nd.execLie = { step: S_LIE, neuron: NEURON, delta: DELTA, kind: "input" };
 log(`B is now lying about neuron ${NEURON} at step ${S_LIE}; posting a task with redundancy 2`);
 const nonce = keccak256(encodePacked(["uint64"], [BigInt(Date.now())]));
-const ph = await cA.market.write.postTask([{ mepId, stimulusSeed: SEED, inputCommit: "0x" + "00".repeat(32), fee: FEE, deadline: BigInt(Number(await cA.pub.getBlockNumber()) + 3000), redundancy: 2 }, nonce], { value: FEE });
+const task = { mepId, stimulusSeed: SEED, steps: STEPS, commitStride: STRIDE, inputCommit: "0x" + "00".repeat(32), fee: FEE, deadline: BigInt(Number(await cA.pub.getBlockNumber()) + 3000), redundancy: 2 };
+const ph = await cA.market.write.postTask([task, nonce], { value: FEE });
 await cA.pub.waitForTransactionReceipt({ hash: ph }); evidence.txs.postTask = ph;
-const taskId = keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [mepId, SEED, nonce])); evidence.taskId = taskId;
+const taskId = H.taskIdOf(task, nonce); evidence.taskId = taskId;
 const ex = (await cA.market.read.executors([taskId])).map((x) => x.toLowerCase());
 check(`sortition picked both instances (${ex.join(", ")})`, ex.length === 2 && ex.includes(A.addr) && ex.includes(B.addr));
 const { keypair } = await H.porw("claim.js");

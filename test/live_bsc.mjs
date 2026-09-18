@@ -22,10 +22,11 @@ log(`bonded ${formatEther(await c.instances.read.bonded([wallet]))} BNB, ${await
 const E = await H.porw("eip712.js"); const { keypair } = await H.porw("claim.js"); const session = keypair(null); const lw = E.localWallet(pk);
 const del = await E.makeDelegation(lw, domains.registry, H.hex(session.address), Number(await c.pub.getBlockNumber()) + 200000);
 const dr = await api("/tx/delegate", { instance: del.instance, session: del.session, expiry: del.expiry, sig: del.sig }); evidence.txs.delegate = dr.hash; log(`delegateBySig via relayer: ${dr.ok ? "ok" : "FAILED " + dr.error} ${dr.hash || ""}`);
-// 3. the real brain, resident
+// 3. the real brain, resident. Steps and the commit stride are the TASK's under scheme v2, not the MEP's.
+const STEPS = Number(process.env.PORW_STEPS || 100), STRIDE = Number(process.env.PORW_STRIDE || 10);
 const { PorwNode } = await H.porw("node.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const { RelayClient } = await H.porw("relay_client.js"); const { NodeService } = await H.porw("node_service.js");
 const payload = new Uint8Array(fs.readFileSync(payloadPath)); const nd = new PorwNode(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), { privHex: H.hex(session.priv), domains, delegation: del });
-let t0 = Date.now(); const st = await nd.loadModel("flywire-fafb-v783-min5", payload, { steps: 100, commitStride: 10 }); log(`model resident: ${st.hdr.neurons} neurons, mep ${H.hex(st.mep.mepId).slice(0, 12)}… (${H.hex(st.mep.mepId).toLowerCase() === mepId ? "matches the registered MEP" : "MISMATCH"}), ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+let t0 = Date.now(); const st = await nd.loadModel("flywire-fafb-v783-min5", payload, { maxSteps: STEPS }); log(`model resident: ${st.hdr.neurons} neurons, mep ${H.hex(st.mep.mepId).slice(0, 12)}… (${H.hex(st.mep.mepId).toLowerCase() === mepId ? "matches the registered MEP" : "MISMATCH"}), ${((Date.now() - t0) / 1000).toFixed(1)} s`);
 const rc = new RelayClient([d.relay], nd.key); await rc.connect(); const results = [];
 const svc = new NodeService(nd, rc, { onResult: async (res) => { const r = await api("/tx/result", res); res.relayer = r; results.push(res); evidence.txs.result = r.hash; log(`result submitted via relayer: ${r.ok ? "ok" : "FAILED " + r.error} ${r.hash || ""}`); } }); svc.serve(st.mep.mepId);
 // 4. epochs: claim each rolled epoch; materialize the previous one once its root is posted; then a task
@@ -36,14 +37,15 @@ while (Date.now() < deadline && !settled) {
     // announce ourselves once an epoch, the way the node page does: against a relayer running with
     // PORW_BEACON_LAZY=1 nothing else would wake the beacon and this script would wait out its deadline.
     if (wokeEpoch !== e.epoch) { wokeEpoch = e.epoch; const w = await api("/wake", { instance: wallet }).catch(() => ({})); if (w.lazy) log(`epoch ${e.epoch}: woke the relayer's beacon through ${w.wakeUntil}`); }
-    if (e.rolled && !claims[e.epoch]) { t0 = Date.now(); const { r } = await svc.announce(st.mep.mepId, H.unhex(e.challenge), { stimulusSeed: 1 }); claims[e.epoch] = H.hex(r.claimHash); log(`epoch ${e.epoch}: claim announced ${claims[e.epoch].slice(0, 12)}… (slot ${((Date.now() - t0) / 1000).toFixed(1)} s incl. 100 LIF steps + commitments)`); }
+    if (e.rolled && !claims[e.epoch]) { t0 = Date.now(); const { r } = await svc.announce(st.mep.mepId, H.unhex(e.challenge)); claims[e.epoch] = H.hex(r.claimHash); log(`epoch ${e.epoch}: claim announced ${claims[e.epoch].slice(0, 12)}… (slot ${((Date.now() - t0) / 1000).toFixed(1)} s — residency only, no inference)`); }
     const prev = e.epoch - 1;
     if (claims[prev] && !materialized[prev]) { const p = await api(`/proof?mep=${mepId}&epoch=${prev}&instance=${wallet}`); if (p.posted) { const r = await api("/tx/materialize", { mep: mepId, epoch: prev, instance: wallet }); materialized[prev] = r.ok; evidence.txs.materialize = r.hash; log(`epoch ${prev}: materializeClaim via relayer ${r.ok ? "ok gas " + r.gasUsed : "FAILED " + r.error} ${r.hash || ""}`); } }
     // eligible this epoch (materialized claim for e-1)? post one task and execute it
     if (!taskId && materialized[prev] && (await c.instances.read.isEligible([wallet, mepId, BigInt(e.epoch)]))) {
       const nonce = keccak256(encodePacked(["uint64"], [BigInt(Date.now())]));
-      const h = await c.market.write.postTask([{ mepId, stimulusSeed: 7, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.001"), deadline: BigInt(Number(await c.pub.getBlockNumber()) + 2000), redundancy: 1 }, nonce], { value: parseEther("0.001") });
-      await c.pub.waitForTransactionReceipt({ hash: h }); taskId = keccak256(encodePacked(["bytes32", "uint32", "bytes32"], [mepId, 7, nonce])); evidence.txs.postTask = h; evidence.taskId = taskId;
+      const task = { mepId, stimulusSeed: 7, steps: STEPS, commitStride: STRIDE, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.001"), deadline: BigInt(Number(await c.pub.getBlockNumber()) + 2000), redundancy: 1 };
+      const h = await c.market.write.postTask([task, nonce], { value: parseEther("0.001") });
+      await c.pub.waitForTransactionReceipt({ hash: h }); taskId = H.taskIdOf(task, nonce); evidence.txs.postTask = h; evidence.taskId = taskId;
       const ex = await c.market.read.executors([taskId]); log(`task ${taskId.slice(0, 12)}… posted ${h}; executors ${ex.join(",")}`);
       const client = new RelayClient([d.relay], keypair(null)); await client.connect();
       const resp = await client.request(H.hex(session.address), "task-announce", mepId, { taskId, stimulusSeed: 7 }, { timeoutMs: 120000, responseType: "result" }); log(`executed over the relay: execDigest ${resp.payload.execDigest.slice(0, 14)}…`); client.close();

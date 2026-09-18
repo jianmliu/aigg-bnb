@@ -1,7 +1,7 @@
 // Local end-to-end harness: anvil + DeployBNB (small epoch parameters) + a registered MEP over a synthetic
 // brain + the relayer as a child process. Blocks are advanced with anvil_mine so epochs are deterministic.
 import { spawn, fork } from "node:child_process"; import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
-import { createPublicClient, createWalletClient, http, defineChain, getContract, parseEther } from "viem";
+import { createPublicClient, createWalletClient, http, defineChain, getContract, parseEther, keccak256, encodeAbiParameters } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { MEPRegistryAbi, InstanceRegistryAbi, ClaimManagerAbi, TaskMarketAbi } from "../relayer/abi.mjs";
 import { eip712Domains } from "../relayer/chain.mjs";
@@ -11,6 +11,10 @@ export const FOUNDRY = process.env.FOUNDRY_BIN || "/root/.foundry171";
 // anvil's deterministic accounts
 export const KEYS = ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6", "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a"];
 export const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); export const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
+/** taskId = keccak256(abi.encode(Task, nonce)): the id binds every field of the task, fee and deadline included */
+export const TASK_TUPLE = { type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" },
+  { name: "inputCommit", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] };
+export const taskIdOf = (t, nonce) => keccak256(encodeAbiParameters([TASK_TUPLE, { type: "bytes32" }], [t, nonce]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const rpcCall = async (rpc, method, params = []) => (await (await fetch(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) })).json()).result;
 
@@ -35,9 +39,9 @@ export function clientsFor(dep, key) {
 export async function registerSyntheticMep(dep, key, { name = "flywire-female", neurons = 4000, synapses = 40000, steps = 2 } = {}) {
   const { synthesizePayload } = await porw("synth.js"); const { PorwNode } = await porw("node.js"); const { loadKernelFromBytes } = await porw("porw.js");
   const payload = synthesizePayload(name, neurons, synapses); const wasm = fs.readFileSync(path.join(porwDir, "sketch.wasm"));
-  const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: KEYS[4] }); const st = await nd.loadModel(name, payload, { steps }); const mep = st.mep;
+  const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: KEYS[4] }); const st = await nd.loadModel(name, payload, { maxSteps: steps }); const mep = st.mep;
   const c = clientsFor(dep, key);
-  const h = await c.meps.write.registerMEP([{ modelId: hex(mep.modelId), schemeDigest: hex(mep.schemeDigest), execKind: hex(mep.execKind), steps: mep.steps, clampQ16: mep.clampQ16, neurons: st.hdr.neurons, synapses: st.hdr.synapses, synapseRoot: hex(st.csr.synapseRoot), weightsDA: "0x" + Buffer.from(`gnfd://aigg-brains/${name}.bin`).toString("hex") }]);
+  const h = await c.meps.write.registerMEP([{ modelId: hex(mep.modelId), schemeDigest: hex(mep.schemeDigest), execKind: hex(mep.execKind), neurons: st.hdr.neurons, synapses: st.hdr.synapses, synapseRoot: hex(st.csr.synapseRoot), weightsDA: "0x" + Buffer.from(`gnfd://aigg-brains/${name}.bin`).toString("hex") }]);
   await c.pub.waitForTransactionReceipt({ hash: h });
   return { mep, mepId: hex(mep.mepId), payload, st, steps };
 }

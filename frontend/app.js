@@ -56,8 +56,8 @@ function renderMeps() {
 }
 function renderActive() {
   const m = mepById(state.active); if (!m) return;
-  $("mepInfo").textContent = `${m.mepId} · model_id ${m.modelId.slice(0, 14)}… · steps ${m.steps}${m.exec === "int-lif" ? " · stride " + m.commitStride : ""} · ${m.synapses.toLocaleString()} synapses · ${m.weightsDA}`;
-  $("steps").value = m.steps; if (!$("url").value && m.weightsDA.startsWith("gnfd://") && $("sp").value) $("url").value = $("sp").value.replace(/\/$/, "") + "/view/" + m.weightsDA.slice(7);
+  $("mepInfo").textContent = `${m.mepId} · model_id ${m.modelId.slice(0, 14)}… · ${m.neurons.toLocaleString()} neurons · ${m.synapses.toLocaleString()} synapses · ${m.weightsDA}`;
+  if (!$("url").value && m.weightsDA.startsWith("gnfd://") && $("sp").value) $("url").value = $("sp").value.replace(/\/$/, "") + "/view/" + m.weightsDA.slice(7);
   const l = state.loaded[m.mepId]; $("model").textContent = l ? `${l.name}: ${l.neurons} neurons, ${l.synapses} synapses, model_id ${l.modelId.slice(0, 14)}… (${l.ok ? "matches the MEP" : "DOES NOT MATCH the MEP's model_id"})` : "not loaded";
   const claimed = Object.entries(state.claims[m.mepId] || {}).map(([e]) => e).join(","); $("mepStatus").textContent = `hosted: ${state.hosted.has(m.mepId) ? "yes" : "no"} · claims: epochs ${claimed || "—"} · materialized: ${Object.entries(state.materialized[m.mepId] || {}).filter(([, v]) => v).map(([e]) => e).join(",") || "—"}`;
 }
@@ -105,8 +105,8 @@ async function loadModel() {
 }
 async function hostOnNode(m) {
   if (!state.hosted.has(m.mepId) || !state.prepared.has(m.mepId) || state.node.models.has(m.mepId)) return;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, steps: m.steps, exec: m.exec === "int-lif" ? "lif" : "spmv", commitStride: m.commitStride });
-  if (!r.matches) { log(`WARNING ${m.name || m.mepId.slice(0, 10)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model/steps/exec kind mismatch)`); return; }
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps: Number($("steps").value) || 100, exec: m.exec === "int-lif" ? "lif" : "spmv" });
+  if (!r.matches) { log(`WARNING ${m.name || m.mepId.slice(0, 10)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons });
   log(`${m.name || m.mepId.slice(0, 10)}: resident on the node, serving audits and tasks`);
 }

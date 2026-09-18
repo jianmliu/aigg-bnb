@@ -31,14 +31,12 @@ const ops = {
   // MEP pins on-chain. Recomputing it is a keccak over every 4 KiB tile -- 28 MB of it, which is why it is here.
   async prepare({ mepId, bytes }) {
     const b = new Uint8Array(bytes); pending.set(mepId, b);
-    const nT = Math.floor(b.length / V.TILE_BYTES); const lv = [];
-    for (let t = 0; t < nT; t++) lv.push(V.weightsLeaf(t, b.subarray(t * V.TILE_BYTES, (t + 1) * V.TILE_BYTES)));
-    const hdr = decodeHeader(b);
-    return { modelId: hex(V.merkleRoot(lv)), name: hdr.name, neurons: hdr.neurons, synapses: hdr.synapses, bytes: b.length };
+    const hdr = decodeHeader(b); const prof = V.profileOf(b, hdr); // model id AND the CSR roots: mep_id binds both now
+    return { modelId: hex(prof.modelId), synapseRoot: hex(prof.synapseRoot), name: hdr.name, neurons: hdr.neurons, synapses: hdr.synapses, bytes: b.length };
   },
-  async host({ mepId, name, steps, exec, commitStride }) {
+  async host({ mepId, name, maxSteps, exec }) {
     const bytes = pending.get(mepId); if (!bytes) throw new Error("no bytes prepared for this brain");
-    const st = await node.loadModel(name, bytes, { steps, exec, commitStride });
+    const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec });
     const local = hex(st.mep.mepId).toLowerCase();
     if (svc && local === mepId) svc.serve(st.mep.mepId);
     return { localMepId: local, matches: local === mepId, neurons: st.hdr.neurons };
@@ -46,7 +44,7 @@ const ops = {
   async relay({ url }) { rc = new RelayClient([url], node.key, { onLog: (m) => say("log", { msg: m }) }); const n = await rc.connect();
     svc = new NodeService(node, rc, { onResult: (res) => say("result", { res }) }); return { connected: n }; },
   async announce({ mepId, challenge }) {
-    const t0 = performance.now(); const { r } = await svc.announce(unhex(mepId), unhex(challenge), { stimulusSeed: 1 });
+    const t0 = performance.now(); const { r } = await svc.announce(unhex(mepId), unhex(challenge)); // residency only: no inference in a claim
     const t = r.timings || {}; const slot = (t.sketchMs || 0) + (t.commitMs || 0) + (t.inferMs || 0) + (t.disputeCommitMs || 0);
     return { claimHash: hex(r.claimHash), slotMs: Math.round(slot || performance.now() - t0) };
   },

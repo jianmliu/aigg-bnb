@@ -44,10 +44,10 @@ const meps = new Map(); // mepId -> { mep, info, aggregators: Map(epoch -> Aggre
 for (const id of cfg.meps) {
   const m = await ch.meps.read.getMEP([id]);
   const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
-  const info = { mepId: id.toLowerCase(), modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", steps: Number(m.steps), clampQ16: Number(m.clampQ16), commitStride: isLif ? Number(m.clampQ16) : 1, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
+  const info = { mepId: id.toLowerCase(), modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
     weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || (cfg.mepNames || {})[id.toLowerCase()] || null };
   const execKind = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? lifExecKind() : EXEC_INT_SPMV_Q16;
-  const mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), steps: Number(m.steps), clampQ16: Number(m.clampQ16), execKind, commitStride: Number(m.clampQ16) });
+  const mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
   if (hex(mep.mepId).toLowerCase() !== id.toLowerCase()) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind mismatch)`);
   meps.set(id.toLowerCase(), { mep, info, aggregators: new Map(), posted: new Set() });
 }

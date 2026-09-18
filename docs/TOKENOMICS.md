@@ -126,79 +126,58 @@ Recommendation: ship (a), specify (b), and treat the type table as its own piece
 
 ---
 
-## 5. The binding constraint is a browser tab, not storage or gas
+## 5. The binding constraint is memory, not CPU or storage or gas
 
 The node runs in the user's browser, single-threaded (the page loads `sketch.wasm` and never passes a worker pool
 to `PorwNode`; as of the worker refactor it runs off the main thread, but still on one core).
 
-*Measured:* one residency claim for the real brain is **5.1 s** on a laptop. An epoch is 800 blocks ≈ **600 s**.
-
-Where that goes is the surprise, and it decides what to do about it. Breaking a claim down on the real brain
+This section used to say a residency claim cost **5.1 s** and that CPU was the scarce resource. Scheme
+`sketch-tile-keccak:v2` removed the reason for that. Breaking the old claim down on the real brain
 (139,255 neurons, 2,700,513 synapse records, 100 steps, stride 10):
 
-| phase | time | what it is |
-|---|---|---|
-| sketch | **11 ms** | the actual proof that the weights are resident |
-| commit | 23 ms | the claim's own commitment |
-| infer | 1,843 ms | the 100 LIF steps |
-| **disputeCommit** | **5,033 ms** | **72%** — a Merkle tree over 139,255 state leaves at every stride boundary |
+| phase | time | what it is | still in a claim? |
+|---|---|---|---|
+| sketch | 11 ms | the actual proof that the weights are resident | yes |
+| commit | 23 ms | the claim's own commitment | yes |
+| infer | 1,843 ms | the 100 LIF steps | no |
+| disputeCommit | 5,033 ms | a Merkle tree over 139,255 state leaves at every stride boundary | no |
 
-**Proving residency costs 11 ms.** The rest proves *execution*, so that a claim can be audited and disputed by the
-same machinery a task is. Which means every instance pays, every epoch, for every brain it hosts, the full cost of
-being ready for a dispute that will almost certainly never come.
+The last two rows were never adjudicated. A claim is invalidated by exactly one verdict — the tile fraud proof —
+and that proof reads `partialsRoot` and the model root. `execDigest` reached the chain only inside the claim's own
+hash; nothing ever compared it. v2 drops it, and with it the run that produced it.
 
-The commitments are per stride boundary, and stride is `clampQ16` — a **per-MEP field chosen at registration**,
-not a global immutable. So this is tunable today, per brain, with no contract change. *Measured,* same brain:
+**A residency claim is the first two rows: 34 ms.** Same brain, same laptop, ~200× less than before. Execution is
+still attested, per *task*, by `TaskMarket.Result`, where `execDigest` is compared between redundant executors and
+a mismatch opens the dispute — which is the only place it was ever read.
 
-| stride | commitments | infer | disputeCommit | claim |
-|---|---|---|---|---|
-| 10 | 10 | 1,843 ms | 5,033 ms | **6.96 s** |
-| 25 | 4 | 1,878 ms | 2,304 ms | 4.26 s |
-| 50 | 2 | 1,871 ms | 1,388 ms | 3.34 s |
-| 100 | 1 | 1,870 ms | 935 ms | **2.88 s** |
+Two knock-on effects for a collection:
 
-A **2.4× cheaper claim** for choosing stride 100 at registration. The cost moves to the dispute's refine phase,
-where `postStepRoots` posts a 100-entry array instead of a 10-entry one — roughly an order of magnitude more gas
-for that one move, paid once, by the two parties, in a rare event. Moving cost off the path everyone walks every
-epoch and onto the path almost nobody walks is the right direction; the anvil dispute measured `postStepRoots` at
-207,044 gas with stride 5, so even ten times that is small against what it buys.
+**The step count and the commit stride left the MEP.** They are per-task fields now, which is where the dispute
+machinery reads them. Before, two MEPs differing only in step count were two bonds, two claims per epoch and two
+disjoint sortition pools for one identical brain. One fly is now one `mep_id`, and `mep_id` is a pure function of
+the model bytes — which is exactly what an NFT that *is* a brain should mean.
 
-So a tab hosting `h` brains spends `2.9h`–`7h` seconds of one core per epoch depending on stride. `h` of 3–5 is a
-reasonable ask of a visitor's laptop; ten brains at stride 10 is seventy seconds every ten minutes and they will
-notice.
+**CPU stops being the cap.** A tab hosting `h` brains now spends `0.034h` seconds of one core per epoch, so `h` is
+bounded by something else long before it is bounded by time. What binds instead:
 
-With `T` tabs online, each hosting `h`, and redundancy 2, the number of individuals that can actually be claimed
-every epoch is
+1. **Memory.** Each hosted brain is a 28 MB payload resident in wasm memory, plus its weights tree, its CSR
+   commitments and its per-slot regions. That is the real ceiling on `h` for a laptop tab, and it is the number to
+   measure next — the 200-individual figure this section used to give was a CPU figure and no longer applies.
+2. **First load.** 28 MB over the network before a tab can claim anything, once per base.
+3. **Redundancy.** Still `N ≤ T · h / 2` in shape, with `h` now set by memory rather than seconds.
 
-> **N ≤ T · h / 2**
+This is why item 2 below is still the one that matters, but for a different reason than before. It is no longer
+about paying twenty dispute-commitment bills; it is about a tab holding twenty variants of one base as one 28 MB
+payload plus twenty kilobyte deltas, instead of twenty resident payloads.
 
-A hundred live tabs at four brains each supports about **200 individuals** at stride 10, or about **480** at
-stride 100. Beyond that the extra members of the collection get no residency claims, so no task can be assigned to
-them, so they are dead tokens.
-
-This is the number that should set the genesis size and the breeding rate — not demand. Storage stopped mattering
-when deltas landed; gas never mattered at 0.1 gwei; **attention-seconds of other people's laptops** is what is
-scarce.
-
-Three ways to buy room, in increasing order of how much has to change:
-
-1. **Register brains with a large stride.** Available today, per MEP, 2.4×. Do this regardless.
-2. **Claim the base once, prove the delta.** This is the one that matters for a collection. A tab hosting twenty
-   variants of one base holds *one* 28 MB payload and twenty kilobyte deltas — but pays twenty full claims,
-   because the claim scheme treats each variant as an unrelated model. Since `apply` is deterministic, residency
-   of (base, delta) is residency of the variant, so one claim for the base plus a cheap proof of each delta would
-   take `5.1h` seconds to `5.1 + ε`. That is an upstream change to the claim scheme, and it is the single
-   highest-value one available — deltas created this inefficiency and deltas are what make the fix obvious.
+1. ~~Register brains with a large stride.~~ Obsolete: stride is a task parameter now and a claim does not commit
+   anything per stride. A task still chooses it, and `postTask` bounds the dispute rounds it implies.
+2. **Claim the base once, prove the delta.** Since `apply` is deterministic, residency of (base, delta) is
+   residency of the variant, so one claim for the base plus a cheap proof of each delta would let a tab host a
+   whole lineage from one payload. Still an upstream change to the claim scheme, still the highest-value one
+   available.
 3. **Claims on demand**, or a longer epoch — noting that with a lazy beacon the epoch length is now the cold-start
    latency, so it cannot be stretched freely.
-
-Worth stating plainly for whoever picks this up: the claim is expensive because it is built as a miniature task
-execution, so that the same audit and dispute machinery covers it. That is a coherent design, not an accident.
-But if what a claim is *for* is residency, the 11 ms sketch already establishes that, and the other 6.9 seconds is
-buying a property — disputability of the claim's execution — whose value should be weighed against being paid by
-every tab, for every brain, every epoch, forever.
-
----
 
 ## 6. Parameters
 
@@ -212,7 +191,7 @@ nominal amount in a volatile asset.
 | `SLASH_AMOUNT` | 0.5 BNB | capped by the bond in practice |
 | beacon `DEPOSIT` | 0.1 BNB | prices biasing one epoch's randomness; fixed while task value grows (§7) |
 | `MINT_PRICE` | `UNIT` + fee | the fee is the treasury's only income |
-| genesis size | ≤ 200 initially (§5) | split between the two sexes; a skewed ratio throttles breeding |
+| genesis size | to set against the §5 memory bound | the old ≤ 200 was a CPU figure and no longer applies; split between the two sexes, since a skewed ratio throttles breeding |
 | `BREED_FEE` | to decide | the second sink, and the rate limit on new MEPs |
 
 Not an admin key. The neighbouring project lets its owner change the mint price, the swap route and the buyback
@@ -232,7 +211,8 @@ biasing becomes profitable and the deposit cannot be raised. That is the economi
 standing gas cost.
 
 **Every individual is an immutable on-chain MEP, forever.** Breeding without a cap grows that set without bound,
-and §5 says the mesh cannot host an unbounded set. The fee is the rate limit; choose it as one.
+and §5 says the mesh cannot host an unbounded set — the ceiling is a tab's memory now, not its CPU, but it is
+still a ceiling. The fee is the rate limit; choose it as one.
 
 **Transfer and bond must stay separate.** The token is transferable; the bond belongs to an address, not a token.
 Transferring an individual does not transfer the right to be slashed for it, and the new owner bonds themselves if
@@ -243,7 +223,8 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
 ## 8. Still to decide
 
 1. Breeding rule: (a) or (b) from §4 — this blocks the contract.
-2. Genesis size and sex ratio, against the §5 bound.
+2. Genesis size and sex ratio, against the §5 bound — which needs the memory measurement §5 asks for before it
+   can be a number.
 3. `MINT_PRICE` split between bond and treasury, and what the treasury may spend on.
 4. Whether the token owner's share of task fees is a protocol rule or a social one.
 5. Who exports the male base, and when.

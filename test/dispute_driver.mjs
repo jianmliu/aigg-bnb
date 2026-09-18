@@ -40,8 +40,8 @@ export async function driveDispute(A, B, opts, mod, hooks) {
   };
 
   // each side replays its own run locally so it has its own commitments to post
-  const rA = await A.nd.challenge(mepIdBytes, challengeBytes, { stimulusSeed: seed });
-  const rB = await B.nd.challenge(mepIdBytes, challengeBytes, { stimulusSeed: seed });
+  const rA = await A.nd.challenge(mepIdBytes, challengeBytes, { steps, commitStride: stride, stimulusSeed: seed });
+  const rB = await B.nd.challenge(mepIdBytes, challengeBytes, { steps, commitStride: stride, stimulusSeed: seed });
   check("the local replays reproduce exactly what each side signed on-chain", hex(rA.result.execRoot) === A.execRoot && hex(rB.result.execRoot) === B.execRoot);
 
   gas.reveal = await send(A, "revealRoots", [taskId, rA.result.actRoots.map(hex)]);
