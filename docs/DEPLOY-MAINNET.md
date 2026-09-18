@@ -232,10 +232,15 @@ Measured, from the live BSC testnet run, per epoch, per MEP:
 
 At 800-block epochs (~10 min on BSC) that is 144 epochs/day ≈ **52.7M gas/day, with zero users**. In BNB:
 
-| gas price (*assumed*) | per day | per year |
+| gas price | per day | per year |
 |---|---|---|
-| 1 gwei (the figure in `DESIGN.md` §5) | 0.053 BNB | 19.2 BNB |
-| 0.1 gwei | 0.0053 BNB | 1.9 BNB |
+| 1 gwei — the *assumption* in `DESIGN.md` §5 | 0.053 BNB | 19.2 BNB |
+| **0.1 gwei — measured on BSC testnet, 2026-09-17** | 0.0053 BNB | 1.9 BNB |
+
+The gas price is no longer an assumption: every transaction in the second live run settled at **0.1 gwei**, ten
+times below the figure `DESIGN.md` §5 is built on. That table is conservative by an order of magnitude and should
+be restated. Re-check on mainnet before quoting anything — testnet and mainnet floors need not agree — but the
+direction of the error is now known.
 
 **267,911 of the 365,710 gas — 73% — is the beacon** (commit + reveal + roll). The idle cost of this system is
 almost entirely the cost of producing randomness nobody is using yet.
