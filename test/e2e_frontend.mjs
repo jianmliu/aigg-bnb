@@ -73,7 +73,7 @@ try {
   check("on-chain: valid claims + eligible in epoch 2 for both MEPs", (await W.instances.read.isEligible([W.account.address, mepId, 2n])) && (await W.instances.read.isEligible([W.account.address, mepId2, 2n])));
   // a task from another client: the page's session inbox gets the announcement, the relayer submits the page's result
   const C = H.clientsFor(dep, H.KEYS[0]); const nonce = "0x" + "41".repeat(32);
-  const task = { mepId: mepId2, stimulusSeed: 7, steps: 3, commitStride: 1, inputCommit: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 1 };
+  const task = { mepId: mepId2, stimulusSeed: 7, steps: 3, commitStride: 1, initStateRoot: "0x" + "00".repeat(32), fee: parseEther("0.01"), deadline: BigInt(await anvil.block() + 50), redundancy: 1 };
   await C.pub.waitForTransactionReceipt({ hash: await C.market.write.postTask([task, nonce], { value: parseEther("0.01") }) });
   const taskId = H.taskIdOf(task, nonce); const ex = await C.market.read.executors([taskId]);
   check("the tab's wallet is the sortitioned executor", ex.length === 1 && ex[0].toLowerCase() === W.account.address.toLowerCase());

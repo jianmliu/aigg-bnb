@@ -13,7 +13,7 @@ export const KEYS = ["0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7b
 export const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); export const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
 /** taskId = keccak256(abi.encode(Task, nonce)): the id binds every field of the task, fee and deadline included */
 export const TASK_TUPLE = { type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" },
-  { name: "inputCommit", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] };
+  { name: "initStateRoot", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] };
 export const taskIdOf = (t, nonce) => keccak256(encodeAbiParameters([TASK_TUPLE, { type: "bytes32" }], [t, nonce]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const rpcCall = async (rpc, method, params = []) => (await (await fetch(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) })).json()).result;

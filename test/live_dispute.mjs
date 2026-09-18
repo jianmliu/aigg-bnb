@@ -103,7 +103,7 @@ check("both instances are eligible to be picked for a task", (await cA.instances
 B.nd.execLie = { step: S_LIE, neuron: NEURON, delta: DELTA, kind: "input" };
 log(`B is now lying about neuron ${NEURON} at step ${S_LIE}; posting a task with redundancy 2`);
 const nonce = keccak256(encodePacked(["uint64"], [BigInt(Date.now())]));
-const task = { mepId, stimulusSeed: SEED, steps: STEPS, commitStride: STRIDE, inputCommit: "0x" + "00".repeat(32), fee: FEE, deadline: BigInt(Number(await cA.pub.getBlockNumber()) + 3000), redundancy: 2 };
+const task = { mepId, stimulusSeed: SEED, steps: STEPS, commitStride: STRIDE, initStateRoot: "0x" + "00".repeat(32), fee: FEE, deadline: BigInt(Number(await cA.pub.getBlockNumber()) + 3000), redundancy: 2 };
 const ph = await cA.market.write.postTask([task, nonce], { value: FEE });
 await cA.pub.waitForTransactionReceipt({ hash: ph }); evidence.txs.postTask = ph;
 const taskId = H.taskIdOf(task, nonce); evidence.taskId = taskId;

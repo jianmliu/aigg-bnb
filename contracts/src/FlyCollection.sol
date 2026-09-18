@@ -29,6 +29,8 @@ contract FlyCollection {
     uint8 public constant MALE = 1;
     bytes32 public immutable BASE_FEMALE; // model_id of the female base payload
     bytes32 public immutable BASE_MALE;   // model_id of the male base payload
+    bytes32 public immutable BASE_MEP_FEMALE; // the bases' MEPs: what a minter is enrolled for, because it is what they can host on day one
+    bytes32 public immutable BASE_MEP_MALE;   // (zero: bond without enrolling)
 
     // ---- economics, all immutable: no owner may move them after deployment ----
     uint256 public immutable MINT_PRICE;
@@ -100,24 +102,24 @@ contract FlyCollection {
     constructor(
         bytes32 baseFemale, bytes32 baseMale, bytes32 genesisRoot, uint32 genesisSize,
         uint256 mintPrice, uint256 mintBond, uint256 breedFee, address treasury,
-        IMEPRegistry meps, IInstanceBonding instances, LineageRegistry lineage
+        IMEPRegistry meps, IInstanceBonding instances, LineageRegistry lineage, bytes32 baseMepFemale, bytes32 baseMepMale
     ) {
         require(mintBond <= mintPrice, "bond > price"); require(treasury != address(0), "treasury");
         BASE_FEMALE = baseFemale; BASE_MALE = baseMale; GENESIS_ROOT = genesisRoot; GENESIS_SIZE = genesisSize;
         MINT_PRICE = mintPrice; MINT_BOND = mintBond; BREED_FEE = breedFee; TREASURY = treasury;
-        MEPS = meps; INSTANCES = instances; LINEAGE = lineage;
+        MEPS = meps; INSTANCES = instances; LINEAGE = lineage; BASE_MEP_FEMALE = baseMepFemale; BASE_MEP_MALE = baseMepMale;
     }
 
     /// @notice Mint a genesis individual. The whole genesis set is committed at deployment as a Merkle root over
     ///         `keccak256(index ‖ sex ‖ deltaHash)`, so which individuals exist is fixed before anyone mints and
     ///         no owner can add to it afterwards. The delta bytes themselves are published off-chain and are
     ///         content-addressed by `deltaHash`.
-    /// @dev    MINT_BOND is bonded for the minter against the BASE brain, which is the one they can host on day
-    ///         one; joining their own individual's MEP is a later top-up once it is registered.
-    ///         OPEN (upstream): this needs `InstanceRegistry.bondFor(address,bytes32[])`. `bond()` bonds
-    ///         `msg.sender`, so a contract cannot bond on a user's behalf; sponsored bonding is a general thing
-    ///         the neutral registry should have. Until it exists, MINT_BOND must be 0 and the minter bonds
-    ///         separately — which is exactly the two-step flow this design is trying to remove.
+    /// @dev    One action, one price: MINT_BOND of it becomes the minter's own stake, bonded through
+    ///         `InstanceRegistry.bondFor` and enrolled for the BASE brain's MEP -- the brain they can host on day one -- so
+    ///         the minter leaves this call owning an individual AND being a bonded instance. `bondFor` lets a payer only add
+    ///         to a bond; the stake is the minter's from here on, and exit is theirs alone. Enrolling somebody else takes at
+    ///         least one UNIT upstream, so MINT_BOND is either 0 (no bonding) or >= UNIT. Joining their own individual's
+    ///         MEP is a later top-up once it is registered.
     function mint(uint32 genesisIndex, uint8 sex, bytes32 deltaHash, bytes32[] calldata proof) external payable returns (uint256 id) {
         require(msg.value == MINT_PRICE, "price");
         require(genesisIndex < GENESIS_SIZE && !genesisMinted[genesisIndex], "index");
@@ -133,7 +135,10 @@ contract FlyCollection {
         _balanceOf[msg.sender]++; _ownerOf[id] = msg.sender;
         emit Transfer(address(0), msg.sender, id); emit Minted(id, msg.sender, sex, deltaHash, genesisIndex);
 
-        if (MINT_BOND > 0) { bytes32[] memory none = new bytes32[](0); INSTANCES.bondFor{value: MINT_BOND}(msg.sender, none); }
+        if (MINT_BOND > 0) {
+            bytes32 baseMep = sex == FEMALE ? BASE_MEP_FEMALE : BASE_MEP_MALE; bytes32[] memory ids = new bytes32[](baseMep == bytes32(0) ? 0 : 1); if (baseMep != bytes32(0)) ids[0] = baseMep;
+            INSTANCES.bondFor{value: MINT_BOND}(msg.sender, ids);
+        }
         (bool ok,) = TREASURY.call{value: MINT_PRICE - MINT_BOND}(""); require(ok, "treasury");
     }
 
@@ -222,6 +227,5 @@ contract FlyCollection {
 
 interface IERC721Receiver { function onERC721Received(address, address, uint256, bytes calldata) external returns (bytes4); }
 
-/// @notice The sponsored-bonding call the mint needs. `InstanceRegistry.bond()` bonds `msg.sender`, so a contract
-///         cannot bond for a user; this is the upstream addition docs/TOKENOMICS.md asks for.
+/// @notice The sponsored-bonding call of aigg-porw's `InstanceRegistry`: a payer adds to someone else's bond (and only adds).
 interface IInstanceBonding { function bondFor(address instance, bytes32[] calldata mepIds) external payable; }

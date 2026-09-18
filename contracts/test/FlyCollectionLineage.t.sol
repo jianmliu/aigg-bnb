@@ -8,7 +8,7 @@ import {FlyDeltaFixtures as FX} from "../lib/aigg-porw/contracts/evm/test/fixtur
 
 /// a bred token's seed comes from a block hash; the fixture child was derived with seed 101, so the test pins it
 contract FlyCollectionHarness is FlyCollection {
-    constructor(bytes32 f, bytes32 m, bytes32 g, uint32 n, uint256 p, uint256 b, uint256 fee, address t, IMEPRegistry meps, IInstanceBonding i, LineageRegistry l) FlyCollection(f, m, g, n, p, b, fee, t, meps, i, l) {}
+    constructor(bytes32 f, bytes32 m, bytes32 g, uint32 n, uint256 p, uint256 b, uint256 fee, address t, IMEPRegistry meps, IInstanceBonding i, LineageRegistry l) FlyCollection(f, m, g, n, p, b, fee, t, meps, i, l, bytes32(0), bytes32(0)) {}
     function setSeed(uint256 id, bytes32 seed) external { individuals[id].seed = seed; }
 }
 

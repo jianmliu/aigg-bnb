@@ -230,7 +230,7 @@ api.on("request", async (req, res) => {
         () => ch.instances.simulate.delegateBySig(args, { account: ch.account }), (o) => ch.instances.write.delegateBySig(args, o)); }
     if (u.pathname === "/tx/materialize") { const id = String(b.mep).toLowerCase(); const M = meps.get(id); const T = epochTrees.get(Number(b.epoch));
       if (M && M.aggregators.has(Number(b.epoch)) && !T) return json(res, 409, { error: "root not posted yet" }); const p = M && T && T.proofFor(id, b.instance); if (!p) return json(res, 404, { error: "no proof" });
-      const l = p.payload.leaf; const args = [BigInt(b.epoch), ch.account.address, BigInt(p.payload.index), { mepId: l.mepId, instance: l.instance, partialsRoot: l.partialsRoot, coverageBytes: BigInt(l.coverageBytes), deviceId: l.deviceId, signature: l.signature }, p.payload.proof];
+      const l = p.payload.leaf; const args = [BigInt(b.epoch), ch.account.address, BigInt(p.payload.index), { mepId: l.mepId, instance: l.instance, partialsRoot: l.partialsRoot, coverageBytes: BigInt(l.coverageBytes), signature: l.signature }, p.payload.proof];
       return await sponsored(res, b.instance, `claims.materializeClaim(${String(b.instance).slice(0, 10)}, ${b.epoch})`,
         () => ch.claims.simulate.materializeClaim(args, { account: ch.account }), (o) => ch.claims.write.materializeClaim(args, o)); }
     if (u.pathname === "/tx/result") {
