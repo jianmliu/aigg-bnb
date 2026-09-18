@@ -50,6 +50,13 @@ try {
   check("switching to the male MEP and loading the WRONG bytes is flagged (model_id mismatch)", (await page.evaluate((id) => window.app.state.loaded[id].ok, mepId2.toLowerCase())) === false);
   await page.fill("#url", "/payload2.bin"); await page.click("#btnModel"); await page.waitForFunction((id) => window.app.state.loaded[id].ok === true, mepId2.toLowerCase(), { timeout: 60000 }); check("male model loaded, model_id matches", true);
   check("task capacity defaults to 100 and is editable", (await page.inputValue("#steps")) === "100" && await page.isEnabled("#steps"));
+  // the capacity buys memory, and memory is what bounds how many brains a tab holds — so the page shows the bill
+  { const at100 = await page.textContent("#model");
+    await page.fill("#steps", "5000"); await page.dispatchEvent("#steps", "input"); const at5000 = await page.textContent("#model");
+    const mb = (t) => Number((t.match(/~(\d+) MB resident/) || [])[1]);
+    check(`the page projects resident memory for the capacity asked for (${mb(at100)} MB at 100 steps, ${mb(at5000)} MB at 5000)`,
+      mb(at100) > 0 && mb(at5000) > mb(at100) * 2);
+    await page.fill("#steps", "100"); await page.dispatchEvent("#steps", "input"); }
   for (const value of ["", "0", "-1", "1.5", "513"]) {
     await page.fill("#steps", value);
     const error = await page.evaluate(async () => { try { await window.appActions.startNode(); return null; } catch (e) { return e.message; } });
