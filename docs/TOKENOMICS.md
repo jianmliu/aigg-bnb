@@ -269,6 +269,15 @@ bounded by something else long before it is bounded by time. What binds instead:
    So under sponsorship `h ≤ 5`, well below the memory bound — which is the quantitative case for "claims on demand"
    (item 3) and for item 2, and the number the mint fee's treasury share has to be set against.
 
+   **Update — the first two fixes are in (aigg-porw "claims: one storage word per claim, one epoch root").** A claim
+   on-chain is now a single word (a commitment; the contents go to the event log and a challenger passes them back),
+   and the relayer posts one root per epoch over the claims of every MEP. *Measured:* `materializeClaim` 208,999 →
+   59,643 execution gas (92k as a sponsored transaction, was ~285k); `postEpochRoot` 71,894 per MEP → 51,215 per epoch.
+   The 200-individual example drops from ~1.9 BNB a day to ~0.5, and its root cost no longer depends on the collection
+   size at all. In the gate run the default sponsorship budget now covers everything: 12 of 12 results sponsored,
+   where 4 were refused before. What remains proportional to the number of brains is the materialization itself, which
+   base-inherited eligibility (item 2) or materialize-when-selected would remove.
+
 This is why item 2 below is still the one that matters, but for a different reason than before. It is no longer
 about paying twenty dispute-commitment bills; it is about a tab holding twenty variants of one base as one 28 MB
 payload plus twenty kilobyte deltas, instead of twenty resident payloads.

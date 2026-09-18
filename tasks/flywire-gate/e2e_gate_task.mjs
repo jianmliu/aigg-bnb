@@ -43,7 +43,7 @@ try {
   let t0 = performance.now(); for (const m of MODELS) { const ep = await api("/epoch?mep=" + meps[m].mepId); for (const X of [A, B]) await X.svc.announce(meps[m].bytes, H.unhex(ep.challenge)); } log.epochs.claimsMs = Math.round(performance.now() - t0);
   check(`six residency claims in ${log.epochs.claimsMs} ms (no inference; the v1 run needed ~70,000 ms), 2 per MEP collected`, await waitFor(async () => (await api("/status")).aggregators.every((a) => a.epochs.find((e) => e.epoch === 1)?.claims === 2)));
   const e2 = await enterEpoch(2); check("epoch 2 entered", e2.rolled);
-  check("relayer posted the epoch-1 roots for the three MEPs", await waitFor(async () => (await api("/status")).rootsPosted.filter((r) => r.epoch === 1 && r.count === 2).length === 3));
+  check("relayer posted ONE epoch-1 root over the six claims of the three MEPs", await waitFor(async () => { const r = (await api("/status")).rootsPosted.filter((r) => r.epoch === 1); return r.length === 1 && r[0].count === 6 && r[0].meps === 3; }));
   for (const m of MODELS) for (const X of [A, B]) { const r = await api("/tx/materialize", { mep: meps[m].mepId, epoch: 1, instance: X.addr }); if (!r.ok) console.log("materialize failed", m, X.addr, r); }
   check("both executors eligible on all three MEPs in epoch 2", (await Promise.all(MODELS.flatMap((m) => [A, B].map((X) => A.c.instances.read.isEligible([X.wallet.address, meps[m].mepId, 2n]))))).every(Boolean));
   const balA = await A.c.pub.getBalance({ address: A.wallet.address }); t0 = performance.now();
