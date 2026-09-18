@@ -17,5 +17,8 @@ export function relayerFromEnv() {
     wakeEpochs: e.PORW_BEACON_WAKE_EPOCHS ? Number(e.PORW_BEACON_WAKE_EPOCHS) : null,
     // sponsorship budgets, in gas: per instance per epoch, and across everyone per rolling day
     sponsorEpochGas: e.PORW_SPONSOR_EPOCH_GAS ? Number(e.PORW_SPONSOR_EPOCH_GAS) : null,
-    sponsorDayGas: e.PORW_SPONSOR_DAY_GAS ? Number(e.PORW_SPONSOR_DAY_GAS) : null };
+    sponsorDayGas: e.PORW_SPONSOR_DAY_GAS ? Number(e.PORW_SPONSOR_DAY_GAS) : null,
+    // hosting: serve the relay hub on the API's own port under this path (single-port hosts), and tell browsers
+    // the URL they can actually reach us on rather than whatever address we happened to bind
+    relayPath: e.PORW_RELAY_PATH || null, publicRelayUrl: e.PORW_PUBLIC_RELAY_URL || null };
 }

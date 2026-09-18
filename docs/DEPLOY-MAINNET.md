@@ -137,25 +137,18 @@ commit and reveal, and with one committer that means `beaconFor(e) == 0` and **t
 whole mesh stalls, not just sponsorship. Starter ($7/mo at time of writing) or above. This is not a
 cost-optimization question; it is a correctness one.
 
-**(2) One port, two servers.** Render routes a single `$PORT` per service. `relayer.mjs` starts the relay hub on
-`cfg.relayPort` and the API on `cfg.apiPort` — two `http`/WS listeners. Options, cheapest first:
+**(2) One port, two servers — solved with `PORW_RELAY_PATH`.** Render routes a single `$PORT` per service, while
+`relayer.mjs` opened one listener for the relay hub and another for the API. `startRelay` now takes an optional
+`{ server, path }` and attaches to an existing http server instead of binding a port of its own, so setting
+`PORW_RELAY_PATH=/relay` serves the hub and the API on the same port. Unset, the hub takes its own port exactly
+as before. Bind to `0.0.0.0` on Render (`PORW_HOST=0.0.0.0`).
 
-- **a small front server on `$PORT`** that upgrades `/relay` to the internal relay hub and forwards everything
-  else to the internal API. ~30 lines in `relayer.mjs`, no change to `aigg-porw`.
-- **teach `startRelay` to accept an existing server.** It currently does
-  `new WebSocketServer({ port, host, maxPayload })` — adding an optional `{ server }` or `{ noServer: true }`
-  passthrough is a couple of lines, and `aigg-porw` needs a change for the keepalive fix below anyway, so this
-  is the cleaner place to spend it. Recommended.
-- two Render services — not possible: it is one process with shared in-memory state.
-
-Bind to `0.0.0.0` on Render (`PORW_HOST=0.0.0.0`); the internal listeners stay on `127.0.0.1`.
-
-**(3) `/deployment` advertises the bind address, not the public one.** `startRelay` returns
-``url: `ws://${host}:${port}` `` — the address it bound — and the API hands that straight to browsers as
-`relay: relay.url`. Every tab then tries to open `ws://127.0.0.1:8787`, and an `https://ai.gg` page would refuse
-the plaintext scheme even if the host were right. **This breaks on any hosted deployment, Render or otherwise**,
-and is invisible locally because locally it happens to be correct. Needs a `PORW_PUBLIC_RELAY_URL` (and likely
-`PORW_PUBLIC_API_URL`) that `/deployment` returns when set. Small fix; a hard blocker until it exists.
+**(3) `/deployment` advertised the bind address — solved with `PORW_PUBLIC_RELAY_URL`.** `startRelay` returns
+``url: `ws://${host}:${port}` ``, the address it bound, and the API handed that straight to browsers as
+`relay: relay.url`. Every tab then tried to open `ws://127.0.0.1:8787`, which an `https://ai.gg` page would
+refuse for its scheme even if the host were right. It broke on any hosted deployment and was invisible locally,
+because locally it happened to be correct. `/deployment` now returns `PORW_PUBLIC_RELAY_URL` when set, while the
+relayer's own aggregator client keeps dialling the local address. `test/e2e_hosting.mjs` covers both.
 
 Config on Render: a **Secret File** holding the env file, and `PORW_ENV_FILE` pointing at its mount path, so the
 existing `--env` / `loadEnv` path is reused unchanged and the key never appears in the dashboard's plain
@@ -181,26 +174,28 @@ Persisting the aggregator to a Render disk would remove this, and is the obvious
 disappoints. Note that Render redeploys on every push to the tracked branch — turn off auto-deploy, or accept
 that a README typo can cost an epoch.
 
-### WebSocket keepalive — confirmed missing, and it is the blocker
+### WebSocket keepalive — was the blocker; fixed in `aigg-porw`
 
 Both Cloudflare and Render close idle WebSocket connections (Cloudflare's limit is on the order of 100 s). Tabs
 hold the relay connection open across 10-minute epochs with almost no traffic in between, so the connection is
-idle nearly all the time. Now that `aigg-porw` is readable, the relevant code says this plainly:
+idle nearly all the time. What the code used to say:
 
-- `relay.js` `startRelay()` — no `ping`, no `pong`, no heartbeat interval anywhere. The server never probes a
-  connection and never keeps one warm.
-- `relay_client.js` — `ws.onclose = () => { entry.open = false; }`. That is the entire close handling. **No
-  reconnect.** Once a socket drops, the entry stays closed for the life of the client, and the next `publish`
-  throws `no relay connected`.
+- `relay.js` `startRelay()` — no `ping`, no `pong`, no heartbeat interval anywhere. The server never probed a
+  connection and never kept one warm.
+- `relay_client.js` — `ws.onclose = () => { entry.open = false; }`. That was the entire close handling. **No
+  reconnect.** Once a socket dropped, the entry stayed closed for the life of the client and the next `publish`
+  threw `no relay connected`.
 
-Consequence, in production but never locally: every browser tab loses its relay connection roughly 100 s after
-its last message and silently never recovers — claims stop being announced, tasks stop being answered, and the
-page shows no error until something throws. **The relayer's own `RelayClient` is the same object**, so the
-aggregator stops receiving claims too, while `tick()` keeps happily posting empty roots.
+The consequence appeared in production and never locally: a browser tab lost its relay connection roughly 100 s
+after its last message and silently never recovered — claims stopped being announced, tasks stopped being
+answered, and the page showed no error until something threw. **The relayer's own `RelayClient` is the same
+class**, so the aggregator stopped receiving claims too while `tick()` kept posting empty roots.
 
-Fix in `aigg-porw`, both sides, before anything is exposed publicly: a server-side ping interval with a dead-peer
-sweep, and a client-side reconnect-with-backoff that re-subscribes its topics. This is the single most important
-item in this document that is not a gas-drain issue.
+Both halves are now implemented upstream: the hub pings on an interval and reaps peers that stop answering (also
+`ws.on("error")`, whose absence meant a client resetting its connection could take the relayer's process down),
+and `RelayClient` redials with jittered backoff and replays its subscriptions on the new socket.
+`test_relay_keepalive.mjs` covers a cut connection recovering, a silent peer being reaped without disturbing the
+live ones, and `close()` actually stopping the loop.
 
 ### Run two, not one
 
@@ -348,11 +343,10 @@ topping it up automatically without a ceiling.
 `model_id` does not match makes that MEP id permanently dead. Verify the bytes through **both** the SP and the
 R2 mirror — `register_mep.mjs` already does the SP check when given an endpoint — before the mainnet call.
 
-**(i) Hosting blockers, all detailed in §4 and all confirmed in the source:** no WebSocket keepalive and no
-client reconnect in `aigg-porw` (every tab, and the relayer's own aggregator feed, dies ~100 s after going idle
-behind any proxy); `/deployment` advertising the internal bind address as the relay URL; the
-two-listener/one-port mismatch with Render. None is a security issue; each is a hard blocker for any deployment
-that is not localhost. The keepalive one is the largest piece of work here and lives upstream.
+**(i) Hosting blockers — fixed; see §4 for each.** Keepalive and reconnect in `aigg-porw` (the one that mattered:
+every tab, and the relayer's own aggregator feed, died ~100 s after going idle behind any proxy),
+`PORW_PUBLIC_RELAY_URL` for what `/deployment` announces, and `PORW_RELAY_PATH` to put the hub and the API on one
+port. Covered by `test_relay_keepalive.mjs` upstream and `test/e2e_hosting.mjs` here.
 
 **(j) The `.gitignore` gap is closed but the habit matters.** `env.*.txt` now ignored alongside `.env*`. On
 mainnet the env file holds a key with real BNB behind it; keep it out of the repo, out of the Pages build, and
@@ -362,12 +356,12 @@ out of any CI log.
 
 ## 7. Staged rollout
 
-**Phase 0 — fix and re-verify.** The gas-drain items (a)–(c) and the nonce handling (d) are done and covered by
-`npm test`. What remains before anything is exposed: **(i), the hosting blockers** — above all the missing
-WebSocket keepalive and reconnect in `aigg-porw`. Mainnet runs with `PORW_BEACON_LAZY=1` from day one, and
-`EPOCH_BLOCKS` stays at 800 or goes lower — §5 for why lengthening it is now the wrong move. Re-run `npm test`
-(greenfield + `e2e_anvil.mjs` + `e2e_lazy_beacon.mjs` + `e2e_sponsor_guard.mjs`), then `test/live_bsc.mjs`
-against the existing BSC testnet deployment.
+**Phase 0 — done.** The gas-drain items (a)–(c), the nonce handling (d) and the hosting blockers (i) are all
+fixed and covered by `npm test` (greenfield + `e2e_anvil` + `e2e_lazy_beacon` + `e2e_sponsor_guard` +
+`e2e_hosting`) plus `test_relay_keepalive.mjs` upstream. Mainnet runs with `PORW_BEACON_LAZY=1` from day one, and
+`EPOCH_BLOCKS` stays at 800 or goes lower — §5 for why lengthening it is now the wrong move. The remaining
+pre-deployment step is `test/live_bsc.mjs` against the existing BSC testnet deployment, which is also the first
+real exercise of the keepalive over a long-lived connection.
 
 **Phase 1 — `ai.gg` serves testnet.** Pages build pipeline (GitHub Actions + `wrangler pages deploy`), `_headers`,
 R2 mirror of the testnet payload, relayer on Render behind `api.ai.gg`, still pointed at chain 97. Everything
@@ -386,6 +380,12 @@ testnet relayer reachable behind a toggle.
 
 ## 8. Unverified — do not treat as settled
 
+- **The submodule does not track `aigg-porw`'s `main`.** `4bd702a` is the tip of
+  `claude/subspace-consensus-dram-bandwidth-y7pgo6`; `main` has moved to a different, Rust-centred tree with no
+  `web/porw-browser` at all. So the browser node, the relay transport and everything this deployment depends on
+  live on a branch whose name reads as auto-generated, and nothing on `main` would build it. That is fragile for
+  a mainnet dependency — worth deciding, before launch, which branch is the supported line and giving it a name
+  that says so.
 - ~~`aigg-porw` could not be read~~ — resolved; the repo is public and the submodule is checked out at
   `4bd702a`. The three questions it was blocking are answered in §4: no keepalive and no reconnect (confirmed
   missing), `startRelay` binds its own port and cannot take an existing server (confirmed), and the aggregator

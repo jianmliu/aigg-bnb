@@ -55,7 +55,9 @@ PORW_API_PORT=8788
 PORW_BEACON_LAZY=1
 PORW_BEACON_WAKE_EPOCHS=2
 PORW_SPONSOR_EPOCH_GAS=1500000
-PORW_SPONSOR_DAY_GAS=50000000" >> .env.bsc-testnet
+PORW_SPONSOR_DAY_GAS=50000000
+PORW_RELAY_PATH=/relay
+PORW_PUBLIC_RELAY_URL=wss://api.example.org/relay" >> .env.bsc-testnet
 source .env.bsc-testnet && npm run relayer      # or: node relayer/relayer.mjs --env .env.bsc-testnet
 # frontend: static page; point it at the relayer API (http://host:8788) in the first box
 npm run frontend -- --port 8790
@@ -77,6 +79,15 @@ and `PORW_SPONSOR_DAY_GAS` across everyone per rolling day (default 50,000,000).
 operator raises them knowingly rather than inheriting an unbounded hot wallet; `/status.sponsor` shows the limits,
 the day's spend and the last refusals with their reasons. `test/e2e_sponsor_guard.mjs` covers all three gates,
 including that a call which would revert broadcasts nothing at all.
+
+Running it behind a proxy needs two more settings. `PORW_RELAY_PATH` serves the relay hub on the API's own port
+under that path instead of giving it a port of its own, which is what a host that routes one port per service
+allows; leave it unset and the hub takes its own port as before. `PORW_PUBLIC_RELAY_URL` is the URL browsers are
+told to connect to -- the address the process bound is an implementation detail, and `ws://127.0.0.1:8787` is
+wrong for every tab that is not on the same machine (and refused outright by an `https://` page). Keepalive is
+handled in `aigg-porw`: the hub pings its peers and reaps the ones that stop answering, and `RelayClient` redials
+with backoff and replays its subscriptions, because a relay connection is idle across whole epochs and anything
+in front of it will cut it. `test/e2e_hosting.mjs` covers the single-port and announced-URL behaviour.
 
 `PORW_BEACON_LAZY=1` makes the beacon follow demand instead of the clock. Producing one costs about 366k gas per
 epoch (commit + reveal + `rollEpoch` + one root) whether or not a single instance is online, and an epoch's beacon

@@ -30,8 +30,15 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
 
 // ---- (1) relay hub + our own relay client (the aggregator listens through it) ----
-const relay = await startRelay({ port: cfg.relayPort || 0, host: cfg.host || "127.0.0.1", name: cfg.name || "bnb-relayer" });
-const relayKey = keypair(cfg.privateKey); const rc = new RelayClient([relay.url], relayKey); await rc.connect();
+// PORW_RELAY_PATH puts the hub on the API's own port under that path, because a single-port host routes one
+// port per service; without it the hub takes a port of its own as before. Either way the client we run for the
+// aggregator dials the local address, while browsers are told PORW_PUBLIC_RELAY_URL -- what we bound is an
+// implementation detail and is wrong for anyone off this machine.
+const HOST = cfg.host || "127.0.0.1";
+const relayPath = cfg.relayPath || null;
+const api = http.createServer();
+const relay = await startRelay(relayPath ? { server: api, path: relayPath, name: cfg.name || "bnb-relayer" } : { port: cfg.relayPort || 0, host: HOST, name: cfg.name || "bnb-relayer" });
+const relayKey = keypair(cfg.privateKey); let rc = null; let relayUrl = relay.url, publicRelayUrl = relay.url; // set once the port is known
 // ---- MEPs served: read from chain, rebuild the MEP object the aggregator verifies claims against ----
 const meps = new Map(); // mepId -> { mep, info, aggregators: Map(epoch -> Aggregator), posted: Set(epoch) }
 for (const id of cfg.meps) {
@@ -180,10 +187,10 @@ async function sponsored(res, instance, label, simulate, send) {
   if (r.gasUsed) bud.charge(r.gasUsed); // a revert that still got mined is charged too: it cost the relayer gas
   return json(res, 200, r);
 }
-const api = http.createServer(async (req, res) => {
+api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: relay.url, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, meps: [...meps.keys()] });
     if (u.pathname === "/meps") return json(res, 200, [...meps.values()].map((M) => M.info));
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);
@@ -221,8 +228,12 @@ const api = http.createServer(async (req, res) => {
     json(res, 404, { error: "not found" });
   } catch (e) { json(res, 500, { error: String(e.shortMessage || e.message) }); }
 });
-await new Promise((r) => api.listen(cfg.apiPort || 0, cfg.host || "127.0.0.1", r));
-log(`relayer ${ch.account.address}: relay ${relay.url}, api http://${cfg.host || "127.0.0.1"}:${api.address().port}, chain ${dep.chainId}, epoch ${EPOCH_BLOCKS} blocks, beacon ${beaconOn ? "commit-reveal" : "prevrandao"}, meps ${[...meps.keys()].map((m) => m.slice(0, 10)).join(",")}`);
-if (process.send) process.send({ relay: relay.url, api: `http://${cfg.host || "127.0.0.1"}:${api.address().port}` });
+await new Promise((r) => api.listen(cfg.apiPort || 0, HOST, r));
+const apiUrl = `http://${HOST}:${api.address().port}`;
+if (relayPath) relayUrl = `ws://${HOST}:${api.address().port}${relayPath}`;
+publicRelayUrl = cfg.publicRelayUrl || relayUrl;
+rc = new RelayClient([relayUrl], relayKey, { onLog: (m) => log(m) }); await rc.connect();
+log(`relayer ${ch.account.address}: relay ${relayUrl}${publicRelayUrl !== relayUrl ? ` (announced as ${publicRelayUrl})` : ""}, api ${apiUrl}, chain ${dep.chainId}, epoch ${EPOCH_BLOCKS} blocks, beacon ${beaconOn ? (LAZY ? "commit-reveal, lazy" : "commit-reveal") : "prevrandao"}, meps ${[...meps.keys()].map((m) => m.slice(0, 10)).join(",")}`);
+if (process.send) process.send({ relay: publicRelayUrl, api: apiUrl });
 const loop = async () => { try { await tick(); } catch (e) { status.errors.push({ label: "tick", msg: String(e.shortMessage || e.message).slice(0, 200) }); log("tick error", String(e.shortMessage || e.message).slice(0, 160)); } };
 await loop(); setInterval(loop, cfg.pollMs || 2000);

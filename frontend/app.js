@@ -91,10 +91,10 @@ async function startNode() {
   if (!state.delegation) throw new Error("delegate first"); const ready = [...state.hosted].filter((id) => state.models[id]); if (!ready.length) throw new Error("load a model for at least one hosted MEP");
   const kernel = await loadKernel("/porw/sketch.wasm"); const k = sessionKey();
   state.node = new PorwNode(kernel, { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
-  const rc = new RelayClient([state.deployment.relay], k); await rc.connect(); state.relay = rc;
+  const rc = new RelayClient([state.deployment.relay], k, { onLog: log }); await rc.connect(); state.relay = rc;
   state.svc = new NodeService(state.node, rc, { onResult: async (res) => { const r = await api("/tx/result", res); res.submitted = r.ok; state.results.push(res); log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`); } });
   for (const id of ready) await hostOnNode(mepById(id));
-  log(`node running for ${state.node.models.size} MEP(s)`); setInterval(loop, 3000); renderActive();
+  log(`node running for ${state.node.models.size} MEP(s)`); setInterval(() => loop().catch((e) => log("loop error: " + (e.message || e))), 3000); renderActive();
 }
 async function refreshEpoch() { try { const e = await api("/epoch"); state.epochInfo = e; $("epoch").textContent = `epoch ${e.epoch} · block ${e.block} · beacon ${e.rolled ? "rolled" : e.lazy && !e.warm ? "cold (waking up)" : "pending"}`; return e; } catch (err) { return null; } }
 /** every hosted + resident MEP: one claim per epoch, materialize the previous epoch once its root is posted */
