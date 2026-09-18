@@ -4,6 +4,10 @@ pragma solidity ^0.8.20;
 import "aigg-porw/interfaces/PorwMesh.sol";
 
 /// @title FlyCollection — a fixed collection of fly-brain individuals
+/// @dev   NAMING: the user-facing word for acquiring an individual is **adopt a fly**, not mint. The ERC-721
+///        surface keeps `mint` / `Minted` / `MINT_PRICE` because that is what wallets, explorers and indexers
+///        expect to find, and renaming a selector and an event topic buys nothing on-chain. Everywhere a person
+///        reads it — the page, the docs, the copy — it is adoption.
 /// @notice An individual is a FLYDELTAv1 edit of one of two released brains (a female and a male base). The token
 ///         carries which base it varies, the hash of its delta, and — once somebody has applied that delta and
 ///         computed the result — the `model_id` and `mep_id` it registers as. Owning an individual means owning a
@@ -13,8 +17,8 @@ import "aigg-porw/interfaces/PorwMesh.sol";
 ///
 ///         - The stake stays fungible. `InstanceRegistry.slash` moves value to the winner of a dispute; an NFT is
 ///           a bad instrument for that (the punishment becomes the floor price of an illiquid asset, and
-///           `weightOf = bonded / UNIT` stops being a parameter the protocol controls). Minting *funds* a bond
-///           instead of replacing it: one action, one price, and the minter comes out owning an individual and
+///           `weightOf = bonded / UNIT` stops being a parameter the protocol controls). Adopting *funds* a bond
+///           instead of replacing it: one action, one price, and the adopter comes out owning an individual and
 ///           being a bonded instance.
 ///         - Anyone may execute any MEP. `TaskMarket` draws sortition over the instances bonded for a given MEP,
 ///           so redundancy 2 needs two of them holding that brain. If a token were the sole right to run its own
@@ -105,15 +109,15 @@ contract FlyCollection {
         MEPS = meps; INSTANCES = instances;
     }
 
-    /// @notice Mint a genesis individual. The whole genesis set is committed at deployment as a Merkle root over
-    ///         `keccak256(index ‖ sex ‖ deltaHash)`, so which individuals exist is fixed before anyone mints and
+    /// @notice Adopt a genesis individual. The whole genesis set is committed at deployment as a Merkle root over
+    ///         `keccak256(index ‖ sex ‖ deltaHash)`, so which individuals exist is fixed before anyone adopts and
     ///         no owner can add to it afterwards. The delta bytes themselves are published off-chain and are
     ///         content-addressed by `deltaHash`.
-    /// @dev    MINT_BOND is bonded for the minter against the BASE brain, which is the one they can host on day
+    /// @dev    MINT_BOND is bonded for the adopter against the BASE brain, which is the one they can host on day
     ///         one; joining their own individual's MEP is a later top-up once it is registered.
     ///         OPEN (upstream): this needs `InstanceRegistry.bondFor(address,bytes32[])`. `bond()` bonds
     ///         `msg.sender`, so a contract cannot bond on a user's behalf; sponsored bonding is a general thing
-    ///         the neutral registry should have. Until it exists, MINT_BOND must be 0 and the minter bonds
+    ///         the neutral registry should have. Until it exists, MINT_BOND must be 0 and the adopter bonds
     ///         separately — which is exactly the two-step flow this design is trying to remove.
     function mint(uint32 genesisIndex, uint8 sex, bytes32 deltaHash, bytes32[] calldata proof) external payable returns (uint256 id) {
         require(msg.value == MINT_PRICE, "price");
@@ -167,7 +171,7 @@ contract FlyCollection {
 
     /// @notice Claim this individual's delta (for a bred token) and register its MEP. Permissionless in spirit but
     ///         restricted to the owner, so nobody can bind someone else's individual to a dead MEP. Registration
-    ///         is a separate act from minting because computing `model_id` means applying the delta to a 28 MB
+    ///         is a separate act from adoption because computing `model_id` means applying the delta to a 28 MB
     ///         base and hashing the result, which no contract can do.
     function register(uint256 id, bytes32 deltaHash, IMEPRegistry.MEP calldata m) external returns (bytes32 mepId) {
         require(msg.sender == ownerOf(id), "not the owner");
@@ -192,6 +196,6 @@ contract FlyCollection {
 
 interface IERC721Receiver { function onERC721Received(address, address, uint256, bytes calldata) external returns (bytes4); }
 
-/// @notice The sponsored-bonding call the mint needs. `InstanceRegistry.bond()` bonds `msg.sender`, so a contract
+/// @notice The sponsored-bonding call adoption needs. `InstanceRegistry.bond()` bonds `msg.sender`, so a contract
 ///         cannot bond for a user; this is the upstream addition docs/TOKENOMICS.md asks for.
 interface IInstanceBonding { function bondFor(address instance, bytes32[] calldata mepIds) external payable; }

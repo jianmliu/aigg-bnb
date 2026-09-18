@@ -14,12 +14,15 @@ changes a PoRW scheme id and never forks the neutral contracts.
 |---|---|
 | `docs/DESIGN.md` | the BNB-specific design: layering, beacon, parameters, costs, risks |
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
+| `docs/BREEDING.md` | breeding economics and the colony/breed/gestation pages — why rarity here has to be measured rather than declared, what `BREED_FEE` should price, and liveness as residency |
+| `docs/REPLICATOR-STANDING.md` | giving an unbonded replicator a way to act on a disagreement: a deposit-backed challenge by a non-executor, specified against the four things in the dispute contract that block it today |
+| `docs/COLLECTIVE.md` | the first task (`tasks/flywire-gate/`, on `main`) and what breaks between six whole-brain runs and a thousand: how an experiment is encoded in `inputCommit`, the four things that bind at scale, and why a study is not yet an on-chain object |
 | `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
 | `js/fetch_brain.mjs` | the other half of publishing: fetch a registered MEP's payload from a storage provider and verify it against the on-chain `model_id` before it lands on disk |
 | `js/greenfield_admin.mjs` / `js/register_mep.mjs` | publisher tools: bridge-funded deployer account → create a public-read bucket, upload the payload (SDK, Reed-Solomon checksums), then register the MEP on-chain after verifying the SP serves bytes with the pinned `model_id` |
 | `relayer/` | **the relayer service**: stage-1 relay hub + epoch aggregator (one root per MEP per epoch) + commit-reveal beacon participant / epoch roller + gas-sponsoring transaction submitter for bonded instances (`delegateBySig`, `materializeClaim`, `submitResult`, `settle`) with a small HTTP API |
-| `frontend/` | **the node page**: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
+| `frontend/` | **the node page** (Vite + React): connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and experiments for every hosted brain over the relay) → post an experiment, whose **scene is chosen at post time** as the `stimulusSeed` pinned on-chain with the fee. `src/core/controller.js` is the whole page in plain JS — the state, the wallet, the chain calls, the memory arithmetic — and `src/ui/` only renders it; `public/node_worker.js` and everything under `/porw/` and `/vendor/` stay unbundled so the module worker and the document load the same URLs |
 | `test/` | end-to-end on a local anvil: `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
 | `split.sh` | turns this staging directory into the standalone repository (`aigg-porw` becomes a git submodule) |
@@ -60,11 +63,14 @@ PORW_SPONSOR_DAY_GAS=50000000
 PORW_RELAY_PATH=/relay
 PORW_PUBLIC_RELAY_URL=wss://api.example.org/relay" >> .env.bsc-testnet
 source .env.bsc-testnet && npm run relayer      # or: node relayer/relayer.mjs --env .env.bsc-testnet
-# frontend: static page; point it at the relayer API (http://host:8788) in the first box
-npm run frontend -- --port 8790
+# frontend: point it at the relayer API (http://host:8788) in the first box
+npm run frontend -- --port 8790   # Vite dev server (hot reload)
+npm run build:frontend            # -> frontend/dist, the static directory Pages serves
+npm run preview:frontend          # serve that directory exactly as it ships
+npm run deploy:frontend           # build + wrangler pages deploy -> fly.ai.gg (needs `wrangler login` once)
 # tests (local anvil + Foundry; PW_CHROMIUM for the browser test)
 npm test              # js/test_greenfield.mjs + test/e2e_anvil.mjs
-npm run test:frontend # headless Chromium: wallet, bond, delegate, model, node, claims, materialize, task
+npm run test:frontend # builds the page, then: memory arithmetic in a vm + headless Chromium end to end
 ```
 
 The relayer sponsors gas only for calls that belong to a bonded instance (or its delegated session key) and

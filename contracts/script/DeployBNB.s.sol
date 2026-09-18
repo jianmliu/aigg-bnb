@@ -27,6 +27,10 @@ contract DeployBNB is Script {
         uint256 slashAmount = vm.envOr("SLASH_AMOUNT", uint256(0.5 ether));
         uint64 taskTimeout = uint64(vm.envOr("TASK_TIMEOUT", uint256(600)));
         uint64 roundBlocks = uint64(vm.envOr("ROUND_BLOCKS", uint256(300)));
+        uint256 challengeDeposit = vm.envOr("CHALLENGE_DEPOSIT", uint256(0.05 ether));
+        // must stay <= EXIT_DELAY, or a liar settles, exits, and is challenged with nothing left to slash
+        uint64 challengeWindow = uint64(vm.envOr("CHALLENGE_WINDOW", uint256(exitDelay)));
+        require(challengeWindow <= exitDelay, "challenge window > exit delay");
         uint256 relayBond = vm.envOr("RELAY_BOND", uint256(1 ether));
         vm.startBroadcast();
         PorwVerifierKeccak verifier = new PorwVerifierKeccak();
@@ -38,6 +42,7 @@ contract DeployBNB is Script {
         ExecutionDisputes disputes = new ExecutionDisputes(meps, inst, market, roundBlocks, slashAmount);
         RelayRegistry relays = new RelayRegistry(relayBond, exitDelay);
         inst.setClaimManager(address(claims)); inst.setSlasher(address(disputes), true); market.setDisputes(address(disputes));
+        market.setChallengeParams(challengeDeposit, challengeWindow); // standing for a non-executor replicator
         vm.stopBroadcast();
         d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays));
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);

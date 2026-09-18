@@ -33,7 +33,7 @@ today `bond()` requires only `msg.value > 0`.
 **Nobody pays the relayer.** `TaskMarket.settle` splits the fee among the agreeing executors. The aggregator, the
 beacon participant and the gas sponsor — the same process, and the thing the entire BSC posture depends on — take
 nothing. The lazy beacon took its idle cost to zero, which makes a volunteer relayer viable at zero traffic, but
-an active mesh means the relayer subsidises everyone. That is the hole a mint fee can fill.
+an active mesh means the relayer subsidises everyone. That is the hole an adoption fee can fill.
 
 ---
 
@@ -83,11 +83,18 @@ root-id table. That matters in §4.
 
 **An NFT is a MEP individual. It is not the stake, and it is not an execution licence.**
 
+**The word is *adopt a fly*, not mint.** Not decoration: what somebody acquires here is a research subject that
+other people's tabs will run experiments against, and it keeps costing its owner attention afterwards — the
+delta has to be published, the MEP registered, the brain hosted if the fees are to be collected. "Mint" names
+none of that. The ERC-721 surface still says `mint` / `Minted` / `MINT_PRICE`, because wallets, explorers and
+indexers expect to find those and renaming a selector buys nothing on-chain; identifiers below are quoted as
+they are in the contract, and the prose around them says adoption.
+
 - **The token** carries: which base, the delta (on-chain), the resulting `model_id`, the `mepId` once registered,
   sex, generation, parents. Owning it means owning a research subject.
-- **The bond stays fungible and slashable**, and the mint pays for it. A mint of `MINT_PRICE` splits: `UNIT` is
-  bonded in `InstanceRegistry` for the minter, the remainder goes to the treasury that funds the relayer. The
-  user performs one action at one price and ends up owning something *and* being a node.
+- **The bond stays fungible and slashable**, and the adoption pays for it. An adoption at `MINT_PRICE` splits:
+  `UNIT` is bonded in `InstanceRegistry` for the adopter, the remainder goes to the treasury that funds the
+  relayer. The user performs one action at one price and ends up owning something *and* being a node.
 - **Anyone may execute any MEP.** The token owner earns a share of the fees paid for tasks against that brain;
   they do not get to be the only one who runs it.
 
@@ -106,6 +113,126 @@ that parameter to a secondary market the protocol does not run, where votes get 
 profitable.
 
 Keep the purchase framing. Keep the slashable BNB underneath it.
+
+---
+
+## 3b. Contributing compute without a bond
+
+Adopting a fly is one way in. The other is to contribute compute — hold a brain resident, answer audits, execute
+tasks — and the natural objection to charging for that is that mining does not work this way: in proof-of-work
+you bring a machine, not a deposit. The residency proof this mesh already runs *is* essentially a
+memory-bandwidth proof, so the question is fair: could it replace the bond?
+
+**As specified today, no — and the reason is one line of the claim manager.**
+
+```solidity
+function epochChallenge(uint64 epoch, bytes32 mepId) public view returns (bytes32) {
+    return keccak256(abi.encodePacked(beacon[epoch], mepId));
+}
+```
+
+The challenge depends on the epoch and the MEP, **not on the instance**. It is the same for every tab hosting
+that brain that epoch.
+
+There is a second input, and it is where the real gap is. The sweep is not seeded by the challenge alone:
+
+```solidity
+function deriveSlotSeedKeccak(bytes32 globalChallenge, bytes32 deviceId) public pure returns (uint32)
+```
+
+`deviceId` is mixed in, every tile's sketch value depends on the resulting seed, and the honest client already
+sets it per identity (`web/porw-browser/node.js`: `deviceId || keccak_256(this.key.address)`). So the mechanism
+for making each claimant do its own sweep **exists end to end** — it is simply **never enforced**.
+`submitClaim` and `materializeClaim` store `deviceId` and check nothing about it. A client that does not want to
+do the work sets one `deviceId` across a thousand addresses, sweeps once, and signs the identical
+`partialsRoot` a thousand times.
+
+So the residency proof is a sound proof of *possession* whose per-identity cost is voluntary. What stops the
+Sybil today is `submitClaim`'s `require(instances.isBondedFor(...))` and `weightOf = bonded / UNIT`: the bond is
+doing the anti-Sybil work, and the residency proof is doing a different job.
+
+**Nothing is deployed yet, so the fix is to delete the field rather than police it.** `deviceId` is
+self-declared, its only live function is diversifying the slot seed, and it cannot prove what it looks like it
+proves (one claim already exists per `(instance, mepId, epoch)`, so it distinguishes nothing). Seed the sweep
+from the claiming instance instead:
+
+```solidity
+function deriveSlotSeed(bytes32 globalChallenge, address instance) public pure returns (uint32)
+```
+
+— and drop `deviceId` from the `Claim` struct, the EIP-712 type, the aggregated leaf, the client and the tile
+fraud proof's arguments. A field whose only valid value is derivable from another field is dead weight, and
+keeping it as a `require` would preserve the shape of a mistake. `N` identities then cost `N` sweeps, which is
+what the mechanism was always meant to mean.
+
+**Two jobs the bond does, and residency does neither.**
+
+1. **It is the only punishment channel.** `InstanceRegistry.slash` is the terminal move of both fraud proofs —
+   `ExecutionDisputes` bisecting down to one synaptic term, and `PoRWClaimManager.challengeOpening` on a tile.
+   Both end by taking bond and paying it to the party who did the work of catching the lie. With no bond there
+   is nothing to take, and a node that is genuinely resident can still sign a wrong `execDigest`: residency
+   proves the bytes are there, never that the arithmetic was done honestly.
+2. **It is the sortition weight.** `eligibleVotes` repeats each instance `weightOf` times. Addresses are free.
+   At redundancy 2, an unweighted draw is captured by whoever registers the most identities — and the
+   cross-check between two executors, which is the entire reason redundancy exists, is exactly what that
+   captures.
+
+**What a stake-free weight would actually take.** Make the challenge instance-specific —
+`keccak(beacon || mepId || instance)` — and a thousand identities need a thousand sweeps instead of one. Worth
+knowing what that does and does not buy: the thousand sweeps still read **one** copy of the payload, so it
+becomes proof-of-*work* over shared bytes rather than proof-of-*space*, and nothing on-chain times a sweep (the
+`slot ms` the page logs is client-side), so the bandwidth part stays unenforced. It would be a real cost, not a
+memory cost.
+
+And a Sybil bound still leaves the punishment problem. Escrowing the fee bounds a liar's loss to the fee they
+were owed, which is the proof-of-work posture: the attacker's gain is capped by the reward, so capping the loss
+at the reward is enough. **That posture does not transfer here.** What this mesh produces is a settled,
+third-party-replicated scientific result that other work will cite. The value of a wrong one is not bounded by
+the 0.001 BNB that paid for the run, and a punishment capped at the fee is therefore capped below the prize.
+That, not gatekeeping, is why the bond exists for anyone whose result *counts*.
+
+**The path that needs no protocol change at all.** Nothing stops an unbonded machine from doing the most
+valuable thing in the list: fetch the base payload, apply the published delta, re-execute a settled task from
+its `inputCommit` and `stimulusSeed`, and compare digests. Every input is on-chain and every output is
+published, so replication is permissionless by construction — it is the same property that lets a dispute
+happen at all. For a network whose product is a verifiable scientific claim, that is not a second-class role:
+independent replication is the thing the claim actually needs, and it is the one contribution that costs the
+protocol nothing to accept.
+
+### How many replicators does that take?
+
+Almost none — **a fraud proof is not a vote.** One party with a correct proof beats any number of liars, so the
+requirement is not a crowd but *at least one* participant who is both honest and **able to act**. The mesh
+already embodies that for residency: `challengeOpening` is fully permissionless, costs `OPENING_DEPOSIT`
+(0.01 BNB), and one outsider with one tile is enough to invalidate a fabricated claim.
+
+**For execution it does not, and this is a real gap.** `ExecutionDisputes.open` reverts with `"use market"`;
+`openDispute` requires `msg.sender == market`; and `TaskMarket` calls it from exactly one place — inside
+`settle`, between two *sortitioned executors who both submitted and disagreed*. An unbonded replicator who
+re-runs a task and gets a different digest has **no on-chain move at all**. So today the honest answer to "how
+many replicators are needed" is that the number does not matter: zero and a thousand buy the same amount of
+protocol security, because none of them has standing. What they can do is publish a contradiction, which for a
+scientific claim is not nothing — but it is not what makes the digest binding.
+
+**What would make one replicator enough** is standing, and the shape is already in this codebase: a
+deposit-backed challenge, mirroring `challengeOpening`. A non-executor posts a deposit and a disagreeing
+`execDigest`, and that opens the same bisection the two executors would have run — loser pays, challenger
+refunded and rewarded if right. Note what that does to the objection this section started from: the money goes
+up **at the moment of the accusation**, not as standing capital, and comes back with the liar's bond. That is a
+very different thing from bonding to be eligible.
+
+Two design notes if it is built. Settlement is immediate and final today (`_pay` runs inside `settle`), so the
+cheaper version is **not** to delay settlement but to allow a post-settlement fraud proof that slashes: the fee
+is small, the bond is the deterrent, and `SLASH_AMOUNT` (0.5 BNB) is already set to exceed any single task fee
+for exactly this reason. And the thing scale actually buys is **coverage, not consensus** — deterrence is
+`P(this task gets re-checked) × punishment`, and because the punishment can be large the probability may be
+small. A flywire-gate task re-runs in ~11 s through the browser kernel, so one laptop covers a thousand-run
+sweep in an evening. What cannot be bought with headcount is **independence**: a hundred replicators all
+belonging to the party that published the claim are worth less than one that does not.
+
+So the two entry points are asymmetric on purpose. **Bonded** means your result counts, you can be drawn as an
+executor, and you can be paid — and the bond is what makes the first of those safe. **Unbonded** means you
+replicate, audit and check, for free, with nothing at risk and, today, nothing the chain will hear.
 
 ---
 
@@ -253,7 +380,7 @@ bounded by something else long before it is bounded by time. What binds instead:
    A tab holding one of each at short tasks is 227 MB before any individual — so `h` counted in *brains* hides that
    the two sexes are not interchangeable units.
 
-   **Sampling is a mint-time step, off-line** (decided), so `min1` is never a hosted MEP and that row is not a hosting
+   **Sampling is an adoption-time step, off-line** (decided), so `min1` is never a hosted MEP and that row is not a hosting
    cost — it is the input to `applyDelta`. And the collection is **two bases and N deltas**, so what gets published
    per individual is the 202 bytes, not a payload. At the sizes this is aiming for the alternative is not close:
 
@@ -289,7 +416,7 @@ bounded by something else long before it is bounded by time. What binds instead:
    budget of 1.5M gas per instance per epoch pays for **five** materializations and nothing else. In the gate run
    (three brains, six tasks in one epoch) 8 of 12 results were sponsored and 4 were refused and paid by the executors.
    So under sponsorship `h ≤ 5`, well below the memory bound — which is the quantitative case for "claims on demand"
-   (item 3) and for item 2, and the number the mint fee's treasury share has to be set against.
+   (item 3) and for item 2, and the number the adoption fee's treasury share has to be set against.
 
 Items 2 and 3 below are both about the same fact — a tab holds one base and many deltas — and item 2 is now the
 near one: it is a change to where `applyDelta` runs, not to the claim scheme.
@@ -320,11 +447,11 @@ nominal amount in a volatile asset.
 | `UNIT` | 0.05 BNB | one sortition vote; see §1 on its relation to `SLASH_AMOUNT` |
 | `SLASH_AMOUNT` | 0.5 BNB | capped by the bond in practice |
 | beacon `DEPOSIT` | 0.1 BNB | prices biasing one epoch's randomness; fixed while task value grows (§7) |
-| `MINT_PRICE` | `UNIT` + fee | the fee is the treasury's only income |
+| `MINT_PRICE` | `UNIT` + fee | the adoption price; the fee is the treasury's only income |
 | genesis size | to set against the §5 memory bound | the old ≤ 200 was a CPU figure and no longer applies; split between the two sexes, since a skewed ratio throttles breeding |
 | `BREED_FEE` | to decide | the second sink, and the rate limit on new MEPs |
 
-Not an admin key. The neighbouring project lets its owner change the mint price, the swap route and the buyback
+Not an admin key. The neighbouring project lets its owner change the adoption price, the swap route and the buyback
 recipient; that is a live hand on the economics. Immutable-with-known-flaws is a better failure mode than
 mutable-at-will, and where something genuinely must change it should be governed explicitly rather than by an
 owner address.
@@ -375,3 +502,10 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
    dropped records in place as zero weights makes `child_tile[t] = G(parent tiles[t], seed)`, which admits a one-step
    fraud proof on a single record (the sampler's Q256 arithmetic is the EVM's word size). It fixes the payload layout,
    so it has to be decided before the first child is registered.
+8. **Whether a replicator gets standing** (§3b). Re-executing a settled task needs no protocol change, but a
+   disagreement found that way has no on-chain move: `ExecutionDisputes.open` reverts `"use market"`, and the
+   market opens a dispute only between two sortitioned executors. A deposit-backed challenge by a non-executor,
+   mirroring `challengeOpening`, is what turns replication from a social act into a security property — and it
+   is the one change that makes the unbonded path worth building a surface for. Specified in
+   `docs/REPLICATOR-STANDING.md`. Separately, and only if a stake-free *paid* role is ever wanted: `epochChallenge` would have to become instance-specific before
+   residency could carry any Sybil weight at all, and that still would not solve punishment.
