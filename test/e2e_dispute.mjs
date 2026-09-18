@@ -96,79 +96,12 @@ try {
   const partyA = await C.pub.readContract({ address: disp, abi: DISP_ABI, functionName: "partyA", args: [taskId] }).catch(() => "0x0000000000000000000000000000000000000000");
   check(`settle opened a dispute instead of paying anyone (partyA ${partyA})`, s.ok && partyA !== "0x0000000000000000000000000000000000000000");
 
-  // ---- now play the dispute out, move by move, both sides on-chain ----
-  const DA = parseAbi([
-    "function revealRoots(bytes32 taskId, bytes32[] actRoots)",
-    "function postStepRoots(bytes32 taskId, bytes32[] roots)",
-    "function postChildren(bytes32 taskId, bytes32 left, bytes32 right)",
-    "function postRowLif(bytes32 taskId, int32 v, int32 g, uint16 refr, uint16 flags, uint32 count, int64[] sums)",
-    "function proveSynapseTermLif(bytes32 taskId, (uint32,bytes32,bytes32,(uint32,bytes32[],uint32,bytes32[]),(uint32,bytes,bytes32[]),(int32,int32,uint16,uint16,uint32,bytes32[]),(int32,int32,uint16,uint16,uint32,bytes32[])) pf)",
-  ]);
-  const send = async (X, fn, args) => { const h = await X.c.wallet.writeContract({ address: disp, abi: DA, functionName: fn, args }); const r = await X.c.pub.waitForTransactionReceipt({ hash: h }); if (r.status !== "success") throw new Error(fn + " reverted"); return Number(r.gasUsed); };
-  let gas = {};
-  // the two runs, replayed locally so each side has its own commitments to post
-  const rA = await A.nd.challenge(mep.mepId, challengeBytes, { stimulusSeed: SEED });
-  const rB = await B.nd.challenge(mep.mepId, challengeBytes, { stimulusSeed: SEED });
-  check("the local replays reproduce exactly what each side signed on-chain", H.hex(rA.result.execRoot) === A.results[0].execRoot && H.hex(rB.result.execRoot) === B.results[0].execRoot);
-
-  gas.reveal = await send(A, "revealRoots", [taskId, rA.result.actRoots.map(H.hex)]);
-  await send(B, "revealRoots", [taskId, rB.result.actRoots.map(H.hex)]);
-  const segStar = D.firstDifferingStep(rA.result.actRoots, rB.result.actRoots) - 1;
-  check(`segment ${segStar} is the first the two disagree on (the lie is at step ${S_LIE}, stride ${STRIDE})`, segStar === Math.floor((S_LIE - 1) / STRIDE));
-
-  const segA = await A.nd.lifSegmentRoots(mep.mepId, segStar), segB = await B.nd.lifSegmentRoots(mep.mepId, segStar);
-  gas.stepRoots = await send(A, "postStepRoots", [taskId, segA.roots.map(H.hex)]);
-  await send(B, "postStepRoots", [taskId, segB.roots.map(H.hex)]);
-  const ref = D.refineSegment({ seg: segStar, stride: STRIDE, steps: STEPS, prevAgreed: rA.result.actRoots[segStar - 1], segRootA: rA.result.actRoots[segStar], segRootB: rB.result.actRoots[segStar], rootsA: segA.roots, rootsB: segB.roots });
-  check(`refining the segment lands on step ${S_LIE} (got ${ref.step})`, ref.step === S_LIE);
-
-  // binary search down the state tree until one neuron is left
-  const widths = (m) => { const w = [m]; while (w[w.length - 1] > 1) w.push((w[w.length - 1] + 1) >> 1); return w; };
-  const w = widths(n); let level = w.length - 1, idx = 0, rounds = 0;
-  while (level > 0) {
-    const l = 2 * idx, r = 2 * idx + 1, cw = w[level - 1];
-    const a = [await A.nd.lifNode(mep.mepId, S_LIE, level - 1, l), r < cw ? await A.nd.lifNode(mep.mepId, S_LIE, level - 1, r) : await A.nd.lifNode(mep.mepId, S_LIE, level - 1, l)];
-    const b = [await B.nd.lifNode(mep.mepId, S_LIE, level - 1, l), r < cw ? await B.nd.lifNode(mep.mepId, S_LIE, level - 1, r) : await B.nd.lifNode(mep.mepId, S_LIE, level - 1, l)];
-    const g = await send(A, "postChildren", [taskId, H.hex(a[0]), H.hex(a[1])]); if (!rounds) gas.children = g;
-    await send(B, "postChildren", [taskId, H.hex(b[0]), H.hex(b[1])]);
-    idx = !V.eq(a[0], b[0]) ? l : (r < cw ? r : l); level--; rounds++;
-  }
-  check(`the bisection walked ${rounds} rounds down to neuron ${idx}, which is the one that was lied about`, idx === NEURON);
-
-  // the neuron's row: each side posts its claimed state and its CSR-ordered partial sums
-  const psA = await A.nd.lifPartialSums(mep.mepId, S_LIE, NEURON), psB = await B.nd.lifPartialSums(mep.mepId, S_LIE, NEURON);
-  const stA = (await A.nd.lifOpenState(mep.mepId, S_LIE, NEURON)).state, stB = (await B.nd.lifOpenState(mep.mepId, S_LIE, NEURON)).state;
-  // Two kinds of liar. A naive one posts its real partial sums, which do not add up to the state it claimed, and
-  // loses right here at the row check. A competent one forges sums that DO transition to its claimed state --
-  // the only way to survive the row check -- and that is what forces the dispute down to a single synapse term.
-  // B is the competent one: it inflates the tail of the row by exactly the amount it lied about, so the last
-  // partial sum matches the input it pretended to receive, and the first forged term is where it will be caught.
-  const len = psA.sums.length, jStar = len >> 1;
-  const lied = Array.from(psA.sums); for (let j = jStar; j < len; j++) lied[j] += BigInt(DELTA);
-  check("the liar's forged row transitions to exactly the state it claimed (so the row check cannot catch it)", L.sameState(L.transition((await A.nd.lifOpenState(mep.mepId, S_LIE - 1, NEURON)).state, lied[len - 1], NEURON, S_LIE, SEED), stB));
-  const row = (X, st, sums) => send(X, "postRowLif", [taskId, st.v, st.g, st.refr, st.flags, st.count, sums]);
-  gas.row = await row(A, stA, Array.from(psA.sums)); await row(B, stB, lied);
-  check(`the two rows agree for ${jStar} terms and first differ at term ${jStar} of ${len}`, D.firstDivergentTerm(psA.sums, lied) === jStar);
-
-  // one synapse term decides it
-  const kStar = psA.k0 + jStar;
-  const chunk = A.nd.openCsrChunk(mep.mepId, Math.floor(kStar / pst.csr.chunk));
-  const rec = L.recordSigned(chunk.records.subarray((kStar - chunk.k0) * 10, (kStar - chunk.k0) * 10 + 10));
-  check(`the term's synapse record targets the disputed neuron (post ${rec.post})`, rec.post === NEURON);
-  const rowStart = A.nd.openRowStart(mep.mepId, NEURON), rowEnd = A.nd.openRowStart(mep.mepId, NEURON + 1);
-  const self = await A.nd.lifOpenState(mep.mepId, S_LIE - 1, NEURON), pre = await A.nd.lifOpenState(mep.mepId, S_LIE - 1, rec.pre);
-  const SO = (o) => [o.state.v, o.state.g, o.state.refr, o.state.flags, o.state.count, o.proof.map(H.hex)];
-  const proof = [kStar, H.hex(rA.result.csrRoot), H.hex(rA.result.rowRoot),
-    [rowStart.value, rowStart.proof.map(H.hex), rowEnd.value, rowEnd.proof.map(H.hex)],
-    [chunk.c, H.hex(chunk.records), chunk.proof.map(H.hex)], SO(self), SO(pre)];
-  const bondB0 = await A.c.instances.read.bonded([B.wallet.address]), bondA0 = await A.c.instances.read.bonded([A.wallet.address]);
-  gas.term = await send(A, "proveSynapseTermLif", [taskId, proof]);
-  const bondB1 = await A.c.instances.read.bonded([B.wallet.address]), bondA1 = await A.c.instances.read.bonded([A.wallet.address]);
-  check(`the liar's bond was slashed on-chain (${Number(bondB0 - bondB1) / 1e18} BNB taken)`, bondB1 < bondB0);
-  check("the honest executor's own bond was untouched", bondA1 === bondA0);
-  console.log(`  gas: revealRoots ${gas.reveal}, postStepRoots ${gas.stepRoots}, postChildren ${gas.children}/round x ${rounds} rounds x2, postRowLif ${gas.row}, proveSynapseTermLif ${gas.term}`);
-  const evidence = { taskId, mepId, neurons: n, steps: STEPS, stride: STRIDE, lie: { step: S_LIE, neuron: NEURON, delta: DELTA, kind: "input", inDegree: inDeg }, segStar, rounds, jStar, kStar, preNeuron: rec.pre, gas, slashed: (bondB0 - bondB1).toString(), honest: A.addr, liar: B.addr };
-  fs.writeFileSync(process.env.PORW_EVIDENCE || "/tmp/dispute-evidence.json", JSON.stringify(evidence, null, 1));
+  // ---- now play the dispute out, move by move, both sides on-chain (shared with the live testnet run) ----
+  const { driveDispute } = await import("./dispute_driver.mjs");
+  A.execRoot = A.results[0].execRoot; B.execRoot = B.results[0].execRoot;
+  const out = await driveDispute(A, B, { taskId, disputes: disp, mepIdBytes: mep.mepId, n, steps: STEPS, stride: STRIDE, seed: SEED, challengeBytes, sLie: S_LIE, neuron: NEURON, delta: DELTA, chunkSize: pst.csr.chunk },
+    { D, V, L, hex: H.hex }, { check, log: (m) => console.log("  " + m) });
+  fs.writeFileSync(process.env.PORW_EVIDENCE || "/tmp/dispute-evidence.json", JSON.stringify({ taskId, mepId, neurons: n, steps: STEPS, stride: STRIDE, lie: { step: S_LIE, neuron: NEURON, delta: DELTA, kind: "input" }, ...out, honest: A.addr, liar: B.addr }, null, 1));
   for (const X of [A, B]) X.rc.close(); client.close(); R.stop();
 } catch (e) { console.error(e); fails++; } finally { anvil.stop(); }
 console.log(fails ? `${fails} FAILURES` : "ALL PASS");
