@@ -244,16 +244,34 @@ bounded by something else long before it is bounded by time. What binds instead:
    **The male base is not the same size, and §4's two bases have to be priced together** (aigg-porw PR #11:
    `malecns-v1.0-min5`, 166,700 neurons, 6,242,118 records, 63.8 MB, 15,566 tiles). Priced with the model above:
 
-   | brain | `maxSteps` 100 | `maxSteps` 5,000 |
-   |---|---|---|
-   | female `min5` | 83 MB | 408 MB |
-   | male `min5` | **145 MB** | 534 MB |
-   | male `min1` (the sampling base) | 439 MB | 829 MB |
+   | brain | `maxSteps` 100 | `maxSteps` 5,000 | |
+   |---|---|---|---|
+   | female `min5` | 83 MB | 408 MB | |
+   | male `min5` | **145 MB** | 534 MB | |
+   | male `min1` | 439 MB | 829 MB | *not hosted — it is `applyDelta`'s input, see below* |
 
    A tab holding one of each at short tasks is 227 MB before any individual — so `h` counted in *brains* hides that
-   the two sexes are not interchangeable units. The male `min1` export exists to sample individuals from and is 439 MB
-   resident on its own; if sampling has to happen in the tab rather than ahead of it, that is the number that decides
-   whether a laptop can breed.
+   the two sexes are not interchangeable units.
+
+   **Sampling is a mint-time step, off-line** (decided). So `min1` is never a hosted MEP and that row is not a hosting
+   cost; it is the input to `applyDelta`. But that decision settles *where an individual is sampled*, not *how a host
+   gets one*, and the two remaining answers cost very differently:
+
+   | | what a host downloads | what it does at load | when it wins |
+   |---|---|---|---|
+   | **(a) publish the payload** | ~64 MB per individual | nothing | few individuals per base |
+   | **(b) publish the 202-byte delta** | the `min1` base once (257 MB) + 202 B each | `applyDelta` | several individuals of the same base |
+
+   *Measured* (this host, one thread, `FLYDELTAv2` apply at the male base's neuron count): 2.5 s at 6.0 M records,
+   4.7 s at 12.0 M — linear, so **~10 s at `min1`'s 25.6 M** — and the base and the individual are held as JS byte
+   arrays at the same time, about **2× the base**, so ~510 MB transiently before anything reaches wasm. (Consistent
+   with §2's 0.9 s, which is the same apply over the female `min5` base's 2.7 M records.)
+
+   Break-even is around four or five individuals of one sex per tab: below that (a) moves less data, above it (b)
+   does. §2's "one hot object instead of N cold ones" is an argument for (b) and it still holds — but it is an
+   argument about the *CDN*, and the tab pays ~10 s and half a gigabyte of transient heap for it. A third option
+   worth pricing before choosing: publish the payload (a) and keep the delta as the *provenance* record, so the CDN
+   serves N objects but the 202 bytes on chain still say which seed produced it.
 2. **First load.** 28 MB over the network before a tab can claim anything, once per base.
 3. **Redundancy.** Still `N ≤ T · h / 2` in shape, with `h` now set by memory rather than seconds.
 
@@ -334,7 +352,9 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
 4. Whether the token owner's share of task fees is a protocol rule or a social one.
 5. Who exports the male base, and when. The source data (edges, annotations with `flywireType`, consensus
    neurotransmitters) is already prepared in the flyaudio project; what is missing is a `FLYBRAINv2` exporter for it.
-6. Tile-local derivation. A procedural individual drops sub-threshold records and re-sorts, so tile `t` of a child
+6. How an individual reaches a host: (a) its payload published, or (b) the base plus its 202 bytes and an apply in
+   the tab (§5.1). Sampling itself is settled — off-line, at mint.
+7. Tile-local derivation. A procedural individual drops sub-threshold records and re-sorts, so tile `t` of a child
    depends on every record before it and a wrong declared `model_id` is self-punishing but not provable. Keeping
    dropped records in place as zero weights makes `child_tile[t] = G(parent tiles[t], seed)`, which admits a one-step
    fraud proof on a single record (the sampler's Q256 arithmetic is the EVM's word size). It fixes the payload layout,
