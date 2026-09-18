@@ -8,7 +8,9 @@
 // network (source the aigg-bnb .env.<network>; the client key pays the fees).
 //   AIGG_BNB=/path/to/aigg-bnb node post_tasks.mjs --env /path/to/.env.bsc-testnet --relayer http://host:8788 [--only full,ablate4,keep4] [--fee 0.001] [--deadline 600]
 import fs from "node:fs"; import path from "node:path"; import { createRequire } from "node:module";
-const here = path.dirname(new URL(import.meta.url).pathname); const bnb = process.env.AIGG_BNB || "/Volumes/T7-Data/rspeech/aigg-bnb-work";
+const here = path.dirname(new URL(import.meta.url).pathname);
+// the aigg-bnb checkout whose submodule (scheme!) and node_modules are used: this file's own repo when it lives in one
+const bnb = process.env.AIGG_BNB || (fs.existsSync(path.join(here, "../../relayer/relayer.mjs")) ? path.join(here, "../..") : "/Volumes/T7-Data/rspeech/aigg-bnb-work");
 const { parseEther, keccak256, encodeAbiParameters, parseAbiItem } = await import(createRequire(path.join(bnb, "package.json")).resolve("viem"));
 const porw = (f) => import(path.join(bnb, "contracts/lib/aigg-porw/web/porw-browser", f));
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
@@ -63,7 +65,9 @@ export async function runTasks(clients, clientKey, api, { taskJson = path.join(h
         catch (e) { r.results[x] = { error: String(e) }; log(`  ${x.slice(0, 8)} no result: ${e}`); }
       }
       const t0 = Date.now(); let all = false; while (Date.now() - t0 < 300000) { const s = await Promise.all(ex.map((x) => clients.market.read.submitted([taskId, x]))); if (s.every(Boolean)) { all = true; break; } await sleep(1000); }
-      r.submitted = all; if (all) { r.settle = await api("/tx/settle", { taskId }); log(`  settle: ${r.settle.ok ? "ok " + (r.settle.hash || r.settle.tx || "") : JSON.stringify(r.settle).slice(0, 200)}`); } else log("  not all results submitted within 5 min");
+      r.submitted = all;
+      // settle is permissionless: the client that posted the task pays for settling it (the relayer sponsors settle only out of an executor's budget)
+      if (all) { try { const sh = await clients.market.write.settle([taskId]); const rc = await clients.pub.waitForTransactionReceipt({ hash: sh }); r.settle = { ok: rc.status === "success", hash: sh, gasUsed: String(rc.gasUsed), paidBy: "client" }; } catch (e) { r.settle = { ok: false, error: String(e.shortMessage || e.message) }; } log(`  settle: ${r.settle.ok ? "ok " + (r.settle.hash || r.settle.tx || "") : JSON.stringify(r.settle).slice(0, 200)}`); } else log("  not all results submitted within 5 min");
       out.push(r);
     }
   } finally { client.close(); }

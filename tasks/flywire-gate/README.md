@@ -29,7 +29,7 @@ the *same* digest (the removed records never carry a spike), which is the built-
   `ablate4` / `keep4` byte for byte, with the model ids in `task.json`. `*.manifest.json` describe the applied payloads.
 - `stimulus_sets.json`, `init_state_roots.json`, `reference_digests.json` — inputs and the reference runner's outputs.
 - `wasm_digests.json` — the same six runs through the browser kernel (`sketch.wasm`): all match the reference.
-- `e2e_gate_task.mjs`, `e2e_anvil_log.json`, `e2e_anvil_run.log` — the end-to-end run on a local anvil.
+- `e2e_gate_task.mjs`, `e2e_anvil_log.json`, `e2e_anvil_run.log` — the end-to-end run on a local anvil under this checkout's scheme (v2).
 - `post_tasks.mjs` — posts the tasks of `task.json` on any deployed mesh and drives them to settlement (executor
   session keys resolved from the instance registry's `SessionKeySet` logs); the anvil run goes through it too.
 - `fields/<model>.v1.json`, `fields/<model>.v2.json` — the MEP fields per scheme (`js/register_mep.mjs` input).
@@ -77,17 +77,31 @@ A settled task whose digest equals `expectedExecDigest` is a third-party replica
 
 ## Schemes
 
-| | `sketch-tile-keccak:v1` (this repo's submodule today) | `sketch-tile-keccak:v2` (aigg-porw `scheme-v3-resident-claim`) |
+| | `sketch-tile-keccak:v1` | `sketch-tile-keccak:v2` (this repo's submodule) |
 |---|---|---|
 | mep_id | keccak(scheme, modelId, execKind, steps, stride) | keccak(scheme, modelId, execKind, neurons, synapses, synapseRoot) |
 | full | 0x1569abaa… | 0x29d28a93… |
 | ablate4 | 0xb831be52… | 0x365bec00… |
 | keep4 | 0x08aa989d… | 0xd3b6a4b1… |
 | steps 5000, stride 500 | in the MEP | on the Task (and in the `task-announce`) |
-| taskId | keccak(mepId, seed, nonce): in `task.json` | keccak(abi.encode(Task, nonce)): covers fee and deadline, exists only at post time |
+| taskId | keccak(mepId, seed, nonce) | keccak(abi.encode(Task, nonce)): covers fee and deadline, exists only at post time |
+| residency claims, 3 brains x 2 executors | ~70 s (six 5000-step runs) | 0.11 s (no inference) |
 
-`modelId`, `synapseRoot`, `execKind`, and every `execDigest`, `execRoot` and `inputCommit` are the same under both
-schemes (checked by running the six tasks through the v2 node's `execute({ steps: 5000, commitStride: 500 })`). The
-anvil record and `post_tasks.mjs` are v1; posting under v2 needs this repo's side of the scheme change (the `Task`
-struct with `steps` / `commitStride`, registration without them, the announce carrying them), then
-`recompute_ids.mjs --check` and a fresh end-to-end run.
+`modelId`, `synapseRoot`, `execKind`, and every `execDigest`, `execRoot` and `inputCommit` are the same under both schemes.
+
+## End to end under v2 (`e2e_gate_task.mjs`, record in `e2e_anvil_log.json` / `e2e_anvil_run.log`)
+
+```bash
+FOUNDRY_BIN=$HOME/.foundry/bin node tasks/flywire-gate/e2e_gate_task.mjs /path/to/flywire-783-min5.bin
+```
+
+Only the base payload is needed: the two edited brains are rebuilt from their deltas, and the registered MEP ids are
+checked against the v2 ids in `task.json`. The six tasks go through `post_tasks.mjs` with `steps` and `commitStride`
+on the Task. All six settle with the expected digests. Two things the run records about the guarded relayer:
+
+- **Sponsorship budget.** With the default 1,500,000 gas per instance per epoch, three materializations (~285k each)
+  plus four `submitResult`s (~180k each) exhaust it: 8 of the 12 results are sponsored, the last 4 are refused (429)
+  and the executors submit them from their own wallets. An operator hosting several brains per instance should size
+  `PORW_SPONSOR_EPOCH_GAS` for materializations + expected results per epoch.
+- **Settle.** The relayer sponsors `settle` only out of an executor's budget, so `post_tasks.mjs` has the client that
+  posted the task settle it (permissionless on chain, paid by the party that wants the result).
