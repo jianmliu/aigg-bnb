@@ -32,7 +32,11 @@ the *same* digest (the removed records never carry a spike), which is the built-
 - `e2e_gate_task.mjs`, `e2e_anvil_log.json`, `e2e_anvil_run.log` — the end-to-end run on a local anvil.
 - `post_tasks.mjs` — posts the tasks of `task.json` on any deployed mesh and drives them to settlement (executor
   session keys resolved from the instance registry's `SessionKeySet` logs); the anvil run goes through it too.
-- `fields/*.json` — the three MEP field files for aigg-bnb's `js/register_mep.mjs`.
+- `fields/<model>.v1.json`, `fields/<model>.v2.json` — the MEP fields per scheme (`js/register_mep.mjs` input).
+- `recompute_ids.mjs` — recomputes every scheme-dependent id from the real base payload with an aigg-porw checkout
+  (`--porw dir`, default this repo's submodule) and keeps them per scheme in `task.json` (`models[*].mepByScheme`,
+  `tasks[*].taskIdByScheme`); `--check` exits 1 when stale. The `mep` block of each model is the v1 profile the
+  tools in this folder still use.
 - `build_variants.py`, `bench_real_payload.mjs`, `wasm_digests.mjs`, `init_state_roots.mjs`, `assemble_task.py` — the tooling.
 
 ## Reproduce
@@ -70,3 +74,20 @@ this task needs the 5000-step / stride-500 MEPs below, registered by a funded de
    sortitioned executors over the relay, waits for the sponsored results, settles, and writes `posted-97.json`.
 
 A settled task whose digest equals `expectedExecDigest` is a third-party replication of that row of the table.
+
+## Schemes
+
+| | `sketch-tile-keccak:v1` (this repo's submodule today) | `sketch-tile-keccak:v2` (aigg-porw `scheme-v3-resident-claim`) |
+|---|---|---|
+| mep_id | keccak(scheme, modelId, execKind, steps, stride) | keccak(scheme, modelId, execKind, neurons, synapses, synapseRoot) |
+| full | 0x1569abaa… | 0x29d28a93… |
+| ablate4 | 0xb831be52… | 0x365bec00… |
+| keep4 | 0x08aa989d… | 0xd3b6a4b1… |
+| steps 5000, stride 500 | in the MEP | on the Task (and in the `task-announce`) |
+| taskId | keccak(mepId, seed, nonce): in `task.json` | keccak(abi.encode(Task, nonce)): covers fee and deadline, exists only at post time |
+
+`modelId`, `synapseRoot`, `execKind`, and every `execDigest`, `execRoot` and `inputCommit` are the same under both
+schemes (checked by running the six tasks through the v2 node's `execute({ steps: 5000, commitStride: 500 })`). The
+anvil record and `post_tasks.mjs` are v1; posting under v2 needs this repo's side of the scheme change (the `Task`
+struct with `steps` / `commitStride`, registration without them, the announce carrying them), then
+`recompute_ids.mjs --check` and a fresh end-to-end run.

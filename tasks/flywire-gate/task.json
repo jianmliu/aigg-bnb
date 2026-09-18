@@ -26,9 +26,35 @@
     "neurons": 139255,
     "synapses": 2700513,
     "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
-    "tiles": 6866
+    "tiles": 6866,
+    "schemeId": "aigg:porw:sketch-tile-keccak:v1"
    },
-   "edit": "none: the FlyWire v783 female connectome, connections with >= 5 synapses (analysis/fw_import.py MIN_SYN=5), exported by aigg-porw's flywire_export.py"
+   "edit": "none: the FlyWire v783 female connectome, connections with >= 5 synapses (analysis/fw_import.py MIN_SYN=5), exported by aigg-porw's flywire_export.py",
+   "mepByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v1",
+     "schemeDigest": "0x718b2eb3b33a6d18d904363ee1cc2fb797e344af10132ebfd93aef8d5d72e4b4",
+     "mepId": "0x1569abaaa3c688414fa4f5317a525c0df319666683cbadcc217ee56117234749",
+     "modelId": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700513,
+     "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
+     "steps": 5000,
+     "clampQ16": 500
+    },
+    "aigg:porw:sketch-tile-keccak:v2": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v2",
+     "schemeDigest": "0x743502825425e31852a0adb96c797d7ac839afdef315e8c24b68db6e58d4be2e",
+     "mepId": "0x29d28a9377e09b2a68f1446970a72c629dc59266fadba8e0cba45fba744aaf82",
+     "modelId": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700513,
+     "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
+     "note": "steps and commit stride belong to the Task under this scheme"
+    }
+   }
   },
   "flywire-783-min5-ablate4": {
    "payload": {
@@ -49,7 +75,8 @@
     "neurons": 139255,
     "synapses": 2700509,
     "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
-    "tiles": 6866
+    "tiles": 6866,
+    "schemeId": "aigg:porw:sketch-tile-keccak:v1"
    },
    "edit": "the 4 direct AN_multi_8 -> DNge145 records removed (weights -22, -33, -29, -30 in 0.275 mV units)",
    "delta": {
@@ -64,6 +91,31 @@
     "delta_id": "0x4e248caf185ffcec61d9774923a86c5f8cd409fc7ff59bd0011a1d51b51ecdcf",
     "sha256": "0819273566b42162aa67f940634e8a310088cc4d04819ffc6273569694305ea9",
     "note": "apply to the base payload (flywire_delta.py apply / PorwNode.loadDelta) to obtain this model byte for byte"
+   },
+   "mepByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v1",
+     "schemeDigest": "0x718b2eb3b33a6d18d904363ee1cc2fb797e344af10132ebfd93aef8d5d72e4b4",
+     "mepId": "0xb831be529f12d196d4c484805ed9c320b37f60bde19b20f18448f1945eacfebf",
+     "modelId": "0x2c05fc989a1c651181c787b58e67982709d72c2aac6b72ebf7545fef20163781",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700509,
+     "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
+     "steps": 5000,
+     "clampQ16": 500
+    },
+    "aigg:porw:sketch-tile-keccak:v2": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v2",
+     "schemeDigest": "0x743502825425e31852a0adb96c797d7ac839afdef315e8c24b68db6e58d4be2e",
+     "mepId": "0x365bec009e8e19df0e282841f1f1120b45efbe5e2ab992af6fd6327b4b129538",
+     "modelId": "0x2c05fc989a1c651181c787b58e67982709d72c2aac6b72ebf7545fef20163781",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700509,
+     "synapseRoot": "0x41473da041297ff74a0847ab2291e8305625bc9aae8e81d556ab08197bd831b7",
+     "note": "steps and commit stride belong to the Task under this scheme"
+    }
    }
   },
   "flywire-783-min5-keep4": {
@@ -85,7 +137,8 @@
     "neurons": 139255,
     "synapses": 2700046,
     "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
-    "tiles": 6864
+    "tiles": 6864,
+    "schemeId": "aigg:porw:sketch-tile-keccak:v1"
    },
    "edit": "the other 467 output records of the 2 AN_multi_8 cells removed; only the 4 direct records onto DNge145 kept",
    "delta": {
@@ -100,6 +153,31 @@
     "delta_id": "0xa36995461918ea743e25a9166baa0ce1460815e91e37cc6c8624ea452525affb",
     "sha256": "79bce4ea1d917ea8e3e66260af3b34a6abecb5a8f0e7a52c4a172c1d7f812092",
     "note": "apply to the base payload (flywire_delta.py apply / PorwNode.loadDelta) to obtain this model byte for byte"
+   },
+   "mepByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v1",
+     "schemeDigest": "0x718b2eb3b33a6d18d904363ee1cc2fb797e344af10132ebfd93aef8d5d72e4b4",
+     "mepId": "0x08aa989d6899bf91cbde20a66b585a777924c565771e84ce2b60926e51c84562",
+     "modelId": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700046,
+     "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
+     "steps": 5000,
+     "clampQ16": 500
+    },
+    "aigg:porw:sketch-tile-keccak:v2": {
+     "schemeId": "aigg:porw:sketch-tile-keccak:v2",
+     "schemeDigest": "0x743502825425e31852a0adb96c797d7ac839afdef315e8c24b68db6e58d4be2e",
+     "mepId": "0xd3b6a4b116af0abe74a8f7e4efccd0484f9dd706116a51bd9398a239cfe79713",
+     "modelId": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
+     "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+     "neurons": 139255,
+     "synapses": 2700046,
+     "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
+     "note": "steps and commit stride belong to the Task under this scheme"
+    }
    }
   }
  },
@@ -869,7 +947,7 @@
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
     "DNge145": 2.8,
-    "DNp12": 6.0,
+    "DNp12": 6,
     "GF": 10.4,
     "locked38": 104.4
    },
@@ -882,6 +960,11 @@
     "postTx": "0x484e73b34cbe32b0f2618601289394848d1fc6d1e2ac75af3d27c352d7bb08f7",
     "settled": true,
     "settleTx": "0x932e324b9c1101a0849d44c36ab9b22725fb6e2d5e67baab1e6b8e8ea80b176c"
+   },
+   "taskId": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
+   "taskIdByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": "0x1c9998195e4cd07a459b28fe18f9833c529a605a3497f1ef363b9f763ac3fc93",
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
    }
   },
   {
@@ -892,10 +975,10 @@
    "expectedExecDigest": "0x017258be33f72b5ad5deb3e184bda5b1b00d3497af5206fa02abb728de8b1b2b",
    "execRoot": "0xdaa85fe9dfb7b3a540ff58777ac0a474a8ebfef9089e48d5bd241347dcb25bf2",
    "referenceRates_last2500steps_per100ms": {
-    "DNge145": 0.0,
+    "DNge145": 0,
     "DNp12": 3.2,
     "GF": 12.4,
-    "locked38": 112.0
+    "locked38": 112
    },
    "anvil": {
     "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
@@ -906,6 +989,11 @@
     "postTx": "0x27818932565d2992599f7d93eceb445302d6d8e70d803dbdbf61dc0bc485bf0e",
     "settled": true,
     "settleTx": "0x265f2cdafd9e5de18621d8ba82636e5a76e9866f1efda26492131f236bef1eb5"
+   },
+   "taskId": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
+   "taskIdByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": "0x8a33b5a1d297d66cf4a61357c2387e44fff1ead8848edd85bd0839ac06af3955",
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
    }
   },
   {
@@ -917,7 +1005,7 @@
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
     "DNge145": 2.8,
-    "DNp12": 6.0,
+    "DNp12": 6,
     "GF": 10.4,
     "locked38": 104.4
    },
@@ -930,6 +1018,11 @@
     "postTx": "0x9d81bc7301ca051e8eb0d56e2a9ee5138965ee5057478b9f26d8ed3e42578ca5",
     "settled": true,
     "settleTx": "0x68a46ef24d784881ade4b8949096abf924e1fd5be6ad977ba9003ab341f30677"
+   },
+   "taskId": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273",
+   "taskIdByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": "0x6131726afe67179e16f45335c707c75dac0375ca7d18ed9adf83062797d4b273",
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
    }
   },
   {
@@ -954,6 +1047,11 @@
     "postTx": "0x0138c0ff52ccb9dc6aded6a48e8bcbf7380a0f6bd92933fdaeb824811520c879",
     "settled": true,
     "settleTx": "0x391ac10ef5be232eb91a77c8393560072764d0eb6709a0325f8486b0b24a172c"
+   },
+   "taskId": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c",
+   "taskIdByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": "0x05ce94fb2aea9dc05fa3f847a99938258595c8e24adaca0702b6d3946ecc8d0c",
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
    }
   },
   {
@@ -965,7 +1063,7 @@
    "execRoot": "0x85f41bc6a7fe32ce591cc62792ea8db0de0ad37efca7bb114f32ae2fb2db0d12",
    "referenceRates_last2500steps_per100ms": {
     "DNge145": 2.8,
-    "DNp12": 6.0,
+    "DNp12": 6,
     "GF": 10.4,
     "locked38": 104.4
    },
@@ -978,6 +1076,11 @@
     "postTx": "0xce63dfbac6ae229b6dd689b4c816acb423f7a7b0340edf9b5b3579280433f391",
     "settled": true,
     "settleTx": "0x7e1b461f2c78e7d9279014db02dabec19f7dc14a1086d75d11ef79f97866431a"
+   },
+   "taskId": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
+   "taskIdByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": "0x0435dd454351621a4f306095f5f315aa7a2158b16a5ca02f60ad115a5a022d98",
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
    }
   },
   {
@@ -988,7 +1091,7 @@
    "expectedExecDigest": "0xd96bc436e5cbed99ffcddd0a180b872bb45202139d93232f532180ff9a5a18c2",
    "execRoot": "0x2e514cd727801593599e612a85dfff719635caddde6cb46c1e4547b91b91e1ed",
    "referenceRates_last2500steps_per100ms": {
-    "DNge145": 0.0,
+    "DNge145": 0,
     "DNp12": 7.2,
     "GF": 11.2,
     "locked38": 111.6
@@ -1002,6 +1105,11 @@
     "postTx": "0xbab35b481655d3d03124635e9d78cab6b1106bc17e29c3c77328d571a21f4eac",
     "settled": true,
     "settleTx": "0xb6d6176b1208b8e4915110117281a223a81d25f0788282fc4c40900375ddf3a6"
+   },
+   "taskId": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
+   "taskIdByScheme": {
+    "aigg:porw:sketch-tile-keccak:v1": "0xf3bbdde7687b966b76e5306d18cad8dd187d07f0dbb0eddc29239f2c26d30b60",
+    "aigg:porw:sketch-tile-keccak:v2": "post-time: keccak(abi.encode(Task{mepId, stimulusSeed, steps, commitStride, inputCommit, fee, deadline, redundancy}, nonce))"
    }
   }
  ],

@@ -1,0 +1,13 @@
+{
+ "name": "flywire-783-min5-keep4",
+ "sha256": "47285bdeb23101c21bdac9b412b5a044ba4cd07c33e947c51a00acb1219d6267",
+ "schemeId": "aigg:porw:sketch-tile-keccak:v2",
+ "schemeDigest": "0x743502825425e31852a0adb96c797d7ac839afdef315e8c24b68db6e58d4be2e",
+ "mepId": "0xd3b6a4b116af0abe74a8f7e4efccd0484f9dd706116a51bd9398a239cfe79713",
+ "modelId": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
+ "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+ "neurons": 139255,
+ "synapses": 2700046,
+ "synapseRoot": "0x86c1c97def4ae37ec303f659c846aa61941bb759e49d63122ae158f0af0e07b6",
+ "note": "steps and commit stride belong to the Task under this scheme"
+}
