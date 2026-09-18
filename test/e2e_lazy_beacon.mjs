@@ -35,7 +35,7 @@ try {
 
   // ---- 2. /wake is for bonded instances only ----
   const stranger = await R.api("/wake", { instance: "0x000000000000000000000000000000000000dEaD" });
-  check("/wake from an address with no bond is refused", stranger.error === "instance not bonded" && (await R.api("/status")).beacon.warm === false);
+  check("/wake from an address with no sortition weight is refused", /no sortition weight/.test(stranger.error || "") && (await R.api("/status")).beacon.warm === false);
 
   // ---- 3. a real instance bonds, delegates and wakes the mesh ----
   const E = await H.porw("eip712.js"); const { keypair } = await H.porw("claim.js"); const { PorwNode } = await H.porw("node.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const { RelayClient } = await H.porw("relay_client.js"); const { NodeService } = await H.porw("node_service.js");

@@ -151,7 +151,11 @@ async function tick() {
 // ---- (4) HTTP API ----
 const json = (res, code, body) => { res.writeHead(code, { "content-type": "application/json", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" }); res.end(JSON.stringify(body, (k, v) => (typeof v === "bigint" ? v.toString() : v))); };
 const body = (req) => new Promise((r) => { let s = ""; req.on("data", (c) => (s += c)); req.on("end", () => r(s ? JSON.parse(s) : {})); });
-const isBonded = async (addr) => (await ch.instances.read.bonded([addr])) > 0n;
+// A participating instance is one with at least one sortition vote. `bonded() > 0` is not that: bond() takes any
+// msg.value > 0, so a single wei passes it -- which would make the per-instance budget below worth nothing, since
+// a Sybil could mint one budget per wei. weightOf() is bonded/UNIT (capped), i.e. what the mesh itself means by an
+// instance, and it puts the price of a sponsorship budget at one UNIT.
+const hasWeight = async (addr) => (await ch.instances.read.weightOf([addr])) > 0n;
 // ---- sponsorship guard ----
 // Every /tx/* call spends the relayer's own BNB on somebody else's behalf, so each one must name a bonded
 // instance to charge, must simulate successfully from the relayer's account (a reverted transaction still costs
@@ -179,7 +183,7 @@ const refuse = (res, code, label, why) => { status.sponsor.refused.push({ label,
 /** bonded instance -> budget -> simulation -> only then sign and send. Nothing is broadcast before all three pass. */
 async function sponsored(res, instance, label, simulate, send) {
   if (!instance || !/^0x[0-9a-fA-F]{40}$/.test(instance)) return refuse(res, 400, label, "no instance to charge this call to");
-  if (!(await isBonded(instance))) return refuse(res, 403, label, "instance not bonded");
+  if (!(await hasWeight(instance))) return refuse(res, 403, label, "instance has no sortition weight (bond at least one UNIT)");
   const inst = instance.toLowerCase();
   const bud = budget(inst); if (!bud.ok) return refuse(res, 429, label, bud.why);
   try { await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
@@ -206,7 +210,7 @@ api.on("request", async (req, res) => {
       const e = Number(lastBlock / BigInt(EPOCH_BLOCKS)); // the last block a tick saw: up to one poll stale, which at
       // worst attributes a wake near an epoch boundary to the previous epoch. Harmless: WAKE_EPOCHS covers it and the
       // page wakes again next epoch. Deliberate -- a fresh read here would be an RPC call per polling tab.
-      if (e + WAKE_EPOCHS > wakeUntil) { if (!(await isBonded(b.instance))) return json(res, 403, { error: "instance not bonded" }); wakeUntil = e + WAKE_EPOCHS; status.beacon.wakeUntil = wakeUntil; }
+      if (e + WAKE_EPOCHS > wakeUntil) { if (!(await hasWeight(b.instance))) return json(res, 403, { error: "instance has no sortition weight (bond at least one UNIT)" }); wakeUntil = e + WAKE_EPOCHS; status.beacon.wakeUntil = wakeUntil; }
       return json(res, 200, { ok: true, lazy: LAZY, epoch: e, wakeUntil }); }
     if (u.pathname === "/tx/delegate") { const args = [b.instance, b.session, BigInt(b.expiry), b.sig];
       return sponsored(res, b.instance, `instances.delegateBySig(${String(b.instance).slice(0, 10)})`,

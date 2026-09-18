@@ -28,9 +28,15 @@ try {
   const anon = await R.api("/tx/settle", { taskId: "0x" + "11".repeat(32) });
   check("settle with no instance named is refused, and nothing was broadcast", /no instance/.test(anon.error || "") && (await sent()) === n);
 
-  // ---- 2. and that instance must be bonded ----
+  // ---- 2. and that instance must carry real weight, not a token bond ----
   const unbonded = await R.api("/tx/settle", { taskId: "0x" + "11".repeat(32), instance: "0x000000000000000000000000000000000000dEaD" });
-  check("settle for an unbonded instance is refused, and nothing was broadcast", unbonded.error === "instance not bonded" && (await sent()) === n);
+  check("settle for an instance that never bonded is refused, and nothing was broadcast", /no sortition weight/.test(unbonded.error || "") && (await sent()) === n);
+  // bond() only requires msg.value > 0, so a wei buys a bond. It must not buy a sponsorship budget: otherwise the
+  // per-instance limit costs a Sybil one wei per budget and only the relayer-wide daily cap does any work.
+  const dust = H.clientsFor(dep, H.KEYS[2]); await dust.pub.waitForTransactionReceipt({ hash: await dust.instances.write.bond([[mepId]], { value: 1n }) });
+  check("a one-wei bond is a real bond on-chain", (await dust.instances.read.bonded([dust.account.address])) === 1n && (await dust.instances.read.weightOf([dust.account.address])) === 0n);
+  const dustCall = await R.api("/tx/settle", { taskId: "0x" + "11".repeat(32), instance: dust.account.address });
+  check("but it buys no sponsorship: refused for want of sortition weight, nothing broadcast", /no sortition weight/.test(dustCall.error || "") && (await sent()) === n);
 
   // ---- 3. the simulation guard: a call that would revert costs the relayer nothing ----
   const A = await bond(H.KEYS[1]);
@@ -49,7 +55,7 @@ try {
   check(`the same instance's next call is refused by its epoch budget (${String(d2.error).slice(0, 70)}…)`, /epoch/.test(d2.error || "") && (await sent()) === n);
 
   // ---- 6. a different instance still has its own budget ----
-  const B = await bond(H.KEYS[2]);
+  const B = await bond(H.KEYS[2]); // tops the one-wei bond above up past a UNIT
   const d3 = await delegateCall(await delegation(B.wallet, "22"));
   check("a different bonded instance has its own epoch budget and is sponsored", d3.ok && (await sent()) === n + 1);
 
@@ -60,7 +66,7 @@ try {
   check(`a third instance is refused by the relayer's daily cap (${String(d4.error).slice(0, 70)}…)`, /daily/.test(d4.error || "") && (await sent()) === n);
 
   const sp = await sponsorOf();
-  check("every refusal is recorded for the operator, with its reason", sp.refused.length === 5 && sp.refused.every((r) => r.label && r.why));
+  check("every refusal is recorded for the operator, with its reason", sp.refused.length === 6 && sp.refused.every((r) => r.label && r.why));
   const st = await R.api("/status");
   console.log(`sponsored txs: ${st.txs.length} (all ok: ${st.txs.every((t) => t.ok)}), refusals: ${sp.refused.length}, day gas ${sp.dayGas}/${sp.dayGasLimit}`);
   check("exactly the two affordable calls were paid for, and the relayer logged no errors", st.txs.length === 2 && st.txs.every((t) => t.ok) && st.errors.length === 0);
