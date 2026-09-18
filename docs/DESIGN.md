@@ -96,8 +96,12 @@ mainnet; it remains the cheaper choice if every instance should carry an on-chai
   nonce errors), because public RPC pools return stale nonces right after a mined transaction. The relayer is
   untrusted for correctness and replaceable for liveness (several may run; instances fan out). Its cost per epoch: beacon commit + reveal + roll + one root per MEP, plus the
   sponsored materializations and results, all recoverable from task fees / operator incentives.
-- **Frontend** (`frontend/`): no framework; neutral modules from aigg-porw; chain reads through the wallet
-  provider; two wallet interactions in total (bond tx, one EIP-712 Delegation). The session key lives in
+- **Frontend** (`frontend/`): Vite + React, for rendering only. `src/core/controller.js` is framework-free and
+  holds all of the page's state, the wallet and chain calls and the memory arithmetic (which is why
+  `test/frontend_memory.mjs` can run it in a `vm`); the node itself runs in `public/node_worker.js`. The neutral
+  modules from aigg-porw are served unbundled under `/porw/`, because the module worker imports the same URLs.
+  Chain reads go through the wallet provider; running a node takes two wallet interactions in total (bond tx,
+  one EIP-712 Delegation), and posting an experiment is one more transaction, from whoever pays its fee. The session key lives in
   `localStorage` (per-viewer convenience: it is worth nothing without the on-chain delegation, and
   `revokeSessionKey` cuts it off).
 
