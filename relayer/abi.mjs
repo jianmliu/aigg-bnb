@@ -84,4 +84,8 @@ export const FlyCollectionAbi = parseAbi([
   "event Bred(uint256 indexed id, uint256 indexed parentA, uint256 indexed parentB, uint64 seedBlock)",
   "event Rearmed(uint256 indexed id, uint64 seedBlock)",
   "event Hatched(uint256 indexed id, bytes32 seed, uint8 sex)",
+  // who holds which individual, for the FlyBnB acknowledgments (relayer.mjs section 6)
+  "function totalSupply() view returns (uint256)",
+  "function ownerOf(uint256 id) view returns (address)",
+  "function individuals(uint256 id) view returns (bytes32 baseModelId, bytes32 deltaHash, bytes32 modelId, bytes32 mepId, uint8 sex, uint32 generation, uint64 parentA, uint64 parentB, bytes32 seed, uint64 seedBlock)",
 ]);

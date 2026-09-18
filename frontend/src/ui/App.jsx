@@ -14,6 +14,7 @@ import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
 import { BrainCard } from "./BrainCard.jsx";
 import FliesView from "./FliesView.jsx";
+import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
 
 const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
 
@@ -65,8 +66,9 @@ export default function App() {
   // Two views, one page: the node console and the colony. The hash is the route, so a link to #/flies works. The
   // node view is hidden rather than unmounted -- the controller writes into #log and reads #relayer whichever
   // view is showing, and a running node must not lose its console because someone went to look at their flies.
-  const [view, setView] = useState(() => (window.location.hash === "#/flies" ? "flies" : "node"));
-  useEffect(() => { const on = () => setView(window.location.hash === "#/flies" ? "flies" : "node"); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
+  const route = () => (window.location.hash === "#/flies" ? "flies" : window.location.hash === "#/flybnb" ? "flybnb" : "node");
+  const [view, setView] = useState(route);
+  useEffect(() => { const on = () => setView(route()); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
 
   // the MEP's gnfd:// pointer plus an SP endpoint is a fetchable URL; fill the box rather than make anyone paste it
   useEffect(() => { C.autofillUrl(); }, [s.active]);
@@ -104,6 +106,7 @@ export default function App() {
         <nav className="views">
           <a id="navNode" href="#/" data-active={view === "node"}>Node</a>
           <a id="navFlies" href="#/flies" data-active={view === "flies"}>Flies</a>
+          <a id="navFlyBnb" href="#/flybnb" data-active={view === "flybnb"}>FlyBnB</a>
         </nav>
         <Pill tone={st.tone}>{st.text}</Pill>
         <div className="telemetry">
@@ -116,7 +119,9 @@ export default function App() {
         </div>
       </header>
 
+      {view !== "flybnb" && <FlyBnbBanner />}
       {view === "flies" && <FliesView />}
+      {view === "flybnb" && <FlyBnbView />}
       <div className="main" hidden={view !== "node"}>
         <div className="col">
           <Panel step={1} title="Relayer" note="read-only">

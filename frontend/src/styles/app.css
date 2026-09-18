@@ -262,3 +262,20 @@ input[type="file"]::file-selector-button {
 .fees .amt { color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
 .fees .why { color: var(--faint); }
 @media (max-width: 560px) { .fees { grid-template-columns: max-content minmax(0, 1fr); } .fees .why { grid-column: 1 / -1; padding-left: 12px; margin-bottom: 4px; } }
+
+/* ---- FlyBnB: what the network is for, above everything else ---- */
+.flybnb-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 14px 20px 0; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--green) 40%, transparent); border-radius: var(--r-lg); background: linear-gradient(90deg, color-mix(in srgb, var(--green) 10%, transparent), color-mix(in srgb, var(--cyan) 8%, transparent)); text-decoration: none; color: var(--text); }
+.flybnb-banner:hover { border-color: var(--green); }
+.flybnb-banner:focus-visible { outline: none; box-shadow: var(--focus); }
+.flybnb-banner .tag { font: 700 12px/1 var(--mono); letter-spacing: 1.2px; color: var(--green); }
+.flybnb-banner .pitch { flex: 1 1 320px; font: 500 12.5px/1.45 var(--sans); color: var(--text); }
+.flybnb-banner .go { font: 600 10px/1 var(--mono); letter-spacing: 1px; text-transform: uppercase; color: var(--cyan); white-space: nowrap; }
+.lede { margin: 0; font: 400 13px/1.6 var(--sans); color: var(--muted); max-width: 86ch; }
+a.btn, span.btn { display: inline-flex; align-items: center; text-decoration: none; }
+span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
+.holders { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.holders li { display: flex; align-items: baseline; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); font: 500 11.5px/1.4 var(--mono); min-width: 0; }
+.holders li[data-me="true"] { border-color: color-mix(in srgb, var(--green) 55%, transparent); }
+.holders .addr { color: var(--text); }
+.holders .toks { color: var(--muted); overflow-wrap: anywhere; }
+.holders .you { margin-left: auto; color: var(--green); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 9.5px; }
