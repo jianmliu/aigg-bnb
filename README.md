@@ -22,7 +22,6 @@ changes a PoRW scheme id and never forks the neutral contracts.
 | `frontend/` | **the node page**: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
 | `test/` | end-to-end on a local anvil: `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
-| `split.sh` | turns this staging directory into the standalone repository (`aigg-porw` becomes a git submodule) |
 
 ## Layering (short version)
 
@@ -206,12 +205,11 @@ What this run did **not** exercise: the relay hub and both clients were on one m
 position to cut an idle WebSocket and the keepalive was never actually put to the test. That, along with
 `PORW_RELAY_PATH` and `PORW_PUBLIC_RELAY_URL`, waits for a deployment with a proxy in front of it.
 
-## Build and test (standalone layout)
+## Build and test
 
 ```sh
+git submodule update --init --recursive   # aigg-porw and forge-std, pinned under contracts/lib/
 cd contracts && forge test          # remappings point at contracts/lib/aigg-porw (pinned submodule)
 cd .. && npm install && npm test    # js/test_greenfield.mjs (a local server stands in for the storage provider)
 NETWORK=anvil ./deploy.sh           # deploy the BNB-parameterized mesh to a local anvil (or opbnb-testnet / bsc-testnet)
 ```
-
-After `./split.sh /path/to/aigg-bnb`, the same commands run against the pinned submodule `contracts/lib/aigg-porw`.
