@@ -48,6 +48,11 @@ export const TaskMarketAbi = parseAbi([
   "struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStride; bytes32 initStateRoot; uint256 fee; uint64 deadline; uint8 redundancy; }",
   "struct Result { bytes32 execDigest; bytes32 execRoot; }",
   "function postTask(Task t, bytes32 nonce) payable returns (bytes32)",
+  // one task, many runs of the same brain: t.initStateRoot is the root of the runs, t.stimulusSeed is 0. Results, settlement
+  // and sponsorship are the single task's -- a batch result is still one (execDigest, execRoot) -- so nothing else changes
+  "function postBatch(Task t, uint32 runs, bytes32 nonce) payable returns (bytes32)",
+  "function batchRuns(bytes32 taskId) view returns (uint32)",
+  "event BatchPosted(bytes32 indexed taskId, uint32 runs, bytes32 runsRoot)",
   "function executors(bytes32 taskId) view returns (address[])",
   "function submitResult(bytes32 taskId, Result r, bytes signature)",
   "function settle(bytes32 taskId)",

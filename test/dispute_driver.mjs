@@ -16,9 +16,40 @@ export const DISPUTES_ABI = parseAbi([
   "function revealRoots(bytes32 taskId, bytes32[] actRoots)",
   "function postStepRoots(bytes32 taskId, bytes32[] roots)",
   "function postChildren(bytes32 taskId, bytes32 left, bytes32 right)",
+  "function openRun(bytes32 taskId, bytes32 runExecRoot, uint32 seed, bytes32 initStateRoot, bytes32[] inputProof)",
+  "function batches(bytes32) view returns (uint32 runs, uint32 level, uint32 idx)",
   "function postRowLif(bytes32 taskId, int32 v, int32 g, uint16 refr, uint16 flags, uint32 count, int64[] sums)",
   "function proveSynapseTermLif(bytes32 taskId, (uint32,bytes32,bytes32,(uint32,bytes32[],uint32,bytes32[]),(uint32,bytes,bytes32[]),(int32,int32,uint16,uint16,uint32,bytes32[]),(int32,int32,uint16,uint16,uint32,bytes32[])) pf)",
 ]);
+
+/**
+ * The part of a BATCH dispute that comes before the ordinary one: both sides re-execute the batch, bisect their
+ * run-result trees on-chain to the first run they differ on (`postChildren`, Phase.Run), and open that run
+ * (`openRun`: the run's own execRoot, and its input against the task's runs root). Returns what `driveDispute`
+ * needs to carry on as that run's dispute: `{ run, replayed: { rA, rB } }`, with A.execRoot / B.execRoot set to the
+ * run's roots, which is what each side is now on the hook for.
+ * @param opts { taskId, disputes, mepIdBytes, steps, stride, runs }  -- `runs` as announced to the executors
+ */
+export async function driveBatchRun(A, B, opts, mod, hooks) {
+  const { taskId, disputes, mepIdBytes, steps, stride, runs } = opts; const { V, hex } = mod; const { check, log } = hooks; const gas = { children: 0 };
+  const send = async (X, fn, args) => { const h = await X.c.wallet.writeContract({ address: disputes, abi: DISPUTES_ABI, functionName: fn, args }); const r = await X.c.pub.waitForTransactionReceipt({ hash: h }); if (r.status !== "success") throw new Error(`${fn} reverted (${h})`); return Number(r.gasUsed); };
+  const at = async () => { const [n, level, idx] = await A.c.pub.readContract({ address: disputes, abi: DISPUTES_ABI, functionName: "batches", args: [taskId] }); return { n: Number(n), level: Number(level), idx: Number(idx) }; };
+  const bA = await A.nd.executeBatch(mepIdBytes, { steps, commitStride: stride, runs }), bB = await B.nd.executeBatch(mepIdBytes, { steps, commitStride: stride, runs });
+  check("the local replays of the BATCH reproduce exactly what each side signed on-chain", hex(bA.result.execRoot) === A.execRoot && hex(bB.result.execRoot) === B.execRoot);
+  let p = await at(); check(`the dispute opened in the Run phase, at the top of a tree over ${p.n} runs`, p.n === runs.length && p.idx === 0 && p.level === widths(runs.length).length - 1);
+  let rounds = 0;
+  while (p.level > 0) { const a = A.nd.batchNode(mepIdBytes, p.level, p.idx), b = B.nd.batchNode(mepIdBytes, p.level, p.idx);
+    gas.children += await send(A, "postChildren", [taskId, hex(a[0]), hex(a[1])]); await send(B, "postChildren", [taskId, hex(b[0]), hex(b[1])]); rounds++; p = await at(); }
+  const expected = bA.runs.findIndex((r, k) => hex(r.execRoot) !== hex(bB.runs[k].execRoot));
+  check(`the run bisection walked ${rounds} rounds on-chain to run ${p.idx}, the first the two differ on`, p.idx === expected && expected >= 0);
+  const oA = await A.nd.batchOpenRun(mepIdBytes, p.idx), oB = await B.nd.batchOpenRun(mepIdBytes, p.idx);
+  const open = (X, o) => send(X, "openRun", [taskId, hex(o.execRoot), o.seed, hex(o.initStateRoot), o.inputProof.map(hex)]);
+  gas.openRun = await open(A, oA); await open(B, oB);
+  check("both opened the same input and different results", hex(oA.initStateRoot) === hex(oB.initStateRoot) && oA.seed === oB.seed && hex(oA.execRoot) !== hex(oB.execRoot));
+  log(`run ${p.idx} of ${runs.length} opened; postChildren ${Math.round(gas.children / rounds)} gas/round x ${rounds}, openRun ${gas.openRun} gas`);
+  A.execRoot = hex(oA.execRoot); B.execRoot = hex(oB.execRoot); // from here each side answers for the run's root
+  return { run: p.idx, rounds, gas, seed: oA.seed, replayed: { rA: { result: oA.result }, rB: { result: oB.result } } };
+}
 
 const widths = (m) => { const w = [m]; while (w[w.length - 1] > 1) w.push((w[w.length - 1] + 1) >> 1); return w; };
 
@@ -39,9 +70,10 @@ export async function driveDispute(A, B, opts, mod, hooks) {
     return Number(r.gasUsed);
   };
 
-  // each side replays its own run locally so it has its own commitments to post
-  const rA = await A.nd.challenge(mepIdBytes, challengeBytes, { steps, commitStride: stride, stimulusSeed: seed });
-  const rB = await B.nd.challenge(mepIdBytes, challengeBytes, { steps, commitStride: stride, stimulusSeed: seed });
+  // each side replays its own run locally so it has its own commitments to post -- unless the run was just reopened
+  // out of a batch (driveBatchRun), in which case the nodes already hold it and `replayed` carries its results
+  const rA = opts.replayed ? opts.replayed.rA : await A.nd.challenge(mepIdBytes, challengeBytes, { steps, commitStride: stride, stimulusSeed: seed });
+  const rB = opts.replayed ? opts.replayed.rB : await B.nd.challenge(mepIdBytes, challengeBytes, { steps, commitStride: stride, stimulusSeed: seed });
   check("the local replays reproduce exactly what each side signed on-chain", hex(rA.result.execRoot) === A.execRoot && hex(rB.result.execRoot) === B.execRoot);
 
   gas.reveal = await send(A, "revealRoots", [taskId, rA.result.actRoots.map(hex)]);
