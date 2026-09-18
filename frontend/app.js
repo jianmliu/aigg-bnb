@@ -96,10 +96,15 @@ async function startNode() {
   for (const id of ready) await hostOnNode(mepById(id));
   log(`node running for ${state.node.models.size} MEP(s)`); setInterval(loop, 3000); renderActive();
 }
-async function refreshEpoch() { try { const e = await api("/epoch"); state.epochInfo = e; $("epoch").textContent = `epoch ${e.epoch} · block ${e.block} · beacon ${e.rolled ? "rolled" : "pending"}`; return e; } catch (err) { return null; } }
+async function refreshEpoch() { try { const e = await api("/epoch"); state.epochInfo = e; $("epoch").textContent = `epoch ${e.epoch} · block ${e.block} · beacon ${e.rolled ? "rolled" : e.lazy && !e.warm ? "cold (waking up)" : "pending"}`; return e; } catch (err) { return null; } }
 /** every hosted + resident MEP: one claim per epoch, materialize the previous epoch once its root is posted */
 async function loop() {
-  const e = await refreshEpoch(); if (!e || !e.rolled || !state.svc) return;
+  const e = await refreshEpoch(); if (!e || !state.svc) return;
+  // tell the relayer we are here, once per epoch: where the beacon is lazy, a mesh nobody is using stops
+  // producing one, and this is what wakes it and keeps it awake while this tab hosts a brain.
+  const me = state.resolved || state.wallet;
+  if (me && state.wokeEpoch !== e.epoch) { state.wokeEpoch = e.epoch; api("/wake", { instance: me }).catch(() => {}); }
+  if (!e.rolled) return;
   for (const id of state.hosted) {
     const m = mepById(id); if (!state.node.models.has(id)) continue; state.claims[id] ||= {}; state.materialized[id] ||= {};
     if (!state.claims[id][e.epoch]) { const info = await api("/epoch?mep=" + id); const { r } = await state.svc.announce(unhex(id), unhex(info.challenge), { stimulusSeed: 1 }); state.claims[id][e.epoch] = hex(r.claimHash); log(`${m.name || id.slice(0, 10)} epoch ${e.epoch}: claim announced (slot ${(r.timings.sketchMs + r.timings.commitMs + r.timings.inferMs + (r.timings.disputeCommitMs || 0)).toFixed(0)} ms)`); }

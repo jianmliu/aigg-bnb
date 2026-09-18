@@ -51,7 +51,11 @@ node js/register_mep.mjs fields.json gnfd://aigg-brains/flywire-fafb-v783-min5.b
 echo "PORW_RELAYER_KEY=0x...
 PORW_MEP_IDS=0x<mep id>,0x<mep id>
 PORW_RELAY_PORT=8787
-PORW_API_PORT=8788" >> .env.bsc-testnet
+PORW_API_PORT=8788
+PORW_BEACON_LAZY=1
+PORW_BEACON_WAKE_EPOCHS=2
+PORW_SPONSOR_EPOCH_GAS=1500000
+PORW_SPONSOR_DAY_GAS=50000000" >> .env.bsc-testnet
 source .env.bsc-testnet && npm run relayer      # or: node relayer/relayer.mjs --env .env.bsc-testnet
 # frontend: static page; point it at the relayer API (http://host:8788) in the first box
 npm run frontend -- --port 8790
@@ -63,6 +67,25 @@ npm run test:frontend # headless Chromium: wallet, bond, delegate, model, node, 
 The relayer sponsors gas only for calls that belong to a bonded instance (or its delegated session key) and
 that succeed in simulation; it is untrusted for correctness (envelopes are signed, roots are challengeable,
 omitted instances fall back to `submitClaim`), so anyone may run one and instances may use several.
+
+Every `/tx/*` call therefore passes three gates before anything is signed: it must **name a bonded instance** to
+charge (`/tx/result` derives it from the session key the signature resolves to; `/tx/settle` needs one in the
+body -- settling is permissionless on-chain, so a client who is not bonded can always settle their own task by
+paying for it), it must **simulate successfully** from the relayer's account, because a reverted transaction
+still costs gas, and it must **fit a budget**: `PORW_SPONSOR_EPOCH_GAS` per instance per epoch (default 1,500,000)
+and `PORW_SPONSOR_DAY_GAS` across everyone per rolling day (default 50,000,000). Both are finite by default so an
+operator raises them knowingly rather than inheriting an unbounded hot wallet; `/status.sponsor` shows the limits,
+the day's spend and the last refusals with their reasons. `test/e2e_sponsor_guard.mjs` covers all three gates,
+including that a call which would revert broadcasts nothing at all.
+
+`PORW_BEACON_LAZY=1` makes the beacon follow demand instead of the clock. Producing one costs about 366k gas per
+epoch (commit + reveal + `rollEpoch` + one root) whether or not a single instance is online, and an epoch's beacon
+is only ever consumed by that epoch's claims, sortition and audits. In lazy mode the relayer commits for the next
+epoch only when there is demand: a verified claim collected in this epoch or the previous one, or a bonded
+instance that announced itself (`POST /wake`, which the node page sends once per epoch). A cold epoch never rolls
+and costs nothing; a node arriving into a cold mesh waits one epoch for a beacon and a second to become eligible,
+and `/status` reports `beacon.warm` with the reason. Spamming `/wake` cannot amplify the bill — the beacon fires
+at most once per epoch either way. Default off: with it unset the relayer behaves exactly as before.
 
 ## Claim posture per chain
 

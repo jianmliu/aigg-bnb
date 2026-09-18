@@ -41,10 +41,10 @@ export async function registerSyntheticMep(dep, key, { name = "flywire-female", 
   await c.pub.waitForTransactionReceipt({ hash: h });
   return { mep, mepId: hex(mep.mepId), payload, st, steps };
 }
-export async function startRelayer(dep, key, mepIds, { relayPort = 0, apiPort = 0 } = {}) {
+export async function startRelayer(dep, key, mepIds, { relayPort = 0, apiPort = 0, env: extra = {} } = {}) {
   // the production path: everything from PORW_* environment variables (what deploy.sh's .env.<network> provides)
   const a = dep.addresses; const env = { ...process.env, PORW_NETWORK: "anvil", PORW_CHAIN_ID: String(dep.chainId), PORW_RPC: dep.rpc, PORW_EPOCH_BLOCKS: String(dep.epochBlocks), PORW_VERIFIER: a.verifier, PORW_MEP_REGISTRY: a.meps, PORW_INSTANCES: a.instances, PORW_BEACON: a.beacon, PORW_CLAIMS: a.claims, PORW_MARKET: a.market, PORW_DISPUTES: a.disputes, PORW_RELAYS: a.relays,
-    PORW_RELAYER_KEY: key, PORW_MEP_IDS: mepIds.join(","), PORW_RELAY_PORT: String(relayPort), PORW_API_PORT: String(apiPort), PORW_POLL_MS: "500", PORW_RELAYER_NAME: "test-relayer" };
+    PORW_RELAYER_KEY: key, PORW_MEP_IDS: mepIds.join(","), PORW_RELAY_PORT: String(relayPort), PORW_API_PORT: String(apiPort), PORW_POLL_MS: "500", PORW_RELAYER_NAME: "test-relayer", ...extra };
   const child = fork(path.join(root, "relayer/relayer.mjs"), [], { env, stdio: ["ignore", "pipe", "pipe", "ipc"] }); let log = ""; child.stdout.on("data", (d) => (log += d)); child.stderr.on("data", (d) => (log += d));
   const info = await new Promise((res, rej) => { child.on("message", res); child.on("exit", (c) => rej(new Error("relayer exited " + c + "\n" + log))); setTimeout(() => rej(new Error("relayer start timeout\n" + log)), 60000); });
   const api = async (p, body) => (await fetch(info.api + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();

@@ -5,7 +5,7 @@
   "type": "module",
   "description": "BNB Chain deployment of the PoRW fly-brain mesh (Greenfield model store, opBNB/BSC settlement)",
   "scripts": {
-    "test": "node js/test_greenfield.mjs && node test/e2e_anvil.mjs",
+    "test": "node js/test_greenfield.mjs && node test/e2e_anvil.mjs && node test/e2e_lazy_beacon.mjs && node test/e2e_sponsor_guard.mjs",
     "test:frontend": "node test/e2e_frontend.mjs",
     "relayer": "node relayer/relayer.mjs",
     "frontend": "node frontend/serve.mjs"

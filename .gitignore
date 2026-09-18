@@ -7,3 +7,4 @@ deployments/*.json
 .env
 .env.*
 relayer/config.json
+env.*.txt
