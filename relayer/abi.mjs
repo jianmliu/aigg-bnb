@@ -9,6 +9,7 @@ export const InstanceRegistryAbi = parseAbi([
   "function weightOf(address) view returns (uint256)",
   "function isBondedFor(address inst, bytes32 mepId) view returns (bool)",
   "function isEligible(address inst, bytes32 mepId, uint64 epoch) view returns (bool)",
+  "function claimValidityEpochs() view returns (uint64)", // a valid claim keeps its instance eligible for this many epochs
   "function eligibleVotes(bytes32 mepId, uint64 epoch) view returns (address[])",
   "function setSessionKey(address session, uint64 expiry)",
   "function delegateBySig(address instance, address session, uint64 expiry, bytes sig)",
@@ -33,7 +34,8 @@ export const ClaimManagerAbi = parseAbi([
   "function postEpochRoot(uint64 epoch, bytes32 root, uint64 count)", // one root per epoch over the claims of every MEP
   "function epochRoots(uint64, address) view returns (bytes32 root, uint64 count)",
   "function materializeClaim(uint64 epoch, address aggregator, uint64 index, ClaimLeaf l, bytes32[] proof) returns (bytes32)",
-  "function claimRecord(bytes32 claimId) view returns (bytes32)", // commitment to the claim's contents | valid
+  "function claimRecord(bytes32 claimId) view returns (bytes32)",
+  "function lastValidEpochPlus1(address instance, bytes32 mepId) view returns (uint64)", // (epoch + 1) of the most recent valid claim; 0 none / struck down // commitment to the claim's contents | valid
   "function challengeOpening(address instance, bytes32 mepId, uint64 epoch, bytes32 partialsRoot, uint64 coverageBytes, bytes32 deviceId, uint64 tileIdx) payable returns (bytes32)",
   "function claimLeafHash(ClaimLeaf l) pure returns (bytes32)",
   "function beaconProvider() view returns (address)",

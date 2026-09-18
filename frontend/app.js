@@ -169,7 +169,11 @@ async function loop() {
     const m = mepById(id); if (!state.node || !state.node.models.has(id)) continue; state.claims[id] ||= {}; state.materialized[id] ||= {};
     if (!state.claims[id][e.epoch]) { const info = await api("/epoch?mep=" + id); const r = await ask("announce", { mepId: id, challenge: info.challenge }); state.claims[id][e.epoch] = r.claimHash; log(`${m.name || id.slice(0, 10)} epoch ${e.epoch}: claim announced (slot ${r.slotMs} ms)`); }
     const prev = e.epoch - 1;
-    if ($("auto").checked && state.claims[id][prev] && !state.materialized[id][prev]) { const p = await api(`/proof?mep=${id}&epoch=${prev}&instance=${state.resolved}`); if (p.posted) { const r = await api("/tx/materialize", { mep: id, epoch: prev, instance: state.resolved }); state.materialized[id][prev] = r.ok; log(`${m.name || id.slice(0, 10)} epoch ${prev}: materialized via relayer ${r.ok ? "ok (gas " + r.gasUsed + ")" : "FAILED " + r.error}`); } }
+    // A valid claim keeps this instance eligible for `claimValidityEpochs` epochs, so materialize only when the standing
+    // would otherwise lapse NEXT epoch: eligible in x iff lastMaterialized >= x - k. One transaction every k epochs.
+    const k = state.deployment?.claimValidityEpochs || 1; const lastM = Math.max(-Infinity, ...Object.entries(state.materialized[id]).filter(([, ok]) => ok).map(([ep]) => Number(ep)));
+    const lapsing = !(lastM >= e.epoch + 1 - k);
+    if ($("auto").checked && lapsing && state.claims[id][prev] && !state.materialized[id][prev]) { const p = await api(`/proof?mep=${id}&epoch=${prev}&instance=${state.resolved}`); if (p.posted) { const r = await api("/tx/materialize", { mep: id, epoch: prev, instance: state.resolved }); state.materialized[id][prev] = r.ok; log(`${m.name || id.slice(0, 10)} epoch ${prev}: materialized via relayer ${r.ok ? "ok (gas " + r.gasUsed + ")" : "FAILED " + r.error}`); } }
   }
   renderActive();
 }
