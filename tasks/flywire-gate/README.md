@@ -24,8 +24,9 @@ the *same* digest (the removed records never carry a spike), which is the built-
 - `task.json` — the publication record: three payloads (sha256, FLYBRAINv2 sizes), their MEP fields (modelId,
   synapseRoot, execKind, steps 5000, commit stride 500, mepId), the two stimulus sets (payload indices) with their
   `initStateRoot` (= the task's `inputCommit`), the six task nonces and expected digests, and the anvil run.
-- `*.manifest.json` — the two edited payloads (`ablate4`, `keep4`), derived from `flywire-783-min5.bin`
-  (sha256 fd246cc2…1da; `mesh/groups_min5.json` gives the record indices).
+- `*.delta` + `*.delta.manifest.json` — the two edited models as **FLYDELTAv1 deltas** of the base (169 B and
+  4.7 KB; aigg-porw `delta.js` / `flywire_delta.py`): applying them to `flywire-783-min5.bin` reproduces
+  `ablate4` / `keep4` byte for byte, with the model ids in `task.json`. `*.manifest.json` describe the applied payloads.
 - `stimulus_sets.json`, `init_state_roots.json`, `reference_digests.json` — inputs and the reference runner's outputs.
 - `wasm_digests.json` — the same six runs through the browser kernel (`sketch.wasm`): all match the reference.
 - `e2e_gate_task.mjs`, `e2e_anvil_log.json`, `e2e_anvil_run.log` — the end-to-end run on a local anvil.
@@ -60,8 +61,9 @@ this task needs the 5000-step / stride-500 MEPs below, registered by a funded de
 
 1. `node js/register_mep.mjs <flyaudio>/tasks/mesh-first-task/fields/flywire-783-min5.json gnfd://aigg-brains/flywire-fafb-v783-min5.bin https://gnfd-testnet-sp2.bnbchain.org`
    (no upload needed: the pointer already serves these bytes);
-2. upload `flywire-783-min5-ablate4.bin` and `flywire-783-min5-keep4.bin` (built by `build_variants.py`; sha256 in
-   `task.json`) with `js/greenfield_admin.mjs upload`, then register their field files the same way;
+2. the two edited models need no 28 MB uploads: publish `flywire-783-min5-ablate4.delta` and `…-keep4.delta` (a few
+   KB) and register their field files; a node holding the base applies the delta (`PorwNode.loadDelta`) and gets the
+   registered model id (`flywire_delta.py apply` reproduces the payload for anyone who wants the bytes);
 3. add the three MEP ids to the relayer's `PORW_MEP_IDS`; instances bond on them and claim for an epoch;
 4. `AIGG_BNB=/path/to/aigg-bnb node <flyaudio>/tasks/mesh-first-task/post_tasks.mjs --env /path/to/.env.bsc-testnet --relayer http://<relayer>:8788 --fee 0.001`
    posts the six tasks (nonces and `inputCommit`s from `task.json`), announces them with the stimulus ids to the

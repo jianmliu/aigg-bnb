@@ -1,0 +1,20 @@
+{
+ "format": "FLYDELTAv1",
+ "name": "flywire-783-min5-keep4",
+ "bytes": 4797,
+ "ops": 467,
+ "deletes": 467,
+ "sets": 0,
+ "neurons": 139255,
+ "base_model_id": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+ "base_da": "gnfd://aigg-brains/flywire-fafb-v783-min5.bin",
+ "delta_id": "0xa36995461918ea743e25a9166baa0ce1460815e91e37cc6c8624ea452525affb",
+ "sha256": "79bce4ea1d917ea8e3e66260af3b34a6abecb5a8f0e7a52c4a172c1d7f812092",
+ "result": {
+  "model_id": "0x4a21b9b7bd3e3f5d1353964e711be50cae8d8f92326ea8bfd5c6c69db45acc3d",
+  "sha256": "47285bdeb23101c21bdac9b412b5a044ba4cd07c33e947c51a00acb1219d6267",
+  "bytes": 28114944,
+  "tiles": 6864,
+  "synapse_records": 2700046
+ }
+}
