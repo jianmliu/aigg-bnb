@@ -1,8 +1,14 @@
-// The page: one node in a decentralized fly-brain network, and the console for running an experiment on it.
+// flybnb: a bed-and-breakfast for fruit-fly brains, organised on BNB Chain.
 //
-// Five numbered panels are the order a node has to be brought up in -- relayer, wallet, session key, brains,
-// run -- and a sixth posts an experiment into the network. Setup lives in the left rail and stays put; the right
-// column is what moves once the node is running.
+// The borrowed shape is deliberate, because the product really is that shape. A brain is a LISTING. Whoever holds
+// one resident in a browser tab and proves it every epoch is its HOST, and puts down a deposit (the bond) to be
+// one. A scientist BOOKS an experiment against a listing and pays the hosts that ran it. So the page has the three
+// places that kind of site has: Brains (browse the listings, open one, book an experiment on it), Host (the four
+// things it takes to become one, then the running node) and Flies (the individuals you own, and breeding). The
+// capsule in the header is "where": which mesh -- which relayer -- all of it is read from.
+//
+// What is NOT borrowed is any softness about what is happening. Every technical word is still on the page next to
+// its friendly one (deposit = bond, house key = session key), and every number is still the chain's.
 //
 // The strings written into #dep, #epoch, #wallet, #bond, #session, #mepInfo, #mepStatus and #model are the same
 // ones the old page assigned to those elements by hand. They are rendered here instead, but the ids and the text
@@ -23,15 +29,22 @@ const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
 // the whole reason the relayer is replaceable.
 const DEFAULT_RELAYER = import.meta.env?.VITE_RELAYER_URL || "http://127.0.0.1:8788";
 
+/** the mark: a fly's head from the front -- two red eyes, a gold brain between them. The portraits are this, grown up */
 function Logo() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3.5c-2.4 0-3.6 1.4-3.6 3 0 .8.3 1.5.8 2-1.9.4-3.7 1.9-3.7 4.2 0 2.6 2.1 4.4 4.6 4.4.9 0 1.6-.2 2-.4v3.3" stroke="var(--cyan)" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M12 3.5c2.4 0 3.6 1.4 3.6 3 0 .8-.3 1.5-.8 2 1.9.4 3.7 1.9 3.7 4.2 0 2.6-2.1 4.4-4.6 4.4-.9 0-1.6-.2-2-.4" stroke="var(--pink)" strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="12" cy="20" r="1.4" fill="var(--green)" />
+    <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+      <ellipse cx="16" cy="17" rx="8.5" ry="9.5" fill="var(--gold)" />
+      <path d="M16 8.5v17" stroke="var(--text)" strokeOpacity="0.35" strokeWidth="1" />
+      <ellipse cx="6.5" cy="16" rx="5.5" ry="8" fill="var(--eye)" />
+      <ellipse cx="25.5" cy="16" rx="5.5" ry="8" fill="var(--eye)" />
+      <ellipse cx="5" cy="12.5" rx="1.4" ry="2.4" fill="#fff" opacity="0.5" transform="rotate(-20 5 12.5)" />
+      <ellipse cx="27" cy="12.5" rx="1.4" ry="2.4" fill="#fff" opacity="0.5" transform="rotate(20 27 12.5)" />
     </svg>
   );
 }
+
+const VIEWS = { "#/host": "host", "#/flies": "flies" };
+const viewOf = () => VIEWS[window.location.hash] || "stay";
 
 /** the one-line health of the whole page, in the order things go wrong */
 function status(s) {
@@ -62,11 +75,11 @@ export default function App() {
   const [taskFee, setTaskFee] = useState("0.01");
   const [taskDeadline, setTaskDeadline] = useState("50");
 
-  // Two views, one page: the node console and the colony. The hash is the route, so a link to #/flies works. The
-  // node view is hidden rather than unmounted -- the controller writes into #log and reads #relayer whichever
-  // view is showing, and a running node must not lose its console because someone went to look at their flies.
-  const [view, setView] = useState(() => (window.location.hash === "#/flies" ? "flies" : "node"));
-  useEffect(() => { const on = () => setView(window.location.hash === "#/flies" ? "flies" : "node"); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
+  // Three views, one page; the hash is the route, so a link to #/host or #/flies works. Brains and Host are hidden
+  // rather than unmounted -- the controller writes into #log and reads #amount, #steps, #url and the rest whichever
+  // view is showing, and a running node must not lose its console because someone went to look at the listings.
+  const [view, setView] = useState(viewOf);
+  useEffect(() => { const on = () => setView(viewOf()); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on); }, []);
 
   // the MEP's gnfd:// pointer plus an SP endpoint is a fetchable URL; fill the box rather than make anyone paste it
   useEffect(() => { C.autofillUrl(); }, [s.active]);
@@ -93,19 +106,41 @@ export default function App() {
 
   const on = (fn) => C.wrap(fn);
 
+  const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+  const feeNum = Number(taskFee); const hostsNum = Number(taskRedundancy);
+
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand">
+        <a className="brand" href="#/" aria-label="flybnb — home">
           <Logo />
-          <h1>Fly-brain network</h1>
-          <span className="sub">node · BNB Chain</span>
-        </div>
-        <nav className="views">
-          <a id="navNode" href="#/" data-active={view === "node"}>Node</a>
+          <span className="word">fly<b>bnb</b></span>
+        </a>
+
+        {/* "where": the mesh everything on the page is read from. A form, so Enter in the field loads it too */}
+        <form className="where" onSubmit={(ev) => { ev.preventDefault(); on(C.loadDeployment)(); }}>
+          <label htmlFor="relayer">Mesh</label>
+          <input id="relayer" type="text" defaultValue={DEFAULT_RELAYER} placeholder="https://relayer.example.org" spellCheck={false} />
+          <button id="btnDep" type="submit" className="go" aria-label="Load deployment" title="Load this mesh">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h9M8.5 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+        </form>
+
+        <nav className="views" aria-label="Sections">
+          <a id="navStay" href="#/" data-active={view === "stay"}>Brains</a>
+          <a id="navHost" href="#/host" data-active={view === "host"}>Host</a>
           <a id="navFlies" href="#/flies" data-active={view === "flies"}>Flies</a>
         </nav>
-        <Pill tone={st.tone}>{st.text}</Pill>
+
+        <div className="me">
+          <Pill tone={st.tone}>{st.text}</Pill>
+          <Button id="btnConnect" tone={s.wallet ? undefined : "money"} onClick={on(C.connect)} disabled={!s.deployment}>
+            {s.wallet ? short(s.wallet) : "Connect wallet"}
+          </Button>
+        </div>
+      </header>
+
+      <div className="strip">
         <div className="telemetry">
           <Chip k="epoch" v={e ? e.epoch : "—"} tone="cyan" />
           <Chip k="block" v={e ? e.block : "—"} />
@@ -114,31 +149,137 @@ export default function App() {
           <Chip k="resident" v={s.node ? C.MB(s.node.memoryBytes) : projected ? `~${C.MB(projected)}` : "—"} tone={s.node ? "green" : undefined} title="wasm memory the hosted brains hold" />
           <Chip k="claims" v={claimsNow} tone={claimsNow ? "green" : undefined} title="claims announced this epoch" />
         </div>
-      </header>
+        <div className="mesh">
+          <div id="dep" className={`kv ${s.deployment ? "" : "empty"}`}>
+            {s.deployment ? `chain ${s.deployment.chainId} · claims ${s.deployment.addresses.claims.slice(0, 10)}… · relay ${s.deployment.relay} · ${s.meps.length} MEP(s)` : "—"}
+          </div>
+          <div id="epoch" className={`kv ${e ? "" : "empty"}`}>
+            {e ? `epoch ${e.epoch} · block ${e.block} · beacon ${e.rolled ? "rolled" : e.lazy && !e.warm ? "cold (waking up)" : "pending"}` : "—"}
+          </div>
+        </div>
+      </div>
 
       {view === "flies" && <FliesView />}
-      <div className="main" hidden={view !== "node"}>
-        <div className="col">
-          <Panel step={1} title="Relayer" note="read-only">
-            <Field label="Relayer API URL" htmlFor="relayer">
-              <input id="relayer" type="text" defaultValue={DEFAULT_RELAYER} placeholder="https://relayer.example.org" />
-            </Field>
-            <div className="row tight">
-              <Button id="btnDep" tone="chain" onClick={on(C.loadDeployment)}>Load deployment</Button>
-            </div>
-            <div id="dep" className={`kv ${s.deployment ? "" : "empty"}`}>
-              {s.deployment ? `chain ${s.deployment.chainId} · claims ${s.deployment.addresses.claims.slice(0, 10)}… · relay ${s.deployment.relay} · ${s.meps.length} MEP(s)` : "—"}
-            </div>
-            <div id="epoch" className={`kv ${e ? "" : "empty"}`}>
-              {e ? `epoch ${e.epoch} · block ${e.block} · beacon ${e.rolled ? "rolled" : e.lazy && !e.warm ? "cold (waking up)" : "pending"}` : "—"}
-            </div>
-          </Panel>
 
-          <Panel step={2} title="Wallet and bond" note="BNB">
-            <div className="row tight">
-              <Button id="btnConnect" tone="chain" onClick={on(C.connect)} disabled={!s.deployment}>Connect wallet</Button>
-              <Button id="btnRefresh" onClick={on(C.refreshBond)} disabled={!s.wallet}>Refresh</Button>
+      {/* ---------------- Brains: the listings, and booking an experiment on one ---------------- */}
+      <div className="main stay" hidden={view !== "stay"}>
+        <section className="hero">
+          <p className="kicker">A bed &amp; breakfast for fruit-fly brains · on BNB Chain</p>
+          <h1>Give a brain <em>a place to stay</em>.</h1>
+          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. Scientists book experiments on it and pay the hosts who ran them, in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
+        </section>
+
+        {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the design
+            (docs/TOKENOMICS.md §3) and NOT in the contracts -- TaskMarket.settle pays the agreeing hosts and nobody
+            else -- so the card says so. A page about money that is vague about which parts exist is the one thing
+            this page may not be. */}
+        <section className="ways">
+          <article className="way">
+            <span className="badge" data-tone="live">live on-chain</span>
+            <h3>Host a brain, earn for the work</h3>
+            <p>You bring a tab’s memory and a BNB deposit. Each epoch your tab proves the brain is resident; when sortition draws you for an experiment and your result agrees with the other hosts’, its fee is split between you.</p>
+            <dl className="terms">
+              <dt>You put in</dt><dd>compute · a bond of 0.05 BNB per vote</dd>
+              <dt>You are paid</dt><dd>your share of each experiment’s fee, at settlement</dd>
+              <dt>You can lose</dt><dd>the bond, if a result of yours loses a dispute</dd>
+            </dl>
+            <a className="btn" data-tone="money" href="#/host">Become a host</a>
+          </article>
+          <article className="way">
+            <span className="badge" data-tone="soon">royalty: designed, not yet in the contracts</span>
+            <h3>Own a fly, and its line</h3>
+            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. The design gives its owner a share of the fees paid for experiments on it.</p>
+            <dl className="terms">
+              <dt>You put in</dt><dd>the adoption price, or a breed fee</dd>
+              <dt>You would be paid</dt><dd>a royalty on experiments booked against your fly</dd>
+              <dt>Today</dt><dd>fees go to the hosts only; the owner’s share is an open design item</dd>
+            </dl>
+            <a className="btn" href="#/flies">Your flies</a>
+          </article>
+          <p className="fineprint">Both are ways of taking a stake in work the network does, and neither is a promise: earnings depend on experiments being booked, a bond can be slashed, and a fly nobody studies earns nothing.</p>
+        </section>
+
+        <section className="shelf">
+          <header><h2>Brains on this mesh</h2><span className="note">{s.meps.length ? `${s.meps.length} listed` : "no mesh loaded"}</span></header>
+          {s.meps.length === 0 && <p className="hint empty-shelf">Put a relayer’s address in the <b>Mesh</b> capsule above and press the arrow. The listings come from the chain it points at.</p>}
+          <div className="listings">
+            {s.meps.map((m, i) => (
+              <BrainCard key={m.mepId} listing index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
+                         steps={stepsNum} onSelect={() => C.setActive(m.mepId)} onHost={(v) => C.host(m.mepId, v)} />
+            ))}
+          </div>
+        </section>
+
+        {active && (
+          <section className="listing-page">
+            <div className="about-brain">
+              <h2>{C.mepName(active)}</h2>
+              <p className="sub">{active.exec} · {active.neurons.toLocaleString()} neurons · {active.synapses.toLocaleString()} synapses</p>
+              <dl className="facts">
+                <dt>Hosted by this tab</dt><dd>{s.hosted.has(active.mepId) ? (s.node?.models.has(active.mepId) ? "yes — resident and proving" : "chosen, not resident yet") : "no"}</dd>
+                <dt>Where its bytes live</dt><dd className="mono">{active.weightsDA}</dd>
+                <dt>How you know they are the right bytes</dt><dd>every host recomputes <code>model_id</code> over all of them before loading; a wrong source can only waste the download</dd>
+              </dl>
+              <div id="mepInfo" className="kv">
+                {`${active.mepId} · model_id ${active.modelId.slice(0, 14)}… · ${active.neurons.toLocaleString()} neurons · ${active.synapses.toLocaleString()} synapses · ${active.weightsDA}`}
+              </div>
+              <div id="mepStatus" className="kv">
+                {`hosted: ${s.hosted.has(active.mepId) ? "yes" : "no"} · claims: epochs ${Object.keys(s.claims[active.mepId] || {}).join(",") || "—"} · materialized: ${Object.entries(s.materialized[active.mepId] || {}).filter(([, v]) => v).map(([k]) => k).join(",") || "—"}`}
+              </div>
+              <p className="hint">The seed is the scene, and it is pinned on-chain with the fee and the deadline — so the experiment is fixed before anyone runs it, and an executor cannot choose afterwards what it was answering. Any node, an auditor, or a dispute round re-derives the same stimulus from it: that is what makes a result from a stranger’s tab worth anything.</p>
             </div>
+
+            <aside className="book">
+              <div className="price"><b>{Number.isFinite(feeNum) ? taskFee : "—"} BNB</b><span>per experiment</span></div>
+              <div className="legend">Scene — what the fly sees</div>
+              <div className="scenes">
+                {C.SCENES.map((sc) => (
+                  <button key={sc.id} type="button" className="scene" data-active={Number(scene) === sc.id} title={sc.about} onClick={() => setScene(String(sc.id))}>
+                    <span className="name">{sc.name}</span>
+                    <span className="counts">seed {sc.id}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="cells">
+                <Field label="Seed (uint32)" htmlFor="taskSeed"><input id="taskSeed" type="number" min="0" value={scene} onChange={(ev) => setScene(ev.target.value)} /></Field>
+                <Field label="Steps" htmlFor="taskSteps"><input id="taskSteps" type="number" min="1" value={taskSteps} onChange={(ev) => setTaskSteps(ev.target.value)} /></Field>
+                <Field label="Stride" htmlFor="taskStride"><input id="taskStride" type="number" min="1" value={taskStride} onChange={(ev) => setTaskStride(ev.target.value)} /></Field>
+                <Field label="Hosts (redundancy)" htmlFor="taskRedundancy"><input id="taskRedundancy" type="number" min="1" value={taskRedundancy} onChange={(ev) => setTaskRedundancy(ev.target.value)} /></Field>
+                <Field label="Fee (BNB)" htmlFor="taskFee"><input id="taskFee" type="number" min="0" step="0.001" value={taskFee} onChange={(ev) => setTaskFee(ev.target.value)} /></Field>
+                <Field label="Deadline +blocks" htmlFor="taskDeadline"><input id="taskDeadline" type="number" min="1" value={taskDeadline} onChange={(ev) => setTaskDeadline(ev.target.value)} /></Field>
+              </div>
+              <Button id="btnPostTask" tone="money" className="btn wide" disabled={!s.wallet || !!taskProblem}
+                      onClick={on(() => C.postTask({ seed: Number(scene), steps: Number(taskSteps), commitStride: Number(taskStride), redundancy: Number(taskRedundancy), feeBnb: taskFee, deadlineIn: Number(taskDeadline) }))}>
+                Book this experiment
+              </Button>
+              <div className="kv empty">{!s.wallet ? "connect your wallet to book — the fee is paid from it" : taskProblem || `scene seed ${scene} · ${taskSteps} steps · stride ${taskStride} · ${taskRedundancy}× redundancy · ${taskFee} BNB`}</div>
+              <dl className="bill">
+                <dt>You pay</dt><dd>{Number.isFinite(feeNum) ? taskFee : "—"} BNB</dd>
+                <dt>Split between</dt><dd>{Number.isInteger(hostsNum) && hostsNum >= 1 ? `${hostsNum} host${hostsNum > 1 ? "s" : ""} whose results agree` : "—"}</dd>
+              </dl>
+              {s.tasks.length > 0 && (
+                <div className="kv trips">
+                  <div className="legend">Your experiments</div>
+                  {s.tasks.slice(0, 5).map((t) => (
+                    <div key={t.taskId}>{t.taskId.slice(0, 12)}… · seed {t.seed} · {t.steps} steps · deadline {t.deadline}</div>
+                  ))}
+                </div>
+              )}
+            </aside>
+          </section>
+        )}
+      </div>
+
+      {/* ---------------- Host: the four things it takes, then the running node ---------------- */}
+      <div className="main host" hidden={view !== "host"}>
+        <div className="col">
+          <section className="hosthead">
+            <p className="kicker">Become a host</p>
+            <h2>Your tab, their brain.</h2>
+            <p className="lede">Four steps, two wallet prompts. After that the tab does the work: a residency claim per brain per epoch, audits answered, experiments run.</p>
+          </section>
+
+          <Panel step={1} title="Your deposit" note="bond · BNB">
             <div id="wallet" className={`kv ${s.wallet ? "strong" : "empty"}`}>
               {s.wallet ? `${s.wallet} (chain ${s.chainId}${s.chainOk ? "" : " ≠ " + s.deployment.chainId})` : "not connected"}
             </div>
@@ -152,13 +293,16 @@ export default function App() {
                 <input id="amount" type="number" defaultValue="0.5" step="0.05" min="0" />
               </Field>
               <Button id="btnBond" tone="money" onClick={on(C.bond)} disabled={!s.wallet}>Bond</Button>
+              <Button id="btnRefresh" onClick={on(C.refreshBond)} disabled={!s.wallet}>Refresh</Button>
+            </div>
+            <div className="row tight">
               <Button id="btnExit" tone="danger" onClick={on(C.requestExit)} disabled={!s.wallet}>Request exit</Button>
               <Button id="btnFinalize" tone="danger" onClick={on(C.finalizeExit)} disabled={!s.wallet}>Finalize exit</Button>
             </div>
-            <p className="hint">One bond covers every brain ticked below; a top-up adds brains to it.</p>
+            <p className="hint">A host’s deposit is a bond: slashable if a result of yours loses a dispute, yours again after the exit delay. One bond covers every brain ticked on the right; a top-up adds brains to it.</p>
           </Panel>
 
-          <Panel step={3} title="Session key" note="1 signature">
+          <Panel step={2} title="House key" note="session key · 1 signature">
             <div className="row">
               <Field label="Expiry in blocks" htmlFor="expiry" className="mid">
                 <input id="expiry" type="number" defaultValue="100000" />
@@ -168,29 +312,21 @@ export default function App() {
             <div id="session" className={`kv ${s.session ? "strong" : "empty"}`}>
               {s.session ? `session key ${hex(s.session.address)}${s.resolved ? ` → instance ${s.resolved}` : ""}` : "—"}
             </div>
-            <p className="hint">EIP-712 <code>Delegation</code>: the only wallet prompt the node needs. Everything after this is signed by the session key.</p>
+            <p className="hint">EIP-712 <code>Delegation</code>: the only wallet prompt the node needs. Everything after this is signed by the session key, which holds no BNB — the relayer pays the gas.</p>
           </Panel>
         </div>
 
         <div className="col">
-          <Panel step={4} title="Brains" note={`${s.meps.length} registered`}>
-            {s.meps.length === 0 && <p className="hint">Load a deployment to see the brains this mesh registers.</p>}
+          <Panel step={3} title="Move a brain in" note={`${s.meps.length} on this mesh`}>
+            {s.meps.length === 0 && <p className="hint">Load a mesh in the capsule above to see the brains it lists.</p>}
             <div className="brains">
-              {s.meps.map((m) => (
-                <BrainCard key={m.mepId} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
+              {s.meps.map((m, i) => (
+                <BrainCard key={m.mepId} index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
                            steps={stepsNum} onSelect={() => C.setActive(m.mepId)} onHost={(v) => C.host(m.mepId, v)} />
               ))}
             </div>
-            <div id="mepInfo" className={`kv ${active ? "" : "empty"}`}>
-              {active ? `${active.mepId} · model_id ${active.modelId.slice(0, 14)}… · ${active.neurons.toLocaleString()} neurons · ${active.synapses.toLocaleString()} synapses · ${active.weightsDA}` : "—"}
-            </div>
-            <div id="mepStatus" className={`kv ${active ? "" : "empty"}`}>
-              {active
-                ? `hosted: ${s.hosted.has(active.mepId) ? "yes" : "no"} · claims: epochs ${Object.keys(s.claims[active.mepId] || {}).join(",") || "—"} · materialized: ${Object.entries(s.materialized[active.mepId] || {}).filter(([, v]) => v).map(([k]) => k).join(",") || "—"}`
-                : "—"}
-            </div>
 
-            <div className="legend">Model for the selected brain</div>
+            <div className="legend">Bytes for the selected brain</div>
             <Field label="Greenfield SP endpoint (optional)" htmlFor="sp">
               <input id="sp" type="text" onInput={() => C.autofillUrl()}
                      placeholder="https://gnfd-testnet-sp1.bnbchain.org — fills the URL from the MEP's gnfd:// pointer" />
@@ -211,7 +347,7 @@ export default function App() {
             <p className="hint">The bytes go straight to the worker, which recomputes the model_id over every 4 KiB tile: a wrong or hostile source can only waste the download.</p>
           </Panel>
 
-          <Panel step={5} title="Node" note={s.node ? "running" : "stopped"}>
+          <Panel step={4} title="Open the doors" note={s.node ? "running" : "stopped"}>
             <div className="row tight">
               <Button id="btnStart" tone="primary" onClick={on(C.startNode)} disabled={!!s.node || !s.delegation}>
                 {s.node ? "Node running" : "Start node"}
@@ -226,56 +362,13 @@ export default function App() {
             </div>
             <pre id="log" className="console" />
           </Panel>
-
-          <Panel step={6} title="Experiment" note="scene set at post time">
-            <div className="legend">Scene — the stimulus every node in the network re-derives</div>
-            <div className="scenes">
-              {C.SCENES.map((sc) => (
-                <button key={sc.id} type="button" className="brain scene" data-active={Number(scene) === sc.id}
-                        title={sc.about} onClick={() => setScene(String(sc.id))}>
-                  <span className="name">{sc.name}</span>
-                  <span className="counts">seed {sc.id} · {sc.about}</span>
-                </button>
-              ))}
-            </div>
-            <div className="row">
-              <Field label="Seed (uint32)" htmlFor="taskSeed" className="narrow">
-                <input id="taskSeed" type="number" min="0" value={scene} onChange={(ev) => setScene(ev.target.value)} />
-              </Field>
-              <Field label="Steps" htmlFor="taskSteps" className="narrow">
-                <input id="taskSteps" type="number" min="1" value={taskSteps} onChange={(ev) => setTaskSteps(ev.target.value)} />
-              </Field>
-              <Field label="Stride" htmlFor="taskStride" className="narrow">
-                <input id="taskStride" type="number" min="1" value={taskStride} onChange={(ev) => setTaskStride(ev.target.value)} />
-              </Field>
-              <Field label="Redundancy" htmlFor="taskRedundancy" className="narrow">
-                <input id="taskRedundancy" type="number" min="1" value={taskRedundancy} onChange={(ev) => setTaskRedundancy(ev.target.value)} />
-              </Field>
-            </div>
-            <div className="row">
-              <Field label="Fee (BNB)" htmlFor="taskFee" className="narrow">
-                <input id="taskFee" type="number" min="0" step="0.001" value={taskFee} onChange={(ev) => setTaskFee(ev.target.value)} />
-              </Field>
-              <Field label="Deadline +blocks" htmlFor="taskDeadline" className="narrow">
-                <input id="taskDeadline" type="number" min="1" value={taskDeadline} onChange={(ev) => setTaskDeadline(ev.target.value)} />
-              </Field>
-              <Button id="btnPostTask" tone="money" disabled={!s.wallet || !!taskProblem}
-                      onClick={on(() => C.postTask({ seed: Number(scene), steps: Number(taskSteps), commitStride: Number(taskStride), redundancy: Number(taskRedundancy), feeBnb: taskFee, deadlineIn: Number(taskDeadline) }))}>
-                Post experiment
-              </Button>
-            </div>
-            <div className="kv empty">{taskProblem || `scene seed ${scene} · ${taskSteps} steps · stride ${taskStride} · ${taskRedundancy}× redundancy · ${taskFee} BNB`}</div>
-            {s.tasks.length > 0 && (
-              <div className="kv">
-                {s.tasks.slice(0, 5).map((t) => (
-                  <div key={t.taskId}>{t.taskId.slice(0, 12)}… · seed {t.seed} · {t.steps} steps · deadline {t.deadline}</div>
-                ))}
-              </div>
-            )}
-            <p className="hint">The seed is the scene, and it is pinned on-chain with the fee and the deadline — so the experiment is fixed before anyone runs it, and an executor cannot choose afterwards what it was answering. Any node, an auditor, or a dispute round re-derives the same stimulus from it: that is what makes a result from a stranger’s tab worth anything.</p>
-          </Panel>
         </div>
       </div>
+
+      <footer className="foot-note">
+        <span>fly<b>bnb</b> · bonded, settled and disputed on BNB Chain · model bytes on Greenfield</span>
+        <span>the relayer is replaceable: point the Mesh capsule at your own</span>
+      </footer>
     </div>
   );
 }
