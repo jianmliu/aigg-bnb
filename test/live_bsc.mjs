@@ -29,10 +29,13 @@ let t0 = Date.now(); const st = await nd.loadModel("flywire-fafb-v783-min5", pay
 const rc = new RelayClient([d.relay], nd.key); await rc.connect(); const results = [];
 const svc = new NodeService(nd, rc, { onResult: async (res) => { const r = await api("/tx/result", res); res.relayer = r; results.push(res); evidence.txs.result = r.hash; log(`result submitted via relayer: ${r.ok ? "ok" : "FAILED " + r.error} ${r.hash || ""}`); } }); svc.serve(st.mep.mepId);
 // 4. epochs: claim each rolled epoch; materialize the previous one once its root is posted; then a task
-const claims = {}, materialized = {}; let taskId = null, settled = false; const deadline = Date.now() + 75 * 60 * 1000;
+const claims = {}, materialized = {}; let taskId = null, settled = false, wokeEpoch = null; const deadline = Date.now() + 75 * 60 * 1000;
 while (Date.now() < deadline && !settled) {
   try {
     const e = await api("/epoch?mep=" + mepId);
+    // announce ourselves once an epoch, the way the node page does: against a relayer running with
+    // PORW_BEACON_LAZY=1 nothing else would wake the beacon and this script would wait out its deadline.
+    if (wokeEpoch !== e.epoch) { wokeEpoch = e.epoch; const w = await api("/wake", { instance: wallet }).catch(() => ({})); if (w.lazy) log(`epoch ${e.epoch}: woke the relayer's beacon through ${w.wakeUntil}`); }
     if (e.rolled && !claims[e.epoch]) { t0 = Date.now(); const { r } = await svc.announce(st.mep.mepId, H.unhex(e.challenge), { stimulusSeed: 1 }); claims[e.epoch] = H.hex(r.claimHash); log(`epoch ${e.epoch}: claim announced ${claims[e.epoch].slice(0, 12)}… (slot ${((Date.now() - t0) / 1000).toFixed(1)} s incl. 100 LIF steps + commitments)`); }
     const prev = e.epoch - 1;
     if (claims[prev] && !materialized[prev]) { const p = await api(`/proof?mep=${mepId}&epoch=${prev}&instance=${wallet}`); if (p.posted) { const r = await api("/tx/materialize", { mep: mepId, epoch: prev, instance: wallet }); materialized[prev] = r.ok; evidence.txs.materialize = r.hash; log(`epoch ${prev}: materializeClaim via relayer ${r.ok ? "ok gas " + r.gasUsed : "FAILED " + r.error} ${r.hash || ""}`); } }
