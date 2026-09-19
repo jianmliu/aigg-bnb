@@ -11,14 +11,14 @@ const env = {
   PORW_RELAYER_KEY: "0x" + "22".repeat(32), PORW_MEP_IDS: "0xaa,0xbb", PORW_MEP_NAMES: "0xaa=female,0xbb=male",
   PORW_RELAY_PORT: "8787", PORW_API_PORT: "8788", PORW_HOST: "0.0.0.0", PORW_POLL_MS: "500", PORW_RELAYER_NAME: "n",
   PORW_BEACON_LAZY: "1", PORW_BEACON_WAKE_EPOCHS: "3", PORW_SPONSOR_EPOCH_GAS: "111", PORW_SPONSOR_DAY_GAS: "222",
-  PORW_RELAY_PATH: "/relay", PORW_PUBLIC_RELAY_URL: "wss://example.org/relay", PORW_KEEPER: "0",
+  PORW_RELAY_PATH: "/relay", PORW_PUBLIC_RELAY_URL: "wss://example.org/relay", PORW_KEEPER: "0", PORW_WHITELIST_EVERY: "7", PORW_TASK_CLIENTS: "0xAbC0000000000000000000000000000000000001, 0xdef0000000000000000000000000000000000002",
 };
 Object.assign(process.env, env);
 const r = relayerFromEnv(), d = deploymentFromEnv();
 const want = {
   privateKey: env.PORW_RELAYER_KEY, meps: ["0xaa", "0xbb"], mepNames: { "0xaa": "female", "0xbb": "male" },
   relayPort: 8787, apiPort: 8788, host: "0.0.0.0", pollMs: 500, name: "n",
-  beaconLazy: true, wakeEpochs: 3, sponsorEpochGas: 111, sponsorDayGas: 222, relayPath: "/relay", publicRelayUrl: "wss://example.org/relay", keeper: false,
+  beaconLazy: true, wakeEpochs: 3, sponsorEpochGas: 111, sponsorDayGas: 222, relayPath: "/relay", publicRelayUrl: "wss://example.org/relay", keeper: false, whitelistEvery: 7, taskClients: ["0xabc0000000000000000000000000000000000001", "0xdef0000000000000000000000000000000000002"],
 };
 for (const [k, v] of Object.entries(want)) check(`relayerFromEnv().${k}`, JSON.stringify(r[k]) === JSON.stringify(v));
 check("relayerFromEnv() returns no undefined field (a field lost to an edit reads as undefined)", Object.keys(want).every((k) => r[k] !== undefined));

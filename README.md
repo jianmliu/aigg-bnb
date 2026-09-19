@@ -119,6 +119,28 @@ when the bounty covers the gas at the current price, and one that does not stays
 the reason, since the price may fall inside the window. These are the relayer's own transactions, outside the
 sponsorship budgets, and anyone may run the same loop -- whoever lands first takes the bounty.
 `PORW_KEEPER=0` keeps naming the collection to the page over `/deployment` without hatching for it.
+
+`PORW_WHITELIST` makes **the brains the relayer serves follow the whitelist**. The mesh is permissionless, but a relayer's
+attention is not: aggregating a brain's claims, serving its proofs and sponsoring gas for tasks against it is what being
+one of the system's brains means, and whose those are is decided on-chain by `CollectionWhitelist`, whose unit is the
+collection. For every listed collection the relayer serves the bases it names and every brain bound to one of its tokens
+-- so a fly is served from the pass after its owner registers it, adopted or **bred** alike, with nobody editing
+`PORW_MEP_IDS` and nothing restarted; a profile under royalty terms is reproduced with its terms; a collection taken off
+the list stops being served. `PORW_MEP_IDS` stays, as brains pinned whatever the list says, and is no longer required when
+a whitelist is given. Collections are walked every `PORW_WHITELIST_EVERY` blocks (default 20) rather than followed by
+logs: a token's binding never changes once made, so a pass re-reads only what was unbound, and a restart needs no
+history. `/meps` says where each brain comes from (`collection`, `token`, `beneficiary`, `royaltyBps`), `/status.whitelist`
+what was walked and what was refused, and `/tx/result` and `/tx/settle` are sponsored only for tasks against a served
+brain. `test/e2e_whitelist.mjs` covers it.
+
+`PORW_TASK_CLIENTS` says **whose tasks are sponsored**. Third-party experiments are not open yet: every task on the
+network is one the FlyBnB dataset needs (the perturbation battery in the paper), posted by the project. `TaskMarket` is
+permissionless and cannot refuse anybody's task, so what is withheld is the relayer's gas: `/tx/result` and `/tx/settle`
+are refused for a task whose client is not on the list, and a session key holds no BNB of its own. `/deployment` carries
+the list (`taskClients`; `null` = anybody's, the default, which is what a local mesh and the tests run with), and the
+page reads it: a wallet that is not on it sees "Not open yet" and the two ways in -- host a brain, own a fly -- instead of a
+booking card. `test/e2e_anvil.mjs` posts a third party's task on-chain and checks it is not sponsored;
+`test/e2e_flybnb_page.mjs` checks what a visitor is shown.
 `test/e2e_keeper.mjs` covers startup backfill, a live egg, and a bounty too small to be worth it.
 
 The page has a second view for that collection, **Flies** (`#/flies`; `src/core/flies.js` + `src/ui/FliesView.jsx`): the

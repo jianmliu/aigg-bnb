@@ -217,6 +217,8 @@ code { font: 500 0.92em/1 var(--mono); color: var(--muted); }
 .facts dd.mono { font: 500 12.5px/1.5 var(--mono); word-break: break-all; }
 
 .book { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 14px; padding: 24px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--panel); box-shadow: var(--shadow-lift); }
+.book .hint a { color: var(--text); font-weight: 600; }
+.lede a { color: inherit; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .book .price { display: flex; align-items: baseline; gap: 8px; }
 .book .price b { font: 800 26px/1 var(--display); letter-spacing: -0.03em; }
 .book .price span { color: var(--muted); }
@@ -338,6 +340,7 @@ input[type="file"]::file-selector-button {
 .foot-note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; padding: 22px clamp(16px, 4vw, 48px); border-top: 1px solid var(--line); background: var(--wash); font-size: 13px; color: var(--faint); }
 .foot-note b { color: var(--amber); }
 
+.shell[data-entered="true"] :is(.hero, .way, .brain.listing) { animation: none; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 

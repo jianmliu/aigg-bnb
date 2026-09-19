@@ -2,7 +2,8 @@
 //
 // The borrowed shape is deliberate, because the product really is that shape. A brain is a LISTING. Whoever holds
 // one resident in a browser tab and proves it every epoch is its HOST, and puts down a deposit (the bond) to be
-// one. A scientist BOOKS an experiment against a listing and pays the hosts that ran it. So the page has the three
+// one. An experiment is a BOOKING against a listing, paid to the hosts that ran it -- and for now every booking is
+// the FlyBnB dataset's own: third-party experiments are not open yet, and the booking card says so instead of offering one. So the page has the three
 // places that kind of site has: Brains (browse the listings, open one, book an experiment on it), Host (the four
 // things it takes to become one, then the running node) and Flies (the individuals you own, and breeding) -- and a
 // fourth, Paper, which is what all of it is for: the FlyBnB atlas, its dataset, and the holders it acknowledges. The
@@ -92,6 +93,10 @@ export default function App() {
   // should see the brains, not an empty shelf and "offline" until they find the arrow. A local build does not -- its
   // default is a relayer on this machine that may not be running, and the tests point the field somewhere else first.
   useEffect(() => { if (BAKED_RELAYER) C.wrap(C.loadDeployment)(); }, []);
+  // the entrance plays once. A view that is hidden and shown again would otherwise replay it on every tab switch
+  // (a CSS animation restarts when display leaves `none`), and the listings would blink out each time
+  const [entered, setEntered] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setEntered(true), 1500); return () => clearTimeout(t); }, []);
 
   const e = s.epochInfo;
   const st = status(s);
@@ -114,10 +119,15 @@ export default function App() {
   const on = (fn) => C.wrap(fn);
 
   const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+  // Third-party experiments are not open yet: every task on the network is one the FlyBnB dataset needs, posted by the
+  // project, and the relayer says so (`taskClients`: whose tasks it sponsors; null = anybody's, as on a local mesh). The
+  // market is permissionless and the page cannot stop anybody posting -- but it does not offer what nothing will run.
+  const taskClients = s.deployment?.taskClients || null;
+  const bookingOpen = !taskClients || (!!s.wallet && taskClients.includes(s.wallet));
   const feeNum = Number(taskFee); const hostsNum = Number(taskRedundancy);
 
   return (
-    <div className="shell">
+    <div className="shell" data-entered={entered}>
       <header className="topbar">
         <a className="brand" href="#/" aria-label="flybnb — home">
           <Logo />
@@ -176,7 +186,7 @@ export default function App() {
         <section className="hero">
           <p className="kicker">A bed &amp; breakfast for fruit-fly brains · on BNB Chain</p>
           <h1>Give a brain <em>a place to stay</em>.</h1>
-          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. Scientists book experiments on it and pay the hosts who ran them, in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
+          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. The experiments run on it are, for now, the ones the <a href="#/flybnb">FlyBnB atlas</a> needs — every cell type silenced and activated, in a hundred individuals — and the hosts who run them are paid in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
         </section>
 
         {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the contracts now --
@@ -198,15 +208,15 @@ export default function App() {
           <article className="way">
             <span className="badge" data-tone="soon">royalty: in the contracts · no collection deployed yet</span>
             <h3>Own a fly, and its line</h3>
-            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours.</p>
+            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours — and the atlas runs its battery on every listed individual.</p>
             <dl className="terms">
               <dt>You put in</dt><dd>the adoption price, or a breed fee</dd>
-              <dt>You are paid</dt><dd>a royalty on every experiment booked against your fly, set aside at settlement</dd>
+              <dt>You are paid</dt><dd>a royalty on every experiment run against your fly, set aside at settlement</dd>
               <dt>If you sell it</dt><dd>what it earned until then stays yours; from then on the buyer is paid, with nothing to update</dd>
             </dl>
             <a className="btn" href="#/flies">Your flies</a>
           </article>
-          <p className="fineprint">Both are ways of taking a stake in work the network does, and neither is a promise: earnings depend on experiments being booked, a bond can be slashed, and a fly nobody studies earns nothing.</p>
+          <p className="fineprint">Both are ways of taking a stake in work the network does, and neither is a promise: earnings depend on experiments being run, a bond can be slashed, and a fly nobody studies earns nothing.</p>
         </section>
 
         <section className="shelf">
@@ -239,6 +249,14 @@ export default function App() {
               <p className="hint">The seed is the scene, and it is pinned on-chain with the fee and the deadline — so the experiment is fixed before anyone runs it, and an executor cannot choose afterwards what it was answering. Any node, an auditor, or a dispute round re-derives the same stimulus from it: that is what makes a result from a stranger’s tab worth anything.</p>
             </div>
 
+            {!bookingOpen ? (
+            <aside className="book" id="bookingClosed">
+              <div className="price"><b>Not open yet</b></div>
+              <p className="hint">For now every experiment on this network is one the FlyBnB atlas needs: the perturbation battery in the paper, posted by the project and run by the hosts. Booking your own experiment on a brain opens later.</p>
+              <p className="hint">Until then there are two ways in: <a href="#/host">host a brain</a> and be paid for the runs you do, or <a href="#/flies">own a fly</a> the atlas measures.</p>
+              <a className="btn wide" href="#/flybnb">What the experiments are</a>
+            </aside>
+            ) : (
             <aside className="book">
               <div className="price"><b>{Number.isFinite(feeNum) ? taskFee : "—"} BNB</b><span>per experiment</span></div>
               <div className="legend">Scene — what the fly sees</div>
@@ -276,6 +294,7 @@ export default function App() {
                 </div>
               )}
             </aside>
+            )}
           </section>
         )}
       </div>

@@ -46,6 +46,7 @@ try {
   await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.deployment !== null);
   await page.click("#btnConnect"); await page.waitForFunction(() => window.app.state.wallet !== null);
 
+  check("on a mesh that names no task clients (a local one) the booking card is open", (await page.locator("#btnPostTask").count()) === 1 && (await page.locator("#bookingClosed").count()) === 0);
   // ---- the colony ----
   await page.click("#navFlies"); await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies && window.app.state.flies.all.length === 2);
   check("the node console is hidden, not gone: the controller still has its #log", await page.evaluate(() => !!document.getElementById("log") && document.getElementById("log").offsetParent === null));

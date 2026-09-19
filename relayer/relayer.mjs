@@ -13,9 +13,10 @@
 import fs from "node:fs"; import http from "node:http"; import path from "node:path"; import { fileURLToPath } from "node:url";
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
+import { FlyCollectionAbi } from "./abi.mjs";
 import { loadEnv, deploymentFromEnv, relayerFromEnv } from "./env.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser/", f));
-const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
+const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, withTerms, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => { if (v.startsWith("--")) a.push([v.slice(2), arr[i + 1]]); return a; }, []));
 loadEnv(args.env || process.env.PORW_ENV_FILE);
@@ -25,7 +26,7 @@ const envCfg = relayerFromEnv(); const cfg = { ...fileCfg, ...Object.fromEntries
 const dep = deploymentFromEnv() || (cfg.deployment ? JSON.parse(fs.readFileSync(path.resolve(here, "..", cfg.deployment), "utf8")) : null);
 if (!dep) throw new Error("no deployment: source the .env.<network> from deploy.sh (PORW_* variables) or set config.deployment");
 dep.rpc = process.env.PORW_RPC || cfg.rpc || dep.rpc; if (!dep.rpc) throw new Error("PORW_RPC (or config.rpc) required");
-if (!cfg.privateKey) throw new Error("PORW_RELAYER_KEY (or config.privateKey) required"); if (!cfg.meps || !cfg.meps.length) throw new Error("PORW_MEP_IDS (or config.meps) required");
+if (!cfg.privateKey) throw new Error("PORW_RELAYER_KEY (or config.privateKey) required"); if (!(cfg.meps && cfg.meps.length) && !dep.addresses.whitelist) throw new Error("nothing to serve: PORW_MEP_IDS (or config.meps) and/or PORW_WHITELIST required");
 const ch = clients(dep, cfg.privateKey); const domains = eip712Domains(dep);
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
@@ -48,16 +49,24 @@ let CLAIM_VALIDITY = 1; try { CLAIM_VALIDITY = Number(await ch.instances.read.cl
 // what a replicator needs to know before it re-executes for a reason: how long a settled result stays challengeable
 // and the base deposit (0 blocks: off, or a deployment older than the feature). The relayer itself never challenges.
 let CHALLENGE = { windowBlocks: 0, depositWei: "0" }; try { CHALLENGE = { windowBlocks: Number(await ch.market.read.challengeWindow()), depositWei: String(await ch.market.read.challengeDepositWei()) }; } catch {}
-for (const id of cfg.meps) {
-  const m = await ch.meps.read.getMEP([id]);
+// One brain, read from the registry and rebuilt as the object the aggregator verifies claims against. A profile under
+// TERMS (a beneficiary's share of every settled fee) has the terms inside its id, so they are read and wrapped back on;
+// then the id has to come out the same, or this relayer and the chain disagree about what the MEP is.
+const ZERO_ADDR = "0x" + "0".repeat(40);
+async function loadMep(id, { name = null, collection = null, token = null, pinned = false } = {}) {
+  id = id.toLowerCase(); const m = await ch.meps.read.getMEP([id]);
   const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
-  const info = { mepId: id.toLowerCase(), modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
-    weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || (cfg.mepNames || {})[id.toLowerCase()] || null };
-  const execKind = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? lifExecKind() : EXEC_INT_SPMV_Q16;
-  const mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
-  if (hex(mep.mepId).toLowerCase() !== id.toLowerCase()) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind mismatch)`);
-  meps.set(id.toLowerCase(), { mep, info, aggregators: new Map(), posted: new Set() });
+  let terms = null; try { const [beneficiary, royaltyBps] = await ch.meps.read.termsOf([id]); if (beneficiary !== ZERO_ADDR) terms = { beneficiary, royaltyBps: Number(royaltyBps) }; } catch {} // a registry older than terms
+  const info = { mepId: id, modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
+    weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || name,
+    collection, token, beneficiary: terms ? terms.beneficiary : null, royaltyBps: terms ? terms.royaltyBps : 0 };
+  let mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind: isLif ? lifExecKind() : EXEC_INT_SPMV_Q16, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
+  if (terms) mep = withTerms(mep, terms.beneficiary, terms.royaltyBps);
+  if (hex(mep.mepId).toLowerCase() !== id) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind/terms mismatch)`);
+  return { mep, info, aggregators: new Map(), posted: new Set(), pinned };
 }
+// PORW_MEP_IDS: brains this relayer serves whatever any list says. A mismatch here is a misconfiguration: refuse to start.
+for (const id of cfg.meps || []) meps.set(id.toLowerCase(), await loadMep(id, { pinned: true }));
 const EPOCH_BLOCKS = Number(await ch.claims.read.EPOCH_BLOCKS());
 const beaconOn = ch.beacon && (await ch.claims.read.beaconProvider()).toLowerCase() === dep.addresses.beacon.toLowerCase();
 const bcfg = beaconOn ? { commit: Number(await ch.beacon.read.COMMIT_BLOCKS()), reveal: Number(await ch.beacon.read.REVEAL_BLOCKS()), deposit: await ch.beacon.read.DEPOSIT() } : null;
@@ -139,6 +148,8 @@ async function tick() {
     const ready = beaconOn ? (await ch.beacon.read.beaconFor([BigInt(e)])) !== ZERO32 : true;
     if (ready) { const r = await tx(`claims.rollEpoch(${e})`, (o) => ch.claims.write.rollEpoch(o)); if (r.ok) { status.epochsRolled.push(e); rolled = true; } }
   }
+  // the brains served follow the whitelist: before aggregation, so a brain listed this pass is collected for this epoch
+  if (wl) try { await follow(bn); } catch (err) { status.errors.push({ label: "whitelist", msg: String(err.shortMessage || err.message).slice(0, 200) }); log("whitelist error", String(err.shortMessage || err.message).slice(0, 160)); }
   // (2) aggregation: collect this epoch's claims once it is rolled -- but post the previous epoch's root either
   // way. An epoch with no beacon (nobody revealed, or a cold epoch under PORW_BEACON_LAZY) must not strand the
   // claims collected in the epoch before it: without that root nobody can materialize them.
@@ -161,6 +172,42 @@ async function tick() {
   // after the mesh's own work, and never in its way: a collection that misbehaves must not stop an epoch rolling
   if (keeper) try { await keep(bn); } catch (err) { status.errors.push({ label: "keeper", msg: String(err.shortMessage || err.message).slice(0, 200) }); log("keeper error", String(err.shortMessage || err.message).slice(0, 160)); }
 }
+// ---- the whitelist (PORW_WHITELIST): which brains are the system's ----
+// The mesh is permissionless -- anybody may register a MEP -- but this relayer's attention is not: aggregating a
+// brain's claims, serving its proofs and sponsoring the gas of tasks against it is what being "one of ours" means, and
+// whose brains those are is decided on-chain by CollectionWhitelist. Its unit is the collection. For every listed
+// collection this serves the two bases it names and every brain bound to one of its tokens -- so a fly is served from
+// the pass after its owner registers it, adopted or BRED alike, with nobody editing PORW_MEP_IDS and nothing
+// restarted. A collection taken off the list stops being served the same way; PORW_MEP_IDS stay pinned regardless.
+// Walked, not followed by logs: a token's binding never changes once made, so a pass re-reads only the tokens that
+// were unbound last time, and a restart needs no history (public RPCs cap a log query at a few thousand blocks).
+const note = (list, entry) => { list.push(entry); if (list.length > 50) list.shift(); };
+const WL_EVERY = BigInt(cfg.whitelistEvery || 20), WL_MAX = 5000;
+const wl = ch.whitelist ? { walked: null, bound: new Map() /* collection -> Map(token -> mepId) */ } : null;
+status.whitelist = wl ? { address: dep.addresses.whitelist, collections: [], served: 0, walkedAt: null, skipped: [] } : null;
+async function follow(bn) {
+  if (wl.walked !== null && bn < wl.walked + WL_EVERY) return;
+  const listed = (await ch.whitelist.read.collections()).map((a) => a.toLowerCase()); const want = new Map(); // mepId -> where it comes from
+  for (const c of listed) {
+    const rd = (functionName, args = []) => ch.pub.readContract({ address: c, abi: FlyCollectionAbi, functionName, args });
+    for (const [fn, name] of [["BASE_MEP_FEMALE", "base ♀"], ["BASE_MEP_MALE", "base ♂"]]) { const id = String(await rd(fn)).toLowerCase(); if (id !== ZERO32 && !want.has(id)) want.set(id, { collection: c, token: null, name }); }
+    if (!wl.bound.has(c)) wl.bound.set(c, new Map()); const bound = wl.bound.get(c);
+    const n = Math.min(Number(await rd("totalSupply")), WL_MAX);
+    for (let t = 1; t <= n; t++) {
+      if (!bound.has(t)) { const mepId = String((await rd("individuals", [BigInt(t)]))[3]).toLowerCase(); if (mepId !== ZERO32) bound.set(t, mepId); }
+      const id = bound.get(t); if (id && !want.has(id)) want.set(id, { collection: c, token: t, name: `fly #${t}` });
+    }
+  }
+  for (const c of [...wl.bound.keys()]) if (!listed.includes(c)) wl.bound.delete(c);
+  for (const [id, from] of want) { const M = meps.get(id);
+    if (M) { if (!M.info.collection) Object.assign(M.info, { collection: from.collection, token: from.token, name: M.info.name || from.name }); continue; }
+    try { meps.set(id, await loadMep(id, from)); log(`whitelist: now serving ${id.slice(0, 12)}… (${from.name}, collection ${from.collection.slice(0, 10)}…)`); }
+    catch (err) { const why = String(err.shortMessage || err.message).slice(0, 160); if (!status.whitelist.skipped.some((x) => x.mepId === id)) { note(status.whitelist.skipped, { mepId: id, ...from, why }); log(`whitelist: NOT serving ${id.slice(0, 12)}…: ${why}`); } } }
+  // what is no longer listed is no longer served -- except what PORW_MEP_IDS pins
+  for (const [id, M] of [...meps]) if (!M.pinned && !want.has(id)) { for (const A of M.aggregators.values()) A.stop && A.stop(); meps.delete(id); log(`whitelist: no longer serving ${id.slice(0, 12)}… (its collection left the list)`); }
+  wl.walked = bn; Object.assign(status.whitelist, { collections: listed, served: [...meps.values()].filter((M) => !M.pinned).length, walkedAt: Number(bn) });
+}
+
 // ---- (5) hatch keeper (PORW_COLLECTION) ----
 // FlyCollection.breed fixes the recipe and a seed block -- the block after the one it lands in -- and hatch(id),
 // which anyone may call, turns that block's hash into the child's seed and pays the caller HATCH_BOUNTY. The EVM
@@ -174,7 +221,6 @@ async function tick() {
 const WINDOW = 256n;
 const keeper = ch.collection && cfg.keeper !== false ? { eggs: new Map(), scanned: null, bounty: await ch.collection.read.HATCH_BOUNTY() } : null;
 status.keeper = keeper ? { collection: dep.addresses.collection, bounty: keeper.bounty, eggs: [], hatched: [], skipped: [] } : null;
-const note = (list, entry) => { list.push(entry); if (list.length > 50) list.shift(); };
 async function keep(bn) {
   // on the first pass look back exactly one window: an egg older than that has expired whoever was watching
   const from = keeper.scanned === null ? (bn > WINDOW ? bn - WINDOW : 0n) : keeper.scanned + 1n;
@@ -235,6 +281,7 @@ const hasWeight = async (addr) => (await ch.instances.read.weightOf([addr])) > 0
 // Budgets are in gas: SPONSOR_EPOCH_GAS per instance per epoch stops one bonded instance from looping a call
 // that simulates fine, and SPONSOR_DAY_GAS caps the whole relayer. Both are deliberately finite by default:
 // an operator should raise them knowingly rather than inherit an unbounded wallet.
+const TASK_CLIENTS = cfg.taskClients && cfg.taskClients.length ? new Set(cfg.taskClients) : null; // null: anybody's tasks
 const SPONSOR_EPOCH_GAS = Number(cfg.sponsorEpochGas || 1_500_000);
 const SPONSOR_DAY_GAS = Number(cfg.sponsorDayGas || 50_000_000);
 const DAY_MS = 24 * 3600 * 1000;
@@ -256,12 +303,21 @@ const refuse = (res, code, label, why) => { status.sponsor.refused.push({ label,
 // Queue the complete admission decision through receipt accounting, not only the broadcast. Otherwise a
 // concurrent burst can all observe an unused budget and simulate against the same stale chain state.
 let sponsorChain = Promise.resolve();
-function sponsored(res, instance, label, simulate, send) {
+function sponsored(res, instance, label, simulate, send, taskId = null) {
   const run = async () => {
     if (!instance || !/^0x[0-9a-fA-F]{40}$/.test(instance)) return refuse(res, 400, label, "no instance to charge this call to");
     if (!(await hasWeight(instance))) return refuse(res, 403, label, "instance has no sortition weight (bond at least one UNIT)");
     const inst = instance.toLowerCase();
     const bud = budget(inst); if (!bud.ok) return refuse(res, 429, label, bud.why);
+    // Sponsorship is for the brains this relayer serves. A task against any other MEP settles on-chain exactly as well
+    // -- its executor pays its own gas -- but it is not ours to pay for: that is what being off the list means. A task
+    // that does not exist has no MEP to judge; the simulation below is what refuses it.
+    // And, while PORW_TASK_CLIENTS is set, only for the tasks of those clients. Third-party tasks are not open yet:
+    // every task on this network is one the FlyBnB dataset needs, posted by the project. The market is permissionless
+    // and cannot refuse anybody's task; what is withheld is this relayer's gas, and a session key holds none of its own.
+    if (taskId) { let m = ZERO32, client = null; try { const t = await ch.market.read.taskInfo([taskId]); m = String(t[0]).toLowerCase(); client = String(t[2]).toLowerCase(); } catch {}
+      if (m !== ZERO32 && !meps.has(m)) return refuse(res, 403, label, "the task's MEP is not one this relayer serves (not pinned, not on the whitelist)");
+      if (m !== ZERO32 && TASK_CLIENTS && !TASK_CLIENTS.has(client)) return refuse(res, 403, label, "tasks are not open to third parties yet: this relayer sponsors only the dataset's own (PORW_TASK_CLIENTS)"); }
     try { await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
     const r = await tx(label, send);
     if (r.gasUsed) bud.charge(r.gasUsed); // a revert that still got mined is charged too: it cost the relayer gas
@@ -272,7 +328,7 @@ function sponsored(res, instance, label, simulate, send) {
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, meps: [...meps.keys()] });
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
     if (u.pathname === "/meps") return json(res, 200, [...meps.values()].map((M) => M.info));
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
@@ -305,7 +361,7 @@ api.on("request", async (req, res) => {
       const signer = await ch.instances.read.resolve([recovered]); if (signer === "0x0000000000000000000000000000000000000000") return json(res, 403, { error: "signer not bonded/delegated" });
       const args = [b.taskId, { execDigest: b.execDigest, execRoot: b.execRoot }, b.signature]; // charged to the instance the session key resolves to
       return await sponsored(res, signer, `market.submitResult(${String(b.taskId).slice(0, 10)})`,
-        () => ch.market.simulate.submitResult(args, { account: ch.account }), (o) => ch.market.write.submitResult(args, o)); }
+        () => ch.market.simulate.submitResult(args, { account: ch.account }), (o) => ch.market.write.submitResult(args, o), b.taskId); }
     // settle is permissionless on-chain, so anyone may settle their own task by paying for it; the relayer only
     // sponsors it for a selected executor, so callers cannot spend an unrelated instance's budget.
     if (u.pathname === "/tx/settle") { const args = [b.taskId];
@@ -314,7 +370,7 @@ api.on("request", async (req, res) => {
           const executors = await ch.market.read.executors(args);
           if (!executors.some((a) => a.toLowerCase() === b.instance.toLowerCase())) throw new Error("instance is not a task executor");
           return ch.market.simulate.settle(args, { account: ch.account });
-        }, (o) => ch.market.write.settle(args, o)); }
+        }, (o) => ch.market.write.settle(args, o), b.taskId); }
     json(res, 404, { error: "not found" });
   } catch (e) { json(res, 500, { error: String(e.shortMessage || e.message) }); }
 });

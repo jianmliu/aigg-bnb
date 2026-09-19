@@ -25,5 +25,9 @@ export function relayerFromEnv() {
     // the URL they can actually reach us on rather than whatever address we happened to bind
     relayPath: e.PORW_RELAY_PATH || null, publicRelayUrl: e.PORW_PUBLIC_RELAY_URL || null,
     // PORW_KEEPER=0 still names PORW_COLLECTION to the page over /deployment, but leaves its eggs to somebody else
+    // whose tasks this relayer sponsors. Unset: anybody's. Set: only tasks posted by these addresses -- third-party tasks are not open yet
+    taskClients: e.PORW_TASK_CLIENTS ? e.PORW_TASK_CLIENTS.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean) : null,
+    // how often (in blocks) the collections on PORW_WHITELIST are walked for brains to serve
+    whitelistEvery: e.PORW_WHITELIST_EVERY ? Number(e.PORW_WHITELIST_EVERY) : null,
     keeper: e.PORW_KEEPER == null ? null : !(e.PORW_KEEPER === "0" || e.PORW_KEEPER === "false") };
 }

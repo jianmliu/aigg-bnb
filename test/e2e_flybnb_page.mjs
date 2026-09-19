@@ -14,7 +14,7 @@ try {
   const dep = await H.deployMesh(anvil.rpc); const { mepId } = await H.registerSyntheticMep(dep, H.KEYS[0]);
   const A = H.clientsFor(dep, H.KEYS[1]), B = H.clientsFor(dep, H.KEYS[2]);
   const C = await H.deployCollection(dep, parseEther("0.002")); await H.adoptBoth(A, C);
-  const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
+  const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_KEEPER: "0", PORW_TASK_CLIENTS: H.clientsFor(dep, H.KEYS[0]).account.address } }); stop.push(() => R.stop());
   const fe = await startFrontend(0); stop.push(() => fe.server.close());
   const launch = { headless: true }; if (process.env.PW_CHROMIUM) launch.executablePath = process.env.PW_CHROMIUM;
   browser = await chromium.launch(launch); const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }); page.on("console", (m) => { if (m.type() === "error") console.error("page:", m.text()); });
@@ -34,6 +34,11 @@ try {
   await page.click("#navStay"); await page.click("#navFlyBnb"); // the view reads the list when it opens (and every 30 s while open)
   check("after a transfer the acknowledgment has moved with the token", await waitFor(async () => { const t = await page.locator("#flybnbHolders").innerText().catch(() => ""); return /2 holders/.test(await page.locator("#flybnbHoldersSummary").innerText().catch(() => "")) && t.includes(short(a)) && t.includes(short(b)); }));
   if (process.env.FLYBNB_SHOTS) await page.screenshot({ path: process.env.FLYBNB_SHOTS + "/flybnb.png" });
+
+  // third-party experiments are not open yet: the relayer sponsors only the project's tasks, and the page does not offer one
+  await page.click("#navStay"); await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.deployment !== null && window.app.state.meps.length > 0);
+  check("a visitor is told experiments are not open yet, instead of being offered a booking nothing would run", await waitFor(() => page.locator("#bookingClosed").isVisible()) && (await page.locator("#btnPostTask").count()) === 0 && /FlyBnB atlas needs/.test(await page.locator("#bookingClosed").innerText()));
+  if (process.env.FLYBNB_SHOTS) await page.screenshot({ path: process.env.FLYBNB_SHOTS + "/booking-closed.png", fullPage: true });
 } catch (e) { console.error(e); fails++; }
 finally { if (browser) await browser.close(); for (const s of stop) s(); anvil.stop(); }
 console.log(fails ? `${fails} FAILURES` : "flybnb page: all checks passed"); process.exit(fails ? 1 : 0);
