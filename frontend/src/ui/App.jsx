@@ -29,7 +29,8 @@ const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
 // VITE_RELAYER_URL baked in, because `http://127.0.0.1:8788` on an https origin is blocked as mixed content
 // before it is anything else. The field stays editable either way -- pointing the page at your own relayer is
 // the whole reason the relayer is replaceable.
-const DEFAULT_RELAYER = import.meta.env?.VITE_RELAYER_URL || "http://127.0.0.1:8788";
+const BAKED_RELAYER = import.meta.env?.VITE_RELAYER_URL || "";
+const DEFAULT_RELAYER = BAKED_RELAYER || "http://127.0.0.1:8788";
 
 /** the mark: a fly's head from the front -- two red eyes, a gold brain between them. The portraits are this, grown up */
 function Logo() {
@@ -55,7 +56,7 @@ function status(s) {
   if (s.delegation) return { tone: "ready", text: "ready to start" };
   if (s.wallet) return { tone: "warn", text: "no session key" };
   if (s.deployment) return { tone: "warn", text: "no wallet" };
-  return { tone: null, text: "offline" };
+  return { tone: null, text: "no mesh loaded" };
 }
 
 const toneOfLine = (line) => (!line ? null : /ERROR|FAIL|REVERT|DOES NOT MATCH/.test(line) ? "bad" : /WARNING|note:/.test(line) ? "warn" : /\bok\b|confirmed|running|resident|matches/.test(line) ? "ok" : null);
@@ -87,6 +88,10 @@ export default function App() {
   useEffect(() => { C.autofillUrl(); }, [s.active]);
   // after the first commit, not before: #relayer and #log have to exist before anything drives the page
   useEffect(() => { window.__ready = true; }, []);
+  // A deployed build knows its mesh (VITE_RELAYER_URL is baked in), so it opens it: a visitor who lands on the site
+  // should see the brains, not an empty shelf and "offline" until they find the arrow. A local build does not -- its
+  // default is a relayer on this machine that may not be running, and the tests point the field somewhere else first.
+  useEffect(() => { if (BAKED_RELAYER) C.wrap(C.loadDeployment)(); }, []);
 
   const e = s.epochInfo;
   const st = status(s);
