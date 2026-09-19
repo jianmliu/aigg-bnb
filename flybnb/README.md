@@ -5,6 +5,8 @@ FlyBnB is a whole-brain perturbation atlas of the fly, re-tested across individu
 | here | what |
 |---|---|
 | `battery/` | **the standard battery every individual gets**: 13 stimuli × 3 seeds, the output of all 1,303 descending neurons; how it is built from the annotations; its form as one batched task. It is what makes the atlas, the association analysis and the selection experiment one dataset |
+| `male/` | **the male brain's line** (MaleCNS v1.0): how its counts compare with FlyWire's (`count_scale.py`), which weight unit puts it in the same regime (`unit_scan.py` → 7209), its own variability model (`lr_conditional.py`, `founder_density.py`), and its battery (`build_battery.py` → `battery/battery-male-v1.json`). Results in `results/male/` |
+| `analysis/battery_variance_report.py` | how much of a battery phenotype belongs to the individual: ignition rates and single-run ICCs from battery rows, the same script for either brain → `results/variance/` |
 | `analysis/intlif.py` | the int-lif runner the battery uses: exact, 0.6 s per run (the reference takes 75 s), silence sets included. `--verify` holds it to the published digests and to the rule as written |
 | `analysis/run_battery.py`, `breeding_design.py`, `breeding_report.py` | the breeding pilot: founders, randomly mated offspring and two divergent selection lines in the collection's recipe format; midparent regression, realised heritability, tested correlated responses |
 | `results/breeding/` | the design, every run of 301 individuals under the battery (digest and descending-neuron spikes per run), and `heritability.{json,md}` |

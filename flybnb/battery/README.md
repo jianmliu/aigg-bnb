@@ -34,10 +34,42 @@ Operationally it is one action. When an individual exists (minted, or bred), its
 
 What is not in it: anything that needs spatial or temporal structure (looming, optic flow, song), because an int-lif stimulus is a set of neurons at a fixed rate. Photoreceptors other than the ocelli are left out for the same reason.
 
+## The male battery (`battery-male-v1.json`)
+
+The same assay for the male brain (Janelia MaleCNS v1.0, brain **and** ventral nerve cord, CC-BY 4.0): 14 stimuli × 3 seeds = 42 runs, the readout every descending neuron (1,314). Built by `flybnb/male/build_battery.py` from the release's body annotations.
+
+| stimulus | neurons | reached on the base wiring, descending neurons active |
+|---|---|---|
+| `sound` | 114 | 181, 23 — a **left-ear** stimulus, see below |
+| `sound_gate` | 116 | 129, 15 — sound plus the two `AN02A001` neurons, the male type matched to FlyWire's `AN_multi_8` |
+| `wind` | 475 | 1,877, 210 |
+| `taste_labellar`, `taste_peg`, `taste_leg` | 163, 60, 768 | 571, 28 · 590, 80 · 2,002, 129 |
+| `ppk23` (contact pheromone) | 269 | 2,491, 145 |
+| `touch_leg`, `grooming` | 213, 65 | 535, 13 · 296, 38 |
+| `chordotonal`, `campaniform`, `haltere` | 425, 426, 205 | 773, 11 · 1,222, 21 · 1,703, 47 |
+| `hygro`, `thermo` | 66, 25 | **5,562**, 123 · **5,598**, 130 — ignited |
+
+**A battery names its population.** What differs between connectomes is not the assay but the individuals: the base they are drawn on, their variability model, and the weight unit of their exec kind. The male file carries them in `population`, and `run_battery.py` reads them from there (a battery without one is the female brain's):
+
+| | female (FlyWire v783) | male (MaleCNS v1.0) | where the male value comes from |
+|---|---|---|---|
+| in-place base | `flywire-fafb-v783-min2` | `malecns-v1.0-min2` (154,169,344 bytes, sha256 `38227caa…71ba`) | `malecns_export.py --min-syn 2` |
+| weight unit (Q16) | 18022 | **7209** = 0.40 × | `male/count_scale.py`: MaleCNS counts are 1.55–1.62 × FlyWire's over 222,457 homologous connections; `male/unit_scan.py`: at 18022 every male stimulus ignites, at 7209 the male brain is in the female brain's regime. The unit is a parameter of the exec kind, declared on chain (`MEPRegistry.declareLifKind`) |
+| dispersion table | 423, 479, 677, … | 218, 347, 520, 635, 923, 1339, 1907, 2899, 4305, 4797 | `male/lr_conditional.py`: the male brain's own two hemispheres, the female table's derivation |
+| mean ratio | 0.92 | **0.93** (Q16 60948) | `male/founder_density.py`: a founder then has 100.6% of the real male's synapses of ≥ 5; the mirror data independently give 0.931 |
+
+**A reconstruction is not symmetric, and the battery says where.** Every male stimulus records its outgoing synapses by side of entry. The right antenna's auditory neurons are nearly disconnected in this release (835 synapses of ≥ 5 against 25,201 on the left; driving them alone reaches 2 neurons), and `wind` is lopsided the same way (38,037 against 108,209). So the male `sound` is a left-ear stimulus and there is no separate `sound_left`. The other stimuli are balanced within 30%, `hygro` excepted (30,945 right, 16,805 left).
+
+Male results are **provisional** until the male kind is declared and the base registered on a public network: nothing here has been executed by anyone else yet.
+
 ## Rebuilding it
 
 ```bash
 python flybnb/battery/build_battery.py --annotations annotations.tsv --payload flywire-783-min5.bin
+```
+
+```bash
+python flybnb/male/build_battery.py --annotations body-annotations-male-cns-v1.0-minconf-0.5.feather --payload malecns-v1.0-min2.bin
 ```
 
 `annotations.tsv` is the neuron annotation table of `flyconnectome/flywire_annotations` (v783). The script maps root ids to payload rows, applies the rules, runs the base wiring under every stimulus with `flybnb/analysis/intlif.py`, and writes the table above into the file. Indices are rows of the payload's neuron table, which is the same for the ≥ 5 and the ≥ 2 synapse export.
