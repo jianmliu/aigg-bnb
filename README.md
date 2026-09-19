@@ -226,6 +226,34 @@ the contracts were being deployed. They are additive -- a royalty-free MEP keeps
 when a task carries one -- so the `f04411b` runtime serves this deployment unchanged; using them needs one more
 redeploy.
 
+### Redeployed with the genesis collection — 2026-09-19
+
+The redeploy the paragraph above asks for. From `main` at `b3a88d7` (aigg-porw `994ccf4`: MEP terms, batched tasks,
+the chain-read LIF weight unit), same deployer, same parameters as 2026-09-18; every address the deployment names was
+checked to hold code, and every parameter of the collection was read back from the chain. The addresses are in
+`render.yaml`.
+
+- **Two brains.** `flywire-783-min5` keeps its id (`0x312dda12…3f8a`, tx `0xc3acea49…f800`): it is what the gate task
+  and `test/live_bsc.mjs` run on. `flywire-783-min2` is new: MEP
+  `0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50` (`flybnb/genesis/flywire-783-min2.v3.json`), tx
+  `0x6ece389ee4a00ac328131f3ca9f06a1e3065f905253f792d47bd239cba2706d7`, 139,255 neurons, 7,595,967 synapse records,
+  `gnfd://aigg-brains/flywire-fafb-v783-min2.bin` -- fetched back from Greenfield (77,074,432 bytes) and its `model_id`
+  recomputed before registering, because a registration is immutable. It is the base the hundred founders are variants
+  of (`genesis-v1.json: baseModelId`), so it is the collection's `BASE_MEP_FEMALE`: what an adopter is bonded for.
+- **`CollectionWhitelist`** `0xAd8e7206A9bE4F24Ce0aa2c861F1E9331A16681C`, curator = the deployer. Deployed on its own
+  (tx `0xb44610fc…4a4f`): `DeployBNB` created it *after* `vm.stopBroadcast()`, so the first run wrote an address into
+  `deployments/97.json` that had no contract behind it. Fixed in the script; `test/harness.mjs: deploy` now refuses a
+  deployment file that names an address without code, which is what every scripted e2e goes through.
+- **The genesis collection** `0xE0a5a93CD9398BdFcA992F877d513e49E18E7AA4` (`deploy_collection.sh`), listed. Root
+  `0x02d6d4d2…4d78`, 100 founders, all female. Testnet-scale prices, in the proportions of the mainnet intent
+  (0.1 / 0.05 / 0.05 / 0.001 BNB): adopt 0.01 tBNB of which 0.005 (one UNIT) becomes the adopter's own bond, breed
+  0.005, hatch bounty 0.0001; royalty 1000 bps through the market. Treasury = the deployer and no lineage registry --
+  both immutable, both to be decided again before a mainnet deployment. There is no male base yet, so this network
+  adopts and registers; it does not breed.
+
+Cost: 0.0021 tBNB at 0.1 gwei for everything. The 2026-09-18 contracts are left as they are; bonds placed in that
+`InstanceRegistry` during the live runs stay withdrawable by their owners through the ordinary exit.
+
 ### Live run record — 2026-09-18, scheme v3, against the hosted relayer
 
 `test/live_bsc.mjs` with the real FlyWire brain against the deployment above and the relayer **on Render**
