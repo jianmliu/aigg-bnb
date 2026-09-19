@@ -389,6 +389,7 @@ nominal amount in a volatile asset.
 | `BREED_FEE` | to decide | the second sink, and the rate limit on new MEPs |
 | `ROYALTY_BPS` | 1000 | of every fee settled for a task on a registered fly; inside the `mep_id`, so fixed for the collection's life |
 | `BASE_SHARE_BPS`, `BASE_VENDOR` | 1000, the treasury | the base's part **of the royalty**, not of the fee: of a fee of 1 the hosts share 0.90, the owner gets 0.09, the base 0.01. One level -- it does not compound down a pedigree -- and the vendor is the treasury until a base has one of its own (docs/GATEWAY.md §4.1) |
+| `TREASURY` | a `TreasuryRouter` | immutable in the collection, and a collection outlives any wallet, multisig or buyback scheme: so it is a fixed address whose *destination* can change. Not a proxy -- no delegatecall, no replaceable logic; everything it holds can leave only to the destination, which is why `sweep` / `collect` / `rescue` are anybody's to call. Its owner chooses the destination (two-step; renounceable) and reaches nothing else. `receive` does no work: the collection caps the gas it hands its treasury and credits what it will not take, and work belongs to the destination |
 | `SALE_ROYALTY_BPS` | 500 | ERC-2981, to the treasury: what a marketplace is *asked* to pay on a resale. No venue is bound by it and a plain transfer pays nothing, which is why it is a different thing from the royalty the protocol enforces. Capped at 10% |
 
 Not an admin key. The neighbouring project lets its owner change the mint price, the swap route and the buyback
