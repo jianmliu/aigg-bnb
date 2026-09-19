@@ -97,8 +97,10 @@ services:
       # FlyBnB dataset needs, posted by the project. The market is permissionless and cannot refuse anybody's task; what
       # is withheld is this relayer's gas (a session key holds none of its own), and the page reads this list from
       # /deployment and shows "not open yet" instead of a booking card. Remove the key to open the network.
+      # The second address is the gateway's fee wallet (the service below): experiments reach the network through ai.gg,
+      # and the gateway is the one client that posts them. Without it here, its tasks' results are never sponsored.
       - key: PORW_TASK_CLIENTS
-        value: "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa"
+        value: "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa,0xf5Cfcb350268aEC30e8d814E48DaB01CBE54B5A7"
 
       # ---- the beacon follows demand: a cold epoch never rolls and costs nothing ----
       - key: PORW_BEACON_LAZY
@@ -117,6 +119,98 @@ services:
 
       # ---- secrets: asked for once, never synced, never in git ----
       - key: PORW_RELAYER_KEY
+        sync: false
+      - key: PORW_RPC
+        sync: false
+
+  # The gateway (gateway/gateway.mjs, docs/GATEWAY.md): an OpenAI-compatible API in front of the mesh, registered with ai.gg
+  # as an upstream account (npm run gateway:aigg). It is its own service because it holds money -- every call's fee is paid
+  # from GATEWAY_KEY's wallet -- and the relayer's key never should. Created with `render services create`; the disk and
+  # the three secrets are added in the dashboard (the CLI does neither).
+  - type: web
+    name: aigg-bnb-gateway-testnet
+    runtime: node
+    plan: 0.5c-512mb
+    region: oregon
+    numInstances: 1
+    branch: main
+    # manual, like the relayer's: a deploy restarts the gateway, and a call between postTask and settle is picked up again
+    # from the disk -- but only if it is there, which is what the disk is for
+    autoDeployTrigger: "off"
+    buildCommand: git submodule update --init --recursive && npm ci
+    startCommand: npm run gateway
+    healthCheckPath: /healthz
+    previews:
+      generation: off
+    # The calls, on disk. A fee is spent at postTask, so a call has to survive a restart until it settles: the gateway writes
+    # it here BEFORE a wei moves, and on start drives every posted, unsettled call on. Without a disk a redeploy forgets them.
+    disk:
+      name: gateway-state
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: GATEWAY_HOST
+        value: 0.0.0.0
+      - key: GATEWAY_STATE
+        value: /var/data/gateway-state.json
+      # the relayer: /meps, and the relay the gateway announces tasks on. Its /deployment must agree with the PORW_*
+      # below on the market, or the gateway refuses to start -- money is not sent where an HTTP endpoint says
+      - key: GATEWAY_RELAYER
+        value: https://aigg-bnb-relayer-testnet.onrender.com
+
+      # ---- the deployment: the same as the relayer's, above ----
+      - key: PORW_NETWORK
+        value: bsc-testnet
+      - key: PORW_CHAIN_ID
+        value: "97"
+      - key: PORW_EPOCH_BLOCKS
+        value: "200"
+      - key: PORW_VERIFIER
+        value: "0xcE023ee73A1Ab3A8Ca481B4EA540E48AE24F3365"
+      - key: PORW_MEP_REGISTRY
+        value: "0xC779151b405513B48787B8F1111f79FAC10CDb7A"
+      - key: PORW_INSTANCES
+        value: "0x50b015f2a2a04E2D177343bE4bDB652AFf8100B1"
+      - key: PORW_BEACON
+        value: "0x3F4AB29555b696BACbB2450188ad640013941484"
+      - key: PORW_CLAIMS
+        value: "0x2E9da33606a21e31DDceD22d960b906bAc199c1F"
+      - key: PORW_MARKET
+        value: "0x71120BcF8EFDcc6E4c0299e035676dB6d0d68F19"
+      - key: PORW_DISPUTES
+        value: "0xeEC51cFaB44B45dEc8d34941F75044C5230841de"
+      - key: PORW_RELAYS
+        value: "0x50Cd9B2A00b4B8B33a130C879E7095A9Da7f29Ce"
+
+      # ---- what it offers ----
+      # the names callers use; `mep:0x…` works for any served brain, and a registered fly is `fly-<token>`
+      - key: GATEWAY_MODELS
+        value: "flywire-783-min5=0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a,flywire-783-min2=0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50"
+      # named stimulus sets (`input.stimulate.set`): the gate task's two, payload indices of the FlyWire export
+      - key: GATEWAY_SETS
+        value: tasks/flywire-gate/stimulus_sets.json
+      # two providers who do not know each other, or no call (503 model_cold)
+      - key: GATEWAY_MIN_REDUNDANCY
+        value: "2"
+      # 0.1 gwei per step per provider: 100 steps at redundancy 2 is 0.00002 tBNB
+      - key: GATEWAY_WEI_PER_STEP
+        value: "100000000000"
+      # a host's page loads a brain with room for 100 steps unless its owner asks for more; a longer task would find no
+      # provider able to run it and be refunded only after the market's timeout. Raise it with the hosts.
+      - key: GATEWAY_DEFAULT_STEPS
+        value: "100"
+      - key: GATEWAY_MAX_STEPS
+        value: "100"
+
+      # ---- secrets: never synced, never in git ----
+      # GATEWAY_KEY: the fee wallet, 0xf5Cfcb350268aEC30e8d814E48DaB01CBE54B5A7 -- a float, topped up; never the treasury.
+      # It must hold the fee of a call plus 0.01 tBNB of gas headroom, or calls are refused (503 gateway_unfunded).
+      - key: GATEWAY_KEY
+        sync: false
+      # GATEWAY_BEARER: what ai.gg presents (credentials.api_key of its account). Unset, the gateway refuses to start.
+      - key: GATEWAY_BEARER
         sync: false
       - key: PORW_RPC
         sync: false
