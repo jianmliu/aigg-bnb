@@ -75,7 +75,7 @@ try {
   check("a call: 200, completed, settled on-chain by both providers", r1.status === 200 && j1.status === "completed" && rc.executors?.length === 2 && rc.executors.includes(A.addr) && rc.executors.includes(B.addr) && rc.finality === "settled");
   check("they ran the experiment it named: the state_0 root the gateway computed without the brain is the one they built", rc.init_state_root === H.hex(expected.result.initStateRoot) && rc.stimulated === 250 && rc.silence_ids.length === 6);
   check("the receipt's digest and root are the ones anybody recomputes", rc.exec_digest === H.hex(expected.result.execDigest) && rc.exec_root === H.hex(expected.result.execRoot) && (await D.market.read.settledDigest([j1.id])) === rc.exec_digest);
-  check("the response id is the task id, one step is one token, and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
+  check("the response id is the task id, a token is one step by one provider (20 steps x 2), and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS * 2 && j1.usage.input_tokens === 0 && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
   const b1 = { g: await bal(GW), a: await bal(A.addr), b: await bal(B.addr) };
   check(`the gateway paid the fee (${FEE} wei) and the providers split it`, b1.a - b0.a === FEE / 2n && b1.b - b0.b === FEE / 2n && b0.g - b1.g > FEE && b0.g - b1.g < FEE + parseEther("0.01") && BigInt(rc.fee_wei) === FEE);
   // ---- the readout: counts from the providers, served because they hash to the digest the task settled on ----
@@ -104,7 +104,23 @@ try {
     check(`settled, and challengeable for ${dep.challengeWindow} blocks`, v.receipt.finality === "settled" && v.receipt.final_after_block === v.receipt.settled_at + dep.challengeWindow);
     await anvil.mine(dep.challengeWindow + 1); check("after the window: final", (await (await call("/v1/responses/" + q.id)).json()).receipt.finality === "final"); }
   { const r = await call("/v1/chat/completions", { model: "warm", seed: 10, max_tokens: STEPS, messages: [{ role: "user", content: "{}" }] }); const j = await r.json();
-    check("the chat-completions alias answers in its own shape, with the same receipt", r.status === 200 && j.object === "chat.completion" && j.usage.completion_tokens === STEPS && j.receipt.executors.length === 2); }
+    check("the chat-completions alias answers in its own shape, with the same receipt", r.status === 200 && j.object === "chat.completion" && j.usage.completion_tokens === STEPS * 2 && j.receipt.executors.length === 2); }
+
+  // ---- behind ai.gg (aigg-src, a sub2api fork): the wire as its OpenAI relay makes it, read from its source ----
+  { // what a caller of ai.gg's /v1/chat/completions turns into: always stream:true, store:false, an `include`, injected instructions, the
+    // messages as `input` items, every unknown top-level field (seed!) DROPPED, and max_tokens floored at 128 -- more than these providers'
+    // slots hold (20). So the experiment carries its own seed and steps, and they win.
+    const wire = { model: "warm", instructions: "You are a helpful coding assistant.", stream: true, store: false, include: ["reasoning.encrypted_content"], max_output_tokens: 128,
+      input: [{ role: "system", content: "be brief" }, { role: "user", content: JSON.stringify({ seed: 31, steps: STEPS, stimulate: { set: "ears" }, readout: { top: 2 } }) }] };
+    const r = await call("/v1/responses", wire); const text = await r.text(); const evs = text.split("\n\n").filter((b) => b.startsWith("event: ")).map((b) => ({ type: b.split("\n")[0].slice(7), line: b.split("\n")[1], data: JSON.parse(b.split("\n")[1].slice(6)) }));
+    const types = evs.map((e) => e.type); const delta = evs.filter((e) => e.type === "response.output_text.delta"); const last = evs.at(-1);
+    check("the output opens right after `created`: ai.gg holds preamble events and comments until then, and its caller's proxy would hang up", types[0] === "response.created" && types[1] === "response.output_item.added");
+    const out = delta.length === 1 ? JSON.parse(delta[0].data.delta) : null;
+    check("the answer is sent as a text delta: for a chat-completions caller ai.gg builds the text from deltas and nothing else", !!out && out.readout.length === 2 && /^verified/.test(out.readout_status) && types.indexOf("response.output_text.delta") < types.indexOf("response.completed"));
+    check("the terminal event carries the usage where ai.gg reads it, on a line it does not skip (>= 72 bytes)", last.type === "response.completed" && last.data.response.usage.output_tokens === STEPS * 2 && last.data.response.usage.input_tokens === 0 && last.line.length >= 72);
+    check("the seed and the steps came from the experiment, not from the fields ai.gg drops or floors", last.data.response.receipt.seed === 31 && last.data.response.receipt.steps === STEPS && last.data.response.receipt.executors.length === 2);
+    const probe = await call("/responses", { model: "warm", input: [{ role: "user", content: [{ type: "input_text", text: "hi" }] }], stream: true, instructions: "x" }); // aigg-src's admin "test connection", verbatim
+    check("ai.gg's admin \"test connection\" posts prose to /responses: a plain 400 -- never a 401, which would disable the account, and nothing spent", probe.status === 400 && (await probe.json()).error.type === "invalid_request_error"); }
 
   // ---- refusals that cost nothing ----
   { const g = await bal(GW); const r = await call("/v1/responses", { model: "cold", max_output_tokens: STEPS }); const j = await r.json();

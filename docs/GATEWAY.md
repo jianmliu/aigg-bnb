@@ -1,6 +1,6 @@
 # The gateway: a brain behind an inference API
 
-Status: design, 2026-09-19; **milestones 0 and 1 are built** (`gateway/`, `test/e2e_gateway.mjs` — §7). Nothing else is. Where a
+Status: design, 2026-09-19; **milestones 0, 1 and 2 are built** (`gateway/`, `test/e2e_gateway.mjs` — §7). Nothing else is. Where a
 statement is about code that exists it names the file;
 where it is a proposal it says so. §8 records what was decided on 2026-09-19, and what is still open.
 
@@ -53,13 +53,17 @@ struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStr
 |---|---|
 | `model` | `mepId`: `flywire-783-min5`, `flywire-783-min2`, `fly-<collection>-<token>`, or a raw `mep:0x…` |
 | `seed` | `stimulusSeed` (both are a uint32) |
-| `max_output_tokens` | `steps`. **One step is one token** |
+| `max_output_tokens` | `steps`. **One token is one step run by one provider** — what the fee is proportional to |
 | `n` | `runs` of `postBatch` (int-lif only, 2 … 65,536): one fee, one settlement |
 | `input` | the experiment, as JSON: which neurons are stimulated, which are silenced, what to read out (§1.1) |
 | `stream: true` | progress events, and the keep-alive that carries a minutes-long call through a proxy |
 | the response `id` | `taskId` |
 | `system_fingerprint` | the scheme digest and the exec kind: what "the same model" means here |
-| `usage.output_tokens` | `steps × runs` |
+| `usage.output_tokens` | `steps × redundancy × runs` |
+
+`seed`, `steps` and `redundancy` may also ride **inside the experiment**, and there they win — because behind ai.gg a caller
+of `/v1/chat/completions` has every top-level field it does not know dropped (`seed`), `max_tokens` floored at 128, and on
+the non-passthrough path `max_output_tokens` deleted; the message text is the one thing that arrives intact.
 
 `commitStride` is the gateway's to choose (int-lif: at most 512 segments and a stride of at most 512, so up to 262,144
 steps — `TaskMarket._post`). `deadline` is hashed into the task id and **checked nowhere on-chain**; the clock that
@@ -193,7 +197,7 @@ gateway pays nobody and keeps no ledger of what it owes: it sells balance and sp
 difference. That is also why none of `aigg-src`'s payout machinery (`provider_owner_user_id`, the withdrawal queue) is
 needed here.
 
-**Price.** `fee = steps × runs × redundancy × p(model)`, with `p` wei per step. In `aigg-src` it is a row per model in
+**Price.** `fee = steps × runs × redundancy × p(model)` = `output_tokens × p`, with `p` wei per step per provider. In `aigg-src` it is a row per model in
 the channel pricing table — the resolver already puts channel prices ahead of every other source — in token mode with
 the output price set to `p` converted at the gateway's BNB rate, plus its margin. No code change.
 `billing_mode = "per_request"` exists too, for fixed-length products such as "one atlas row".
@@ -237,15 +241,28 @@ So a vendor has two levers on the same model family: **collect** (its share of e
 
 ## 5. Where it attaches to `aigg-src`
 
-**Now — no gateway code change.** The adapter is a service of its own (§6) registered as an account with
-`platform = openai`, `type = apikey`, `credentials.base_url` = the adapter. Three facts from the code decide its shape:
+**Now — no gateway code change, and built** (`gateway/aigg_src.mjs`, `test/aigg_src_sync.mjs`, the "behind ai.gg" checks
+of `test/e2e_gateway.mjs`). The adapter is registered as an account with `platform = openai`, `type = apikey`,
+`credentials.base_url` = the adapter. Read from `aigg-src`'s source, this is what decides its shape:
 
-- the OpenAI path normalises everything to the **Responses API**: `/v1/chat/completions` from a user is converted and
-  forwarded as `POST /v1/responses` (`openai_gateway_chat_completions.go`). The adapter implements `/v1/responses`
-  first; chat-completions users are served by the conversion.
-- usage is read as `input_tokens` / `output_tokens` from the final frame, and a stream is billed once, at its end.
-- `GET /v1/models` is the union of the accounts' `model_mapping` keys, so the mapping is what publishes the models —
-  the adapter syncs it from `/meps` through the admin API.
+- **`extra.openai_passthrough = true` is required, not a nicety.** On the default path ai.gg *deletes* `max_output_tokens`
+  for an apikey account, injects `instructions`, and fails over on any 5xx — so the adapter's `503 model_cold` and
+  `504 no_result` would reach the caller as a generic 502. With passthrough the body, the status and the error body go
+  through verbatim, only 429/529 fail over, and 503/504 never disable or cool the account. **A 401 does**: a wrong bearer
+  marks an apikey account as errored for good.
+- the OpenAI path normalises everything to the **Responses API**: a caller's `/v1/chat/completions` is converted and sent
+  as `POST {base_url}/v1/responses`, *always* `stream: true`, rebuilt from a struct — unknown fields do not survive
+  (hence seed / steps inside the experiment, §1). Its admin "test connection" posts prose to `{base_url}/responses`:
+  the adapter answers 400, which disables nothing.
+- a stream is relayed line by line, but ai.gg **holds** `response.created`, `response.in_progress` and comment lines until
+  the first event that is not a preamble. So the adapter opens the output (`response.output_item.added`) right after
+  `created`, and its keep-alives pass from then on. For a chat-completions caller the text is built from
+  `response.output_text.delta` events and nothing else, so the answer is sent as one delta before `response.completed`,
+  whose `response.usage` is where ai.gg reads the tokens. All-zero usage is dropped unbilled, which is what a failed call is.
+- `GET /v1/models` is the union of the accounts' `model_mapping` **keys**; the pricing row must say `platform: "openai"`
+  (it defaults to anthropic and then never matches); prices are USD **per token**; and with `restrict_models` off a model
+  that is served but not priced is billed at $0. The script keeps these in step, and a newly registered fly appears — priced
+  — on its next run.
 
 **Later — a `PlatformMEP`.** `GatewayService.Forward` is already a switch on the platform with a pluggable forwarder
 (p2papi's). A MEP forwarder beside it gets `/v1/models` with live `providers`, the 503 semantics, the receipt as a
@@ -282,7 +299,7 @@ out whose digest the test recomputes; then the failure rows of §3, one by one.
 |---|---|---|
 | M0 ✔ | the adapter, receipt-only responses, capacity check, refunds, disputes, restart recovery; the gateway's address in `PORW_TASK_CLIENTS`. Not yet: batches (`n`), cell-type tables, the determinism cache, waking a cold epoch | aigg-bnb |
 | M1 ✔ | `counts` in the announcement and the result; verified readouts; `GET /v1/tasks/{id}/counts`. Not yet: a batch's per-run counts | aigg-porw, aigg-bnb |
-| M2 | registered in `aigg-src` as an OpenAI-compatible account with channel pricing; model-mapping sync | aigg-src (config only) |
+| M2 ✔ | registered in `aigg-src` as an OpenAI-compatible account with channel pricing; model-mapping sync: the script and the wire conformance. Verified against the source and a stand-in built from it — **not yet run against a live ai.gg**, which needs the adapter deployed | aigg-bnb (aigg-src: config only) |
 | M3 | wake by task client; `providers` in `/meps`; the Host view as a provider's dashboard (requests served, earned, models online) | aigg-bnb |
 | M4 | `model_subsidies` | aigg-src |
 | M5 ✔ | `BASE_SHARE_BPS` / `BASE_VENDOR`, ERC-2981, `owner()` with one power, `tokenURI` through an on-chain renderer: in the contract and the deploy script. Deploying it is a new collection | aigg-bnb |
