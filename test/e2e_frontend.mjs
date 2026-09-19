@@ -37,6 +37,7 @@ try {
   await page.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
   await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.deployment !== null);
   await page.click("#navHost"); // the deposit, the key, the model and the node are the Host view
+  check("Host view has a provider dashboard with a disconnected state", await page.locator("#provider-dashboard").count() === 1 && /Connect your wallet/.test(await page.locator("#provider-dashboard").textContent().catch(() => "")));
   check("page loaded the deployment + two MEPs from the relayer", (await page.evaluate(() => window.app.state.meps.map((m) => m.mepId))).join() === [mepId, mepId2].map((x) => x.toLowerCase()).join());
   await page.evaluate((id) => window.appActions.host(id, true), mepId2.toLowerCase()); check("hosting both brains", (await page.evaluate(() => window.app.state.hosted.size)) === 2);
   await page.click("#btnConnect"); await page.waitForFunction(() => window.app.state.wallet !== null);
@@ -86,6 +87,11 @@ try {
   check("the result matches an independent re-execution of the male brain (3 steps)", re.matches);
   check("relayer submitted the tab's result on-chain", await waitFor(async () => C.market.read.submitted([taskId, W.account.address])));
   const s = await R.api("/tx/settle", { taskId, instance: W.account.address }); check("task settled, fee paid to the tab's wallet", s.ok);
+  check("Host dashboard updates settled request count and earned BNB", await waitFor(async () => await page.locator("#host-served").textContent().catch(() => "") === "1", 20000));
+  check("Host dashboard separates local online models from chain earnings", await page.locator("#host-online").textContent().catch(() => "") === "2" && /0.01 BNB/.test(await page.locator("#host-earned").textContent().catch(() => "")));
+  if (process.env.M3_SCREENSHOT) { await page.locator("#provider-dashboard").scrollIntoViewIfNeeded(); await page.screenshot({ path: process.env.M3_SCREENSHOT }); }
+  await page.route(R.apiBase + "/hosts?**", (route) => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "RPC unavailable" }) }));
+  check("unavailable chain data is shown as unavailable, never zero earnings", await waitFor(async () => /Hosting activity is unavailable/.test(await page.locator("#provider-dashboard").textContent()), 15000) && await page.locator("#host-earned").textContent() === "—");
   console.log(`wallet prompts: ${prompts.join(",")}`); console.log("page log tail:\n" + (await page.evaluate(() => document.getElementById("log").textContent)).split("\n").slice(-8).join("\n"));
   client.close(); R.stop(); fe.server.close();
 } catch (e) { console.error(e); fails++; } finally { if (browser) await browser.close(); anvil.stop(); }

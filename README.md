@@ -376,3 +376,20 @@ cd contracts && forge test          # remappings point at contracts/lib/aigg-por
 cd .. && npm install && npm test    # js/test_greenfield.mjs (a local server stands in for the storage provider)
 NETWORK=anvil ./deploy.sh           # deploy the BNB-parameterized mesh to a local anvil (or opbnb-testnet / bsc-testnet)
 ```
+
+### Gateway M3: cold epochs and hosting activity
+
+The gateway can wake a lazy mesh using its task wallet, which must be explicitly listed in
+`PORW_TASK_CLIENTS`. Set `GATEWAY_WAKE_TIMEOUT_MS` to bound the wait for a beacon and eligible hosts
+(default 300000 ms). Streaming requests stay alive during the wait; a timeout posts no task and spends
+no task fee. An already-warm mesh with too few hosts still returns `503 model_cold` immediately.
+See [Gateway M3](docs/GATEWAY.md#7-order-of-work) for signed wake and timeout semantics.
+
+The **Host** view shows models resident in this tab, eligible hosts, settled requests and BNB paid to
+your wallet in the latest 5,000 blocks. It labels the block range and reports unavailable reads explicitly.
+Relayer reads: `/meps` includes distinct `providers` and `votes`; `/hosts?instance=0x…` returns recent
+settlement totals and eligibility. These are eligibility counts, not a guarantee a tab is still connected.
+
+Run `npm run test:gateway:m3` for cold-wake, capacity and earnings checks, and `npm run test:frontend`
+for the browser suite. Local integration tests require Foundry (`FOUNDRY_BIN`) and Node 22+; browser
+tests can use an installed Chromium through `PW_CHROMIUM`.

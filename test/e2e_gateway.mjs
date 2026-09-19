@@ -31,7 +31,7 @@ try {
     return { name, payload, probe, mep, mepId: H.hex(mep.mepId) }; };
   const warm = await register("gw-warm"), cold = await register("gw-cold");
 
-  const R = await H.startRelayer(dep, H.KEYS[3], [warm.mepId, cold.mepId], { env: { PORW_TASK_CLIENTS: GW } }); stop.push(() => R.stop()); const d0 = await R.api("/deployment"); const domains = d0.domains;
+  const R = await H.startRelayer(dep, H.KEYS[3], [warm.mepId, cold.mepId], { env: { PORW_TASK_CLIENTS: GW, PORW_BEACON_LAZY: "1" } }); stop.push(() => R.stop()); const d0 = await R.api("/deployment"); const domains = d0.domains;
   const mk = async (walletKey, sessionByte) => {
     const c = H.clientsFor(dep, walletKey); const wallet = E.localWallet(walletKey); const session = keypair("0x" + sessionByte.repeat(32));
     await c.pub.waitForTransactionReceipt({ hash: await c.instances.write.bond([[warm.mepId]], { value: parseEther("0.5") }) });
@@ -44,6 +44,8 @@ try {
   const A = await mk(H.KEYS[1], "11"), B = await mk(H.KEYS[2], "22");
   const EPOCH = dep.epochBlocks; const toBlock = async (b) => { const cur = await anvil.block(); if (b > cur) await anvil.mine(b - cur); };
   const enterEpoch = async (e) => { await toBlock(e * EPOCH - 5); await waitFor(async () => (await R.api("/status")).commits.includes(e)); await toBlock(e * EPOCH + 2); await waitFor(async () => (await R.api("/status")).reveals.includes(e)); await toBlock(e * EPOCH + 12); return waitFor(async () => (await R.api("/status")).epochsRolled.includes(e)); };
+  { const { wakeMessage } = await import("../relayer/wake.mjs"); const epoch = (await R.api("/epoch")).epoch;
+    await R.api("/wake", { client: GW, epoch, signature: await G.account.signMessage({ message: wakeMessage(dep, d0.relayer, epoch) }) }); }
   check("epoch 1 rolled", await enterEpoch(1)); const ep = await R.api("/epoch?mep=" + warm.mepId); for (const X of [A, B]) await X.svc.announce(warm.mep.mepId, H.unhex(ep.challenge));
   check("epoch 2 rolled, the epoch-1 root posted", (await enterEpoch(2)) && await waitFor(async () => (await R.api("/status")).rootsPosted.some((r) => r.epoch === 1 && r.count === 2)));
   const mA = await R.api("/tx/materialize", { mep: warm.mepId, epoch: 1, instance: A.addr }), mB = await R.api("/tx/materialize", { mep: warm.mepId, epoch: 1, instance: B.addr }); check("two providers of the warm brain are eligible", mA.ok && mB.ok);
@@ -64,6 +66,9 @@ try {
   { const m = (await (await call("/v1/models")).json()).data; const w = m.find((x) => x.id === "warm"), c = m.find((x) => x.id === "cold");
     check(`/v1/models: the warm brain has 2 providers and is available; the cold one has none and is not`, w.providers === 2 && w.votes === 20 && w.available === true && c.providers === 0 && c.available === false && w.exec === "int-lif" && w.aliases.includes("mep:" + warm.mepId)); }
 
+  { const m = await R.api("/meps"); const w = m.find((x) => x.mepId === warm.mepId), c = m.find((x) => x.mepId === cold.mepId);
+    check("relayer /meps counts distinct eligible providers, not votes", w.providers === 2 && w.votes === 20 && w.beacon === true && c.providers === 0); }
+
   // ---- a call ----
   const expected = await warm.probe.execute(warm.mep.mepId, { steps: STEPS, commitStride: 2, stimulusSeed: 7, stimulusIds: Uint32Array.from(sets.ears), silenceIds: Uint32Array.from(sets.quiet) });
   // read out the neuron that fires most, one that fires, and a silenced one (which cannot)
@@ -78,6 +83,9 @@ try {
   check("the response id is the task id, one step is one token, and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
   const b1 = { g: await bal(GW), a: await bal(A.addr), b: await bal(B.addr) };
   check(`the gateway paid the fee (${FEE} wei) and the providers split it`, b1.a - b0.a === FEE / 2n && b1.b - b0.b === FEE / 2n && b0.g - b1.g > FEE && b0.g - b1.g < FEE + parseEther("0.01") && BigInt(rc.fee_wei) === FEE);
+  { const stats = await R.api("/hosts?instance=" + A.addr);
+    check("host dashboard counts settled requests and actual executor earnings", stats.requestsServed === 1 && stats.earnedWei === String(FEE / 2n) && stats.fromBlock === 0 && stats.toBlock > 0);
+    check("host stats reject malformed addresses", !!(await R.api("/hosts?instance=bad")).error); }
   // ---- the readout: counts from the providers, served because they hash to the digest the task settled on ----
   { const want = expected.result.counts; const out = JSON.parse(j1.output[0].content[0].text); const sum = want.reduce((a, b) => a + b, 0);
     check(`the readout is the neurons it asked for, with the counts anybody recomputes (${out.readout.map((r) => r.id + ":" + r.spikes).join(", ")}; ${sum} spikes in all)`, out.readout.length === 3 && out.readout.find((r) => r.id === 40).spikes === 0 && out.readout.some((r) => r.spikes > 1) && out.readout.every((r) => r.spikes === want[r.id] && r.hz === Math.round(want[r.id] / (STEPS * 0.0001) * 100) / 100) && out.summary.total_spikes === sum && sum > 0 && out.summary.dt_ms === 0.1 && /^verified/.test(out.readout_status));
@@ -133,6 +141,22 @@ try {
     const r = await call("/v1/responses", { model: "warm", seed: 13, max_output_tokens: STEPS }); const j = await r.json(); A.nd.execLie = null;
     check("a provider lies: a dispute opens at settlement, 502 disputed, nobody is paid", r.status === 502 && j.error.type === "disputed" && j.receipt.disputed.length === 2 && (await bal(A.addr)) === a);
     const v = await (await call("/v1/responses/" + j.id)).json(); check("and the call stays readable, with both roots in its receipt", v.status === "failed" && v.receipt.results[A.addr].execRoot !== v.receipt.results[B.addr].execRoot); }
+  // After inactivity both the beacon and host eligibility are cold. A live request drives the two-epoch recovery.
+  await toBlock(8 * EPOCH + 12);
+  check("the idle mesh has a cold epoch", !(await R.api("/epoch")).rolled);
+  { const stream = await call("/v1/responses", { model: "warm", seed: 14, max_output_tokens: STEPS, stream: true });
+    const text = stream.text();
+    check("a cold request wakes through the task client's signature", await waitFor(async () => (await R.api("/status")).beacon.wakeUntil >= 10));
+    check("the first waking epoch rolled", await enterEpoch(9));
+    const e = await R.api("/epoch?mep=" + warm.mepId);
+    for (const x of [A, B]) await x.svc.announce(warm.mep.mepId, H.unhex(e.challenge));
+    check("both new residency claims arrived", await waitFor(async () => (await R.api("/status")).aggregators.find((x) => x.mep === warm.mepId).epochs.some((x) => x.epoch === 9 && x.claims === 2)));
+    check("the second waking epoch rolled", await enterEpoch(10));
+    check("the waking claims root was posted", await waitFor(async () => (await R.api("/status")).rootsPosted.some((x) => x.epoch === 9)));
+    for (const x of [A, B]) await R.api("/tx/materialize", { mep: warm.mepId, epoch: 9, instance: x.addr });
+    const frames = await text;
+    check("cold stream stays alive, then posts and settles once hosts are eligible", /: waiting on the chain/.test(frames) && /event: response.created/.test(frames) && /event: response.completed/.test(frames) && !/event: response.failed/.test(frames));
+  }
 } catch (e) { console.error(e); fails++; }
 finally { for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); fs.rmSync(tmp, { recursive: true, force: true }); }
 console.log(fails ? `${fails} FAILURES` : "gateway: all checks passed"); process.exit(fails ? 1 : 0);
