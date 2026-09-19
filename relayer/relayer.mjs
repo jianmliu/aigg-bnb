@@ -55,12 +55,15 @@ let CHALLENGE = { windowBlocks: 0, depositWei: "0" }; try { CHALLENGE = { window
 const ZERO_ADDR = "0x" + "0".repeat(40);
 async function loadMep(id, { name = null, collection = null, token = null, pinned = false } = {}) {
   id = id.toLowerCase(); const m = await ch.meps.read.getMEP([id]);
-  const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
+  // int-lif is a FAMILY of kinds, one per weight unit (a connectome counted on another scale pins another unit); the
+  // chain knows which digests are int-lif and under what unit. Older deployments have no such getter: the default kind only.
+  let wUnitQ16 = 0; try { wUnitQ16 = Number(await ch.meps.read.lifWeightUnit([m.execKind])); } catch { wUnitQ16 = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? 18022 : 0; }
+  const isLif = wUnitQ16 !== 0;
   let terms = null; try { const [beneficiary, royaltyBps] = await ch.meps.read.termsOf([id]); if (beneficiary !== ZERO_ADDR) terms = { beneficiary, royaltyBps: Number(royaltyBps) }; } catch {} // a registry older than terms
-  const info = { mepId: id, modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
+  const info = { mepId: id, modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", wUnitQ16: isLif ? wUnitQ16 : null, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
     weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || name,
     collection, token, beneficiary: terms ? terms.beneficiary : null, royaltyBps: terms ? terms.royaltyBps : 0 };
-  let mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind: isLif ? lifExecKind() : EXEC_INT_SPMV_Q16, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
+  let mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind: isLif ? lifExecKind(wUnitQ16) : EXEC_INT_SPMV_Q16 /* recomputed from the unit, so a kind the chain mis-stated would not reproduce the id below */, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
   if (terms) mep = withTerms(mep, terms.beneficiary, terms.royaltyBps);
   if (hex(mep.mepId).toLowerCase() !== id) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind/terms mismatch)`);
   return { mep, info, aggregators: new Map(), posted: new Set(), pinned };

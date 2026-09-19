@@ -76,6 +76,10 @@ export const MEPRegistryAbi = parseAbi([
   "function registerMEP(MEP m) returns (bytes32)",
   "function getMEP(bytes32 id) view returns (MEP)",
   "function exists(bytes32) view returns (bool)",
+  // int-lif kinds: the weight unit behind an execKind digest (0: not a declared int-lif kind). A connectome that counts
+  // synapses on another scale pins another unit, hence another kind; anybody may declare one, the digest is computed on chain
+  "function declareLifKind(uint32 wUnitQ16) returns (bytes32)",
+  "function lifWeightUnit(bytes32 execKind) view returns (uint32)",
   // a profile under terms (a beneficiary and its share of every settled fee): (0, 0) for a plain one. Older registries have no such getter
   "function termsOf(bytes32 mepId) view returns (address beneficiary, uint16 royaltyBps)",
 ]);
