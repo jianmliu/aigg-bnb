@@ -21,7 +21,8 @@ the chain and follows mints and transfers.
 | `docs/flybnb/` | **the FlyBnB paper, a living draft**: `paper.md` is prose plus generated blocks; `build.mjs` regenerates the pilot's numbers from `results/variance.json` and Appendix A (the acknowledgments) from the chain or a relayer; `.github/workflows/flybnb-paper.yml` re-runs it on a schedule once the repository variables name a deployment |
 | `docs/DESIGN.md` | the BNB-specific design: layering, beacon, parameters, costs, risks |
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
-| `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
+| `docs/GATEWAY.md` | design, not built: the mesh behind ai.gg's OpenAI-compatible API -- every tab a model provider, a task as an inference call, receipts, who pays (user, vendor subsidy) and who is paid (hosts, owners, the base's vendor) |
+| `contracts/` | `CollectionWhitelist` (which collections of brains the system recognises: a curated list of collections, each answering for its own brains, bred ones included), `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
 | `js/fetch_brain.mjs` | the other half of publishing: fetch a registered MEP's payload from a storage provider and verify it against the on-chain `model_id` before it lands on disk |
 | `js/greenfield_admin.mjs` / `js/register_mep.mjs` | publisher tools: bridge-funded deployer account → create a public-read bucket, upload the payload (SDK, Reed-Solomon checksums), then register the MEP on-chain after verifying the SP serves bytes with the pinned `model_id` |
@@ -30,6 +31,7 @@ the chain and follows mints and transfers.
 | `frontend/` | **flybnb — the page** (Vite + React). A bed & breakfast for fly brains, organised on BNB Chain: a brain is a *listing*, whoever holds it resident is its *host* and posts a deposit (the bond), and a scientist *books* an experiment on it. Three views — **Brains** (the listings, each with a portrait drawn from its `model_id`; what hosting and owning pay today, and what they do not yet; the booking card), **Host** (deposit → house key → move a brain in → open the doors) and **Flies** (the colony and breeding). Underneath it is the node page it always was: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
 | `test/` | end-to-end on a local anvil: `e2e_batch.mjs` (one task, many runs: posted, executed by two live nodes, settled, a row re-executed by the client; then a lie in one run bisected to on-chain and convicted); `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
+| `deploy_collection.sh` | the genesis `FlyCollection` on top of a deployed mesh (`contracts/script/DeployCollection.s.sol`): the genesis root is read from `flybnb/genesis/genesis-v1.json`, the collection is listed on the mesh's `CollectionWhitelist`, and its address is saved as `PORW_COLLECTION` |
 
 ## Layering (short version)
 
@@ -119,6 +121,28 @@ when the bounty covers the gas at the current price, and one that does not stays
 the reason, since the price may fall inside the window. These are the relayer's own transactions, outside the
 sponsorship budgets, and anyone may run the same loop -- whoever lands first takes the bounty.
 `PORW_KEEPER=0` keeps naming the collection to the page over `/deployment` without hatching for it.
+
+`PORW_WHITELIST` makes **the brains the relayer serves follow the whitelist**. The mesh is permissionless, but a relayer's
+attention is not: aggregating a brain's claims, serving its proofs and sponsoring gas for tasks against it is what being
+one of the system's brains means, and whose those are is decided on-chain by `CollectionWhitelist`, whose unit is the
+collection. For every listed collection the relayer serves the bases it names and every brain bound to one of its tokens
+-- so a fly is served from the pass after its owner registers it, adopted or **bred** alike, with nobody editing
+`PORW_MEP_IDS` and nothing restarted; a profile under royalty terms is reproduced with its terms; a collection taken off
+the list stops being served. `PORW_MEP_IDS` stays, as brains pinned whatever the list says, and is no longer required when
+a whitelist is given. Collections are walked every `PORW_WHITELIST_EVERY` blocks (default 20) rather than followed by
+logs: a token's binding never changes once made, so a pass re-reads only what was unbound, and a restart needs no
+history. `/meps` says where each brain comes from (`collection`, `token`, `beneficiary`, `royaltyBps`), `/status.whitelist`
+what was walked and what was refused, and `/tx/result` and `/tx/settle` are sponsored only for tasks against a served
+brain. `test/e2e_whitelist.mjs` covers it.
+
+`PORW_TASK_CLIENTS` says **whose tasks are sponsored**. Third-party experiments are not open yet: every task on the
+network is one the FlyBnB dataset needs (the perturbation battery in the paper), posted by the project. `TaskMarket` is
+permissionless and cannot refuse anybody's task, so what is withheld is the relayer's gas: `/tx/result` and `/tx/settle`
+are refused for a task whose client is not on the list, and a session key holds no BNB of its own. `/deployment` carries
+the list (`taskClients`; `null` = anybody's, the default, which is what a local mesh and the tests run with), and the
+page reads it: a wallet that is not on it sees "Not open yet" and the two ways in -- host a brain, own a fly -- instead of a
+booking card. `test/e2e_anvil.mjs` posts a third party's task on-chain and checks it is not sponsored;
+`test/e2e_flybnb_page.mjs` checks what a visitor is shown.
 `test/e2e_keeper.mjs` covers startup backfill, a live egg, and a bounty too small to be worth it.
 
 The page has a second view for that collection, **Flies** (`#/flies`; `src/core/flies.js` + `src/ui/FliesView.jsx`): the
@@ -202,6 +226,34 @@ Not on this deployment: MEP terms (royalties) and batched tasks, which reached `
 the contracts were being deployed. They are additive -- a royalty-free MEP keeps its id, the silence flag acts only
 when a task carries one -- so the `f04411b` runtime serves this deployment unchanged; using them needs one more
 redeploy.
+
+### Redeployed with the genesis collection — 2026-09-19
+
+The redeploy the paragraph above asks for. From `main` at `b3a88d7` (aigg-porw `994ccf4`: MEP terms, batched tasks,
+the chain-read LIF weight unit), same deployer, same parameters as 2026-09-18; every address the deployment names was
+checked to hold code, and every parameter of the collection was read back from the chain. The addresses are in
+`render.yaml`.
+
+- **Two brains.** `flywire-783-min5` keeps its id (`0x312dda12…3f8a`, tx `0xc3acea49…f800`): it is what the gate task
+  and `test/live_bsc.mjs` run on. `flywire-783-min2` is new: MEP
+  `0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50` (`flybnb/genesis/flywire-783-min2.v3.json`), tx
+  `0x6ece389ee4a00ac328131f3ca9f06a1e3065f905253f792d47bd239cba2706d7`, 139,255 neurons, 7,595,967 synapse records,
+  `gnfd://aigg-brains/flywire-fafb-v783-min2.bin` -- fetched back from Greenfield (77,074,432 bytes) and its `model_id`
+  recomputed before registering, because a registration is immutable. It is the base the hundred founders are variants
+  of (`genesis-v1.json: baseModelId`), so it is the collection's `BASE_MEP_FEMALE`: what an adopter is bonded for.
+- **`CollectionWhitelist`** `0xAd8e7206A9bE4F24Ce0aa2c861F1E9331A16681C`, curator = the deployer. Deployed on its own
+  (tx `0xb44610fc…4a4f`): `DeployBNB` created it *after* `vm.stopBroadcast()`, so the first run wrote an address into
+  `deployments/97.json` that had no contract behind it. Fixed in the script; `test/harness.mjs: deploy` now refuses a
+  deployment file that names an address without code, which is what every scripted e2e goes through.
+- **The genesis collection** `0xE0a5a93CD9398BdFcA992F877d513e49E18E7AA4` (`deploy_collection.sh`), listed. Root
+  `0x02d6d4d2…4d78`, 100 founders, all female. Testnet-scale prices, in the proportions of the mainnet intent
+  (0.1 / 0.05 / 0.05 / 0.001 BNB): adopt 0.01 tBNB of which 0.005 (one UNIT) becomes the adopter's own bond, breed
+  0.005, hatch bounty 0.0001; royalty 1000 bps through the market. Treasury = the deployer and no lineage registry --
+  both immutable, both to be decided again before a mainnet deployment. There is no male base yet, so this network
+  adopts and registers; it does not breed.
+
+Cost: 0.0021 tBNB at 0.1 gwei for everything. The 2026-09-18 contracts are left as they are; bonds placed in that
+`InstanceRegistry` during the live runs stay withdrawable by their owners through the ordinary exit.
 
 ### Live run record — 2026-09-18, scheme v3, against the hosted relayer
 

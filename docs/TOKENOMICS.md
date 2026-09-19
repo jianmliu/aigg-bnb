@@ -423,7 +423,24 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
    counts only wasm and predates the decision that individuals arrive as deltas. The tighter bound either way is
    standing gas (§5.4: five sponsored materializations per instance per epoch).
 3. `MINT_PRICE` split between bond and treasury, and what the treasury may spend on.
-4. Whether the token owner's share of task fees is a protocol rule or a social one.
+4. ~~Whether the token owner's share of task fees is a protocol rule or a social one.~~ A protocol rule, in two
+   halves. aigg-porw's MEP **terms** (`registerMEPWithTerms`) put a beneficiary and a rate inside the `mep_id`, and
+   `TaskMarket._pay` sets that share of every settled fee aside before the executors split the rest. `FlyCollection`
+   is the beneficiary of every individual's MEP and forwards: `settle(id)` credits the token's *current* owner, a
+   transfer settles to the seller first, `withdraw()` is the owner's own call. So there is no royalty before adoption
+   (an unadopted individual has no MEP, and the base brains are plain profiles), it starts when the owner registers
+   the brain, and a sale needs no address update because the address on-chain never was the owner's. What is left to
+   decide is the number: `ROYALTY_BPS` is immutable and inside every id. It does not have to be priced against a
+   royalty-free copy of the same bytes. The MEP registry is permissionless, so such a copy can always be registered --
+   but the system has a **whitelist, and its unit is the collection** (`CollectionWhitelist`), the way a marketplace
+   verifies a collection rather than its items. A listed collection answers for its own brains
+   (`FlyCollection.listed(mepId)`): its bases and every brain bound to one of its tokens. So a bred fly is recognised
+   automatically when its owner registers it -- it is a token of a recognised collection like any other -- while a
+   collection somebody deploys for themselves, or a MEP registered with no collection at all, is not; then the page does
+   not show it, the relayer does not aggregate claims or sponsor gas for it, and the dataset does not count what is run
+   against it. The list has a curator, the first admin in these contracts, and its power stops at the list: removing a
+   collection un-recognises it and touches no token, bond, royalty or settled task. The job is handed over in two
+   steps or renounced, which freezes the list.
 5. ~~Who exports the male base, and when.~~ Done: aigg-porw PR #11 (`malecns_export.py`, Janelia MaleCNS v1.0 as
    `FLYBRAINv2`; `min5` 6.24 M records / 63.8 MB, `min1` 25.58 M / 257 MB). One thing it raises for §4: the exec kind
    pins a single weight unit calibrated on FlyWire counts, and this dataset reports more synapses per connection, so
