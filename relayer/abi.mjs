@@ -76,6 +76,8 @@ export const MEPRegistryAbi = parseAbi([
   "function registerMEP(MEP m) returns (bytes32)",
   "function getMEP(bytes32 id) view returns (MEP)",
   "function exists(bytes32) view returns (bool)",
+  // a profile under terms (a beneficiary and its share of every settled fee): (0, 0) for a plain one. Older registries have no such getter
+  "function termsOf(bytes32 mepId) view returns (address beneficiary, uint16 royaltyBps)",
 ]);
 export const BeaconAbi = parseAbi([
   "function EPOCH_BLOCKS() view returns (uint64)", "function COMMIT_BLOCKS() view returns (uint64)", "function REVEAL_BLOCKS() view returns (uint64)", "function DEPOSIT() view returns (uint256)",
@@ -92,8 +94,16 @@ export const FlyCollectionAbi = parseAbi([
   "event Bred(uint256 indexed id, uint256 indexed parentA, uint256 indexed parentB, uint64 seedBlock)",
   "event Rearmed(uint256 indexed id, uint64 seedBlock)",
   "event Hatched(uint256 indexed id, bytes32 seed, uint8 sex)",
+  // what a listed collection answers for: its two bases, and (through individuals().mepId) every brain bound to a token
+  "function BASE_MEP_FEMALE() view returns (bytes32)",
+  "function BASE_MEP_MALE() view returns (bytes32)",
   // who holds which individual, for the FlyBnB acknowledgments (relayer.mjs section 6)
   "function totalSupply() view returns (uint256)",
   "function ownerOf(uint256 id) view returns (address)",
   "function individuals(uint256 id) view returns (bytes32 baseModelId, bytes32 deltaHash, bytes32 modelId, bytes32 mepId, uint8 sex, uint32 generation, uint64 parentA, uint64 parentB, bytes32 seed, uint64 seedBlock)",
+]);
+// which collections of brains the system recognises (relayer.mjs: the MEPs served follow it)
+export const CollectionWhitelistAbi = parseAbi([
+  "function collections() view returns (address[])",
+  "function listed(bytes32 mepId) view returns (bool ok, address collection)",
 ]);
