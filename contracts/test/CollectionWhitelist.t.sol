@@ -24,7 +24,7 @@ contract CollectionWhitelistTest is Test {
             neurons: 139255, synapses: 2700513, synapseRoot: keccak256("syn"), weightsDA: bytes("gnfd://aigg-brains/x.bin") });
     }
     function collection() internal returns (FlyCollection) {
-        return new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), baseF, bytes32(0), IRoyaltyMarket(address(0)), 0);
+        return new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), baseF, bytes32(0), IRoyaltyMarket(address(0)), 0, FlyCollection.Shares(address(0), 0, 0, address(0)));
     }
     function setUp() public {
         meps = new MEPRegistry(); baseF = meps.registerMEP(mep(BASE_F));

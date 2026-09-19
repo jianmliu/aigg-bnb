@@ -42,6 +42,7 @@ contract DeployTest is Test {
     /// the collection goes on top of a deployed mesh, from the published genesis file, and is listed by the curator
     function test_deploy_the_genesis_collection_and_list_it() public {
         vm.setEnv("CURATOR", vm.toString(DEFAULT_SENDER)); // what a real run has: the curator is whoever broadcasts, not this test contract
+        vm.setEnv("OWNER", vm.toString(DEFAULT_SENDER)); vm.setEnv("TREASURY", vm.toString(address(0x7EA)));      // and so is the owner
         DeployBNB.Deployed memory d = new DeployBNB().run();
         bytes32 baseMep = MEPRegistry(d.meps).registerMEP(IMEPRegistry.MEP({ modelId: keccak256("base"), schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V3, execKind: keccak256("aigg:exec:int-lif:v1"), neurons: 1, synapses: 1, synapseRoot: keccak256("s"), weightsDA: bytes("gnfd://b/o") }));
         vm.setEnv("MEPS", vm.toString(d.meps)); vm.setEnv("INSTANCES", vm.toString(d.instances)); vm.setEnv("MARKET", vm.toString(d.market)); vm.setEnv("WHITELIST", vm.toString(d.whitelist));
@@ -49,6 +50,10 @@ contract DeployTest is Test {
         (FlyCollection c, bool listed) = new DeployCollection().run();
         assertEq(c.GENESIS_SIZE(), 100); assertEq(c.GENESIS_ROOT(), 0x02d6d4d2941aef5844a9d017809e27be55a6d739aa83c0e2786038563adc4d78, "the root on-chain is the root of the published file");
         assertEq(c.MINT_PRICE(), 0.01 ether); assertEq(c.MINT_BOND(), 0.005 ether); assertEq(c.ROYALTY_BPS(), 1000); assertEq(address(c.MARKET()), d.market); assertEq(c.BASE_MEP_FEMALE(), baseMep);
+        // the mainnet revision's defaults: a tenth of the royalty to the base -- the treasury, until a base has a vendor of its own --
+        // 5% asked on resale, and an owner whose renderer draws the tokens on-chain from the first block
+        assertEq(c.BASE_SHARE_BPS(), 1000); assertEq(c.BASE_VENDOR(), address(0x7EA)); assertEq(c.TREASURY(), address(0x7EA)); assertEq(c.SALE_ROYALTY_BPS(), 500); assertEq(c.owner(), DEFAULT_SENDER);
+        assertTrue(address(c.renderer()) != address(0) && address(c.renderer()).code.length > 0, "the renderer is deployed and set");
         assertTrue(listed); (bool ok, address by) = CollectionWhitelist(d.whitelist).listed(baseMep); assertTrue(ok, "and its base brain is one of the system's"); assertEq(by, address(c));
     }
 }

@@ -15,7 +15,7 @@ const anvil = await H.startAnvil(8567); let browser; const stop = [];
 try {
   const dep = await H.deployMesh(anvil.rpc); const base = await H.registerSyntheticMep(dep, H.KEYS[0], { name: "base-female" });
   const W = H.clientsFor(dep, H.KEYS[1]); const PRICE = parseEther("0.1"), BOND = parseEther("0.05"); // harness UNIT is 0.05: one vote
-  const C = await H.deployCollection(dep, 0n, H.KEYS[0], { genesis: G, baseMepFemale: base.mepId, royaltyBps: 1000, mintPrice: PRICE, mintBond: BOND });
+  const C = await H.deployCollection(dep, 0n, H.KEYS[0], { genesis: G, baseMepFemale: base.mepId, royaltyBps: 1000, mintPrice: PRICE, mintBond: BOND, baseVendor: H.FLY_TREASURY, baseShareBps: 1000, saleRoyaltyBps: 500 }); // the mainnet revision's numbers
   const R = await H.startRelayer(dep, H.KEYS[3], [base.mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
   const fe = await startFrontend(0); stop.push(() => fe.server.close()); const prompts = [];
   const launch = { headless: true }; if (process.env.PW_CHROMIUM) launch.executablePath = process.env.PW_CHROMIUM;
@@ -58,7 +58,8 @@ try {
 
   const fee = await page.locator("#adoptFee").innerText();
   check("the price is shown as what it buys: 0.1 = 0.05 your bond + 0.05 treasury", /adoption\s*0\.1 BNB/.test(fee) && /your bond\s*0\.05 BNB/.test(fee) && /treasury\s*0\.05 BNB/.test(fee));
-  check("and the royalty as the collection's terms: 10%", /10% of every fee/.test(await page.locator("#owed").innerText()) && await page.isDisabled("#btnWithdraw"));
+  { const owed = await page.locator("#owed").innerText();
+    check(`and the royalty as what reaches the owner: 9% of every fee -- a 10% royalty less the base brain's tenth of it`, /^9% of every fee/.test(owed.trim()) && /a 10% royalty, of which 10% is the base brain/.test(owed) && await page.isDisabled("#btnWithdraw")); }
   await page.click("#btnGenesis");
   check("the page's genesis set is this collection's, and all hundred founders are open", await waitFor(() => page.evaluate(() => window.app.state.flies.genesis?.matches === true && window.app.state.flies.genesis.open.length === 100)));
   check("twelve are shown, each adoptable", (await page.locator("#adoptable .brain.listing").count()) === 12 && await page.isEnabled("#btnAdopt-0"));
