@@ -109,7 +109,7 @@ services:
       # the base's tenth of every royalty, ERC-2981 (500 bps), ERC-4906, owner() with one power, tokenURI drawn on-chain
       # (FlyRenderer 0x7126a022…f544) -- and a TreasuryRouter (0x1Bef7990…3708) as its immutable treasury. Testnet-scale
       # prices: adopt 0.01 (0.005 of it the adopter's own bond), breed 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps.
-      # The first deployment (0xE0a5a93C…7AA4) predates the revision; nobody adopted from it. The relayer names this one to
+      # The first deployment (0xE0a5a93C…7AA4) predates the revision; nobody adopted from it, and it is off the whitelist. The relayer names this one to
       # the page (the Flies view, the Paper view's acknowledgments) and hatches its eggs for the bounty; PORW_KEEPER=0 keeps
       # the first and drops the second.
       - key: PORW_COLLECTION
