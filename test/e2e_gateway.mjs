@@ -75,9 +75,14 @@ try {
   check("a call: 200, completed, settled on-chain by both providers", r1.status === 200 && j1.status === "completed" && rc.executors?.length === 2 && rc.executors.includes(A.addr) && rc.executors.includes(B.addr) && rc.finality === "settled");
   check("they ran the experiment it named: the state_0 root the gateway computed without the brain is the one they built", rc.init_state_root === H.hex(expected.result.initStateRoot) && rc.stimulated === 250 && rc.silence_ids.length === 6);
   check("the receipt's digest and root are the ones anybody recomputes", rc.exec_digest === H.hex(expected.result.execDigest) && rc.exec_root === H.hex(expected.result.execRoot) && (await D.market.read.settledDigest([j1.id])) === rc.exec_digest);
-  check("the response id is the task id, a token is one step by one provider (20 steps x 2), and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS * 2 && j1.usage.input_tokens === 0 && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
+  check("the response id is the task id, an output token is one step by one provider (20 steps x 2), and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS * 2 && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
   const b1 = { g: await bal(GW), a: await bal(A.addr), b: await bal(B.addr) };
   check(`the gateway paid the fee (${FEE} wei) and the providers split it`, b1.a - b0.a === FEE / 2n && b1.b - b0.b === FEE / 2n && b0.g - b1.g > FEE && b0.g - b1.g < FEE + parseEther("0.01") && BigInt(rc.fee_wei) === FEE);
+  // ---- the call's gas, as spent, billed as its input tokens at the same price per token: read both receipts back, redo the sum ----
+  { const r1 = await D.pub.getTransactionReceipt({ hash: rc.post_tx }), r2 = await D.pub.getTransactionReceipt({ hash: rc.settle_tx }); const wei = r1.gasUsed * r1.effectiveGasPrice + r2.gasUsed * r2.effectiveGasPrice;
+    check(`the call's gas (${Number(r1.gasUsed) + Number(r2.gasUsed)} gas, ${wei} wei) is its input tokens: wei / wei-per-step, rounded up`, rc.gas.wei === String(wei) && rc.gas.post_task === Number(r1.gasUsed) && rc.gas.settle === Number(r2.gasUsed)
+      && j1.usage.input_tokens === Number((wei + WEI - 1n) / WEI) && j1.usage.input_tokens >= 1 && j1.usage.total_tokens === j1.usage.input_tokens + j1.usage.output_tokens); }
+
   // ---- the readout: counts from the providers, served because they hash to the digest the task settled on ----
   { const want = expected.result.counts; const out = JSON.parse(j1.output[0].content[0].text); const sum = want.reduce((a, b) => a + b, 0);
     check(`the readout is the neurons it asked for, with the counts anybody recomputes (${out.readout.map((r) => r.id + ":" + r.spikes).join(", ")}; ${sum} spikes in all)`, out.readout.length === 3 && out.readout.find((r) => r.id === 40).spikes === 0 && out.readout.some((r) => r.spikes > 1) && out.readout.every((r) => r.spikes === want[r.id] && r.hz === Math.round(want[r.id] / (STEPS * 0.0001) * 100) / 100) && out.summary.total_spikes === sum && sum > 0 && out.summary.dt_ms === 0.1 && /^verified/.test(out.readout_status));
@@ -117,7 +122,7 @@ try {
     check("the output opens right after `created`: ai.gg holds preamble events and comments until then, and its caller's proxy would hang up", types[0] === "response.created" && types[1] === "response.output_item.added");
     const out = delta.length === 1 ? JSON.parse(delta[0].data.delta) : null;
     check("the answer is sent as a text delta: for a chat-completions caller ai.gg builds the text from deltas and nothing else", !!out && out.readout.length === 2 && /^verified/.test(out.readout_status) && types.indexOf("response.output_text.delta") < types.indexOf("response.completed"));
-    check("the terminal event carries the usage where ai.gg reads it, on a line it does not skip (>= 72 bytes)", last.type === "response.completed" && last.data.response.usage.output_tokens === STEPS * 2 && last.data.response.usage.input_tokens === 0 && last.line.length >= 72);
+    check("the terminal event carries the usage where ai.gg reads it, on a line it does not skip (>= 72 bytes)", last.type === "response.completed" && last.data.response.usage.output_tokens === STEPS * 2 && last.data.response.usage.input_tokens === last.data.response.receipt.gas.tokens && last.data.response.usage.input_tokens >= 1 && last.line.length >= 72);
     check("the seed and the steps came from the experiment, not from the fields ai.gg drops or floors", last.data.response.receipt.seed === 31 && last.data.response.receipt.steps === STEPS && last.data.response.receipt.executors.length === 2);
     const probe = await call("/responses", { model: "warm", input: [{ role: "user", content: [{ type: "input_text", text: "hi" }] }], stream: true, instructions: "x" }); // aigg-src's admin "test connection", verbatim
     check("ai.gg's admin \"test connection\" posts prose to /responses: a plain 400 -- never a 401, which would disable the account, and nothing spent", probe.status === 400 && (await probe.json()).error.type === "invalid_request_error"); }
@@ -130,7 +135,7 @@ try {
       && (await bad({ model: "warm", input: { silence: { ids: [NEURONS] } } })) === "400 invalid_request_error" && (await bad({ model: "warm", input: { readout: { ids: [NEURONS] } } })) === "400 invalid_request_error" && (await bad({ model: "warm", input: { stimulate: { set: "nose" } } })) === "400 invalid_request_error" && (await bal(GW)) === g); }
 
   { const poor = await H.startGateway(R, "0x" + "5e".repeat(32), { ...genv, GATEWAY_STATE: path.join(tmp, "poor.json") }); const r = await fetch(poor.url + "/v1/responses", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer test-bearer" }, body: JSON.stringify({ model: "warm", max_output_tokens: STEPS }) }); const j = await r.json(); await poor.stop();
-    check("a gateway whose float ran dry says so (503 gateway_unfunded), and warns at start that the relayer does not sponsor its tasks", r.status === 503 && j.error.type === "gateway_unfunded" && /is not in the relayer's PORW_TASK_CLIENTS/.test(poor.log())); }
+    check("a gateway whose float ran dry says so (503 gateway_unfunded, before a wei moves), and warns at start that the relayer does not sponsor its tasks", r.status === 503 && j.error.type === "gateway_unfunded" && /is not in the relayer's PORW_TASK_CLIENTS/.test(poor.log())); }
 
   // ---- a restart between postTask and settle ----
   { A.down(); B.down(); const q = await (await call("/v1/responses", { model: "warm", seed: 11, max_output_tokens: STEPS, background: true })).json();

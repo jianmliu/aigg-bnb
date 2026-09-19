@@ -59,7 +59,8 @@ struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStr
 | `stream: true` | progress events, and the keep-alive that carries a minutes-long call through a proxy |
 | the response `id` | `taskId` |
 | `system_fingerprint` | the scheme digest and the exec kind: what "the same model" means here |
-| `usage.output_tokens` | `steps × redundancy × runs` |
+| `usage.output_tokens` | `steps × redundancy × runs`: the work |
+| `usage.input_tokens` | the call's gas, as spent posting and settling it, in steps: `⌈gas wei / wei per step⌉` — a fixed cost per call |
 
 `seed`, `steps` and `redundancy` may also ride **inside the experiment**, and there they win — because behind ai.gg a caller
 of `/v1/chat/completions` has every top-level field it does not know dropped (`seed`), `max_tokens` floored at 128, and on
@@ -197,7 +198,12 @@ gateway pays nobody and keeps no ledger of what it owes: it sells balance and sp
 difference. That is also why none of `aigg-src`'s payout machinery (`provider_owner_user_id`, the withdrawal queue) is
 needed here.
 
-**Price.** `fee = steps × runs × redundancy × p(model)` = `output_tokens × p`, with `p` wei per step per provider. In `aigg-src` it is a row per model in
+**Price.** `fee = steps × runs × redundancy × p(model)` = `output_tokens × p`, with `p` wei per step per provider. The
+gas is a second, fixed cost — two transactions, ~0.33–0.48 M gas whatever the length — and for a short call it is the
+larger one (100 steps at redundancy 2 and 0.1 gwei/step is 0.00002 BNB of fee against ~0.00004 of gas). So it is billed
+too, as `input_tokens` worth the same `p` each: one price per token, input and output, and a call pays for what it
+cost. A call that fails is not billed, and its gas is the gateway's. The wallet is refused a call it could not finish:
+the fee plus the call's gas at the current price, twice over. In `aigg-src` it is a row per model in
 the channel pricing table — the resolver already puts channel prices ahead of every other source — in token mode with
 the output price set to `p` converted at the gateway's BNB rate, plus its margin. No code change.
 `billing_mode = "per_request"` exists too, for fixed-length products such as "one atlas row".

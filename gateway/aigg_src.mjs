@@ -9,8 +9,9 @@
 //              of steps), injects instructions, and turns the gateway's 503 model_cold / 504 no_result into a generic 502
 //   a CHANNEL  one pricing row for those names, platform "openai" (it defaults to anthropic, and then never matches), in USD
 //              per token, with restrict_models on: a model that is served but not priced would otherwise be billed at $0
-//   the PRICE  one output token = one step run by one provider, which is what the gateway pays wei_per_step for. So
-//              output_price = wei_per_step / 1e18 x AIGG_USD_PER_BNB x AIGG_MARGIN.
+//   the PRICE  one token = wei_per_step, of either kind: an output token is one step run by one provider (the fee), an input
+//              token the call's gas turned into steps (a fixed cost per call). So input_price = output_price =
+//              wei_per_step / 1e18 x AIGG_USD_PER_BNB x AIGG_MARGIN, and a short call pays for its transactions too.
 // A newly registered fly is a new model: run this again (or on a timer) and it appears in ai.gg's /v1/models, priced.
 //
 //   node gateway/aigg_src.mjs plan     what would be sent, secrets redacted. Reads the gateway; reads ai.gg if it can
@@ -35,7 +36,7 @@ if (!/^https:\/\//.test(GATEWAY)) console.error(`note: ${GATEWAY} is not https -
 const served = await (await fetch(LOCAL + "/v1/models", { headers: { authorization: "Bearer " + BEARER } })).json(); if (!Array.isArray(served.data)) { console.error("the gateway's /v1/models did not answer with a list:", JSON.stringify(served).slice(0, 200)); process.exit(1); }
 const names = [...new Set(served.data.flatMap((m) => [m.id, ...(m.aliases || [])]))].sort(); if (!names.length) { console.error("the gateway serves no model: nothing to register"); process.exit(1); }
 const weis = [...new Set(served.data.map((m) => m.wei_per_step))]; if (weis.length !== 1) { console.error("models with different wei_per_step need a pricing row each; this script writes one"); process.exit(1); }
-const outputPrice = Number((Number(BigInt(weis[0])) / 1e18 * usdPerBnb * margin).toPrecision(6)); // USD per token: one step by one provider
+const outputPrice = Number((Number(BigInt(weis[0])) / 1e18 * usdPerBnb * margin).toPrecision(6)); // USD per token, of either kind
 
 const group = { name: NAME, description: "fly brains on the PoRW mesh, through the flybnb gateway", platform: "openai", rate_multiplier: 1.0, subscription_type: "standard", is_exclusive: false, require_oauth_only: false };
 const account = (groupId) => ({ name: NAME + "-gateway", platform: "openai", type: "apikey", group_ids: [groupId], concurrency: Number(e.AIGG_CONCURRENCY || 8), priority: Number(e.AIGG_PRIORITY || 50), rate_multiplier: 1.0,
@@ -43,8 +44,8 @@ const account = (groupId) => ({ name: NAME + "-gateway", platform: "openai", typ
   // rules: the gateway's 503 (cold model) and 504 (refunded) are answers, and must never take the account out of rotation.
   credentials: { base_url: GATEWAY, api_key: BEARER, model_mapping: Object.fromEntries(names.map((n) => [n, n])), pool_mode: false, custom_error_codes_enabled: false, temp_unschedulable_enabled: false },
   extra: { openai_passthrough: true } });
-const channel = (groupId) => ({ name: NAME, description: "one output token = one step run by one provider", group_ids: [groupId], restrict_models: true, billing_model_source: "requested",
-  model_pricing: [{ platform: "openai", models: names, billing_mode: "token", input_price: 0, output_price: outputPrice, cache_read_price: 0 }] });
+const channel = (groupId) => ({ name: NAME, description: "output token = one step run by one provider; input token = the call's gas, in steps", group_ids: [groupId], restrict_models: true, billing_model_source: "requested",
+  model_pricing: [{ platform: "openai", models: names, billing_mode: "token", input_price: outputPrice, output_price: outputPrice, cache_read_price: 0 }] });
 const redact = (o) => JSON.parse(JSON.stringify(o, (k, v) => (k === "api_key" ? "<GATEWAY_BEARER>" : v)));
 
 console.log(`the gateway serves ${served.data.length} brain(s) under ${names.length} name(s); ${weis[0]} wei per step x ${usdPerBnb} USD/BNB x ${margin} = ${outputPrice} USD per token`);
@@ -66,8 +67,8 @@ const A = G ? items(await admin("GET", `/accounts?platform=openai&type=apikey&se
 const C = items(await admin("GET", "/channels?page_size=100")).find((c) => c.name === NAME);
 const wantA = account(G?.id ?? "<group id>"), wantC = channel(G?.id ?? "<group id>");
 // what would change: the names served, the price, base_url, the bearer (rotated?), passthrough
-const haveNames = A ? Object.keys(A.credentials?.model_mapping || {}).sort() : []; const havePrice = C?.model_pricing?.[0]?.output_price ?? null; const haveModels = (C?.model_pricing?.[0]?.models || []).slice().sort();
-const todo = { group: !G, account: !A ? "create" : (!same(haveNames, names) || A.credentials?.base_url !== GATEWAY || A.credentials?.api_key !== BEARER || A.extra?.openai_passthrough !== true) ? "update" : null, channel: !C ? "create" : (havePrice !== outputPrice || !same(haveModels, names) || C.restrict_models !== true) ? "update" : null };
+const haveNames = A ? Object.keys(A.credentials?.model_mapping || {}).sort() : []; const havePrice = C?.model_pricing?.[0]?.output_price ?? null; const haveIn = C?.model_pricing?.[0]?.input_price ?? null; const haveModels = (C?.model_pricing?.[0]?.models || []).slice().sort();
+const todo = { group: !G, account: !A ? "create" : (!same(haveNames, names) || A.credentials?.base_url !== GATEWAY || A.credentials?.api_key !== BEARER || A.extra?.openai_passthrough !== true) ? "update" : null, channel: !C ? "create" : (havePrice !== outputPrice || haveIn !== outputPrice || !same(haveModels, names) || C.restrict_models !== true) ? "update" : null };
 console.log(`\nai.gg at ${AIGG}: group ${G ? "#" + G.id : "MISSING"} · account ${A ? "#" + A.id + (todo.account ? " (differs)" : "") : "MISSING"} · channel ${C ? "#" + C.id + (todo.channel ? " (differs)" : "") : "MISSING"}`);
 if (A && !same(haveNames, names)) console.log(`  models: + ${names.filter((n) => !haveNames.includes(n)).join(", ") || "-"}   - ${haveNames.filter((n) => !names.includes(n)).join(", ") || "-"}`);
 if (C && havePrice !== outputPrice) console.log(`  price: ${havePrice} -> ${outputPrice} USD per token`);
