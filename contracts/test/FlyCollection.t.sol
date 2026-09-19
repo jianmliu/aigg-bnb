@@ -165,7 +165,7 @@ contract FlyCollectionTest is Test {
         // ERC721Metadata is name ^ symbol ^ tokenURI, and ERC-2981 is royaltyInfo: claimed because they are there (FlyCollectionRevision.t.sol)
         assertEq(bytes4(0x5b5e139f), bytes4(keccak256("name()")) ^ bytes4(keccak256("symbol()")) ^ bytes4(keccak256("tokenURI(uint256)")));
         assertEq(bytes4(0x2a55205a), bytes4(keccak256("royaltyInfo(uint256,uint256)")));
-        assertTrue(c.supportsInterface(0x5b5e139f), "ERC721Metadata"); assertTrue(c.supportsInterface(0x2a55205a), "ERC-2981"); assertFalse(c.supportsInterface(0xffffffff));
+        assertTrue(c.supportsInterface(0x5b5e139f), "ERC721Metadata"); assertTrue(c.supportsInterface(0x2a55205a), "ERC-2981"); assertTrue(c.supportsInterface(0x49064906), "ERC-4906"); assertFalse(c.supportsInterface(0xffffffff));
         assertFalse(c.supportsInterface(0xd9b67a26), "not ERC-1155");
     }
 

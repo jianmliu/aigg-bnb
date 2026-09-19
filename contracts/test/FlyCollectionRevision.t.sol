@@ -118,6 +118,17 @@ contract FlyCollectionRevisionTest is Test {
         vm.prank(alice); c.transferFrom(alice, bob, id); assertEq(c.ownerOf(id), bob);
     }
 
+    // ---- ERC-4906: a marketplace that cached "egg" is told when it is not one any more ----
+    event MetadataUpdate(uint256 _tokenId); event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
+    function test_a_hatch_a_registration_and_a_new_renderer_each_say_the_metadata_moved() public {
+        assertTrue(c.supportsInterface(0x49064906));
+        uint256 f = adopt(alice, 0, 0, DF); uint256 m = adopt(alice, 1, 1, DM);
+        vm.expectEmit(address(c)); emit MetadataUpdate(f); vm.prank(alice); c.register(f, DF, mep(keccak256("applied-f")));
+        vm.roll(100); vm.prank(alice); uint256 egg = c.breed{value: FEE}(f, m); vm.roll(102);
+        vm.expectEmit(address(c)); emit MetadataUpdate(egg); c.hatch(egg);
+        vm.expectEmit(address(c)); emit BatchMetadataUpdate(0, type(uint256).max); vm.prank(admin); c.setRenderer(art);
+    }
+
     // ---- string helpers (test only) ----
     function _starts(string memory s, string memory p) internal pure returns (bool) { bytes memory a = bytes(s); bytes memory b = bytes(p); if (a.length < b.length) return false; for (uint256 i = 0; i < b.length; i++) if (a[i] != b[i]) return false; return true; }
     function _after(string memory s, uint256 n) internal pure returns (bytes memory o) { bytes memory a = bytes(s); o = new bytes(a.length - n); for (uint256 i = 0; i < o.length; i++) o[i] = a[n + i]; }

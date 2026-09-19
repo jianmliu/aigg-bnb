@@ -114,6 +114,10 @@ contract FlyCollection {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnerProposed(address indexed proposed);
     event RendererSet(address indexed renderer);
+    // ERC-4906: a fly's metadata changes while it lives -- an egg hatches, a brain is registered, the renderer is replaced -- and a
+    // marketplace that cached "egg" shows an egg for ever unless it is told. These are the telling.
+    event MetadataUpdate(uint256 _tokenId);
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
     // ---- the owner: what a marketplace calls `owner()`, and the one thing it can do ----
     // Marketplaces let whoever `owner()` names edit the collection's page and set where a resale royalty is paid, so there
@@ -125,7 +129,7 @@ contract FlyCollection {
     /// @notice draws a token: name, attributes, picture. address(0): `tokenURI` is the empty string.
     ITokenRenderer public renderer;
     modifier onlyOwner() { require(msg.sender == owner, "owner"); _; }
-    function setRenderer(ITokenRenderer r) external onlyOwner { renderer = r; emit RendererSet(address(r)); }
+    function setRenderer(ITokenRenderer r) external onlyOwner { renderer = r; emit RendererSet(address(r)); emit BatchMetadataUpdate(0, type(uint256).max); }
     function proposeOwner(address next) external onlyOwner { proposedOwner = next; emit OwnerProposed(next); }
     function acceptOwner() external { require(msg.sender == proposedOwner, "proposed"); emit OwnershipTransferred(owner, msg.sender); owner = msg.sender; proposedOwner = address(0); }
     function renounceOwner() external onlyOwner { emit OwnershipTransferred(owner, address(0)); owner = address(0); proposedOwner = address(0); }
@@ -157,8 +161,8 @@ contract FlyCollection {
     }
     /// @notice ERC-2981. See SALE_ROYALTY_BPS: what is asked for, from whoever chooses to honour it.
     function royaltyInfo(uint256, uint256 salePrice) external view returns (address receiver, uint256 royaltyAmount) { return (TREASURY, salePrice * SALE_ROYALTY_BPS / 10000); }
-    // ERC-165, ERC-721, ERC721Metadata (0x5b5e139f = name ^ symbol ^ tokenURI) and ERC-2981 (0x2a55205a)
-    function supportsInterface(bytes4 i) external pure returns (bool) { return i == 0x01ffc9a7 || i == 0x80ac58cd || i == 0x5b5e139f || i == 0x2a55205a; }
+    // ERC-165, ERC-721, ERC721Metadata (0x5b5e139f = name ^ symbol ^ tokenURI), ERC-2981 (0x2a55205a) and ERC-4906 (0x49064906: events only)
+    function supportsInterface(bytes4 i) external pure returns (bool) { return i == 0x01ffc9a7 || i == 0x80ac58cd || i == 0x5b5e139f || i == 0x2a55205a || i == 0x49064906; }
 
     /// @notice who else is paid, and who `owner()` is -- one argument, because the constructor had sixteen already.
     ///         `baseVendor` / `baseShareBps`: BASE_VENDOR / BASE_SHARE_BPS. `saleRoyaltyBps`: SALE_ROYALTY_BPS. `owner`: may be zero.
@@ -268,7 +272,7 @@ contract FlyCollection {
         bytes32 h = blockhash(ind.seedBlock); require(h != bytes32(0), "expired");
         seed = keccak256(abi.encode(individuals[ind.parentA].deltaHash, individuals[ind.parentB].deltaHash, uint256(ind.parentA), uint256(ind.parentB), id, h));
         ind.seed = seed; ind.sex = uint8(uint256(seed) & 1);
-        emit Hatched(id, seed, ind.sex);
+        emit Hatched(id, seed, ind.sex); emit MetadataUpdate(id);
         if (HATCH_BOUNTY > 0) { (bool ok,) = msg.sender.call{value: HATCH_BOUNTY}(""); require(ok, "bounty"); } // after the state change: a re-entrant hatch finds nothing to hatch
     }
 
@@ -296,7 +300,7 @@ contract FlyCollection {
         if (ind.deltaHash == bytes32(0)) ind.deltaHash = deltaHash; else require(ind.deltaHash == deltaHash, "delta");
         mepId = _bindMEP(id, m);
         ind.modelId = m.modelId; ind.mepId = mepId;
-        emit Registered(id, mepId, m.modelId);
+        emit Registered(id, mepId, m.modelId); emit MetadataUpdate(id);
     }
 
     /// @dev The MEP this profile IS, registered here if nobody has yet. `MEPRegistry.registerMEP` is permissionless and
@@ -379,7 +383,7 @@ contract FlyCollection {
             else { Individual storage dam = A.baseModelId == ind.baseModelId ? A : B; require(x.parentA == dam.deltaHash && x.parentB == bytes32(0), "dam x base"); }
         }
         mepId = _bindMEP(id, m); ind.modelId = m.modelId; ind.mepId = mepId;
-        emit Registered(id, mepId, m.modelId);
+        emit Registered(id, mepId, m.modelId); emit MetadataUpdate(id);
     }
 
     function _may(uint256 id) internal view returns (bool) {
