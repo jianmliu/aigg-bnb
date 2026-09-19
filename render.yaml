@@ -125,8 +125,9 @@ services:
 
   # The gateway (gateway/gateway.mjs, docs/GATEWAY.md): an OpenAI-compatible API in front of the mesh, registered with ai.gg
   # as an upstream account (npm run gateway:aigg). It is its own service because it holds money -- every call's fee is paid
-  # from GATEWAY_KEY's wallet -- and the relayer's key never should. Created with `render services create`; the disk and
-  # the three secrets are added in the dashboard (the CLI does neither).
+  # from GATEWAY_KEY's wallet -- and the relayer's key never should. Created 2026-09-19 with `render services create` as
+  # srv-danacg942hec73dqnsig (https://aigg-bnb-gateway-testnet.onrender.com); the disk and the three secrets are added in
+  # the dashboard (the CLI does neither).
   - type: web
     name: aigg-bnb-gateway-testnet
     runtime: node
