@@ -4,6 +4,10 @@ FlyBnB is a whole-brain perturbation atlas of the fly, re-tested across individu
 
 | here | what |
 |---|---|
+| `battery/` | **the standard battery every individual gets**: 13 stimuli × 3 seeds, the output of all 1,303 descending neurons; how it is built from the annotations; its form as one batched task. It is what makes the atlas, the association analysis and the selection experiment one dataset |
+| `analysis/intlif.py` | the int-lif runner the battery uses: exact, 0.6 s per run (the reference takes 75 s), silence sets included. `--verify` holds it to the published digests and to the rule as written |
+| `analysis/run_battery.py`, `breeding_design.py`, `breeding_report.py` | the breeding pilot: founders, randomly mated offspring and two divergent selection lines in the collection's recipe format; midparent regression, realised heritability, tested correlated responses |
+| `results/breeding/` | the design, every run of 301 individuals under the battery (digest and descending-neuron spikes per run), and `heritability.{json,md}` |
 | `analysis/phenotype_variance.py` | the pilot: founders × stimulus seeds × stimuli, under a sparse int-lif runner. `--verify` checks the runner against the published reference digests first |
 | `analysis/phenotype_variance_report.py` | variance components and intraclass correlations → `results/pilot/variance.{json,md}` |
 | `analysis/groups_flywire783.json` | payload indices of the stimulus sets and readout groups (Johnston's organ A/B per side, the two gate neurons, DNge145, DNp12, the giant fibre, the 38 phase-locked cells) and the four direct gate connections |
@@ -20,9 +24,17 @@ The brains are not in the repository. They are identified by content address, an
 | payload | what | bytes | sha256 | `model_id` |
 |---|---|---|---|---|
 | `flywire-783-min5.bin` | FlyWire v783, connections of ≥ 5 synapses. The published wiring; on Greenfield as `gnfd://aigg-brains/flywire-fafb-v783-min5.bin` | 28,123,136 | `fd246cc2c0ac74e8928cf5b0012c5d4c48a0a03475595213b301f85f5fe4e1da` | `0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a` |
-| `flywire-783-min2.bin` | the same export at ≥ 2 synapses: the base individuals are laid out on, so that connections can cross the threshold of five in both directions | 77,074,432 | `10a9e16f08174e4c2421f64d10ee17466d39ff88847ba7ab0c1ef57c1a9022a5` | `0x53a7b48e9265bea68fbd3f3640eda751f8dd7742ac76ae6f9c69f1cddc528135` |
+| `flywire-783-min2.bin` | the same export at ≥ 2 synapses: the base individuals are laid out on, so that connections can cross the threshold of five in both directions; on Greenfield as `gnfd://aigg-brains/flywire-fafb-v783-min2.bin` | 77,074,432 | `10a9e16f08174e4c2421f64d10ee17466d39ff88847ba7ab0c1ef57c1a9022a5` | `0x53a7b48e9265bea68fbd3f3640eda751f8dd7742ac76ae6f9c69f1cddc528135` |
 
-Both come from the public FlyWire v783 release through `contracts/lib/aigg-porw/gpu/triton/demo/fly_brain/flywire_export.py`; its README describes the inputs. The payload's name is part of its bytes, so the content address is reproduced only with the same name: `--min-syn 5 --name flywire-fafb-v783-min5` and `--min-syn 2 --name flywire-fafb-v783-min2`.
+Both are served, public-read, by the Greenfield testnet storage provider `https://gnfd-testnet-sp2.bnbchain.org` (`/view/aigg-brains/<object>`); fetch either and check it before use, as the scripts do:
+
+```bash
+curl -O https://gnfd-testnet-sp2.bnbchain.org/view/aigg-brains/flywire-fafb-v783-min2.bin && shasum -a 256 flywire-fafb-v783-min2.bin
+```
+
+The min2 object was fetched back on 2026-09-18 and verified: 77,074,432 bytes, the sha256 above, and `model_id` `0x53a7b48e…` recomputed over its tiles (`js/greenfield.js: fetchVerified`). A testnet is not an archive; the content addresses are what identify the brains, wherever the bytes come from.
+
+Both can also be rebuilt from the public FlyWire v783 release through `contracts/lib/aigg-porw/gpu/triton/demo/fly_brain/flywire_export.py`; its README describes the inputs. The payload's name is part of its bytes, so the content address is reproduced only with the same name: `--min-syn 5 --name flywire-fafb-v783-min5` and `--min-syn 2 --name flywire-fafb-v783-min2`.
 
 ```bash
 python flybnb/analysis/phenotype_variance.py --verify --min5 flywire-783-min5.bin
@@ -37,6 +49,22 @@ python flybnb/analysis/phenotype_variance_report.py
 ```
 
 The first reproduces the two published digests (`0x8614eda1…`, `0x017258be…`) in a few seconds each. The second is about 40 minutes on eight cores and is deterministic: a second pass reproduced the first field for field, and every digest in `results/pilot/runs.jsonl` is what you should get. The third rewrites `results/pilot/variance.*` from `results/pilot/runs.jsonl`; it reproduces the committed `variance.json` byte for byte.
+
+## Reproducing the breeding pilot
+
+```bash
+python flybnb/analysis/intlif.py --verify --min5 flywire-783-min5.bin
+```
+
+```bash
+python flybnb/analysis/run_battery.py --base flywire-783-min2.bin --individuals flybnb/results/breeding/design.json --out rows.jsonl --workers 8
+```
+
+```bash
+python flybnb/analysis/breeding_report.py --rows rows.jsonl
+```
+
+The second is about 100 minutes on eight cores (301 individuals × 39 runs) and deterministic; the committed `results/breeding/rows.jsonl` has every digest. `breeding_design.py` rebuilds `design.json` from the variance pilot's rows: who is crossed with whom is decided by the founders' measured phenotype and fixed seeds, nothing else.
 
 ## Building the dataset
 

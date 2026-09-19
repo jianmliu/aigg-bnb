@@ -28,7 +28,7 @@ the chain and follows mints and transfers.
 | `contracts/src/LineageRegistry.sol` | **who a derived brain is, provably**: bases proven from their first tile; `register(delta, model_id)` with a bond and a challenge window; one-record and static-byte challenges through aigg-porw's `FlyDeltaRecordVerifier`; finalization generation by generation. `FlyCollection.registerDerived` accepts only final registrations and, for bred tokens, only the recipe the contract recorded |
 | `relayer/` | **the relayer service**: stage-1 relay hub + epoch aggregator (one root per MEP per epoch) + commit-reveal beacon participant / epoch roller + gas-sponsoring transaction submitter for bonded instances (`delegateBySig`, `materializeClaim`, `submitResult`, `settle`) with a small HTTP API |
 | `frontend/` | **flybnb — the page** (Vite + React). A bed & breakfast for fly brains, organised on BNB Chain: a brain is a *listing*, whoever holds it resident is its *host* and posts a deposit (the bond), and a scientist *books* an experiment on it. Three views — **Brains** (the listings, each with a portrait drawn from its `model_id`; what hosting and owning pay today, and what they do not yet; the booking card), **Host** (deposit → house key → move a brain in → open the doors) and **Flies** (the colony and breeding). Underneath it is the node page it always was: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
-| `test/` | end-to-end on a local anvil: `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
+| `test/` | end-to-end on a local anvil: `e2e_batch.mjs` (one task, many runs: posted, executed by two live nodes, settled, a row re-executed by the client; then a lie in one run bisected to on-chain and convicted); `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
 
 ## Layering (short version)
@@ -202,6 +202,45 @@ Not on this deployment: MEP terms (royalties) and batched tasks, which reached `
 the contracts were being deployed. They are additive -- a royalty-free MEP keeps its id, the silence flag acts only
 when a task carries one -- so the `f04411b` runtime serves this deployment unchanged; using them needs one more
 redeploy.
+
+### Live run record — 2026-09-18, scheme v3, against the hosted relayer
+
+`test/live_bsc.mjs` with the real FlyWire brain against the deployment above and the relayer **on Render**
+(`aigg-bnb-relayer-testnet.onrender.com`, built from `main` at `7a7a705`, runtime aigg-porw `f04411b`, lazy beacon) --
+the first run in which the relayer was somebody else's machine, reached over TLS and a WebSocket through a proxy,
+rather than a process next to the instance. Instance and client were one wallet (the deployer); the relayer was its
+own account, funded with 0.3 tBNB an hour earlier. Gas price 0.1 gwei. Evidence: `tasks/live-bsc-20260918-v3.json`;
+every receipt below was read back from the chain.
+
+| step | epoch | who | tx | gas |
+|---|---|---|---|---|
+| bond 0.05 BNB for the v3 MEP (10 votes at UNIT 0.005) | 659206 | instance wallet | `0x2b937dbdd4fa58aaa13d6073912ee5989f699217d2f2898632c8c9c527f6a9c4` | 116,224 |
+| `/wake`, then `delegateBySig` (session key, EIP-712) | 659206 | relayer, sponsored | `0x3690b0b52892e990e7a2e9aba66b6a87b93b888d321d5755e805d9f9b07e4730` | 54,989 |
+| beacon commit / reveal / `rollEpoch` for 659207 | 659206–7 | relayer | `0xa1521ec8…` / `0xacef82cb…` / `0x51cb95d2…` | 115,223 / 100,408 / 52,342 |
+| claim for 659207 announced over the relay | 659207 | instance | claimHash `0xabc17e35ce…` | — |
+| beacon commit / reveal / `rollEpoch` for 659208 | 659207–8 | relayer | `0x25514595…` / `0x5dc50d82…` / `0xd99d5358…` | 115,235 / 100,408 / 52,342 |
+| `postEpochRoot(659207)`: 1 claim, 1 MEP, one root for the epoch | 659208 | relayer | `0x486813a6d236aa003c28404ac93667cef8aaf5878ae039382138c8e041cc42db` | 71,842 |
+| `materializeClaim(659207)` with the relayer's inclusion proof | 659208 | relayer, sponsored | `0x797f6f91e30475af802f1a63673c4c7ea7f3ec0affe5238b5cc026683ac772da` | **112,008** |
+| `postTask` (fee 0.001 BNB, 100 steps, stride 10, redundancy 1) | 659208 | client | `0xb95ee30efa0face3dfdebe980bd38eec4ffa4ba4058af8038f925a39d95d8386` | 197,267 |
+| `submitResult` (EIP-712, session key) | 659208 | relayer, sponsored | `0xd6c009221674fdd8a4ece302dc68662f94d18cc3de307314d6fb7f9bb6c496a2` | 155,505 |
+| `settle` → fee paid to the instance | 659208 | relayer, sponsored | `0x2a4811026d7bd341e67f3f8f35b05ee13f4353554c44a47f97939e6ccd74e875` | 126,058 |
+
+Afterwards: `hasValidClaim(instance, MEP, 659207) == true`; three `TaskMarket` events (posted, submitted, settled);
+the relayer had spent 0.0002 tBNB in all.
+
+**What it shows.** The cold start is still exactly two epochs -- woken in 659206, beacon and claim in 659207, root,
+materialization, task and settlement all in 659208 -- but an epoch here is 200 blocks and the testnet now makes a block
+in about 0.45 s, so `delegateBySig` to `settle` was **473 blocks, 3.5 minutes** (10.3 in the run below).
+`materializeClaim` is **112,008 gas where it was 284,571**: a claim on-chain is one storage word now, and the root
+covers every MEP of the epoch. And the two things the second run could not exercise were exercised: the relay hub and
+the API on one port behind a proxy (`PORW_RELAY_PATH`), and the address browsers are told (`PORW_PUBLIC_RELAY_URL`).
+An instance held a WebSocket through Render's proxy across two idle epoch boundaries and was still there for the task.
+
+**What it found.** The relayer's `/status.errors` held nine `beacon.commit(…) reverted: committed` over three epochs.
+Its tick fires every 2 s and waits for receipts that take longer, so a second tick reaches the commit branch before the
+first has stored its secret, and queues the same commit again; the send queue runs it after the first is mined and its
+gas estimate reverts. Nothing was spent and every epoch got its beacon, but it is the same overlap the page's node loop
+had, and `rollEpoch` and `postEpochRoot` sit behind the same interval.
 
 ### Live run record — 2026-09-17, BSC testnet (chain 97)
 

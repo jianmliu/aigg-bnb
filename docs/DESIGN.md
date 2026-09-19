@@ -109,7 +109,16 @@ posted, which also makes it a fact about the task instead of a live view; a task
 Agreement between results is on the execution root only. The digest is not bound to the root by anything the chain can
 check, and a digest-only disagreement used to be won by whoever revealed first; now it is no dispute, and a task
 endorses the digest a strict majority of its paid executors gave, or none (`settledDigest`, and `TaskSettled`, can be
-zero). The relayer and the page do not speak batches yet.
+zero).
+
+Batches run end to end (`test/e2e_batch.mjs`, two live nodes on anvil): a client computes the runs root
+(`PorwNode.batchRunsRoot`), posts with `postBatch`, announces one `batch-announce` (id sets named once, runs referring
+to them), and the executors' one signed result goes through the relayer's `/tx/result` like any other, because a
+batch result is still one `(execDigest, execRoot)`. The reply carries every run's root: those are the dataset's rows,
+and a client checks any of them against the settled root and by re-executing it. A lie in one run is bisected to that
+run on-chain (about 84,000 gas a round, 76,000 to open it) and is then the ordinary dispute. The page's node serves
+batches too: its worker runs the same `NodeService`. What sizes a batch is the task timeout, since an executor runs its
+runs one after another.
 
 ## 5b. Relayer and frontend (implemented)
 

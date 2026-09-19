@@ -6,6 +6,8 @@
 | part | state |
 |---|---|
 | pilot (Section 3) | 100 founders × 10 seeds, analysed |
+| breeding pilot (Section 3a) | 100 founders, 200 offspring, 674 phenotypes |
+| standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |
 | silencing and activation atlas | planned |
 | dataset on the Hugging Face Hub | prepared, not public |
 | acknowledgments (Appendix A) | no deployment read yet |
@@ -13,7 +15,7 @@
 
 ## Abstract
 
-Whole-brain simulations built on the fly connectome make predictions of the form "silence this cell type and that behaviour disappears". Every such prediction rests on one brain: one female (FlyWire) and one male (MaleCNS). Synapse counts between the same pair of cell types differ between brains and between the two hemispheres of one brain, so a prediction carried by a handful of connections may or may not survive in another animal, and no published simulation says which. FlyBnB is a dataset built to say which. It silences and activates every annotated cell type under a battery of sensory stimuli, records the output of all descending neurons, and repeats every result in one hundred synthetic individuals whose wiring varies as much as the two hemispheres of a real brain do. The execution semantics are integer and bit-exact, so each row of the dataset carries a digest that anybody can recompute; rows are executed redundantly on a peer-to-peer network of browser nodes and settled on BNB Chain, with a fraud proof for a wrong result. The individuals are hosted by the people who hold them, and the dataset acknowledges them (Appendix A). This draft reports the pilot that the programme depends on: whether calibrated wiring variability moves a circuit phenotype by more than the assay's own noise.
+Whole-brain simulations built on the fly connectome make predictions of the form "silence this cell type and that behaviour disappears". Every such prediction rests on one brain: one female (FlyWire) and one male (MaleCNS). Synapse counts between the same pair of cell types differ between brains and between the two hemispheres of one brain, so a prediction carried by a handful of connections may or may not survive in another animal, and no published simulation says which. FlyBnB is a dataset built to say which. It silences and activates every annotated cell type under a battery of sensory stimuli, records the output of all descending neurons, and repeats every result in one hundred synthetic individuals whose wiring varies as much as the two hemispheres of a real brain do. The execution semantics are integer and bit-exact, so each row of the dataset carries a digest that anybody can recompute; rows are executed redundantly on a peer-to-peer network of browser nodes and settled on BNB Chain, with a fraud proof for a wrong result. The individuals are hosted by the people who hold them, and the dataset acknowledges them (Appendix A). This draft reports the two pilots that the programme depends on: whether calibrated wiring variability moves a circuit phenotype by more than the assay's own noise, and whether a phenotype is transmitted by the collection's cross so that selection can move it.
 
 ## 1. Introduction
 
@@ -70,6 +72,45 @@ The atlas is only worth building if calibrated wiring variability moves a phenot
 <!-- END GENERATED: pilot -->
 
 What the pilot does not show. It says nothing about narrow-sense heritability under the cross, which needs parent-offspring pairs. It covers two stimuli and one sex. And the variability it applies is a model: every connection is redrawn independently, whereas real differences between animals are probably correlated along a neuron and a lineage; the left-right and female-male comparisons of Section 5 are there to test that.
+
+## 3a. Breeding pilot: is a phenotype transmitted, and does selection move it?
+
+Every individual gets the same **standard battery** (`flybnb/battery/`): 13 sensory stimuli × 3 seeds, the output of all 1,303 descending neurons. That is what makes the perturbation atlas, an association analysis over wiring, and a selection experiment three readings of one table. The third has the most to prove, so it was piloted first.
+
+The assay is deterministic: for fixed seeds a phenotype is a function of the wiring and of nothing else, so all of its variance between individuals is genetic. What is not given is how much of it a parent passes on. Under the collection's cross an offspring takes each connection from one parent or the other, and then one connection in eight is redrawn around the base. An additive phenotype therefore regresses on the midparent with slope 7/8 = 0.875; that is an expectation for additive phenotypes and not a bound. A slope well below it means that part of the phenotype lives in interactions between connections, which recombination breaks up.
+
+<!-- BEGIN GENERATED: breeding -->
+**Design.** 100 founders, 100 randomly mated offspring, and 50 + 50 offspring of two divergent selection lines; every individual under the full battery (39 runs). 674 phenotypes: named cell types, per-stimulus totals, and every descending cell type that is active in at least half of the founders.
+
+**Phenotypes are transmitted.** The midparent regression slope, the narrow-sense heritability under this cross, has median 0.67 (quartiles 0.55 to 0.80); 82% of phenotypes are above 0.5. Against the additive expectation of 0.875 (slope ± 2 SE): 248 phenotypes are clearly below it, 422 are consistent with it, 4 clearly above. So for about 37% of phenotypes a measurable part lives in interactions between connections, which recombination breaks up.
+
+**Selection works, in one generation.** Selected trait: DNge145 | sound (founder mean 9.55). The high line's parents were 8.89 above the mean and their offspring 7.01 above it; the low line's parents 7.18 below and their offspring 5.43 below. Realised heritability 0.77 (high 0.79, low 0.76); the midparent regression gives 1.06 ± 0.12. The two lines end 2.09 founder standard deviations apart.
+
+**What else moved.** Of 674 phenotypes, 14 differ between the two lines at a false discovery rate of 0.05, and 10 of those are not DNge145 phenotypes: DNg24 | sound (-0.99 SD); DNge041 | head_bristle (-0.83 SD); DNg38 | sugar (+0.75 SD); DNp35 | sound (-0.75 SD); DNpe020 | eye_bristle (-0.67 SD); DNg35 | eye_bristle (-0.64 SD). Selection on one response is mostly specific, and not entirely. The one trade-off that matters here is inside the selected circuit: the line bred for a strong response to sound also leaks more through the gate (DNge145 under `sound_gate`: 6.45 against 0.93).
+
+| phenotype | founder mean ± SD | h² (midparent slope ± SE) | high line | low line | high − low, in founder SDs |
+|---|---|---|---|---|---|
+| DNge145 | sound | 9.55 ± 5.95 | 1.06 ± 0.12 | 16.55 | 4.12 | +2.09 |
+| DNge145 | sound_gate | 3.02 ± 3.27 | 1.02 ± 0.11 | 6.45 | 0.93 | +1.69 |
+| gate suppression of DNge145 (sound - sound_gate) | 6.53 ± 3.80 | 0.94 ± 0.13 | 10.10 | 3.19 | +1.82 |
+| giant fibre | sound | 20.30 ± 6.41 | 0.57 ± 0.13 | 19.37 | 19.89 | -0.08 |
+| DNp12 | sound | 21.17 ± 10.78 | 0.82 ± 0.12 | 23.13 | 17.87 | +0.49 |
+| descending spikes, all | sound | 251.79 ± 50.54 | 0.69 ± 0.11 | 240.48 | 258.39 | -0.35 |
+| descending spikes, all | sound_left | 124.98 ± 35.45 | 0.35 ± 0.09 | 123.91 | 119.33 | +0.13 |
+| descending spikes, all | sound_gate | 212.76 ± 50.84 | 0.66 ± 0.15 | 195.58 | 206.52 | -0.22 |
+| descending spikes, all | wind | 771.73 ± 415.71 | 0.34 ± 0.11 | 715.40 | 970.61 | -0.61 |
+| descending spikes, all | sugar | 1744.91 ± 447.14 | 0.54 ± 0.11 | 1762.97 | 1605.57 | +0.35 |
+| descending spikes, all | bitter | 310.28 ± 529.57 | 0.44 ± 0.09 | 285.11 | 300.28 | -0.03 |
+| descending spikes, all | taste_peg | 532.29 ± 448.73 | 0.68 ± 0.12 | 508.43 | 503.87 | +0.01 |
+| descending spikes, all | head_bristle | 4084.33 ± 405.70 | 0.29 ± 0.12 | 4016.03 | 4157.74 | -0.35 |
+| descending spikes, all | eye_bristle | 1318.08 ± 245.70 | 0.28 ± 0.11 | 1261.56 | 1367.51 | -0.43 |
+| descending spikes, all | ocelli | 397.29 ± 46.00 | 0.81 ± 0.13 | 416.77 | 395.77 | +0.46 |
+| descending spikes, all | moist | 1245.34 ± 791.63 | 0.79 ± 0.15 | 1435.25 | 1215.23 | +0.28 |
+| descending spikes, all | pheromone | 2914.71 ± 290.64 | 0.81 ± 0.12 | 2931.90 | 2908.31 | +0.08 |
+| descending spikes, all | cold | 2695.76 ± 339.98 | 0.78 ± 0.12 | 2745.14 | 2691.51 | +0.16 |
+<!-- END GENERATED: breeding -->
+
+What this does not show. The cross is a model of inheritance over connections, not the genetics of a fly: a real animal inherits developmental programs, not synapse counts. What the pilot measures is the shape of the phenotype landscape around a real connectome under a recombination that the collection's contracts can verify. One generation is not a selection experiment; whether the response continues, plateaus, or costs other behaviours is what further generations are for.
 
 ## 4. The dataset
 
