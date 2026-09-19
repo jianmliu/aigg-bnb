@@ -1,7 +1,7 @@
 # The gateway: a brain behind an inference API
 
 Status: design, 2026-09-19. Nothing here is built. Where a statement is about code that exists it names the file;
-where it is a proposal it says so. Three things are marked **to decide** and one **to verify**.
+where it is a proposal it says so. §8 records what was decided on 2026-09-19, and what is still open.
 
 ## 0. The analogy, and where it stops
 
@@ -220,8 +220,12 @@ is **not built**:
 **Proposal (FlyCollection, before mainnet — the collection is immutable):** the forwarded royalty is split once, in
 `_settle`: `BASE_SHARE_BPS` of it to the base's vendor, the rest to the owner. One level, fixed at deployment, no
 recursion — a chain of cuts up a pedigree is a tax that grows with every generation, and it would make a bred fly worth
-less than a founder. Stated plainly in the terms the page shows: *of every fee, 10% is the royalty; of the royalty,
-x% is the base vendor's*. This belongs in the same revision as ERC-2981, `owner()` and `tokenURI`.
+less than a founder. **Decided: `BASE_SHARE_BPS = 1000`, and until a base has a vendor of its own the vendor is the
+collection's `TREASURY`.** Stated plainly in the terms the page shows: *of every fee, 10% is the royalty; of the
+royalty, 10% is the base's and 90% the owner's* — on a fee of 1, the hosts share 0.90, the owner gets 0.09 and the
+base 0.01. The recipient is a constructor argument (`BASE_VENDOR`, defaulting to `TREASURY`), not a constant: FlyWire's
+vendor is the treasury for now, another base's need not be. This belongs in the same revision as ERC-2981, `owner()`
+and `tokenURI`.
 
 So a vendor has two levers on the same model family: **collect** (its share of every descendant's royalty) and
 **subsidise** (pay for calls to grow usage). Both are visible, and the second can be funded by the first.
@@ -243,8 +247,9 @@ So a vendor has two levers on the same model family: **collect** (its share of e
 first-class field, and the subsidy debit, without the fiction of being an OpenAI account. About the size of
 `p2papi_runtime_service.go`.
 
-The adapter's key is a platform-owned wallet, not a user's secret, so it does not have to live in the TEE. Putting it
-there anyway is cheap and means the operator cannot spend the fee wallet either — **to decide**.
+The adapter's key is a platform-owned wallet, not a user's secret, so it does not have to live in the TEE, and
+(decided) it does not: it is an environment secret of the adapter, like the relayer's. What bounds the damage of a
+leaked key is that the wallet is a float, topped up from a treasury that is not online, never the treasury itself.
 
 ## 6. The adapter
 
@@ -278,11 +283,23 @@ out whose digest the test recomputes; then the failure rows of §3, one by one.
 | M5 | `BASE_SHARE_BPS`, with ERC-2981 / `owner()` / `tokenURI`, in the mainnet collection | aigg-bnb |
 | M6 | `PlatformMEP` | aigg-src |
 
-## 8. To decide, and to verify
+## 8. Decided, open, and to verify
 
-- **Redundancy and price.** The default `min_redundancy` (2 is the first value that means anything) and `p(model)`.
-  At the testnet's numbers a 5,000-step call at redundancy 2 and 0.001 tBNB is what `post_tasks.mjs` already pays.
-- **The fee wallet**: in the TEE or not (§5).
-- **`BASE_SHARE_BPS`**, and who the base's vendor is for FlyWire-derived brains (§4.1).
-- **To verify:** that a production `aigg-src` deployment keeps `security.url_allowlist` off or lists the adapter's
-  host, and that nothing in front of it (nginx, Cloudflare) cuts a stream shorter than the 180 s the gateway allows.
+Decided, 2026-09-19:
+
+- **`min_redundancy` defaults to 2** — the first value at which a result is something two providers agreed on. A
+  model with fewer than two eligible hosts is `503 model_cold` (§3); a caller may ask for more, never for less.
+- **The fee wallet is not in the TEE** (§5).
+- **`BASE_SHARE_BPS = 1000`** — 10% of the royalty, which at a 10% royalty is 1% of the fee — **to the collection's
+  treasury** until a base has a vendor of its own (§4.1).
+
+Open:
+
+- **`p(model)`, the price of a step.** The testnet's working number is what `post_tasks.mjs` already pays: 0.001 tBNB
+  for 5,000 steps at redundancy 2, i.e. 0.1 gwei per step per executor. The mainnet number wants a measurement first:
+  what a host's tab costs to keep a brain resident, against how often sortition draws it.
+
+To verify:
+
+- that a production `aigg-src` deployment keeps `security.url_allowlist` off or lists the adapter's host, and that
+  nothing in front of it (nginx, Cloudflare) cuts a stream shorter than the 180 s the gateway allows.
