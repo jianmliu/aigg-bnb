@@ -90,6 +90,23 @@ contract FlyCollectionRoyaltyTest is Test {
         assertEq(c.tokenOfMep(mepId), 1);
     }
 
+    function test_the_whitelist_is_the_bases_and_the_collections_own_flies_bred_ones_included() public {
+        bytes32 baseF = meps.registerMEP(mep(BASE_F));
+        FlyCollection w = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), baseF, bytes32(0), IRoyaltyMarket(address(market)), BPS);
+        assertTrue(w.listed(baseF), "a base brain"); assertFalse(w.listed(bytes32(0)), "the unset male base is not a wildcard");
+        vm.startPrank(alice);
+        uint256 f = w.mint{value: PRICE}(0, 0, DF, proofFor(0)); uint256 m = w.mint{value: PRICE}(1, 1, DM, proofFor(1));
+        bytes32 mepF = w.register(f, DF, mep(keccak256("applied-f"))); w.register(m, DM, mep(keccak256("applied-m")));
+        assertTrue(w.listed(mepF), "an adopted fly, once registered");
+        // somebody registers the same bytes on their own, without terms: a real MEP, and not one of the system's
+        bytes32 twin = meps.registerMEP(mep(keccak256("applied-f"))); assertTrue(meps.exists(twin)); assertFalse(w.listed(twin), "not in the collection, so not listed");
+        // a bred fly needs nobody's approval: it is a token of the collection, so registering it lists it
+        uint256 kid = w.breed{value: FEE}(f, m); vm.roll(block.number + 2); vm.stopPrank();
+        vm.prank(bob); w.hatch(kid);
+        vm.prank(alice); bytes32 mepKid = w.register(kid, keccak256("delta-kid"), mep(keccak256("applied-kid")));
+        assertTrue(w.listed(mepKid), "bred, hatched, registered: listed");
+    }
+
     function test_only_the_market_may_pay_the_collection() public {
         (bool ok,) = address(c).call{value: 1 ether}(""); assertFalse(ok, "stray ether would be nobody's");
     }

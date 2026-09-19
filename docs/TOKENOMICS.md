@@ -430,9 +430,12 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
    transfer settles to the seller first, `withdraw()` is the owner's own call. So there is no royalty before adoption
    (an unadopted individual has no MEP, and the base brains are plain profiles), it starts when the owner registers
    the brain, and a sale needs no address update because the address on-chain never was the owner's. What is left to
-   decide is the number: `ROYALTY_BPS` is immutable and inside every id, and upstream's bound applies -- a royalty-free
-   twin of the same bytes is one call away, so the rate has to cost a client less than standing up that twin's
-   executors would.
+   decide is the number: `ROYALTY_BPS` is immutable and inside every id. It does not have to be priced against a
+   royalty-free copy of the same bytes. The MEP registry is permissionless, so such a copy can always be registered --
+   but the system has a **whitelist**, `FlyCollection.listed(mepId)`: the two base brains and every brain bound to a
+   token of the collection. A bred fly is a token like any other, so it is listed automatically when its owner registers
+   it; a MEP somebody registered on their own is not, and then the page does not show it, the relayer does not
+   aggregate claims or sponsor gas for it, and the dataset does not count what is run against it.
 5. ~~Who exports the male base, and when.~~ Done: aigg-porw PR #11 (`malecns_export.py`, Janelia MaleCNS v1.0 as
    `FLYBRAINv2`; `min5` 6.24 M records / 63.8 MB, `min1` 25.58 M / 257 MB). One thing it raises for §4: the exec kind
    pins a single weight unit calibrated on FlyWire counts, and this dataset reports more synapses per connection, so

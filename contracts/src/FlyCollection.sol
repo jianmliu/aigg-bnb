@@ -268,8 +268,9 @@ contract FlyCollection {
         require(m.schemeDigest == SCHEME_SKETCH_TILE_KECCAK_V3, "scheme");
         mepId = PorwMeshHash.mepId(m.schemeDigest, m.modelId, m.execKind, m.neurons, m.synapses, m.synapseRoot);
         // Under a royalty the individual IS the profile under this collection's terms -- another id, because the terms
-        // are inside it. Anybody may run the royalty-free twin of the same bytes; what they cannot do is have it be
-        // this fly (aigg-porw MEPRegistry, registerMEPWithTerms: price the royalty below what standing up the twin costs).
+        // are inside it. The registry is permissionless, so anybody may register the same bytes without terms; that MEP
+        // is simply not this fly and not LISTED (below): the page does not show it, the relayer does not aggregate or
+        // sponsor for it, the dataset does not count it. The royalty does not have to be priced against it.
         if (ROYALTY_BPS > 0) mepId = PorwMeshHash.mepIdWithTerms(mepId, address(this), ROYALTY_BPS);
         // One MEP pays one fly. Under the lineage registry a token can only reach the MEP of its own delta, so this
         // never fires for an honest one; under the legacy `register` it is what stops a second token from naming a
@@ -277,6 +278,17 @@ contract FlyCollection {
         require(tokenOfMep[mepId] == 0, "mep taken"); tokenOfMep[mepId] = id;
         if (IMEPExists(address(MEPS)).exists(mepId)) emit WeightsHint(id, mepId, m.weightsDA);
         else require((ROYALTY_BPS > 0 ? IMEPTerms(address(MEPS)).registerMEPWithTerms(m, address(this), ROYALTY_BPS) : MEPS.registerMEP(m)) == mepId, "mep id");
+    }
+
+    // ---- the whitelist ----
+    /// @notice Is this MEP one of the system's? The two base brains, and every brain bound to a token of this
+    ///         collection -- adopted or bred, it makes no difference: a bred fly is a token like any other, so it is
+    ///         listed the moment its owner registers it, with nobody's approval. What somebody registers on the MEP
+    ///         registry by themselves is not: the registry is permissionless and has to be, but being in it confers
+    ///         nothing here. This is the one question the page, the relayer and the dataset ask before they list,
+    ///         serve or count a brain, and it is answered on-chain so that they cannot disagree.
+    function listed(bytes32 mepId) external view returns (bool) {
+        return mepId != bytes32(0) && (mepId == BASE_MEP_FEMALE || mepId == BASE_MEP_MALE || tokenOfMep[mepId] != 0);
     }
 
     // ---- the royalty: set aside by TaskMarket under the MEP's terms, forwarded here to whoever owns the fly ----
