@@ -5,6 +5,8 @@ FlyBnB is a whole-brain perturbation atlas of the fly, re-tested across individu
 | here | what |
 |---|---|
 | `battery/` | **the standard battery every individual gets**: 13 stimuli × 3 seeds, the output of all 1,303 descending neurons; how it is built from the annotations; its form as one batched task. It is what makes the atlas, the association analysis and the selection experiment one dataset |
+| `male/` | **the male brain's line** (MaleCNS v1.0): how its counts compare with FlyWire's (`count_scale.py`), which weight unit puts it in the same regime (`unit_scan.py` → 7209), its own variability model (`lr_conditional.py`, `founder_density.py`), and its battery (`build_battery.py` → `battery/battery-male-v1.json`). Results in `results/male/` |
+| `analysis/battery_variance_report.py` | how much of a battery phenotype belongs to the individual: ignition rates and single-run ICCs from battery rows, the same script for either brain → `results/variance/` |
 | `analysis/intlif.py` | the int-lif runner the battery uses: exact, 0.6 s per run (the reference takes 75 s), silence sets included. `--verify` holds it to the published digests and to the rule as written |
 | `analysis/run_battery.py`, `breeding_design.py`, `breeding_report.py` | the breeding pilot: founders, randomly mated offspring and two divergent selection lines in the collection's recipe format; midparent regression, realised heritability, tested correlated responses |
 | `results/breeding/` | the design, every run of 301 individuals under the battery (digest and descending-neuron spikes per run), and `heritability.{json,md}` |
@@ -85,6 +87,8 @@ regenerates the pilot block of `docs/flybnb/paper.md`. Prose is never touched.
 ## Licence of the data
 
 FlyWire's public release data (v783 included) is under **CC BY-NC 4.0**: "FlyWire's public release data is made available under license CC BY-NC 4.0" (<https://flywire.ai/guidelines>, read 2026-09-18). The results and recipes here are adaptations of that wiring, so they are released under CC BY-NC 4.0 too: share and adapt with attribution, **not for commercial use**. Cite FlyWire as its guidelines ask. The male brain, when it is added, comes under different terms: "The Male CNS is licensed under CC-BY" (4.0; <https://male-cns.janelia.org/download/>), which allows commercial use.
+
+**The two FlyWire statements do not agree, and that is worth knowing before asking.** The files the female payload is actually built from, `proofread_connections_783.feather` and `proofread_root_ids_783.npy`, are deposited by the FlyWire Consortium on Zenodo (<https://doi.org/10.5281/zenodo.10676866>) under **CC BY 4.0**, without the NC clause (the record's licence field, read through Zenodo's API on 2026-09-19: `cc-by-4.0`). The website's guidelines say CC BY-NC 4.0 for "public release data". The neuron annotations (`flyconnectome/flywire_annotations`, used here for transmitter signs and for the battery's stimulus rules) state no licence in the repository at all; they are the supplementary data of Schlegel et al. 2024. Until FlyWire says which statement governs, this directory stays with the stricter one.
 
 That distinction matters beyond the dataset. Minting an individual of the female brain for a price, or charging a fee for a task against it, is plausibly a commercial use of FlyWire-derived data. This is not legal advice and nobody here has asked FlyWire; it should be asked before either happens on a public network.
 
