@@ -46,6 +46,19 @@ contract FlyCollection {
     IInstanceBonding public immutable INSTANCES;
     /// @notice where a derived brain's model_id is declared, challenged and finalized. address(0): the legacy, self-punishing `register`.
     LineageRegistry public immutable LINEAGE;
+    /// @notice The owner's royalty, in basis points of every fee settled for a task against an individual's brain; 0 = none.
+    ///         It exists only once a fly is adopted AND registered: the base brains, which nobody adopts, are plain
+    ///         royalty-free profiles, and an individual has no MEP at all until its owner registers one. From then on
+    ///         its MEP carries terms (aigg-porw `registerMEPWithTerms`) whose beneficiary is THIS CONTRACT, which pays
+    ///         whoever owns the token. That is why a sale needs no "update the address" step: the address on-chain
+    ///         never was the owner's. The terms are inside the mep_id, so this rate is fixed for the collection's life.
+    uint16 public immutable ROYALTY_BPS;
+    /// @notice where the royalties are set aside (`TaskMarket.royalties`) and collected from (`withdrawRoyalty`)
+    IRoyaltyMarket public immutable MARKET;
+    /// @notice royalties already moved here and credited to an address, not yet withdrawn by it
+    mapping(address => uint256) public owed;
+    /// @notice one MEP pays one fly. Without this a second token registered to the same MEP could collect on it.
+    mapping(bytes32 => uint256) public tokenOfMep;
 
     struct Individual {
         bytes32 baseModelId; // which base this varies
@@ -86,6 +99,7 @@ contract FlyCollection {
     event Registered(uint256 indexed id, bytes32 indexed mepId, bytes32 modelId);
     /// the owner's location hint, when the MEP was already in the registry under somebody else's (see _bindMEP)
     event WeightsHint(uint256 indexed id, bytes32 indexed mepId, bytes weightsDA);
+    event RoyaltySettled(uint256 indexed id, address indexed owner, uint256 amount);
 
     function ownerOf(uint256 id) public view returns (address o) { o = _ownerOf[id]; require(o != address(0), "no token"); }
     function balanceOf(address a) public view returns (uint256) { require(a != address(0), "zero"); return _balanceOf[a]; }
@@ -96,6 +110,8 @@ contract FlyCollection {
         require(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id], "not authorised");
         // The bond belongs to an address, not to a token: transferring an individual moves the research subject
         // and its fee share, and nothing else. The new owner bonds themselves if they want to run a node.
+        // The fee share moves from here on: what the fly earned up to this block is credited to the seller first.
+        _settle(id);
         _balanceOf[from]--; _balanceOf[to]++; _ownerOf[id] = to; delete getApproved[id];
         emit Transfer(from, to, id);
     }
@@ -112,12 +128,15 @@ contract FlyCollection {
     constructor(
         bytes32 baseFemale, bytes32 baseMale, bytes32 genesisRoot, uint32 genesisSize,
         uint256 mintPrice, uint256 mintBond, uint256 breedFee, uint256 hatchBounty, address treasury,
-        IMEPRegistry meps, IInstanceBonding instances, LineageRegistry lineage, bytes32 baseMepFemale, bytes32 baseMepMale
+        IMEPRegistry meps, IInstanceBonding instances, LineageRegistry lineage, bytes32 baseMepFemale, bytes32 baseMepMale,
+        IRoyaltyMarket market, uint16 royaltyBps
     ) {
         require(mintBond <= mintPrice, "bond > price"); require(hatchBounty <= breedFee, "bounty > fee"); require(treasury != address(0), "treasury");
         BASE_FEMALE = baseFemale; BASE_MALE = baseMale; GENESIS_ROOT = genesisRoot; GENESIS_SIZE = genesisSize;
         MINT_PRICE = mintPrice; MINT_BOND = mintBond; BREED_FEE = breedFee; HATCH_BOUNTY = hatchBounty; TREASURY = treasury;
         MEPS = meps; INSTANCES = instances; LINEAGE = lineage; BASE_MEP_FEMALE = baseMepFemale; BASE_MEP_MALE = baseMepMale;
+        require(royaltyBps <= 10000 && (royaltyBps == 0 || address(market) != address(0)), "royalty"); // a rate needs somewhere to collect from
+        MARKET = market; ROYALTY_BPS = royaltyBps;
     }
 
     /// @notice Mint a genesis individual. The whole genesis set is committed at deployment as a Merkle root over
@@ -248,9 +267,37 @@ contract FlyCollection {
     function _bindMEP(uint256 id, IMEPRegistry.MEP calldata m) internal returns (bytes32 mepId) {
         require(m.schemeDigest == SCHEME_SKETCH_TILE_KECCAK_V3, "scheme");
         mepId = PorwMeshHash.mepId(m.schemeDigest, m.modelId, m.execKind, m.neurons, m.synapses, m.synapseRoot);
+        // Under a royalty the individual IS the profile under this collection's terms -- another id, because the terms
+        // are inside it. Anybody may run the royalty-free twin of the same bytes; what they cannot do is have it be
+        // this fly (aigg-porw MEPRegistry, registerMEPWithTerms: price the royalty below what standing up the twin costs).
+        if (ROYALTY_BPS > 0) mepId = PorwMeshHash.mepIdWithTerms(mepId, address(this), ROYALTY_BPS);
+        // One MEP pays one fly. Under the lineage registry a token can only reach the MEP of its own delta, so this
+        // never fires for an honest one; under the legacy `register` it is what stops a second token from naming a
+        // brain that is already somebody's and collecting on it.
+        require(tokenOfMep[mepId] == 0, "mep taken"); tokenOfMep[mepId] = id;
         if (IMEPExists(address(MEPS)).exists(mepId)) emit WeightsHint(id, mepId, m.weightsDA);
-        else require(MEPS.registerMEP(m) == mepId, "mep id");
+        else require((ROYALTY_BPS > 0 ? IMEPTerms(address(MEPS)).registerMEPWithTerms(m, address(this), ROYALTY_BPS) : MEPS.registerMEP(m)) == mepId, "mep id");
     }
+
+    // ---- the royalty: set aside by TaskMarket under the MEP's terms, forwarded here to whoever owns the fly ----
+    /// @notice Move what an individual's tasks have set aside into its CURRENT owner's credit. Anyone may call it --
+    ///         the money goes to the owner whoever asks -- and a transfer calls it first, so a sale splits the royalty
+    ///         at the block of the sale. Credited, not sent: an owner that refuses ether must not be able to block a
+    ///         transfer, or anybody else's settle. `withdraw` is the owner's own call.
+    function settle(uint256 id) external returns (uint256 amount) { ownerOf(id); return _settle(id); }
+    function _settle(uint256 id) internal returns (uint256 amount) {
+        bytes32 mepId = individuals[id].mepId;
+        if (ROYALTY_BPS == 0 || mepId == bytes32(0) || MARKET.royalties(mepId) == 0) return 0; // withdrawRoyalty reverts on nothing
+        amount = MARKET.withdrawRoyalty(mepId);
+        address o = _ownerOf[id]; owed[o] += amount; emit RoyaltySettled(id, o, amount);
+    }
+    /// @notice collect everything credited to the caller
+    function withdraw() external returns (uint256 amount) {
+        amount = owed[msg.sender]; require(amount > 0, "nothing owed"); owed[msg.sender] = 0;
+        (bool ok,) = msg.sender.call{value: amount}(""); require(ok, "withdraw");
+    }
+    /// @dev only the market pays this contract (a royalty arriving from `withdrawRoyalty`); stray ether would be nobody's
+    receive() external payable { require(msg.sender == address(MARKET), "not the market"); }
 
     /// @notice Register an individual through the lineage registry: the delta is an in-place FLYDELTAv3 cross whose
     ///         `model_id` was declared there, survived its challenge window and is final — so the MEP bound here is the
@@ -293,4 +340,8 @@ interface IERC721Receiver { function onERC721Received(address, address, uint256,
 
 /// @notice The sponsored-bonding call of aigg-porw's `InstanceRegistry`: a payer adds to someone else's bond (and only adds).
 interface IMEPExists { function exists(bytes32 mepId) external view returns (bool); }
+/// @notice aigg-porw MEPRegistry: the same profile under terms (a beneficiary and its share of every settled fee)
+interface IMEPTerms { function registerMEPWithTerms(IMEPRegistry.MEP calldata m, address beneficiary, uint16 royaltyBps) external returns (bytes32 mepId); }
+/// @notice the royalty side of aigg-porw's TaskMarket: what is set aside per MEP, and the beneficiary's withdrawal
+interface IRoyaltyMarket { function royalties(bytes32 mepId) external view returns (uint256); function withdrawRoyalty(bytes32 mepId) external returns (uint256 amt); }
 interface IInstanceBonding { function bondFor(address instance, bytes32[] calldata mepIds) external payable; }

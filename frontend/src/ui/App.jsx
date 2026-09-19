@@ -174,10 +174,10 @@ export default function App() {
           <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. Scientists book experiments on it and pay the hosts who ran them, in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
         </section>
 
-        {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the design
-            (docs/TOKENOMICS.md §3) and NOT in the contracts -- TaskMarket.settle pays the agreeing hosts and nobody
-            else -- so the card says so. A page about money that is vague about which parts exist is the one thing
-            this page may not be. */}
+        {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the contracts now --
+            aigg-porw's MEP terms set a share of every settled fee aside, and FlyCollection forwards it to whoever owns
+            the token -- but no collection is deployed on this network yet, and the card says both. A page about money
+            that is vague about which parts exist is the one thing this page may not be. */}
         <section className="ways">
           <article className="way">
             <span className="badge" data-tone="live">live on-chain</span>
@@ -191,13 +191,13 @@ export default function App() {
             <a className="btn" data-tone="money" href="#/host">Become a host</a>
           </article>
           <article className="way">
-            <span className="badge" data-tone="soon">royalty: designed, not yet in the contracts</span>
+            <span className="badge" data-tone="soon">royalty: in the contracts · no collection deployed yet</span>
             <h3>Own a fly, and its line</h3>
-            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. The design gives its owner a share of the fees paid for experiments on it.</p>
+            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours.</p>
             <dl className="terms">
               <dt>You put in</dt><dd>the adoption price, or a breed fee</dd>
-              <dt>You would be paid</dt><dd>a royalty on experiments booked against your fly</dd>
-              <dt>Today</dt><dd>fees go to the hosts only; the owner’s share is an open design item</dd>
+              <dt>You are paid</dt><dd>a royalty on every experiment booked against your fly, set aside at settlement</dd>
+              <dt>If you sell it</dt><dd>what it earned until then stays yours; from then on the buyer is paid, with nothing to update</dd>
             </dl>
             <a className="btn" href="#/flies">Your flies</a>
           </article>
