@@ -55,11 +55,11 @@ contract DeployBNB is Script {
         RelayRegistry relays = new RelayRegistry(relayBond, exitDelay);
         inst.setClaimManager(address(claims), claimValidity); inst.setSlasher(address(disputes), true); market.setDisputes(address(disputes));
         if (challengeWindow != 0) market.setChallengeParams(challengeDeposit, challengeWindow, challengeSink);
-        vm.stopBroadcast();
         // Which collections of brains this deployment recognises. It starts empty: collections are deployed later, against
         // these registries, and the curator lists them. The curator decides only what is listed -- it holds no funds and
         // no protocol role -- and defaults to the deployer; hand it to a multisig with proposeCurator / acceptCurator.
         CollectionWhitelist whitelist = new CollectionWhitelist(vm.envOr("CURATOR", msg.sender));
+        vm.stopBroadcast();
         d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays), address(whitelist));
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);
         console.log("claims", d.claims); console.log("market", d.market); console.log("disputes", d.disputes); console.log("relays", d.relays); console.log("whitelist", d.whitelist);
