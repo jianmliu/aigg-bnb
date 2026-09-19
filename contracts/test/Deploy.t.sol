@@ -13,6 +13,7 @@ contract DeployTest is Test {
         assertEq(address(cm.beaconProvider()), d.beacon, "claims roll from the commit-reveal beacon");
         assertEq(cm.EPOCH_BLOCKS(), 600); assertEq(inst.UNIT(), 0.05 ether); assertEq(cm.SLASH_AMOUNT(), 0.5 ether); assertEq(RelayRegistry(d.relays).BOND(), 1 ether);
         assertEq(CommitRevealBeacon(d.beacon).EPOCH_BLOCKS(), 600);
+        CollectionWhitelist w = CollectionWhitelist(d.whitelist); assertEq(w.collections().length, 0, "the whitelist starts empty"); assertTrue(w.curator() != address(0), "and has a curator");
         // a replicator has standing: one epoch to challenge a settled result, inside the exit delay, half of a lost deposit to the sink
         assertEq(m.challengeWindow(), 600); assertLe(m.challengeWindow(), inst.EXIT_DELAY()); assertEq(m.challengeDepositWei(), 0.02 ether);
         assertEq(m.challengeSink(), address(this), "defaults to whoever ran the script");
