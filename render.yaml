@@ -104,13 +104,16 @@ services:
       - key: PORW_BEACON_LAZY
         value: "1"
 
-      # ---- the genesis collection (deploy_collection.sh, 2026-09-19): the FlyBnB pilot's hundred founders, root
-      # 0x02d6d4d2… = flybnb/genesis/genesis-v1.json. Testnet-scale prices: adopt 0.01 (0.005 of it the adopter's own
-      # bond), breed 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps. The relayer names it to the page (the Flies
-      # view, the Paper view's acknowledgments) and hatches its eggs for the bounty; PORW_KEEPER=0 keeps the first and
-      # drops the second.
+      # ---- the genesis collection, second deployment (deploy_collection.sh, 2026-09-19, from main at 8bfb263): the FlyBnB
+      # pilot's hundred founders, root 0x02d6d4d2… = flybnb/genesis/genesis-v1.json, with what the mainnet revision added --
+      # the base's tenth of every royalty, ERC-2981 (500 bps), ERC-4906, owner() with one power, tokenURI drawn on-chain
+      # (FlyRenderer 0x7126a022…f544) -- and a TreasuryRouter (0x1Bef7990…3708) as its immutable treasury. Testnet-scale
+      # prices: adopt 0.01 (0.005 of it the adopter's own bond), breed 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps.
+      # The first deployment (0xE0a5a93C…7AA4) predates the revision; nobody adopted from it. The relayer names this one to
+      # the page (the Flies view, the Paper view's acknowledgments) and hatches its eggs for the bounty; PORW_KEEPER=0 keeps
+      # the first and drops the second.
       - key: PORW_COLLECTION
-        value: "0xE0a5a93CD9398BdFcA992F877d513e49E18E7AA4"
+        value: "0x6c4e3EBCf8d1ae3fce16F290Cd1D839419925164"
 
       # ---- secrets: asked for once, never synced, never in git ----
       - key: PORW_RELAYER_KEY

@@ -253,6 +253,16 @@ checked to hold code, and every parameter of the collection was read back from t
   both immutable, both to be decided again before a mainnet deployment. There is no male base yet, so this network
   adopts and registers; it does not breed.
 
+- **The collection, again, with the mainnet revision** (same day, from `main` at `8bfb263`; the contract's source is
+  byte-identical to `main`'s): `0x6c4e3EBCf8d1ae3fce16F290Cd1D839419925164`, listed; same root, same prices. Read back
+  from the chain: `BASE_SHARE_BPS` 1000 to `BASE_VENDOR` = the treasury, `SALE_ROYALTY_BPS` 500 (`royaltyInfo(·, 1 BNB)` =
+  0.05 to the treasury), `owner()` = the deployer, ERC-721 / Metadata / 2981 / 4906 claimed. Its immutable treasury is a
+  `TreasuryRouter`, `0x1Bef7990Ea5d9C761aACe71c48432078AAC43708` (owner and destination: the deployer). Its renderer,
+  `0x7126a02242398BB2F8A05489075756B5bD56f544`, was called on the live chain: a `data:` URI, JSON with the pedigree's
+  attributes and an SVG of 24 circles, 2.10 M gas in an `eth_call` (the collection caps it at 5 M). The first collection
+  (`0xE0a5…7AA4`) is immutable and predates all of this; nobody adopted from it, and it is still on the whitelist until
+  the curator takes it off. Cost: 0.00055 tBNB.
+
 Cost: 0.0021 tBNB at 0.1 gwei for everything. The 2026-09-18 contracts are left as they are; bonds placed in that
 `InstanceRegistry` during the live runs stay withdrawable by their owners through the ordinary exit.
 
