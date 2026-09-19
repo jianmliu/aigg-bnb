@@ -29,7 +29,12 @@ export async function startAnvil(port = 8555) {
 export async function deploy(rpc, env = {}) {
   const e = { ...process.env, PATH: `${FOUNDRY}:${process.env.PATH}`, EPOCH_BLOCKS: "40", COMMIT_BLOCKS: "10", REVEAL_BLOCKS: "10", EXIT_DELAY: "5", OPENING_WINDOW: "10", TASK_TIMEOUT: "30", ROUND_BLOCKS: "10", ...env };
   await new Promise((res, rej) => { const p = spawn(path.join(FOUNDRY, "forge"), ["script", "script/DeployBNB.s.sol", "--rpc-url", rpc, "--chain-id", "31337", "--private-key", KEYS[0], "--broadcast"], { cwd: path.join(root, "contracts"), env: e, stdio: ["ignore", "pipe", "pipe"] }); let out = ""; p.stdout.on("data", (d) => (out += d)); p.stderr.on("data", (d) => (out += d)); p.on("exit", (c) => (c === 0 ? res() : rej(new Error("deploy failed: " + out.slice(-800))))); });
-  const dep = JSON.parse(fs.readFileSync(path.join(root, "deployments/31337.json"), "utf8")); dep.rpc = rpc; return dep;
+  const dep = JSON.parse(fs.readFileSync(path.join(root, "deployments/31337.json"), "utf8")); dep.rpc = rpc;
+  // the file is written from the script's SIMULATION: a contract created outside the broadcast has an address there and
+  // no code on the chain. Every address the deployment names has to be a contract.
+  const pub = createPublicClient({ transport: http(rpc) });
+  for (const [name, address] of Object.entries(dep.addresses)) if (typeof address === "string" /* forge's serializer leaves chainId and epochBlocks in here too */ && !(await pub.getCode({ address }))) throw new Error(`deployments/31337.json names ${name} at ${address}, and there is no contract there`);
+  return dep;
 }
 export function clientsFor(dep, key) {
   const chain = defineChain({ id: dep.chainId, name: "anvil", nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 }, rpcUrls: { default: { http: [dep.rpc] } } });
