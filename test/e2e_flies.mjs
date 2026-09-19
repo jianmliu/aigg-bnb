@@ -52,6 +52,8 @@ try {
   check("the node console is hidden, not gone: the controller still has its #log", await page.evaluate(() => !!document.getElementById("log") && document.getElementById("log").offsetParent === null));
   check("the colony shows both adopted flies as this wallet's, one of each sex", await page.evaluate(() => { const a = window.app.state.flies.all; return a.every((f) => f.mine) && a[0].sex === 0 && a[1].sex === 1; }));
   check("the pairing starts empty and says what it needs", (await page.textContent("#breedProblem")) === "choose one female and one male" && await page.isDisabled("#btnBreed"));
+  await page.click("#btnGenesis");
+  check("this collection's genesis set is not the one the page ships, so nothing is offered for adoption from it", await waitFor(() => page.locator("#genesisMismatch").isVisible()) && (await page.locator("#adoptable").count()) === 0);
   const pair = async () => { await page.click("#fly-1"); await page.click("#fly-2"); };
   await pair();
   check("clicking a fly puts it in the slot for its sex", /#1 ♀/.test(await page.textContent("#slotDam")) && /#2 ♂/.test(await page.textContent("#slotSire")) && (await page.textContent("#breedProblem")) === "ready");
