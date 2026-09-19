@@ -21,6 +21,7 @@ the chain and follows mints and transfers.
 | `docs/flybnb/` | **the FlyBnB paper, a living draft**: `paper.md` is prose plus generated blocks; `build.mjs` regenerates the pilot's numbers from `results/variance.json` and Appendix A (the acknowledgments) from the chain or a relayer; `.github/workflows/flybnb-paper.yml` re-runs it on a schedule once the repository variables name a deployment |
 | `docs/DESIGN.md` | the BNB-specific design: layering, beacon, parameters, costs, risks |
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
+| `docs/GATEWAY.md` | design, not built: the mesh behind ai.gg's OpenAI-compatible API -- every tab a model provider, a task as an inference call, receipts, who pays (user, vendor subsidy) and who is paid (hosts, owners, the base's vendor) |
 | `contracts/` | `CollectionWhitelist` (which collections of brains the system recognises: a curated list of collections, each answering for its own brains, bred ones included), `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
 | `js/fetch_brain.mjs` | the other half of publishing: fetch a registered MEP's payload from a storage provider and verify it against the on-chain `model_id` before it lands on disk |
