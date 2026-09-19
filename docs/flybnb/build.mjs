@@ -9,6 +9,7 @@
 import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url)); const arg = (k) => { const i = process.argv.indexOf(k); return i < 0 ? null : process.argv[i + 1]; };
 const PROPOSAL = path.join(here, "proposal.md"), BREEDING = path.join(here, "..", "..", "flybnb", "results", "breeding", "heritability.json");
+const ASSOC = path.join(here, "..", "..", "flybnb", "results", "association", "association.json"), ATLAS = path.join(here, "..", "..", "flybnb", "results", "atlas", "robustness.json");
 const PAPER = path.join(here, "paper.md"), RESULTS = path.join(here, "results", "variance.json"), HOLDERS = path.join(here, "results", "holders.json");
 
 export function replaceBlock(text, name, body) {
@@ -59,6 +60,37 @@ export function breedingBlock(b) {
   ].join("\n");
 }
 
+export function associationBlock(x) {
+  const s = x.summary, P = x.phenotypes, d = P.find((p) => p.readout === "DNge145" && p.stimulus === "sound"), g = P.find((p) => p.readout === "DNge145" && p.stimulus === "sound_gate");
+  const ign = x.ignition.filter((i) => i.base_regime === "sparse" && i.ignites_on_average > 0).sort((a, b) => b.ignites_on_average - a.ignites_on_average);
+  return [
+    `**Design.** ${x.individuals} unrelated founders under the battery. Predictors are an individual's counts on a stimulus's candidate connections: base records whose two ends are both active under it. ${s.phenotypes} phenotypes (a descending cell type under a stimulus), for the stimuli under which nobody ignites.`,
+    "",
+    `**A phenotype in the sparse regime is its readout's direct inputs.** Cross-validated R² from the connections *into* the readout cells: median ${f(s.median_r2_direct)}${d ? ` (DNge145 under sound: ${f(d.r2_direct)})` : ""}. From the rest of the active network *without* them: median ${f(s.median_r2_without_direct)}, i.e. nothing. A model over all candidates (the 200 most correlated, chosen inside each training fold) does not beat the direct inputs alone (median ${f(s.median_r2_all)}). ${Math.round(100 * s.share_of_significant_that_are_direct)}% of the connections significant at FDR 0.05 are direct inputs of the readout.`,
+    "",
+    g ? `**The gate, revisited.** The variance pilot found that the four direct gate connections do not explain who leaks (r = −0.27). Those were four of DNge145's direct inputs. All of them together, the auditory excitation and the gate's inhibition, give R² ${f(g.r2_direct)} for DNge145 under the gate: what decides the leak is the balance of one cell's inputs, not the network.` : "",
+    "",
+    `**Ignition is an individual phenotype.** Under stimuli that leave the base wiring sparse, some individuals tip into the high-activity state: ${ign.map((i) => `${i.stimulus} ${Math.round(100 * i.ignites_on_average)}%`).join(", ")}. For those stimuli the candidate set is the whole ignited network and a connection-level question is the wrong one; they are reported here and not analysed.`,
+  ].join("\n");
+}
+export function atlasBlock(x) {
+  const c = x.replication_central, w = x.what_predicts_replication || {}, top = x.effects.filter((e) => !e.silenced_is_stimulated).slice(0, 8);
+  return [
+    `**Design.** Stimulus \`sound\`; the base wiring and ${x.individuals} founders; for every individual and seed, the unperturbed run and one run per cell type with an active neuron, silenced. A study of one brain *detects* an effect when ${x.detection_rule}. The rule is applied to the base wiring, and then unchanged to every individual: an effect's **replication rate** is the fraction of individuals in which the same study would have reported it.`,
+    "",
+    `**Most effects found on one brain are not found on another.** ${x.effects_detected_on_base} effects are detected on the base wiring, ${x.of_which_silencing_part_of_the_stimulus} of them by silencing part of the stimulus. Of the other ${c.n}: median replication ${f(c.median)}; ${Math.round(100 * c["at_least_0.8"])}% replicate in at least 80% of individuals and ${Math.round(100 * c["at_most_0.2"])}% in at most 20%. ${x.missed_by_the_base.n} effects are detected in at least half of the individuals and *not* on the base.`,
+    "",
+    ...(x.any_individual_as_the_brain_studied ? [((q) => `**The base wiring has no special place in this.** Take any individual as the one brain studied instead: it shows ${Math.round(q.effects_per_individual_median)} central effects (range ${q.effects_per_individual_range[0]}–${q.effects_per_individual_range[1]}), and an effect found in one individual is found in another with probability ${f(q.replication_in_another_individual.mean)} (${Math.round(100 * q.replication_in_another_individual["at_most_0.2"])}% of effects in at most 20% of the others). Part of any such shortfall is selection, since an effect is chosen for having been detected on the brain studied; that is the situation of every single-brain study, and it is what the number measures.`)(x.any_individual_as_the_brain_studied), ""] : []),
+    "| size of the effect on the base (spikes) | effects | median replication | median same sign | replicate in ≥ 80% |", "|---|---|---|---|---|",
+    ...x.replication_by_base_effect.map((b) => `| ${b.abs_effect} | ${b.n} | ${f(b.median_replication)} | ${f(b.median_same_sign)} | ${Math.round(100 * b.replicate_in_80pct)}% |`),
+    "",
+    `**What predicts replication.** The size of the effect on the base (Spearman ${f(w.abs_base_effect)}) and the synapses of a direct connection from the silenced type to the readout (${f(w.direct_synapses)}). Effects with a direct connection replicate at ${f(w.replication_with_direct)} on average, those without at ${f(w.replication_without_direct)}.`,
+    "",
+    "| silenced | readout | effect on the base | replication | same sign | mean ± SD over individuals |", "|---|---|---|---|---|---|",
+    ...top.map((e) => `| ${e.silenced} | ${e.readout} | ${e.base_effect >= 0 ? "+" : ""}${f(e.base_effect, 1)} | ${f(e.replication)} | ${f(e.same_sign)} | ${e.individual_mean >= 0 ? "+" : ""}${f(e.individual_mean, 1)} ± ${f(e.individual_sd, 1)} |`),
+  ].join("\n");
+}
+
 async function holdersFromChain(rpc, collection) {
   const { createPublicClient, http, parseAbi } = await import("viem");
   const abi = parseAbi(["function totalSupply() view returns (uint256)", "function ownerOf(uint256) view returns (address)"]);
@@ -79,8 +111,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   let text = fs.readFileSync(PAPER, "utf8");
   text = replaceBlock(text, "pilot", v ? pilotBlock(v) : "_The pilot has not been analysed yet._");
   text = replaceBlock(text, "acknowledgments", ackBlock(h));
-  text = replaceBlock(text, "status", ["| part | state |", "|---|---|", `| pilot (Section 3) | ${v ? `${v.individuals} founders × ${v.seeds} seeds, analysed` : "pending"} |`, `| breeding pilot (Section 3a) | ${br ? `${br.individuals.founders} founders, ${br.individuals.random + br.individuals.high + br.individuals.low} offspring, ${br.h2_distribution.n} phenotypes` : "pending"} |`, "| standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |", "| silencing and activation atlas | planned |", "| dataset on the Hugging Face Hub | prepared, not public |", `| acknowledgments (Appendix A) | ${h ? `${h.holders.length} holder(s) at block ${h.block} on chain ${h.chainId}` : "no deployment read yet"} |`].join("\n"));
+  const as = fs.existsSync(ASSOC) ? JSON.parse(fs.readFileSync(ASSOC, "utf8")) : null, at = fs.existsSync(ATLAS) ? JSON.parse(fs.readFileSync(ATLAS, "utf8")) : null;
+  text = replaceBlock(text, "status", ["| part | state |", "|---|---|", `| pilot (Section 3) | ${v ? `${v.individuals} founders × ${v.seeds} seeds, analysed` : "pending"} |`, `| breeding pilot (Section 3a) | ${br ? `${br.individuals.founders} founders, ${br.individuals.random + br.individuals.high + br.individuals.low} offspring, ${br.h2_distribution.n} phenotypes` : "pending"} |`, "| standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |", `| association analysis (Section 3b) | ${as ? `${as.individuals} unrelated founders, ${as.summary.phenotypes} phenotypes` : "pending"} |`, `| atlas, first slice (Section 3c) | ${at ? `silencing under sound, ${at.individuals} individuals, ${at.effects_detected_on_base} effects on the base` : "pending"} |`, "| the rest of the silencing atlas, the activation atlas, the male brain | planned |", "| dataset on the Hugging Face Hub | prepared, not public |", `| acknowledgments (Appendix A) | ${h ? `${h.holders.length} holder(s) at block ${h.block} on chain ${h.chainId}` : "no deployment read yet"} |`].join("\n"));
   text = replaceBlock(text, "breeding", brText);
+  text = replaceBlock(text, "association", as ? associationBlock(as) : "_Not analysed yet._"); text = replaceBlock(text, "atlas", at ? atlasBlock(at) : "_Not run yet._");
   if (fs.existsSync(PROPOSAL)) fs.writeFileSync(PROPOSAL, replaceBlock(fs.readFileSync(PROPOSAL, "utf8"), "breeding", brText)); // the proposal carries the same block
   fs.writeFileSync(PAPER, text); console.log(`paper.md regenerated: pilot ${v ? "yes" : "no"}, holders ${h ? h.holders.length : "none"}`);
 }
