@@ -4,6 +4,10 @@ FlyBnB is a whole-brain perturbation atlas of the fly, re-tested across individu
 
 | here | what |
 |---|---|
+| `battery/` | **the standard battery every individual gets**: 13 stimuli × 3 seeds, the output of all 1,303 descending neurons; how it is built from the annotations; its form as one batched task. It is what makes the atlas, the association analysis and the selection experiment one dataset |
+| `analysis/intlif.py` | the int-lif runner the battery uses: exact, 0.6 s per run (the reference takes 75 s), silence sets included. `--verify` holds it to the published digests and to the rule as written |
+| `analysis/run_battery.py`, `breeding_design.py`, `breeding_report.py` | the breeding pilot: founders, randomly mated offspring and two divergent selection lines in the collection's recipe format; midparent regression, realised heritability, tested correlated responses |
+| `results/breeding/` | the design, every run of 301 individuals under the battery (digest and descending-neuron spikes per run), and `heritability.{json,md}` |
 | `analysis/phenotype_variance.py` | the pilot: founders × stimulus seeds × stimuli, under a sparse int-lif runner. `--verify` checks the runner against the published reference digests first |
 | `analysis/phenotype_variance_report.py` | variance components and intraclass correlations → `results/pilot/variance.{json,md}` |
 | `analysis/groups_flywire783.json` | payload indices of the stimulus sets and readout groups (Johnston's organ A/B per side, the two gate neurons, DNge145, DNp12, the giant fibre, the 38 phase-locked cells) and the four direct gate connections |
@@ -45,6 +49,22 @@ python flybnb/analysis/phenotype_variance_report.py
 ```
 
 The first reproduces the two published digests (`0x8614eda1…`, `0x017258be…`) in a few seconds each. The second is about 40 minutes on eight cores and is deterministic: a second pass reproduced the first field for field, and every digest in `results/pilot/runs.jsonl` is what you should get. The third rewrites `results/pilot/variance.*` from `results/pilot/runs.jsonl`; it reproduces the committed `variance.json` byte for byte.
+
+## Reproducing the breeding pilot
+
+```bash
+python flybnb/analysis/intlif.py --verify --min5 flywire-783-min5.bin
+```
+
+```bash
+python flybnb/analysis/run_battery.py --base flywire-783-min2.bin --individuals flybnb/results/breeding/design.json --out rows.jsonl --workers 8
+```
+
+```bash
+python flybnb/analysis/breeding_report.py --rows rows.jsonl
+```
+
+The second is about 100 minutes on eight cores (301 individuals × 39 runs) and deterministic; the committed `results/breeding/rows.jsonl` has every digest. `breeding_design.py` rebuilds `design.json` from the variance pilot's rows: who is crossed with whom is decided by the founders' measured phenotype and fixed seeds, nothing else.
 
 ## Building the dataset
 
