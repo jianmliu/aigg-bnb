@@ -65,6 +65,13 @@ export async function startRelayer(dep, key, mepIds, { relayPort = 0, apiPort = 
   const api = async (p, body) => (await fetch(info.api + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
   return { ...info, apiBase: info.api, child, api, log: () => log, stop: () => child.kill() };
 }
+/** the gateway (gateway/gateway.mjs) as a child process, configured the way production is: from the environment. `env` wins. */
+export async function startGateway(R, key, env = {}) {
+  const child = fork(path.join(root, "gateway/gateway.mjs"), [], { env: { ...process.env, GATEWAY_KEY: key, GATEWAY_RELAYER: R.apiBase, GATEWAY_PORT: "0", ...env }, stdio: ["ignore", "pipe", "pipe", "ipc"] });
+  let log = ""; child.stdout.on("data", (d) => (log += d)); child.stderr.on("data", (d) => (log += d));
+  const info = await new Promise((res, rej) => { child.on("message", res); child.on("exit", (c) => rej(new Error("gateway exited " + c + "\n" + log))); setTimeout(() => rej(new Error("gateway start timeout\n" + log)), 60000); });
+  return { ...info, child, log: () => log, stop: () => new Promise((res) => { child.once("exit", res); child.kill("SIGKILL"); }) };
+}
 // ---- a mesh deployed from the build artifacts, and a two-fly collection ----
 // DeployBNB deploys everything, ExecutionDisputes included. The collection tests need only what the relayer reads
 // at startup, and should not wait on a contract they never touch -- so this deploys that part, from contracts/out.
