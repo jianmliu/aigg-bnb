@@ -37,6 +37,9 @@ export async function kindMatches(chain, battery, mepId) {
   return { ok: have === want, want, have };
 }
 
+/** may this address post tasks the relayer will sponsor? `/deployment.taskClients` is null while the network is open to anybody's tasks */
+export const clientAllowed = (deployment, address) => !Array.isArray(deployment.taskClients) || deployment.taskClients.map((a) => a.toLowerCase()).includes(address.toLowerCase());
+
 /**
  * Post, announce, collect. `chain` is relayer/chain.mjs clients() with the requester's key; `relay` a connected RelayClient;
  * `porw` = { batch: batch.js, verify: verify.js }; `runsRoot` is PorwNode.batchRunsRoot(mepId, resolvedRuns(batch)).runsRoot.
@@ -89,6 +92,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { PorwNode } = await P("node.js"), { loadKernelFromBytes } = await P("porw.js"), { RelayClient } = await P("relay_client.js"), { keypair } = await P("claim.js"); const porw = { batch: await P("batch.js"), verify: await P("verify.js") };
   const node = new PorwNode(await loadKernelFromBytes(fs.readFileSync(path.join(root, "contracts/lib/aigg-porw/web/porw-browser/sketch.wasm"))), { privHex: key }); const wUnitQ16 = battery.population?.w_unit_q16;
   const st = await node.loadModel(arg("name", path.basename(arg("payload"), ".bin")), new Uint8Array(fs.readFileSync(arg("payload"))), { maxSteps: battery.steps, exec: "lif", ...(wUnitQ16 ? { wUnitQ16 } : {}) }); const mepId = hex(st.mep.mepId);
+  if (!clientAllowed(dep, chain.account.address)) { console.error(`${chain.account.address} is not among this relayer's task clients: the executors' results would not be sponsored, and the fee would buy nothing`); process.exit(1); }
   const km = await kindMatches(chain, battery, mepId); if (km.ok === false) { console.error(`this brain is registered under weight unit ${km.have}; the battery's population needs ${km.want}`); process.exit(1); }
   const b = batteryBatch(battery); const { runsRoot } = await node.batchRunsRoot(st.mep.mepId, resolvedRuns(b)); const relay = new RelayClient([dep.relay], keypair(key)); await relay.connect();
   const att = await postBattery({ battery, mepId, runsRoot, chain, relay, porw, fee: parseEther(arg("fee", "0.01")), redundancy: Number(arg("redundancy", "2")), log: (m) => console.log(m) });

@@ -10,7 +10,7 @@
 import fs from "node:fs"; import os from "node:os"; import path from "node:path"; import { spawnSync } from "node:child_process";
 import { parseEther } from "viem";
 import * as H from "./harness.mjs";
-import { postBattery, settledAs, checkAgainstOffline, sessionsOf, kindMatches } from "../flybnb/battery/post_battery.mjs";
+import { postBattery, settledAs, checkAgainstOffline, sessionsOf, kindMatches, clientAllowed } from "../flybnb/battery/post_battery.mjs";
 import { batteryBatch, resolvedRuns } from "../flybnb/battery/battery_batch.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
 let RELAYER = null; const anvil = await H.startAnvil(8567); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "flybnb-post-"));
@@ -60,6 +60,7 @@ try {
 
   // ---- the requester: a funded key, the relayer's /deployment, the payload. Nothing else ----
   const { clients } = await import("../relayer/chain.mjs"); const chain = clients(d0, H.KEYS[4]); const relay = new RelayClient([d0.relay], keypair(H.KEYS[4])); await relay.connect();
+  check("a mesh that names no task clients is open to this requester; one that names others is not", clientAllowed(d0, chain.account.address) && !clientAllowed({ taskClients: [A.addr] }, chain.account.address) && clientAllowed({ taskClients: [chain.account.address.toUpperCase().replace("0X", "0x")] }, chain.account.address));
   const km = await kindMatches(chain, battery, mepId); check("the battery's population and the registered kind name the same weight unit", km.ok === true && km.have === WUNIT);
   check("a battery of the default population is refused for this brain before anything is paid", (await kindMatches(chain, { ...battery, population: undefined }, mepId)).ok === false);
   const sess = await sessionsOf(chain, [A.addr, Bn.addr]); check("executors' session keys are found on chain, from SessionKeySet", sess[A.addr] === H.hex(A.session.address).toLowerCase() && sess[Bn.addr] === H.hex(Bn.session.address).toLowerCase());
