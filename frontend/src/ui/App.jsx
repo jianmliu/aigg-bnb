@@ -22,6 +22,7 @@ import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
 import { BrainCard } from "./BrainCard.jsx";
 import FliesView from "./FliesView.jsx";
+import { BAKED_RELAYER, SOLO } from "./mode.js";
 import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
 
 const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
@@ -30,7 +31,6 @@ const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
 // VITE_RELAYER_URL baked in, because `http://127.0.0.1:8788` on an https origin is blocked as mixed content
 // before it is anything else. The field stays editable either way -- pointing the page at your own relayer is
 // the whole reason the relayer is replaceable.
-const BAKED_RELAYER = import.meta.env?.VITE_RELAYER_URL || "";
 const DEFAULT_RELAYER = BAKED_RELAYER || "http://127.0.0.1:8788";
 
 /** the mark: a fly's head from the front -- two red eyes, a gold brain between them. The portraits are this, grown up */
@@ -56,8 +56,8 @@ function status(s) {
   if (s.node) return { tone: "live", text: `live · ${s.node.models.size} resident` };
   if (s.delegation) return { tone: "ready", text: "ready to start" };
   if (s.wallet) return { tone: "warn", text: "no session key" };
-  if (s.deployment) return { tone: "warn", text: "no wallet" };
-  return { tone: null, text: "no mesh loaded" };
+  if (s.deployment) return { tone: "ready", text: "online" }; // a visitor needs no wallet to look around
+  return SOLO ? { tone: "warn", text: s.errors.length ? "relayer unreachable · retrying" : "connecting…" } : { tone: null, text: "no mesh loaded" };
 }
 
 const toneOfLine = (line) => (!line ? null : /ERROR|FAIL|REVERT|DOES NOT MATCH/.test(line) ? "bad" : /WARNING|note:/.test(line) ? "warn" : /\bok\b|confirmed|running|resident|matches/.test(line) ? "ok" : null);
@@ -92,7 +92,11 @@ export default function App() {
   // A deployed build knows its mesh (VITE_RELAYER_URL is baked in), so it opens it: a visitor who lands on the site
   // should see the brains, not an empty shelf and "offline" until they find the arrow. A local build does not -- its
   // default is a relayer on this machine that may not be running, and the tests point the field somewhere else first.
-  useEffect(() => { if (BAKED_RELAYER) C.wrap(C.loadDeployment)(); }, []);
+  useEffect(() => {
+    if (!SOLO) return; let live = true;
+    (async () => { while (live && !C.state.deployment) { await C.wrap(C.loadDeployment)(); if (live && !C.state.deployment) await new Promise((r) => setTimeout(r, 5000)); } })();
+    return () => { live = false; };
+  }, []);
   // the entrance plays once. A view that is hidden and shown again would otherwise replay it on every tab switch
   // (a CSS animation restarts when display leaves `none`), and the listings would blink out each time
   const [entered, setEntered] = useState(false);
@@ -128,14 +132,16 @@ export default function App() {
 
   return (
     <div className="shell" data-entered={entered}>
-      <header className="topbar">
+      <header className="topbar" data-solo={SOLO}>
         <a className="brand" href="#/" aria-label="flybnb — home">
           <Logo />
           <span className="word">fly<b>bnb</b></span>
         </a>
 
-        {/* "where": the mesh everything on the page is read from. A form, so Enter in the field loads it too */}
-        <form className="where" onSubmit={(ev) => { ev.preventDefault(); on(C.loadDeployment)(); }}>
+        {/* "where": the mesh everything on the page is read from. A form, so Enter in the field loads it too. A deployed
+            page has one relayer and no choice to offer, so the capsule is not shown; the field stays in the document
+            because the controller reads the relayer's address from it */}
+        <form className="where" hidden={SOLO} onSubmit={(ev) => { ev.preventDefault(); on(C.loadDeployment)(); }}>
           <label htmlFor="relayer">Mesh</label>
           <input id="relayer" type="text" defaultValue={DEFAULT_RELAYER} placeholder="https://relayer.example.org" spellCheck={false} />
           <button id="btnDep" type="submit" className="go" aria-label="Load deployment" title="Load this mesh">
@@ -221,7 +227,7 @@ export default function App() {
 
         <section className="shelf">
           <header><h2>Brains on this mesh</h2><span className="note">{s.meps.length ? `${s.meps.length} listed` : "no mesh loaded"}</span></header>
-          {s.meps.length === 0 && <p className="hint empty-shelf">Put a relayer’s address in the <b>Mesh</b> capsule above and press the arrow. The listings come from the chain it points at.</p>}
+          {s.meps.length === 0 && <p className="hint empty-shelf">{SOLO ? "Connecting to the network… the listings come from the chain, through the relayer." : <>Put a relayer’s address in the <b>Mesh</b> capsule above and press the arrow. The listings come from the chain it points at.</>}</p>}
           <div className="listings">
             {s.meps.map((m, i) => (
               <BrainCard key={m.mepId} listing index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
@@ -347,7 +353,7 @@ export default function App() {
 
         <div className="col">
           <Panel step={3} title="Move a brain in" note={`${s.meps.length} on this mesh`}>
-            {s.meps.length === 0 && <p className="hint">Load a mesh in the capsule above to see the brains it lists.</p>}
+            {s.meps.length === 0 && <p className="hint">{SOLO ? "Connecting to the network…" : "Load a mesh in the capsule above to see the brains it lists."}</p>}
             <div className="brains">
               {s.meps.map((m, i) => (
                 <BrainCard key={m.mepId} index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
@@ -396,7 +402,7 @@ export default function App() {
 
       <footer className="foot-note">
         <span>fly<b>bnb</b> · bonded, settled and disputed on BNB Chain · model bytes on Greenfield</span>
-        <span>the relayer is replaceable: point the Mesh capsule at your own</span>
+        {!SOLO && <span>the relayer is replaceable: point the Mesh capsule at your own</span>}
       </footer>
     </div>
   );

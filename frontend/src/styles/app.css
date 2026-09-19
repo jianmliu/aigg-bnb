@@ -38,6 +38,9 @@ code { font: 500 0.92em/1 var(--mono); color: var(--muted); }
   background: var(--bg-lift); box-shadow: var(--shadow);
   transition: box-shadow 0.2s;
 }
+.where[hidden] { display: none; }
+.topbar[data-solo="true"] { grid-template-columns: auto 1fr auto; }
+.topbar[data-solo="true"] .views { justify-self: start; margin-left: 12px; }
 .where:focus-within { box-shadow: var(--shadow-lift), var(--focus); }
 .where label { font: 700 12px/1 var(--sans); color: var(--text); white-space: nowrap; }
 .where input[type="text"] { flex: 1; min-width: 0; padding: 6px 0; border: 0; background: transparent; box-shadow: none; font: 500 12.5px/1.4 var(--mono); color: var(--muted); }
@@ -388,3 +391,6 @@ span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
 .holders .addr { color: var(--text); font-weight: 600; }
 .holders .toks { color: var(--muted); overflow-wrap: anywhere; }
 .holders .you { margin-left: auto; padding: 3px 8px; border-radius: var(--r-pill); background: var(--gold); color: #1b1a17; font: 700 10.5px/1 var(--sans); letter-spacing: 0.04em; text-transform: uppercase; }
+.listings.adoptable { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 22px 16px; }
+.listings.adoptable .brain.listing { cursor: default; }
+.listings.adoptable .btn { margin-top: 6px; padding: 9px 12px; font-size: 13px; }

@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import * as C from "../core/controller.js";
 import { Panel } from "./primitives.jsx";
+import { SOLO } from "./mode.js";
 
 const REPO = "https://github.com/jianmliu/aigg-bnb/blob/main/docs/flybnb";
 export const PAPER_URL = import.meta.env?.VITE_FLYBNB_PAPER_URL || `${REPO}/paper.md`;
@@ -36,7 +37,7 @@ export default function FlyBnbView() {
     let live = true;
     const pull = async () => {
       try { const r = await fetch(C.relayer() + "/flybnb/holders"); const j = await r.json(); if (!live) return; if (j.error) { setErr(j.error); setH(null); } else { setH(j); setErr(null); } }
-      catch (e) { if (live) setErr("the relayer is not reachable: put its address in the Mesh capsule above and press the arrow"); }
+      catch (e) { if (live) setErr(SOLO ? "the relayer is not reachable right now; this list will fill in when it is" : "the relayer is not reachable: put its address in the Mesh capsule above and press the arrow"); }
     };
     pull(); const t = setInterval(pull, EVERY_MS); return () => { live = false; clearInterval(t); };
   }, [s.deployment]);

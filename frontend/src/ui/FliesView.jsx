@@ -9,6 +9,7 @@ import * as C from "../core/controller.js";
 import * as F from "../core/flies.js";
 import { Panel, Button } from "./primitives.jsx";
 import { Portrait } from "./Portrait.jsx";
+import { SOLO } from "./mode.js";
 
 const bnb = (wei) => { const s = (Number(wei) / 1e18).toFixed(5).replace(/0+$/, "").replace(/\.$/, ""); return s === "" ? "0" : s; };
 const STAGE = {
@@ -36,6 +37,12 @@ function FlyCard({ fly, byId, slot, onPick }) {
         {stage === "egg" ? `seed block ${fly.seedBlock}` : stage === "unborn" ? `seed ${fly.seed.slice(0, 12)}… · no delta yet` : `delta ${fly.deltaHash.slice(0, 12)}…`} · base {fly.baseModelId.slice(0, 10)}…{fly.mine ? "" : " · not yours"}
       </div>
       <div className="state" data-tone={st.tone}>{st.text}</div>
+      {fly.pending > 0n && (
+        <div className="egg" id={`royalty-${fly.id}`}>
+          <div className="foot"><span className="counts">{bnb(fly.pending)} BNB earned, not yet settled to {fly.mine ? "you" : "its owner"}</span>
+            <Button id={`btnSettle-${fly.id}`} tone="money" onClick={(e) => { e.stopPropagation(); C.wrap(() => F.settle(fly.id))(); }} title="Moves it to the owner's credit. Anyone may press this; the money goes to the owner either way">Settle</Button></div>
+        </div>
+      )}
       {stage === "egg" && (
         <div className="egg" id={`egg-${fly.id}`}>
           {fly.preview
@@ -57,7 +64,7 @@ export default function FliesView() {
   const s = C.state; const flies = s.flies;
   const [dam, setDam] = useState(null); const [sire, setSire] = useState(null);
 
-  if (!s.deployment) return <div className="main single"><Panel title="Flies"><p className="hint">Put a relayer’s address in the <b>Mesh</b> capsule above first: it names the collection this page reads.</p></Panel></div>;
+  if (!s.deployment) return <div className="main single"><Panel title="Flies"><p className="hint">{SOLO ? "Connecting to the network…" : <>Put a relayer’s address in the <b>Mesh</b> capsule above first: it names the collection this page reads.</>}</p></Panel></div>;
   if (!flies) return <div className="main single"><Panel title="Flies"><div className="row tight"><Button id="btnFlies" tone="chain" onClick={C.wrap(F.loadFlies)}>Load the colony</Button></div></Panel></div>;
   if (flies.missing) return <div className="main single"><Panel title="Flies"><p className="hint" id="noCollection">This deployment names no collection (the relayer has no <code>PORW_COLLECTION</code>), so there are no flies to read here.</p></Panel></div>;
 
@@ -78,12 +85,44 @@ export default function FliesView() {
           <Button id="btnFlies" tone="chain" onClick={C.wrap(F.loadFlies)}>Refresh</Button>
           <span className="kv" id="fliesInfo">collection {flies.address.slice(0, 10)}… · block {flies.block}{s.wallet ? "" : " · connect your wallet (top right) to see which are yours"}</span>
         </div>
+        {flies.royaltyBps > 0 && (
+          <div className="row tight center" id="royaltyBar">
+            <span className="kv strong" id="owed">{flies.royaltyBps / 100}% of every fee paid for an experiment on your flies is yours · credited to you: {bnb(flies.owed)} BNB</span>
+            <Button id="btnWithdraw" tone="money" disabled={!s.wallet || flies.owed === 0n} onClick={C.wrap(F.withdraw)}>Withdraw</Button>
+          </div>
+        )}
         {flies.all.length === 0 && <p className="hint">Nobody has adopted a fly from this collection yet.</p>}
         <div className="brains" id="colony">
           {flies.all.map((f) => <FlyCard key={f.id} fly={f} byId={byId} slot={f.id === dam ? "dam" : f.id === sire ? "sire" : null} onPick={() => pick(f)} />)}
         </div>
         {flies.truncated && <p className="hint">Showing the first 500 individuals; the rest need an indexer.</p>}
         <p className="hint">Click a fly of yours to put it in the pairing below. An egg or an unborn child cannot breed: its delta is not pinned yet.</p>
+      </Panel>
+
+      <Panel title="Adopt" note={flies.genesis?.matches ? `${flies.genesis.open.length} of ${flies.genesis.size} founders open` : "the genesis set"}>
+        <p className="lede">The collection is a hundred founders, fixed before anyone adopted one: each is a real variant of the FlyWire brain, and each has already been run through the atlas’s battery. Adopting one makes it yours — its lineage, and {flies.royaltyBps > 0 ? `${flies.royaltyBps / 100}% of every fee paid for an experiment on it once you register its brain` : "whatever is measured about it"}.</p>
+        <dl className="fees" id="adoptFee">
+          <dt>adoption</dt><dd className="amt">{bnb(flies.mintPrice)} BNB</dd><dd className="why">one price, one transaction</dd>
+          <dt className="part">your bond</dt><dd className="amt">{bnb(flies.mintBond)} BNB</dd><dd className="why">{flies.mintBond > 0n ? "stays yours: it makes you a host of the base brain, slashable only if a result of yours loses a dispute" : "this collection does not bond its adopters"}</dd>
+          <dt className="part">treasury</dt><dd className="amt">{bnb(flies.mintPrice - flies.mintBond)} BNB</dd><dd className="why">the relayer’s sponsorship budget</dd>
+        </dl>
+        {!flies.genesis && <div className="row tight"><Button id="btnGenesis" tone="chain" onClick={C.wrap(F.loadGenesis)}>See who can be adopted</Button></div>}
+        {flies.genesis && !flies.genesis.matches && <p className="hint" id="genesisMismatch">The genesis set this page ships is not this collection’s (its root is not the collection’s <code>GENESIS_ROOT</code>), so nothing is offered from it.</p>}
+        {flies.genesis?.matches && (
+          <div className="listings adoptable" id="adoptable">
+            {flies.genesis.open.slice(0, 12).map((g, i) => (
+              <div className="brain listing" key={g.index} style={{ "--i": i }}>
+                <div className="photo"><Portrait seed={g.deltaHash} label={`portrait of founder #${g.index}`} /></div>
+                <div className="about">
+                  <div className="name"><span>founder #{g.index} ♀</span><span className="exec">gen 0</span></div>
+                  <div className="counts">delta {g.deltaHash.slice(0, 12)}…</div>
+                  <Button id={`btnAdopt-${g.index}`} tone="money" disabled={!s.wallet} onClick={C.wrap(() => F.adopt(g.index))}>Adopt · {bnb(flies.mintPrice)} BNB</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {flies.genesis?.matches && flies.genesis.open.length > 12 && <p className="hint">Showing 12 of the {flies.genesis.open.length} still open. Every founder is female, as the brains are: breeding needs one of each sex and waits for the male base.</p>}
       </Panel>
 
       <Panel title="Breed" note="a recipe, not yet a brain">
