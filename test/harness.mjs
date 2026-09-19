@@ -24,7 +24,7 @@ export async function startAnvil(port = 8555) {
   const p = spawn(path.join(FOUNDRY, "anvil"), ["--port", String(port), "--silent", "--chain-id", "31337"], { stdio: "ignore" });
   const rpc = `http://127.0.0.1:${port}`;
   for (let i = 0; i < 60; i++) { try { if (await rpcCall(rpc, "eth_chainId")) break; } catch {} await sleep(250); }
-  return { proc: p, rpc, mine: (n) => rpcCall(rpc, "anvil_mine", ["0x" + n.toString(16)]), block: async () => Number(await rpcCall(rpc, "eth_blockNumber")), stop: () => p.kill() };
+  return { proc: p, rpc, call: (method, params) => rpcCall(rpc, method, params), mine: (n) => rpcCall(rpc, "anvil_mine", ["0x" + n.toString(16)]), block: async () => Number(await rpcCall(rpc, "eth_blockNumber")), stop: () => p.kill() };
 }
 export async function deploy(rpc, env = {}) {
   const e = { ...process.env, PATH: `${FOUNDRY}:${process.env.PATH}`, EPOCH_BLOCKS: "40", COMMIT_BLOCKS: "10", REVEAL_BLOCKS: "10", EXIT_DELAY: "5", OPENING_WINDOW: "10", TASK_TIMEOUT: "30", ROUND_BLOCKS: "10", ...env };

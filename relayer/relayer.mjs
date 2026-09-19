@@ -325,5 +325,12 @@ publicRelayUrl = cfg.publicRelayUrl || relayUrl;
 rc = new RelayClient([relayUrl], relayKey, { onLog: (m) => log(m) }); await rc.connect();
 log(`relayer ${ch.account.address}: relay ${relayUrl}${publicRelayUrl !== relayUrl ? ` (announced as ${publicRelayUrl})` : ""}, api ${apiUrl}, chain ${dep.chainId}, epoch ${EPOCH_BLOCKS} blocks, beacon ${beaconOn ? (LAZY ? "commit-reveal, lazy" : "commit-reveal") : "prevrandao"}, meps ${[...meps.keys()].map((m) => m.slice(0, 10)).join(",")}`);
 if (process.send) process.send({ relay: publicRelayUrl, api: apiUrl });
-const loop = async () => { try { await tick(); } catch (e) { status.errors.push({ label: "tick", msg: String(e.shortMessage || e.message).slice(0, 200) }); log("tick error", String(e.shortMessage || e.message).slice(0, 160)); } };
+// One pass at a time. A tick awaits each transaction to its receipt -- seconds on BSC, against a 2 s poll -- and
+// what it did is only recorded after that await (`secrets`, the on-chain flags the other branches read). A second
+// tick started meanwhile sees the commit still missing and sends it again with a fresh secret; tx() serializes it
+// behind the first, where it reverts in estimation ("committed": no gas lost, but a failure in /status.errors that
+// is not one), and reveal, rollEpoch and postEpochRoot double up the same way. A tick that lands mid-pass joins
+// the pass already running instead of queueing behind it: a queued pass would only act on a block number gone stale.
+const runPass = async () => { try { await tick(); } catch (e) { status.errors.push({ label: "tick", msg: String(e.shortMessage || e.message).slice(0, 200) }); log("tick error", String(e.shortMessage || e.message).slice(0, 160)); } };
+let pass = null; const loop = () => (pass ||= runPass().finally(() => { pass = null; }));
 await loop(); setInterval(loop, cfg.pollMs || 2000);
