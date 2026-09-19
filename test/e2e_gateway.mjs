@@ -4,6 +4,8 @@
 //   - a call: posted with the gateway's BNB, run by both providers on the experiment it named (stimulate + silence ->
 //     the state_0 root the gateway computed WITHOUT the brain, which the providers would refuse if it were wrong),
 //     settled, paid; the receipt's digest is the one anybody recomputes; usage = steps
+//   - the READOUT: spike counts returned by the providers, served only because they hash to the settled digest; a
+//     provider that sends other counts is ignored, and the full vector is downloadable
 //   - the same as a stream (events, keep-alive comments), in the background (poll; settled -> final), and through
 //     the chat-completions alias; input as an object, as JSON text, and as a message list
 //   - a cold model: 503 before a wei is spent
@@ -63,8 +65,10 @@ try {
     check(`/v1/models: the warm brain has 2 providers and is available; the cold one has none and is not`, w.providers === 2 && w.votes === 20 && w.available === true && c.providers === 0 && c.available === false && w.exec === "int-lif" && w.aliases.includes("mep:" + warm.mepId)); }
 
   // ---- a call ----
-  const experiment = { stimulate: { set: "ears" }, silence: { ids: [...sets.quiet, 40] }, readout: { ids: [1, 2] } };
   const expected = await warm.probe.execute(warm.mep.mepId, { steps: STEPS, commitStride: 2, stimulusSeed: 7, stimulusIds: Uint32Array.from(sets.ears), silenceIds: Uint32Array.from(sets.quiet) });
+  // read out the neuron that fires most, one that fires, and a silenced one (which cannot)
+  const byCount = Array.from(expected.result.counts.keys()).sort((x, y) => expected.result.counts[y] - expected.result.counts[x]); const ASKED = [byCount[0], byCount[5], 40].sort((x, y) => x - y);
+  const experiment = { stimulate: { set: "ears" }, silence: { ids: [...sets.quiet, 40] }, readout: { ids: ASKED } };
   const b0 = { g: await bal(GW), a: await bal(A.addr), b: await bal(B.addr) };
   const r1 = await call("/v1/responses", { model: "warm", seed: 7, max_output_tokens: STEPS, input: experiment }); const j1 = await r1.json(); const rc = j1.receipt || {};
   if (r1.status !== 200) console.log("   ", r1.status, JSON.stringify(j1).slice(0, 600), "\n", GWY.log().split("\n").slice(-8).join("\n"));
@@ -74,7 +78,18 @@ try {
   check("the response id is the task id, one step is one token, and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
   const b1 = { g: await bal(GW), a: await bal(A.addr), b: await bal(B.addr) };
   check(`the gateway paid the fee (${FEE} wei) and the providers split it`, b1.a - b0.a === FEE / 2n && b1.b - b0.b === FEE / 2n && b0.g - b1.g > FEE && b0.g - b1.g < FEE + parseEther("0.01") && BigInt(rc.fee_wei) === FEE);
-  check("M0 says what it does not return: a digest, and no readout yet", /digests only/.test(JSON.parse(j1.output[0].content[0].text).readout_status));
+  // ---- the readout: counts from the providers, served because they hash to the digest the task settled on ----
+  { const want = expected.result.counts; const out = JSON.parse(j1.output[0].content[0].text); const sum = want.reduce((a, b) => a + b, 0);
+    check(`the readout is the neurons it asked for, with the counts anybody recomputes (${out.readout.map((r) => r.id + ":" + r.spikes).join(", ")}; ${sum} spikes in all)`, out.readout.length === 3 && out.readout.find((r) => r.id === 40).spikes === 0 && out.readout.some((r) => r.spikes > 1) && out.readout.every((r) => r.spikes === want[r.id] && r.hz === Math.round(want[r.id] / (STEPS * 0.0001) * 100) / 100) && out.summary.total_spikes === sum && sum > 0 && out.summary.dt_ms === 0.1 && /^verified/.test(out.readout_status));
+    check("the receipt says whose counts they are and that they were verified", rc.counts.status === "verified" && rc.executors.includes(rc.counts.from) && rc.counts.neurons === NEURONS && /match the digest/.test(rc.results[A.addr].counts));
+    const dl = await call(rc.counts_url); const bytes = new Uint8Array(await dl.arrayBuffer()); const got = new Uint32Array(bytes.buffer, 0, bytes.length / 4);
+    check("and the whole vector is there to download: little-endian u32, one per neuron, equal to the recomputed one", dl.status === 200 && dl.headers.get("x-exec-digest") === rc.exec_digest && got.length === NEURONS && got.every((v, i) => v === want[i]));
+    check("which needs the bearer like everything else", (await call(rc.counts_url, null, {})).status === 401); }
+  // a provider that hands over OTHER counts than the ones it signed for: ignored, the honest provider's are served
+  { const run = A.nd.execute.bind(A.nd); A.nd.execute = async (...a) => { const r = await run(...a); r.result.counts = Uint32Array.from(r.result.counts, (v, i) => (i === 3 ? v + 1 : v)); return r; };
+    const j = await (await call("/v1/responses", { model: "warm", seed: 21, max_output_tokens: STEPS, input: { stimulate: { set: "ears" }, readout: { top: 3 } } })).json(); A.nd.execute = run; const out = JSON.parse(j.output[0].content[0].text);
+    check("forged counts are not served: they do not hash to the digest their sender signed, and the other provider's do", j.status === "completed" && /DO NOT match/.test(j.receipt.results[A.addr].counts) && j.receipt.counts.status === "verified" && j.receipt.counts.from === B.addr);
+    check(`asked for the top 3, it gives the three that fired most (${out.readout.map((r) => r.id + ":" + r.spikes).join(", ")})`, out.readout.length === 3 && out.readout[0].spikes >= out.readout[1].spikes && out.readout[1].spikes >= out.readout[2].spikes && out.readout[2].spikes > 0); }
 
   // ---- a stream; input as JSON text ----
   { const r = await call("/v1/responses", { model: "mep:" + warm.mepId, seed: 8, max_output_tokens: STEPS, stream: true, input: JSON.stringify({ silence: { set: "quiet" } }) }); const text = await r.text();
@@ -96,7 +111,7 @@ try {
     check("a cold model: 503 model_cold with Retry-After, and not a wei spent", r.status === 503 && j.error.type === "model_cold" && j.error.providers === 0 && r.headers.get("retry-after") === "60" && (await bal(GW)) === g);
     const bad = async (body) => { const x = await call("/v1/responses", body); return [x.status, (await x.json()).error?.type].join(" "); };
     check("and what is not a request is a 4xx, equally free", (await bad({ model: "nobody" })) === "404 model_not_found" && (await bad({ model: "warm", max_output_tokens: 0 })) === "400 invalid_request_error" && (await bad({ model: "warm", redundancy: 1 })) === "400 invalid_request_error"
-      && (await bad({ model: "warm", input: { silence: { ids: [NEURONS] } } })) === "400 invalid_request_error" && (await bad({ model: "warm", input: { stimulate: { set: "nose" } } })) === "400 invalid_request_error" && (await bal(GW)) === g); }
+      && (await bad({ model: "warm", input: { silence: { ids: [NEURONS] } } })) === "400 invalid_request_error" && (await bad({ model: "warm", input: { readout: { ids: [NEURONS] } } })) === "400 invalid_request_error" && (await bad({ model: "warm", input: { stimulate: { set: "nose" } } })) === "400 invalid_request_error" && (await bal(GW)) === g); }
 
   { const poor = await H.startGateway(R, "0x" + "5e".repeat(32), { ...genv, GATEWAY_STATE: path.join(tmp, "poor.json") }); const r = await fetch(poor.url + "/v1/responses", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer test-bearer" }, body: JSON.stringify({ model: "warm", max_output_tokens: STEPS }) }); const j = await r.json(); await poor.stop();
     check("a gateway whose float ran dry says so (503 gateway_unfunded), and warns at start that the relayer does not sponsor its tasks", r.status === 503 && j.error.type === "gateway_unfunded" && /is not in the relayer's PORW_TASK_CLIENTS/.test(poor.log())); }

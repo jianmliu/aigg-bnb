@@ -1,13 +1,15 @@
-// The gateway (docs/GATEWAY.md), milestone 0: a brain behind an OpenAI-compatible inference API.
+// The gateway (docs/GATEWAY.md), milestones 0-1: a brain behind an OpenAI-compatible inference API.
 //
 // A request names a model (a MEP), a seed, a number of steps and an experiment; the gateway is the on-chain client
 // that turns it into a task: capacity check -> postTask (its own BNB) -> announce to the sortitioned tabs over the
-// relay -> wait for their sponsored results -> settle -> answer with a RECEIPT. M0 answers with the receipt only:
-// executors do not return spike counts yet (§1.2), so there is a digest to verify and nothing to read.
+// relay -> wait for their sponsored results -> settle -> answer with a READOUT and a RECEIPT. The readout is not taken
+// on trust: an int-lif executor hands back every neuron's spike count when asked, the settled execDigest IS
+// keccak(n ‖ those counts), and only a vector that hashes to it is ever served (§1.2).
 //
 //   POST /v1/responses          { model, input, seed?, max_output_tokens?, redundancy?, stream?, background? }
 //   GET  /v1/responses/{id}     the call, with its finality re-read from the chain
 //   GET  /v1/models             served MEPs with providers / votes / available / price
+//   GET  /v1/tasks/{id}/counts  the verified spike counts of a settled call: little-endian u32, one per neuron
 //   POST /v1/chat/completions   a thin, non-streaming alias
 //
 // It is NOT part of the relayer: it holds money (GATEWAY_KEY pays every fee), and the relayer's key never should.
@@ -23,21 +25,24 @@
 //   GATEWAY_SETS           a JSON file of named id sets, { "joLR": [ids…] }, for `stimulate` / `silence`
 //   GATEWAY_MIN_REDUNDANCY (2) GATEWAY_WEI_PER_STEP (100000000000) GATEWAY_DEFAULT_STEPS (100) GATEWAY_MAX_STEPS (20000)
 //   GATEWAY_STATE          the calls, on disk: a fee is spent at postTask, so a call has to survive a restart
-//   GATEWAY_KEEP           (5000) how many finished calls stay readable; unfinished ones are never dropped
+//   GATEWAY_KEEP           (5000) how many finished calls stay readable; unfinished ones are never dropped. Their counts
+//                          (~0.5 MB a call at FlyWire's size) live beside the state file and go with them
+//   GATEWAY_COUNTS_WAIT_MS (15000) a provider replies AFTER it has submitted on-chain, so a task can settle before its
+//                          counts arrive: how long to wait for a vector that matches the settled digest
 //   GATEWAY_PORT / PORT, GATEWAY_HOST, GATEWAY_KEEPALIVE_MS (20000), GATEWAY_RESULT_TIMEOUT_MS (600000), GATEWAY_POLL_MS (1000)
 import http from "node:http"; import fs from "node:fs"; import path from "node:path"; import crypto from "node:crypto"; import { EventEmitter } from "node:events"; import { fileURLToPath } from "node:url";
 import { parseAbi, parseAbiItem, decodeEventLog, keccak256, encodeAbiParameters } from "viem";
 import { loadEnv, deploymentFromEnv } from "../relayer/env.mjs"; import { clients } from "../relayer/chain.mjs";
 import { state0Root } from "./state0.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser", f));
-const { keypair } = await porw("claim.js"); const { RelayClient } = await porw("relay_client.js"); const V = await porw("verify.js");
+const { keypair } = await porw("claim.js"); const { RelayClient } = await porw("relay_client.js"); const V = await porw("verify.js"); const L = await porw("lif.js");
 
 { const i = process.argv.indexOf("--env"); loadEnv(i >= 0 ? process.argv[i + 1] : process.env.PORW_ENV_FILE); }
 const e = process.env; const num = (k, d) => (e[k] ? Number(e[k]) : d);
 const cfg = { key: e.GATEWAY_KEY, bearer: e.GATEWAY_BEARER || null, open: e.GATEWAY_OPEN === "1", relayer: (e.GATEWAY_RELAYER || "").replace(/\/$/, ""),
   minRedundancy: num("GATEWAY_MIN_REDUNDANCY", 2), weiPerStep: BigInt(e.GATEWAY_WEI_PER_STEP || "100000000000"), defaultSteps: num("GATEWAY_DEFAULT_STEPS", 100), maxSteps: num("GATEWAY_MAX_STEPS", 20000),
   state: e.GATEWAY_STATE || path.join(process.cwd(), "gateway-state.json"), port: num("GATEWAY_PORT", num("PORT", 8790)), host: e.GATEWAY_HOST || "127.0.0.1",
-  keep: num("GATEWAY_KEEP", 5000), keepAliveMs: num("GATEWAY_KEEPALIVE_MS", 20000), resultTimeoutMs: num("GATEWAY_RESULT_TIMEOUT_MS", 600000), pollMs: num("GATEWAY_POLL_MS", 1000),
+  keep: num("GATEWAY_KEEP", 5000), countsWaitMs: num("GATEWAY_COUNTS_WAIT_MS", 15000), keepAliveMs: num("GATEWAY_KEEPALIVE_MS", 20000), resultTimeoutMs: num("GATEWAY_RESULT_TIMEOUT_MS", 600000), pollMs: num("GATEWAY_POLL_MS", 1000),
   aliases: Object.fromEntries((e.GATEWAY_MODELS || "").split(",").map((kv) => kv.split("=").map((s) => s.trim())).filter((kv) => kv.length === 2 && kv[0]).map(([k, v]) => [k, v.toLowerCase()])),
   sets: e.GATEWAY_SETS ? JSON.parse(fs.readFileSync(e.GATEWAY_SETS, "utf8")) : {} };
 if (!cfg.key) throw new Error("GATEWAY_KEY: the wallet that pays the fees");
@@ -67,6 +72,10 @@ const save = () => { const tmp = cfg.state + ".tmp"; fs.writeFileSync(tmp, JSON.
 if (fs.existsSync(cfg.state)) for (const c of JSON.parse(fs.readFileSync(cfg.state, "utf8"))) calls.set(c.id, c);
 const emit = (c, type, data = {}) => { c.events.push({ type, at: Date.now(), ...data }); save(); bus.get(c.id)?.emit("event", { type, ...data }); };
 const TERMINAL = new Set(["completed", "failed"]);
+// spike counts, beside the state file: bytes as the executor sent them (LE u32 per neuron), one file per call, written
+// only once they have hashed to the digest the task settled on
+const countsDir = cfg.state + ".counts"; const countsFile = (id) => path.join(countsDir, id + ".bin");
+const DT_MS = 0.1; // one int-lif step (aigg-porw LifRowCheck: DT_TAU_M_Q16 = 0.1 ms / 20 ms)
 
 // ---- models ----
 let served = { at: 0, list: [] };
@@ -114,7 +123,11 @@ async function plan(body) {
   // the float ran dry: say so before the chain does, and in a way the operator's alerting can tell from a cold model
   const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + GAS_MARGIN) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
   const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: block + BigInt(TASK_TIMEOUT), redundancy };
-  return { m, task, stimulate, silence, stimulated: init?.stimulated ?? null, readout: x.readout ?? null };
+  // what to read out: named neurons, or (asked for nothing) the ten that fired most. Checked now, while refusing is free
+  let readout = null; if (x.readout != null) { if (!lif) throw new Refusal(400, "invalid_request_error", `${m.exec} has no spike counts to read out`);
+    if (x.readout.top != null) { if (!Number.isInteger(x.readout.top) || x.readout.top < 1 || x.readout.top > 1000) throw new Refusal(400, "invalid_request_error", "readout.top is 1 … 1000"); readout = { top: x.readout.top }; }
+    else { const ids = idsOf(x.readout, "readout"); const bad = ids.find((i) => i >= m.neurons); if (bad !== undefined) throw new Refusal(400, "invalid_request_error", `readout id ${bad} is not a neuron of this brain (0 … ${m.neurons - 1})`); readout = { ids }; } }
+  return { m, task, stimulate, silence, stimulated: init?.stimulated ?? null, readout };
 }
 
 // ---- the life of a call (docs/GATEWAY.md §2) ----
@@ -134,7 +147,7 @@ function create(p, body) {
   const nonce = "0x" + crypto.randomBytes(32).toString("hex"); const id = taskIdOf(p.task, nonce);
   const c = { id, created_at: Math.floor(Date.now() / 1000), status: "queued", model: body.model, mepId: p.m.mepId, exec: p.m.exec, task: wire(p.task), nonce,
     stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, executors: [], results: {}, events: [], error: null, receipt: null };
-  calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) calls.delete(old.id); // oldest first: a Map keeps insertion order
+  calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order
   save(); return c; // the INTENT is on disk before a wei moves: the id is the task's, so a restart can tell whether it was posted
 }
 async function drive(c) {
@@ -148,12 +161,16 @@ async function drive(c) {
     c.executors = ex; c.status = "in_progress"; const stored = await readMarket("tasks", [c.id]); c.posted_at = Number(stored[3]);
     emit(c, "response.created", { executors: ex }); log(`task ${c.id.slice(0, 12)}… ${c.model}: ${task.steps} steps, fee ${task.fee} wei, executors ${ex.map((a) => a.slice(0, 8)).join(", ")}`);
     // announce to each executor's session inbox; it runs, signs, and hands the result to the relayer, which pays for submitResult
-    const announce = { taskId: c.id, stimulusSeed: task.stimulusSeed, steps: task.steps, commitStride: task.commitStride, ...(c.exec === "int-lif" ? { initStateRoot: task.initStateRoot } : {}), ...(c.stimulate ? { stimulusIds: c.stimulate } : {}), ...(c.silence ? { silenceIds: c.silence } : {}) };
+    const announce = { taskId: c.id, stimulusSeed: task.stimulusSeed, steps: task.steps, commitStride: task.commitStride, ...(c.exec === "int-lif" ? { initStateRoot: task.initStateRoot, counts: true } : {}), ...(c.stimulate ? { stimulusIds: c.stimulate } : {}), ...(c.silence ? { silenceIds: c.silence } : {}) };
     // The replies are progress, not the condition: what settles a task is what is ON THE CHAIN, so nothing below waits for them.
-    for (const a of ex.filter((x) => !c.results[x]?.execRoot)) (async () => { let r;
-      try { const got = await relay.request(await sessionOf(a), "task-announce", c.mepId, announce, { timeoutMs: cfg.resultTimeoutMs, responseType: "result" }); r = { execDigest: got.payload.execDigest, execRoot: got.payload.execRoot }; }
+    const offered = new Map(); // executor -> the bytes it says are the spike counts, kept only if they hash to the digest IT signed
+    const replies = ex.filter((x) => !c.results[x]?.execRoot || c.exec === "int-lif").map(async (a) => { let r;
+      try { const got = await relay.request(await sessionOf(a), "task-announce", c.mepId, announce, { timeoutMs: cfg.resultTimeoutMs, responseType: "result" }); r = { execDigest: got.payload.execDigest, execRoot: got.payload.execRoot };
+        if (typeof got.payload.counts === "string" && got.payload.countsEncoding === "u32le-base64") { const bytes = new Uint8Array(Buffer.from(got.payload.counts, "base64"));
+          r.counts = bytes.length % 4 === 0 && V.hex(L.countsDigest(new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4))) === r.execDigest.toLowerCase() ? "match the digest it signed" : "DO NOT match the digest it signed";
+          if (r.counts.startsWith("match")) offered.set(a, bytes); } }
       catch (err) { r = { error: String(err?.message || err).slice(0, 200) }; }
-      if (!TERMINAL.has(c.status)) { c.results[a] = r; emit(c, "response.in_progress", { executor: a, ...r }); } })();
+      if (!TERMINAL.has(c.status)) { c.results[a] = r; emit(c, "response.in_progress", { executor: a, ...r }); } });
     // settle when every executor's result is on-chain, or when the market's timeout lets anybody settle without them
     for (;;) { const s = await Promise.all(ex.map((a) => ch.market.read.submitted([c.id, a]))); if (s.every(Boolean)) break;
       if (Number(await blockNumber()) > c.posted_at + TASK_TIMEOUT) break; await sleep(cfg.pollMs); }
@@ -166,8 +183,16 @@ async function drive(c) {
     if (dispute) { c.receipt = { ...base, executors: ex, disputed: [dispute.args.a, dispute.args.b].map((a) => a.toLowerCase()) }; return fail(c, 502, "disputed", "the executors disagreed and the task is in dispute: nothing is billed, and the fee is held until the dispute resolves"); }
     if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, "no_result", "no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
     const at = Number((await readMarket("tasks", [c.id]))[4]);
+    // The output. A provider replies after it has submitted, so the task may have settled first: wait a little for a vector
+    // that hashes to the SETTLED digest. One is enough, whoever sent it -- the digest is what the providers agreed on.
+    const digest = settled.args.execDigest.toLowerCase(); const verified = () => [...offered].find(([a]) => c.results[a]?.execDigest?.toLowerCase() === digest);
+    if (c.exec === "int-lif" && BigInt(digest) !== 0n) { let allIn = false; Promise.allSettled(replies).then(() => { allIn = true; }); const t0 = Date.now(); while (!verified() && !allIn && Date.now() - t0 < cfg.countsWaitMs) await sleep(100); }
+    const got = c.exec === "int-lif" ? verified() : null; if (got) { fs.mkdirSync(countsDir, { recursive: true, mode: 0o700 }); fs.writeFileSync(countsFile(c.id), got[1]); }
+    c.counts = c.exec !== "int-lif" ? { status: "none: " + c.exec + " has no spike counts" } : got ? { status: "verified", from: got[0], neurons: got[1].length / 4 }
+      : { status: BigInt(digest) === 0n ? "unavailable: the providers agreed on the root and split on the digest, so there is no digest to check counts against" : "unavailable: no provider returned counts that hash to the settled digest" };
     c.receipt = { ...base, executors: settled.args.executors.map((a) => a.toLowerCase()), exec_digest: settled.args.execDigest, exec_root: c.results[settled.args.executors[0].toLowerCase()]?.execRoot ?? (await ch.market.read.resultOf([c.id, settled.args.executors[0]]))[1],
-      settled_at: at, finality: CHALLENGE_WINDOW ? "settled" : "final", final_after_block: at + CHALLENGE_WINDOW };
+      settled_at: at, finality: CHALLENGE_WINDOW ? "settled" : "final", final_after_block: at + CHALLENGE_WINDOW,
+      counts: c.counts, ...(got ? { counts_url: `/v1/tasks/${c.id}/counts` } : {}) };
     c.status = "completed"; emit(c, "response.completed"); log(`task ${c.id.slice(0, 12)}… settled: ${c.receipt.executors.length} paid, digest ${c.receipt.exec_digest.slice(0, 12)}…`);
   } catch (err) { fail(c, 500, "gateway_error", String(err?.shortMessage || err?.message || err).slice(0, 300)); }
   finally { setTimeout(() => bus.delete(c.id), 1000); }
@@ -182,9 +207,18 @@ async function finality(c) {
   c.receipt.final_after_block = settledAt + CHALLENGE_WINDOW;
   c.receipt.finality = repudiated ? "repudiated" : disputed ? "challenged" : block > settledAt + CHALLENGE_WINDOW ? "final" : "settled"; save();
 }
-/** the Responses API's object. M0: a receipt and no readout -- executors return digests only (docs/GATEWAY.md §1.2) */
+/** the verified counts of a call, or null: what is on disk was checked against the settled digest before it was written */
+const countsOf = (c) => { try { const b = fs.readFileSync(countsFile(c.id)); return new Uint32Array(b.buffer, b.byteOffset, b.length / 4); } catch { return null; } };
+function readoutOf(c) {
+  const counts = c.counts?.status === "verified" ? countsOf(c) : null; if (!counts) return { readout: null, readout_status: c.counts?.status || "unavailable" };
+  const seconds = c.task.steps * DT_MS / 1000; const row = (id) => ({ id, spikes: counts[id], hz: Math.round(counts[id] / seconds * 100) / 100 });
+  let total = 0, active = 0; for (const n of counts) { total += n; if (n) active++; }
+  const ids = c.readout?.ids || Array.from(counts.keys()).filter((i) => counts[i] > 0).sort((a, b) => counts[b] - counts[a] || a - b).slice(0, c.readout?.top || 10);
+  return { readout: ids.map(row), readout_status: "verified: these counts hash to the digest the providers settled on", summary: { neurons: counts.length, active_neurons: active, total_spikes: total, steps: c.task.steps, dt_ms: DT_MS, simulated_ms: c.task.steps * DT_MS } };
+}
+/** the Responses API's object: the readout as the message, the receipt beside it */
 function view(c) {
-  const done = c.status === "completed"; const text = done ? JSON.stringify({ exec_digest: c.receipt.exec_digest, readout: null, readout_status: "executors return digests only in this milestone: exec_digest is keccak(n ‖ spike counts), and the receipt says who agreed on it" }) : null;
+  const done = c.status === "completed"; const text = done ? JSON.stringify({ exec_digest: c.receipt.exec_digest, ...readoutOf(c) }) : null;
   return { id: c.id, object: "response", created_at: c.created_at, status: c.status, model: c.model, system_fingerprint: `${c.exec}:${c.mepId.slice(0, 18)}`,
     output: done ? [{ type: "message", id: "msg_" + c.id.slice(2, 26), status: "completed", role: "assistant", content: [{ type: "output_text", text, annotations: [] }] }] : [],
     usage: { input_tokens: 0, output_tokens: done ? c.task.steps : 0, total_tokens: done ? c.task.steps : 0 }, error: c.error, receipt: c.receipt, executors: c.executors };
@@ -224,6 +258,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && p === "/v1/responses") return await respond(req, res, await readBody(req));
     const one = /^\/v1\/responses\/(0x[0-9a-fA-F]{64})$/.exec(p);
     if (req.method === "GET" && one) { const c = calls.get(one[1].toLowerCase()); if (!c) return json(res, 404, { error: { type: "not_found", message: "no such call" } }); await finality(c); return json(res, 200, view(c)); }
+    const cnt = /^\/v1\/tasks\/(0x[0-9a-fA-F]{64})\/counts$/.exec(p);
+    if (req.method === "GET" && cnt) { const c = calls.get(cnt[1].toLowerCase()); const ok = c && c.counts?.status === "verified" && fs.existsSync(countsFile(c.id));
+      if (!ok) return json(res, 404, { error: { type: "not_found", message: c ? `no verified counts for this call (${c.counts?.status || c.status})` : "no such call" } });
+      res.writeHead(200, { "content-type": "application/octet-stream", "x-exec-digest": c.receipt.exec_digest, "x-counts-encoding": "u32le", "x-neurons": String(c.counts.neurons) }); return res.end(fs.readFileSync(countsFile(c.id))); }
     if (req.method === "POST" && p === "/v1/chat/completions") { // a caller that reaches the adapter directly; ai.gg's gateway sends /v1/responses
       const b = await readBody(req); if (b.stream) throw new Refusal(400, "invalid_request_error", "stream /v1/responses instead: this alias is not streamed");
       const c = create(await plan({ ...b, input: b.messages, background: false }), b); start(c); await done(c); if (c.status !== "completed") return json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id });

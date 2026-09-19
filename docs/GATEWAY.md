@@ -1,6 +1,6 @@
 # The gateway: a brain behind an inference API
 
-Status: design, 2026-09-19; **milestone 0 is built** (`gateway/`, `test/e2e_gateway.mjs` — §7). Nothing else is. Where a
+Status: design, 2026-09-19; **milestones 0 and 1 are built** (`gateway/`, `test/e2e_gateway.mjs` — §7). Nothing else is. Where a
 statement is about code that exists it names the file;
 where it is a proposal it says so. §8 records what was decided on 2026-09-19, and what is still open.
 
@@ -88,8 +88,8 @@ Today an executor returns `{taskId, execDigest, execRoot, signature}` and nothin
 `execDigest = keccak(LE32 n ‖ counts[n])`: the digest **is** the hash of every neuron's spike count
 (`aigg-porw: web/porw-browser/lif.js`). The counts are computed in `PorwNode._runLif` and dropped by `_execute`.
 
-So the output needs no new proof system. **Proposal (an aigg-porw change):** an announcement may ask for `counts`; the
-executor returns them with its result (139,255 × 4 bytes ≈ 557 KB); the gateway checks
+So the output needs no new proof system. **Built (aigg-porw #30, `test_counts.mjs`):** an announcement may ask for
+`counts: true`; the executor returns them with its result — to the asker only, never in what is submitted on-chain — (139,255 × 4 bytes ≈ 557 KB); the gateway checks
 `keccak(n ‖ counts) == settledDigest(taskId)` and answers from them. The response carries the readout the caller asked
 for as rates, the digest, and a way to fetch the full vector:
 
@@ -110,8 +110,12 @@ digest a strict majority of the paid executors gave, and nothing on-chain ties a
 they are what independent providers agreed on. A per-neuron opening against `execRoot` exists for the day that is not
 enough (`PorwNode.lifOpenState`): the last committed state carries the cumulative count.
 
-Until the upstream change lands, **v0** returns the receipt alone and, for the project's own use, counts recomputed by
-the gateway (~11 s per 5,000-step run in Node).
+The gateway keeps a vector only if it hashes to the digest its sender signed, serves one only if that digest is the
+settled one, and says in the receipt whose it was (`receipt.counts`); a provider that hands over other counts is
+ignored and named. A provider replies *after* it has submitted on-chain, so a task can settle before its counts
+arrive: the gateway waits `GATEWAY_COUNTS_WAIT_MS` for them, and a call whose providers split on the digest has no
+readout at all, which it says. `readout` takes `{ ids }`, `{ set }` or `{ top: k }`; asked for nothing, it is the ten
+neurons that fired most. Rates assume the model's 0.1 ms step, and the response says so (`summary.dt_ms`).
 
 ## 2. The life of a call
 
@@ -277,7 +281,7 @@ out whose digest the test recomputes; then the failure rows of §3, one by one.
 | | | repo |
 |---|---|---|
 | M0 ✔ | the adapter, receipt-only responses, capacity check, refunds, disputes, restart recovery; the gateway's address in `PORW_TASK_CLIENTS`. Not yet: batches (`n`), cell-type tables, the determinism cache, waking a cold epoch | aigg-bnb |
-| M1 | `counts` in the announcement and the result; verified readouts | aigg-porw, aigg-bnb |
+| M1 ✔ | `counts` in the announcement and the result; verified readouts; `GET /v1/tasks/{id}/counts`. Not yet: a batch's per-run counts | aigg-porw, aigg-bnb |
 | M2 | registered in `aigg-src` as an OpenAI-compatible account with channel pricing; model-mapping sync | aigg-src (config only) |
 | M3 | wake by task client; `providers` in `/meps`; the Host view as a provider's dashboard (requests served, earned, models online) | aigg-bnb |
 | M4 | `model_subsidies` | aigg-src |
