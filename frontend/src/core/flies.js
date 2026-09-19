@@ -9,7 +9,7 @@
 // nobody hatches in that window needs `rearm`, which costs a whole BREED_FEE. A relayer running the hatch keeper
 // makes that window irrelevant; the Hatch button is for when nobody is.
 import { keccakWords, decodeUint, decodeAddress } from "./abi.js";
-import { state, call, send, eth, log, notify } from "./controller.js";
+import { state, call, send, read, log, notify } from "./controller.js";
 
 export const FEMALE = 0, MALE = 1, UNHATCHED = 2;
 export const WINDOW = 256; // block hashes the EVM keeps
@@ -17,7 +17,7 @@ const ZERO32 = "0x" + "0".repeat(64);
 const MAX_LISTED = 500; // the page walks ids 1..totalSupply (the contract has no owner index); past this it needs an indexer
 
 const words = (data) => { const h = data.slice(2); const out = []; for (let i = 0; i + 64 <= h.length; i += 64) out.push("0x" + h.slice(i, i + 64)); return out; };
-const blockNumber = async () => Number(await eth().request({ method: "eth_blockNumber" }));
+const blockNumber = async () => Number(await read("eth_blockNumber"));
 
 /** Individual, in the order the contract's getter returns it */
 function decodeIndividual(id, data) {
@@ -47,11 +47,17 @@ export async function loadFlies() {
   const n = Number(decodeUint(await call(address, "totalSupply()")));
   const flies = { address, missing: false, truncated: n > MAX_LISTED, block: await blockNumber(),
     breedFee: decodeUint(await call(address, "BREED_FEE()")), bounty: decodeUint(await call(address, "HATCH_BOUNTY()")),
+    mintPrice: decodeUint(await call(address, "MINT_PRICE()")), mintBond: decodeUint(await call(address, "MINT_BOND()")),
+    royaltyBps: Number(decodeUint(await call(address, "ROYALTY_BPS()"))), market: decodeAddress(await call(address, "MARKET()")),
+    genesisRoot: await call(address, "GENESIS_ROOT()"), owed: state.wallet ? decodeUint(await call(address, "owed(address)", [state.wallet])) : 0n,
+    genesis: state.flies?.genesis || null,
     baseFemale: await call(address, "BASE_FEMALE()"), baseMale: await call(address, "BASE_MALE()"), all: [] };
   for (let id = 1; id <= Math.min(n, MAX_LISTED); id++) {
     const f = decodeIndividual(id, await call(address, "individuals(uint256)", [id]));
     f.owner = decodeAddress(await call(address, "ownerOf(uint256)", [id])); f.mine = !!state.wallet && f.owner === state.wallet;
     f.preview = state.flies?.all.find((x) => x.id === id && x.seedBlock === f.seedBlock)?.preview || null; // keep what we already worked out
+    // what its experiments have set aside and nobody has moved to its owner yet (the market holds it until `settle`)
+    f.pending = flies.royaltyBps > 0 && f.mepId !== ZERO32 ? decodeUint(await call(flies.market, "royalties(bytes32)", [f.mepId])) : 0n;
     flies.all.push(f);
   }
   state.flies = flies; notify(); await watchEggs();
@@ -59,7 +65,7 @@ export async function loadFlies() {
 
 /** what the child will be, from the seed block's hash -- the same arithmetic as FlyCollection.hatch */
 async function previewOf(f, byId) {
-  const b = await eth().request({ method: "eth_getBlockByNumber", params: ["0x" + f.seedBlock.toString(16), false] });
+  const b = await read("eth_getBlockByNumber", ["0x" + f.seedBlock.toString(16), false]);
   if (!b || !b.hash) return null;
   const seed = keccakWords([byId.get(f.parentA).deltaHash, byId.get(f.parentB).deltaHash, f.parentA, f.parentB, f.id, b.hash]);
   return { seed, sex: Number(BigInt(seed) & 1n) };
@@ -105,5 +111,33 @@ export async function breed(damId, sireId) {
   await loadFlies();
   return state.flies.all.length; // ids are sequential: the newborn is the last one
 }
+// ---- adoption ----
+// The genesis set ships with the page (/genesis/genesis-v1.json: index, sex, deltaHash, recipe, proof). It is only
+// offered if its root IS the collection's GENESIS_ROOT -- a page pointed at another collection must not sell this
+// one's founders -- and an individual only while `genesisMinted(index)` is false.
+const GENESIS_URL = "/genesis/genesis-v1.json";
+export async function loadGenesis() {
+  const F = state.flies; if (!F || F.missing) return;
+  let file = null; try { file = await (await fetch(GENESIS_URL)).json(); } catch {}
+  if (!file || String(file.root).toLowerCase() !== String(F.genesisRoot).toLowerCase()) { F.genesis = { matches: false, open: [] }; notify(); return; }
+  const open = []; const chunk = 10;
+  for (let i = 0; i < file.individuals.length; i += chunk) {
+    const part = file.individuals.slice(i, i + chunk);
+    const taken = await Promise.all(part.map((x) => call(F.address, "genesisMinted(uint256)", [x.index])));
+    part.forEach((x, k) => { if (decodeUint(taken[k]) === 0n) open.push(x); });
+  }
+  F.genesis = { matches: true, size: file.size, open }; notify();
+}
+export async function adopt(index) {
+  const F = state.flies; const x = F.genesis?.open.find((g) => g.index === index); if (!x) throw new Error("that individual is not open for adoption");
+  log(`adopting founder #${index} — ${Number(F.mintPrice) / 1e18} BNB${F.mintBond ? `, of which ${Number(F.mintBond) / 1e18} becomes your own bond` : ""}`);
+  const r = await send(F.address, "mint(uint32,uint8,bytes32,bytes32[])", [x.index, x.sex, x.deltaHash, x.proof], F.mintPrice);
+  if (r.status !== "0x1") throw new Error("adoption reverted");
+  await loadFlies(); await loadGenesis();
+}
+// ---- the royalty: set aside by the market per brain, moved to the fly's owner by `settle`, collected by `withdraw` ----
+export async function settle(id) { await send(state.flies.address, "settle(uint256)", [id]); await loadFlies(); }
+export async function withdraw() { await send(state.flies.address, "withdraw()"); await loadFlies(); }
+
 export async function hatch(id) { await send(state.flies.address, "hatch(uint256)", [id]); await loadFlies(); }
 export async function rearm(id) { await send(state.flies.address, "rearm(uint256)", [id], state.flies.breedFee); await loadFlies(); }

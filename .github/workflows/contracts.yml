@@ -54,6 +54,9 @@ jobs:
       # render.yaml is edited next to a key file: no secret has a value, and the brains it names are known ones
       - run: node test/render_blueprint.mjs
 
+      # the genesis set is committed to once, at deployment: the published file is what the generator writes and every proof opens
+      - run: node test/genesis_set.mjs
+
       - run: node test/frontend_memory.mjs
 
       # chain-free: the FlyBnB battery file is well formed and its batch form is order-preserving; the paper build never touches prose
