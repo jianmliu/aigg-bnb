@@ -1,0 +1,20 @@
+{
+ "chainId": 97,
+ "wallet": "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa",
+ "mepId": "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a",
+ "txs": {
+  "bond": "0x2b937dbdd4fa58aaa13d6073912ee5989f699217d2f2898632c8c9c527f6a9c4",
+  "delegate": "0x3690b0b52892e990e7a2e9aba66b6a87b93b888d321d5755e805d9f9b07e4730",
+  "materialize": "0x797f6f91e30475af802f1a63673c4c7ea7f3ec0affe5238b5cc026683ac772da",
+  "postTask": "0xb95ee30efa0face3dfdebe980bd38eec4ffa4ba4058af8038f925a39d95d8386",
+  "result": "0xd6c009221674fdd8a4ece302dc68662f94d18cc3de307314d6fb7f9bb6c496a2",
+  "settle": "0x2a4811026d7bd341e67f3f8f35b05ee13f4353554c44a47f97939e6ccd74e875"
+ },
+ "taskId": "0x2ad543a9e867f60c4ea73fbfb02074dda1235a98980489c6d11ce47590a1683c",
+ "claims": {
+  "659207": "0xabc17e35cef8542d16b70a4a9565eb27a6743ea513a34309f5b5e05d0aae2738"
+ },
+ "materialized": {
+  "659207": true
+ }
+}
