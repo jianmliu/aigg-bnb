@@ -10,11 +10,12 @@ import "aigg-porw/mesh/TaskMarket.sol";
 import "aigg-porw/mesh/ExecutionDisputes.sol";
 import "aigg-porw/mesh/RelayRegistry.sol";
 import "../src/CommitRevealBeacon.sol";
+import "../src/CollectionWhitelist.sol";
 
 /// Deploys the mesh with BNB-chain parameters (env-overridable; defaults = docs/DESIGN.md §4 at ~1 s blocks).
 ///   forge script script/DeployBNB.s.sol --rpc-url $RPC --broadcast --private-key $PK
 contract DeployBNB is Script {
-    struct Deployed { address verifier; address meps; address instances; address beacon; address claims; address market; address disputes; address relays; }
+    struct Deployed { address verifier; address meps; address instances; address beacon; address claims; address market; address disputes; address relays; address whitelist; }
     function run() external returns (Deployed memory d) {
         uint64 epochBlocks = uint64(vm.envOr("EPOCH_BLOCKS", uint256(600)));
         uint64 commitBlocks = uint64(vm.envOr("COMMIT_BLOCKS", uint256(120)));
@@ -54,16 +55,21 @@ contract DeployBNB is Script {
         RelayRegistry relays = new RelayRegistry(relayBond, exitDelay);
         inst.setClaimManager(address(claims), claimValidity); inst.setSlasher(address(disputes), true); market.setDisputes(address(disputes));
         if (challengeWindow != 0) market.setChallengeParams(challengeDeposit, challengeWindow, challengeSink);
+        // Which collections of brains this deployment recognises. It starts empty: collections are deployed later, against
+        // these registries, and the curator lists them. The curator decides only what is listed -- it holds no funds and
+        // no protocol role -- and defaults to the deployer; hand it to a multisig with proposeCurator / acceptCurator.
+        CollectionWhitelist whitelist = new CollectionWhitelist(vm.envOr("CURATOR", msg.sender));
         vm.stopBroadcast();
-        d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays));
+        d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays), address(whitelist));
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);
-        console.log("claims", d.claims); console.log("market", d.market); console.log("disputes", d.disputes); console.log("relays", d.relays);
+        console.log("claims", d.claims); console.log("market", d.market); console.log("disputes", d.disputes); console.log("relays", d.relays); console.log("whitelist", d.whitelist);
         // deployments/<chainId>.json consumed by the relayer and the frontend
         string memory j = "d";
         vm.serializeUint(j, "chainId", block.chainid); vm.serializeUint(j, "epochBlocks", epochBlocks);
         vm.serializeAddress(j, "verifier", d.verifier); vm.serializeAddress(j, "meps", d.meps); vm.serializeAddress(j, "instances", d.instances); vm.serializeAddress(j, "beacon", d.beacon);
         vm.serializeAddress(j, "claims", d.claims); vm.serializeAddress(j, "market", d.market); vm.serializeAddress(j, "disputes", d.disputes);
-        string memory addrs = vm.serializeAddress(j, "relays", d.relays);
+        vm.serializeAddress(j, "relays", d.relays);
+        string memory addrs = vm.serializeAddress(j, "whitelist", d.whitelist);
         string memory root = "r"; vm.serializeUint(root, "chainId", block.chainid); vm.serializeUint(root, "epochBlocks", epochBlocks); vm.serializeUint(root, "claimValidityEpochs", claimValidity);
         vm.serializeUint(root, "challengeWindow", challengeWindow); vm.serializeUint(root, "challengeDeposit", challengeWindow == 0 ? 0 : challengeDeposit);
         string memory out = vm.serializeString(root, "addresses", addrs);

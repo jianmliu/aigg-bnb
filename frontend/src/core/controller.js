@@ -31,7 +31,7 @@ export const log = (m) => {
   state.lastLog = m; onChange();
 };
 
-export const state = { deployment: null, meps: [], hosted: new Set(), active: null, wallet: null, chainId: null, chainOk: false,
+export const state = { deployment: null, unit: null /* wei per vote, read from this deployment */, meps: [], hosted: new Set(), active: null, wallet: null, chainId: null, chainOk: false,
   balance: 0n, bonded: 0n, weight: 0n, exitAt: 0n, inMep: [], session: null, delegation: null, resolved: null, epochInfo: null,
   prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null,
   flies: null }; // the collection, as flies.js reads it: null until a deployment that names one is loaded
@@ -58,7 +58,17 @@ async function onTaskResult(res) {
   log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
 }
 export const eth = () => window.ethereum;
-export const call = async (to, sig, args = []) => eth().request({ method: "eth_call", params: [{ to, data: encode(sig, args) }, "latest"] });
+// Looking needs no wallet. A read goes through the wallet only when one is connected AND on this deployment's chain --
+// the node that just mined your transaction is the one that knows about it -- and otherwise to the deployment's own RPC,
+// which the relayer names: a visitor without a wallet can still see the colony, and a wallet left on another chain
+// cannot answer for this one. Writes are always the wallet's.
+export const read = async (method, params = []) => {
+  if (eth() && state.wallet && state.chainOk) return eth().request({ method, params });
+  const url = state.deployment?.rpc; if (!url) throw new Error("nothing to read the chain with: no wallet is connected and the deployment names no RPC");
+  const r = await (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) })).json();
+  if (r.error) throw new Error(r.error.message || "RPC error"); return r.result;
+};
+export const call = async (to, sig, args = []) => read("eth_call", [{ to, data: encode(sig, args) }, "latest"]);
 export const send = async (to, sig, args = [], value = 0n) => { const hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: state.wallet, to, data: encode(sig, args), value: "0x" + value.toString(16) }] }); log(`tx ${hash.slice(0, 12)}… sent`); for (let i = 0; i < 120; i++) { const r = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] }); if (r) { log(`tx ${hash.slice(0, 12)}… ${r.status === "0x1" ? "confirmed" : "REVERTED"}`); return r; } await new Promise((x) => setTimeout(x, 500)); } throw new Error("receipt timeout"); };
 
 // The relayer URL is read from the DOM rather than from React state on purpose: the field is uncontrolled, so a
@@ -76,6 +86,8 @@ export async function loadDeployment() {
   if (!state.active) state.active = state.meps[0]?.mepId || null;
   if (!state.hosted.size && state.active) state.hosted.add(state.active);
   onChange(); log(`deployment loaded: ${state.meps.length} MEP(s)`); refreshEpoch();
+  // what one vote costs is a parameter of THIS deployment (0.05 BNB is the mainnet intent; a testnet's is smaller)
+  try { state.unit = decodeUint(await call(deployment.addresses.instances, "UNIT()")); onChange(); } catch (e) { log("could not read UNIT: " + (e.message || e)); }
 }
 export async function connect() {
   if (!eth()) throw new Error("no wallet (window.ethereum)");
@@ -167,7 +179,7 @@ export async function hostOnNode(m) {
   requireMemory(state.node.memoryBytes + bytes);
   // Reserve before awaiting: concurrent hot-adds, mismatched MEPs and failed loads still consume heap.
   state.node.memoryBytes += bytes;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv" });
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0 }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
   if (!r.matches) { log(`WARNING ${mepName(m)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
   log(`${mepName(m)}: resident on the node, serving audits and tasks`);
@@ -265,7 +277,7 @@ export async function postTask({ seed, steps, commitStride, redundancy, feeBnb, 
   if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Error("the scene seed is a uint32");
   const fee = BigInt(Math.round(parseFloat(feeBnb || "0") * 1e6)) * 10n ** 12n;
   if (fee < 0n) throw new Error("the fee cannot be negative");
-  const block = Number(await eth().request({ method: "eth_blockNumber" }));
+  const block = Number(await read("eth_blockNumber"));
   const deadline = BigInt(block + Math.max(1, Number(deadlineIn) || 0));
   const nonce = randomNonce();
   const task = [m.mepId, seed, steps, commitStride, "0x" + "0".repeat(64), fee, deadline, redundancy];

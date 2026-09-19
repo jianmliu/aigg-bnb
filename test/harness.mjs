@@ -24,12 +24,17 @@ export async function startAnvil(port = 8555) {
   const p = spawn(path.join(FOUNDRY, "anvil"), ["--port", String(port), "--silent", "--chain-id", "31337"], { stdio: "ignore" });
   const rpc = `http://127.0.0.1:${port}`;
   for (let i = 0; i < 60; i++) { try { if (await rpcCall(rpc, "eth_chainId")) break; } catch {} await sleep(250); }
-  return { proc: p, rpc, mine: (n) => rpcCall(rpc, "anvil_mine", ["0x" + n.toString(16)]), block: async () => Number(await rpcCall(rpc, "eth_blockNumber")), stop: () => p.kill() };
+  return { proc: p, rpc, call: (method, params) => rpcCall(rpc, method, params), mine: (n) => rpcCall(rpc, "anvil_mine", ["0x" + n.toString(16)]), block: async () => Number(await rpcCall(rpc, "eth_blockNumber")), stop: () => p.kill() };
 }
 export async function deploy(rpc, env = {}) {
   const e = { ...process.env, PATH: `${FOUNDRY}:${process.env.PATH}`, EPOCH_BLOCKS: "40", COMMIT_BLOCKS: "10", REVEAL_BLOCKS: "10", EXIT_DELAY: "5", OPENING_WINDOW: "10", TASK_TIMEOUT: "30", ROUND_BLOCKS: "10", ...env };
   await new Promise((res, rej) => { const p = spawn(path.join(FOUNDRY, "forge"), ["script", "script/DeployBNB.s.sol", "--rpc-url", rpc, "--chain-id", "31337", "--private-key", KEYS[0], "--broadcast"], { cwd: path.join(root, "contracts"), env: e, stdio: ["ignore", "pipe", "pipe"] }); let out = ""; p.stdout.on("data", (d) => (out += d)); p.stderr.on("data", (d) => (out += d)); p.on("exit", (c) => (c === 0 ? res() : rej(new Error("deploy failed: " + out.slice(-800))))); });
-  const dep = JSON.parse(fs.readFileSync(path.join(root, "deployments/31337.json"), "utf8")); dep.rpc = rpc; return dep;
+  const dep = JSON.parse(fs.readFileSync(path.join(root, "deployments/31337.json"), "utf8")); dep.rpc = rpc;
+  // the file is written from the script's SIMULATION: a contract created outside the broadcast has an address there and
+  // no code on the chain. Every address the deployment names has to be a contract.
+  const pub = createPublicClient({ transport: http(rpc) });
+  for (const [name, address] of Object.entries(dep.addresses)) if (typeof address === "string" /* forge's serializer leaves chainId and epochBlocks in here too */ && !(await pub.getCode({ address }))) throw new Error(`deployments/31337.json names ${name} at ${address}, and there is no contract there`);
+  return dep;
 }
 export function clientsFor(dep, key) {
   const chain = defineChain({ id: dep.chainId, name: "anvil", nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 }, rpcUrls: { default: { http: [dep.rpc] } } });
@@ -37,15 +42,19 @@ export function clientsFor(dep, key) {
   const c = (address, abi) => getContract({ address, abi, client: { public: pub, wallet } }); const a = dep.addresses;
   return { pub, wallet, account, meps: c(a.meps, MEPRegistryAbi), instances: c(a.instances, InstanceRegistryAbi), claims: c(a.claims, ClaimManagerAbi), market: c(a.market, TaskMarketAbi) };
 }
-/** register a MEP for a synthetic v1 brain: returns { mep, mepId, payload, st } (st from a throwaway node: synapseRoot) */
-export async function registerSyntheticMep(dep, key, { name = "flywire-female", neurons = 4000, synapses = 40000, steps = 2 } = {}) {
+/** a synthetic brain and the profile it registers as: { mep, fields (the registry's MEP struct), payload, st } -- nothing is sent */
+export async function syntheticMep({ name = "flywire-female", neurons = 4000, synapses = 40000, steps = 2 } = {}) {
   const { synthesizePayload } = await porw("synth.js"); const { PorwNode } = await porw("node.js"); const { loadKernelFromBytes } = await porw("porw.js");
   const payload = synthesizePayload(name, neurons, synapses); const wasm = fs.readFileSync(path.join(porwDir, "sketch.wasm"));
   const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: KEYS[4] }); const st = await nd.loadModel(name, payload, { maxSteps: steps }); const mep = st.mep;
-  const c = clientsFor(dep, key);
-  const h = await c.meps.write.registerMEP([{ modelId: hex(mep.modelId), schemeDigest: hex(mep.schemeDigest), execKind: hex(mep.execKind), neurons: st.hdr.neurons, synapses: st.hdr.synapses, synapseRoot: hex(st.csr.synapseRoot), weightsDA: "0x" + Buffer.from(`gnfd://aigg-brains/${name}.bin`).toString("hex") }]);
-  await c.pub.waitForTransactionReceipt({ hash: h });
-  return { mep, mepId: hex(mep.mepId), payload, st, steps };
+  const fields = { modelId: hex(mep.modelId), schemeDigest: hex(mep.schemeDigest), execKind: hex(mep.execKind), neurons: st.hdr.neurons, synapses: st.hdr.synapses, synapseRoot: hex(st.csr.synapseRoot), weightsDA: "0x" + Buffer.from(`gnfd://aigg-brains/${name}.bin`).toString("hex") };
+  return { mep, mepId: hex(mep.mepId), fields, payload, st, steps };
+}
+/** register a MEP for a synthetic v1 brain: returns { mep, mepId, payload, st } (st from a throwaway node: synapseRoot) */
+export async function registerSyntheticMep(dep, key, opts = {}) {
+  const S = await syntheticMep(opts); const c = clientsFor(dep, key);
+  await c.pub.waitForTransactionReceipt({ hash: await c.meps.write.registerMEP([S.fields]) });
+  return S;
 }
 export async function startRelayer(dep, key, mepIds, { relayPort = 0, apiPort = 0, env: extra = {} } = {}) {
   // the production path: everything from PORW_* environment variables (what deploy.sh's .env.<network> provides)
@@ -78,7 +87,11 @@ export async function deployMesh(rpc, key = KEYS[0]) {
 export const GENESIS = (() => { const DF = keccak256("0x01"), DM = keccak256("0x02"); const leaf = (i, sex, d) => keccak256(encodeAbiParameters([{ type: "uint32" }, { type: "uint8" }, { type: "bytes32" }], [i, sex, d]));
   const L0 = leaf(0, 0, DF), L1 = leaf(1, 1, DM); return { DF, DM, L0, L1, root: keccak256(encodePacked(["bytes32", "bytes32"], BigInt(L0) < BigInt(L1) ? [L0, L1] : [L1, L0])) }; })();
 export const FLY_PRICE = parseEther("0.06"), FLY_BREED_FEE = parseEther("0.01"), FLY_TREASURY = "0x0000000000000000000000000000000000007ea5";
-export const deployCollection = (dep, bounty, key = KEYS[0]) => create(clientsFor(dep, key), "FlyCollection", [keccak256("0x0f"), keccak256("0x0e"), GENESIS.root, 2, FLY_PRICE, 0n, FLY_BREED_FEE, bounty, FLY_TREASURY, dep.addresses.meps, ZERO_ADDR, ZERO_ADDR, ZERO_WORD, ZERO_WORD]);
+/** `baseMepFemale`: the base brain the collection answers for (and bonds adopters for, when `mintBond` > 0); `royaltyBps` > 0 registers
+ *  its flies under terms and needs the market; `genesis` { root, size, baseModelId }: a real genesis set instead of the two-fly one */
+export const deployCollection = (dep, bounty, key = KEYS[0], { baseMepFemale = ZERO_WORD, royaltyBps = 0, genesis = null, mintPrice = FLY_PRICE, mintBond = 0n } = {}) => create(clientsFor(dep, key), "FlyCollection",
+  [genesis ? genesis.baseModelId : keccak256("0x0f"), keccak256("0x0e"), genesis ? genesis.root : GENESIS.root, genesis ? genesis.size : 2, mintPrice, mintBond, FLY_BREED_FEE, bounty, FLY_TREASURY, dep.addresses.meps,
+   mintBond ? dep.addresses.instances : ZERO_ADDR, ZERO_ADDR, baseMepFemale, ZERO_WORD, royaltyBps ? dep.addresses.market : ZERO_ADDR, royaltyBps]);
 export async function adoptBoth(c, collection) { await sendTo(c, collection, "FlyCollection", "mint", [0, 0, GENESIS.DF, [GENESIS.L1]], FLY_PRICE); await sendTo(c, collection, "FlyCollection", "mint", [1, 1, GENESIS.DM, [GENESIS.L0]], FLY_PRICE); }
 /** the seed FlyCollection.hatch computes for child `id` of 1 x 2, given the hash of its seed block */
 export const flySeed = (id, blockHash) => keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }, { type: "uint256" }, { type: "uint256" }, { type: "uint256" }, { type: "bytes32" }], [GENESIS.DF, GENESIS.DM, 1n, 2n, BigInt(id), blockHash]));

@@ -7,7 +7,8 @@ export function deploymentFromEnv() {
   const e = process.env; if (!e.PORW_CLAIMS) return null;
   return { chainId: Number(need("PORW_CHAIN_ID")), rpc: need("PORW_RPC"), epochBlocks: Number(e.PORW_EPOCH_BLOCKS || 0), network: e.PORW_NETWORK || String(e.PORW_CHAIN_ID),
     addresses: { verifier: e.PORW_VERIFIER || null, meps: need("PORW_MEP_REGISTRY"), instances: need("PORW_INSTANCES"), beacon: e.PORW_BEACON || null, claims: need("PORW_CLAIMS"), market: need("PORW_MARKET"), disputes: e.PORW_DISPUTES || null, relays: e.PORW_RELAYS || null,
-      collection: e.PORW_COLLECTION || null } }; // FlyCollection: set it and the relayer hatches its eggs (the keeper)
+      collection: e.PORW_COLLECTION || null, // FlyCollection: set it and the relayer hatches its eggs (the keeper)
+      whitelist: e.PORW_WHITELIST || null } }; // CollectionWhitelist: which collections' brains are the system's; served to the page over /deployment
 }
 export function relayerFromEnv() {
   const e = process.env; return { privateKey: e.PORW_RELAYER_KEY || null, meps: e.PORW_MEP_IDS ? e.PORW_MEP_IDS.split(",").map((s) => s.trim()).filter(Boolean) : null,
@@ -24,5 +25,9 @@ export function relayerFromEnv() {
     // the URL they can actually reach us on rather than whatever address we happened to bind
     relayPath: e.PORW_RELAY_PATH || null, publicRelayUrl: e.PORW_PUBLIC_RELAY_URL || null,
     // PORW_KEEPER=0 still names PORW_COLLECTION to the page over /deployment, but leaves its eggs to somebody else
+    // whose tasks this relayer sponsors. Unset: anybody's. Set: only tasks posted by these addresses -- third-party tasks are not open yet
+    taskClients: e.PORW_TASK_CLIENTS ? e.PORW_TASK_CLIENTS.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean) : null,
+    // how often (in blocks) the collections on PORW_WHITELIST are walked for brains to serve
+    whitelistEvery: e.PORW_WHITELIST_EVERY ? Number(e.PORW_WHITELIST_EVERY) : null,
     keeper: e.PORW_KEEPER == null ? null : !(e.PORW_KEEPER === "0" || e.PORW_KEEPER === "false") };
 }

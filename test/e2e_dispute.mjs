@@ -16,13 +16,19 @@ try {
   const E = await H.porw("eip712.js"); const V = await H.porw("verify.js"); const D = await H.porw("dispute.js"); const L = await H.porw("lif.js");
   const wasm = fs.readFileSync(path.join(H.porwDir, "sketch.wasm"));
   const STEPS = 20, STRIDE = 5, SEED = 9, NEURONS = 3000, SYNAPSES = 30000;
+  // LIF_WUNIT=<q16>: run the whole dispute under another int-lif KIND -- the same rule with another weight unit, which is
+  // what a connectome counted on another scale pins (MaleCNS). The kind is declared on-chain first; the nodes load the
+  // model under it; the chain's row check then has to use that unit too, or the honest row would not verify.
+  const WUNIT = Number(process.env.LIF_WUNIT || 0); const lifOpts = { maxSteps: STEPS, exec: "lif", ...(WUNIT ? { wUnitQ16: WUNIT } : {}) };
   const payload = synthesizePayloadV2("lif-dispute", NEURONS, SYNAPSES);
 
   // ---- register the LIF MEP ----
   const probe = new PorwNode(await loadKernelFromBytes(wasm), { privHex: H.KEYS[4] });
-  const pst = await probe.loadModel("lif-dispute", payload, { maxSteps: STEPS, exec: "lif" });
+  const pst = await probe.loadModel("lif-dispute", payload, lifOpts);
   const mep = pst.mep, mepId = H.hex(mep.mepId); const n = pst.hdr.neurons;
   { const c = H.clientsFor(dep, H.KEYS[0]);
+    if (WUNIT) { await c.pub.waitForTransactionReceipt({ hash: await c.meps.write.declareLifKind([WUNIT]) });
+      check(`kind declared on-chain: weight unit ${WUNIT}, and its digest is the node's`, Number(await c.meps.read.lifWeightUnit([H.hex(mep.execKind)])) === WUNIT && H.hex(mep.execKind) === H.hex(L.lifExecKind(WUNIT)) && H.hex(mep.execKind) !== H.hex(L.lifExecKind())); }
     await c.pub.waitForTransactionReceipt({ hash: await c.meps.write.registerMEP([{ modelId: H.hex(mep.modelId), schemeDigest: H.hex(mep.schemeDigest), execKind: H.hex(mep.execKind), neurons: pst.hdr.neurons, synapses: pst.hdr.synapses, synapseRoot: H.hex(pst.csr.synapseRoot), weightsDA: "0x" + Buffer.from("gnfd://aigg-brains/lif-dispute.bin").toString("hex") }]) }); }
   check(`LIF MEP registered: ${n} neurons, ${STEPS} steps, stride ${STRIDE}`, await (await H.clientsFor(dep, H.KEYS[0])).meps.read.exists([mepId]));
 
@@ -35,7 +41,7 @@ try {
     const S = L.decodeState(prevStates, i * 16); if (S.refr > 0 || (S.flags & 1)) continue;
     const ps = await probe.lifPartialSums(mep.mepId, S_LIE, i); if (ps.sums.length < 3) continue;
     const last = ps.sums[ps.sums.length - 1];
-    let d = 0; for (const cand of [40, 400, 4000, 40000, 400000]) { if (!L.sameState(L.transition(S, last, i, S_LIE, SEED), L.transition(S, last + BigInt(cand), i, S_LIE, SEED))) { d = cand; break; } }
+    let d = 0; for (const cand of [40, 400, 4000, 40000, 400000]) { if (!L.sameState(L.transition(S, last, i, S_LIE, SEED, WUNIT || undefined), L.transition(S, last + BigInt(cand), i, S_LIE, SEED, WUNIT || undefined))) { d = cand; break; } }
     if (!d) continue;
     NEURON = i; inDeg = ps.sums.length; DELTA = d; break;
   }
@@ -49,7 +55,7 @@ try {
     const del = await E.makeDelegation(wallet, domains.registry, H.hex(session.address), 100000);
     await R.api("/tx/delegate", { instance: del.instance, session: del.session, expiry: del.expiry, sig: del.sig });
     const nd = new PorwNode(await loadKernelFromBytes(wasm), { privHex: "0x" + sessionByte.repeat(32), domains, delegation: del });
-    await nd.loadModel("lif-dispute", payload, { maxSteps: STEPS, exec: "lif" });
+    await nd.loadModel("lif-dispute", payload, lifOpts);
     const rc = new RelayClient([d0.relay], nd.key); await rc.connect(); const results = [];
     const svc = new NodeService(nd, rc, { onResult: async (res) => { results.push(res); res.relayer = await R.api("/tx/result", res); } }); svc.serve(mep.mepId);
     return { c, wallet, session, nd, rc, svc, results, addr: wallet.address.toLowerCase() };
@@ -100,7 +106,7 @@ try {
   // ---- now play the dispute out, move by move, both sides on-chain (shared with the live testnet run) ----
   const { driveDispute } = await import("./dispute_driver.mjs");
   A.execRoot = A.results[0].execRoot; B.execRoot = B.results[0].execRoot;
-  const out = await driveDispute(A, B, { taskId, disputes: disp, mepIdBytes: mep.mepId, n, steps: STEPS, stride: STRIDE, seed: SEED, challengeBytes, sLie: S_LIE, neuron: NEURON, delta: DELTA, chunkSize: pst.csr.chunk },
+  const out = await driveDispute(A, B, { taskId, disputes: disp, mepIdBytes: mep.mepId, n, steps: STEPS, stride: STRIDE, seed: SEED, challengeBytes, sLie: S_LIE, neuron: NEURON, delta: DELTA, chunkSize: pst.csr.chunk, wUnitQ16: WUNIT || undefined },
     { D, V, L, hex: H.hex }, { check, log: (m) => console.log("  " + m) });
   fs.writeFileSync(process.env.PORW_EVIDENCE || "/tmp/dispute-evidence.json", JSON.stringify({ taskId, mepId, neurons: n, steps: STEPS, stride: STRIDE, lie: { step: S_LIE, neuron: NEURON, delta: DELTA, kind: "input" }, ...out, honest: A.addr, liar: B.addr }, null, 1));
   for (const X of [A, B]) X.rc.close(); client.close(); R.stop();

@@ -2,7 +2,8 @@
 //
 // The borrowed shape is deliberate, because the product really is that shape. A brain is a LISTING. Whoever holds
 // one resident in a browser tab and proves it every epoch is its HOST, and puts down a deposit (the bond) to be
-// one. A scientist BOOKS an experiment against a listing and pays the hosts that ran it. So the page has the three
+// one. An experiment is a BOOKING against a listing, paid to the hosts that ran it -- and for now every booking is
+// the FlyBnB dataset's own: third-party experiments are not open yet, and the booking card says so instead of offering one. So the page has the three
 // places that kind of site has: Brains (browse the listings, open one, book an experiment on it), Host (the four
 // things it takes to become one, then the running node) and Flies (the individuals you own, and breeding) -- and a
 // fourth, Paper, which is what all of it is for: the FlyBnB atlas, its dataset, and the holders it acknowledges. The
@@ -21,15 +22,17 @@ import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
 import { BrainCard } from "./BrainCard.jsx";
 import FliesView from "./FliesView.jsx";
+import { BAKED_RELAYER, SOLO } from "./mode.js";
 import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
 
 const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
+const unitBnb = (wei) => (Number(wei) / 1e18).toFixed(6).replace(/0+$/, "").replace(/\.$/, ""); // 0.05, 0.005: an amount somebody types back in
 
 // Where the page points on first load. Locally that is a relayer on this machine; a deployed build gets
 // VITE_RELAYER_URL baked in, because `http://127.0.0.1:8788` on an https origin is blocked as mixed content
 // before it is anything else. The field stays editable either way -- pointing the page at your own relayer is
 // the whole reason the relayer is replaceable.
-const DEFAULT_RELAYER = import.meta.env?.VITE_RELAYER_URL || "http://127.0.0.1:8788";
+const DEFAULT_RELAYER = BAKED_RELAYER || "http://127.0.0.1:8788";
 
 /** the mark: a fly's head from the front -- two red eyes, a gold brain between them. The portraits are this, grown up */
 function Logo() {
@@ -54,15 +57,15 @@ function status(s) {
   if (s.node) return { tone: "live", text: `live · ${s.node.models.size} resident` };
   if (s.delegation) return { tone: "ready", text: "ready to start" };
   if (s.wallet) return { tone: "warn", text: "no session key" };
-  if (s.deployment) return { tone: "warn", text: "no wallet" };
-  return { tone: null, text: "offline" };
+  if (s.deployment) return { tone: "ready", text: "online" }; // a visitor needs no wallet to look around
+  return SOLO ? { tone: "warn", text: s.errors.length ? "relayer unreachable · retrying" : "connecting…" } : { tone: null, text: "no mesh loaded" };
 }
 
 const toneOfLine = (line) => (!line ? null : /ERROR|FAIL|REVERT|DOES NOT MATCH/.test(line) ? "bad" : /WARNING|note:/.test(line) ? "warn" : /\bok\b|confirmed|running|resident|matches/.test(line) ? "ok" : null);
 
 export default function App() {
   useNodeState();
-  const s = C.state;
+  const s = C.state; const hasCollection = !!s.deployment?.addresses?.collection;
   const active = C.mepById(s.active);
 
   // hosting capacity: controlled, because the memory projection under the model line reprices as it is typed
@@ -87,6 +90,18 @@ export default function App() {
   useEffect(() => { C.autofillUrl(); }, [s.active]);
   // after the first commit, not before: #relayer and #log have to exist before anything drives the page
   useEffect(() => { window.__ready = true; }, []);
+  // A deployed build knows its mesh (VITE_RELAYER_URL is baked in), so it opens it: a visitor who lands on the site
+  // should see the brains, not an empty shelf and "offline" until they find the arrow. A local build does not -- its
+  // default is a relayer on this machine that may not be running, and the tests point the field somewhere else first.
+  useEffect(() => {
+    if (!SOLO) return; let live = true;
+    (async () => { while (live && !C.state.deployment) { await C.wrap(C.loadDeployment)(); if (live && !C.state.deployment) await new Promise((r) => setTimeout(r, 5000)); } })();
+    return () => { live = false; };
+  }, []);
+  // the entrance plays once. A view that is hidden and shown again would otherwise replay it on every tab switch
+  // (a CSS animation restarts when display leaves `none`), and the listings would blink out each time
+  const [entered, setEntered] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setEntered(true), 1500); return () => clearTimeout(t); }, []);
 
   const e = s.epochInfo;
   const st = status(s);
@@ -109,18 +124,25 @@ export default function App() {
   const on = (fn) => C.wrap(fn);
 
   const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+  // Third-party experiments are not open yet: every task on the network is one the FlyBnB dataset needs, posted by the
+  // project, and the relayer says so (`taskClients`: whose tasks it sponsors; null = anybody's, as on a local mesh). The
+  // market is permissionless and the page cannot stop anybody posting -- but it does not offer what nothing will run.
+  const taskClients = s.deployment?.taskClients || null;
+  const bookingOpen = !taskClients || (!!s.wallet && taskClients.includes(s.wallet));
   const feeNum = Number(taskFee); const hostsNum = Number(taskRedundancy);
 
   return (
-    <div className="shell">
-      <header className="topbar">
+    <div className="shell" data-entered={entered}>
+      <header className="topbar" data-solo={SOLO}>
         <a className="brand" href="#/" aria-label="flybnb — home">
           <Logo />
           <span className="word">fly<b>bnb</b></span>
         </a>
 
-        {/* "where": the mesh everything on the page is read from. A form, so Enter in the field loads it too */}
-        <form className="where" onSubmit={(ev) => { ev.preventDefault(); on(C.loadDeployment)(); }}>
+        {/* "where": the mesh everything on the page is read from. A form, so Enter in the field loads it too. A deployed
+            page has one relayer and no choice to offer, so the capsule is not shown; the field stays in the document
+            because the controller reads the relayer's address from it */}
+        <form className="where" hidden={SOLO} onSubmit={(ev) => { ev.preventDefault(); on(C.loadDeployment)(); }}>
           <label htmlFor="relayer">Mesh</label>
           <input id="relayer" type="text" defaultValue={DEFAULT_RELAYER} placeholder="https://relayer.example.org" spellCheck={false} />
           <button id="btnDep" type="submit" className="go" aria-label="Load deployment" title="Load this mesh">
@@ -171,12 +193,13 @@ export default function App() {
         <section className="hero">
           <p className="kicker">A bed &amp; breakfast for fruit-fly brains · on BNB Chain</p>
           <h1>Give a brain <em>a place to stay</em>.</h1>
-          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. Scientists book experiments on it and pay the hosts who ran them, in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
+          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. The experiments run on it are, for now, the ones the <a href="#/flybnb">FlyBnB atlas</a> needs — every cell type silenced and activated, in a hundred individuals — and the hosts who run them are paid in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
         </section>
 
-        {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the design
-            (docs/TOKENOMICS.md §3) and NOT in the contracts -- TaskMarket.settle pays the agreeing hosts and nobody
-            else -- so the card says so. A page about money that is vague about which parts exist is the one thing
+        {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the contracts --
+            aigg-porw's MEP terms set a share of every settled fee aside, and FlyCollection forwards it to whoever owns
+            the token -- and whether a collection is deployed on THIS network is something the relayer says, so the
+            card says what is true here. A page about money that is vague about which parts exist is the one thing
             this page may not be. */}
         <section className="ways">
           <article className="way">
@@ -184,29 +207,31 @@ export default function App() {
             <h3>Host a brain, earn for the work</h3>
             <p>You bring a tab’s memory and a BNB deposit. Each epoch your tab proves the brain is resident; when sortition draws you for an experiment and your result agrees with the other hosts’, its fee is split between you.</p>
             <dl className="terms">
-              <dt>You put in</dt><dd>compute · a bond of 0.05 BNB per vote</dd>
+              <dt>You put in</dt><dd id="unitLine">compute · a bond of {s.unit ? unitBnb(s.unit) : "…"} BNB per vote</dd>
               <dt>You are paid</dt><dd>your share of each experiment’s fee, at settlement</dd>
               <dt>You can lose</dt><dd>the bond, if a result of yours loses a dispute</dd>
             </dl>
             <a className="btn" data-tone="money" href="#/host">Become a host</a>
           </article>
           <article className="way">
-            <span className="badge" data-tone="soon">royalty: designed, not yet in the contracts</span>
+            {hasCollection
+              ? <span className="badge" data-tone="live" id="collectionBadge">live on-chain · adoption open</span>
+              : <span className="badge" data-tone="soon" id="collectionBadge">royalty: in the contracts · no collection deployed yet</span>}
             <h3>Own a fly, and its line</h3>
-            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. The design gives its owner a share of the fees paid for experiments on it.</p>
+            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours — and the atlas runs its battery on every listed individual.</p>
             <dl className="terms">
               <dt>You put in</dt><dd>the adoption price, or a breed fee</dd>
-              <dt>You would be paid</dt><dd>a royalty on experiments booked against your fly</dd>
-              <dt>Today</dt><dd>fees go to the hosts only; the owner’s share is an open design item</dd>
+              <dt>You are paid</dt><dd>a royalty on every experiment run against your fly, set aside at settlement</dd>
+              <dt>If you sell it</dt><dd>what it earned until then stays yours; from then on the buyer is paid, with nothing to update</dd>
             </dl>
             <a className="btn" href="#/flies">Your flies</a>
           </article>
-          <p className="fineprint">Both are ways of taking a stake in work the network does, and neither is a promise: earnings depend on experiments being booked, a bond can be slashed, and a fly nobody studies earns nothing.</p>
+          <p className="fineprint">Both are ways of taking a stake in work the network does, and neither is a promise: earnings depend on experiments being run, a bond can be slashed, and a fly nobody studies earns nothing.</p>
         </section>
 
         <section className="shelf">
           <header><h2>Brains on this mesh</h2><span className="note">{s.meps.length ? `${s.meps.length} listed` : "no mesh loaded"}</span></header>
-          {s.meps.length === 0 && <p className="hint empty-shelf">Put a relayer’s address in the <b>Mesh</b> capsule above and press the arrow. The listings come from the chain it points at.</p>}
+          {s.meps.length === 0 && <p className="hint empty-shelf">{SOLO ? "Connecting to the network… the listings come from the chain, through the relayer." : <>Put a relayer’s address in the <b>Mesh</b> capsule above and press the arrow. The listings come from the chain it points at.</>}</p>}
           <div className="listings">
             {s.meps.map((m, i) => (
               <BrainCard key={m.mepId} listing index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
@@ -234,6 +259,14 @@ export default function App() {
               <p className="hint">The seed is the scene, and it is pinned on-chain with the fee and the deadline — so the experiment is fixed before anyone runs it, and an executor cannot choose afterwards what it was answering. Any node, an auditor, or a dispute round re-derives the same stimulus from it: that is what makes a result from a stranger’s tab worth anything.</p>
             </div>
 
+            {!bookingOpen ? (
+            <aside className="book" id="bookingClosed">
+              <div className="price"><b>Not open yet</b></div>
+              <p className="hint">For now every experiment on this network is one the FlyBnB atlas needs: the perturbation battery in the paper, posted by the project and run by the hosts. Booking your own experiment on a brain opens later.</p>
+              <p className="hint">Until then there are two ways in: <a href="#/host">host a brain</a> and be paid for the runs you do, or <a href="#/flies">own a fly</a> the atlas measures.</p>
+              <a className="btn wide" href="#/flybnb">What the experiments are</a>
+            </aside>
+            ) : (
             <aside className="book">
               <div className="price"><b>{Number.isFinite(feeNum) ? taskFee : "—"} BNB</b><span>per experiment</span></div>
               <div className="legend">Scene — what the fly sees</div>
@@ -271,6 +304,7 @@ export default function App() {
                 </div>
               )}
             </aside>
+            )}
           </section>
         )}
       </div>
@@ -295,7 +329,8 @@ export default function App() {
             </div>
             <div className="row">
               <Field label="Amount (BNB)" htmlFor="amount" className="mid">
-                <input id="amount" type="number" defaultValue="0.5" step="0.05" min="0" />
+                {/* one vote's worth by default; remounted once, when the deployment has said what a vote costs here */}
+                <input id="amount" key={s.unit ? "unit" : "unknown"} type="number" defaultValue={s.unit ? unitBnb(s.unit) : ""} step={s.unit ? unitBnb(s.unit) : "any"} min="0" />
               </Field>
               <Button id="btnBond" tone="money" onClick={on(C.bond)} disabled={!s.wallet}>Bond</Button>
               <Button id="btnRefresh" onClick={on(C.refreshBond)} disabled={!s.wallet}>Refresh</Button>
@@ -323,7 +358,7 @@ export default function App() {
 
         <div className="col">
           <Panel step={3} title="Move a brain in" note={`${s.meps.length} on this mesh`}>
-            {s.meps.length === 0 && <p className="hint">Load a mesh in the capsule above to see the brains it lists.</p>}
+            {s.meps.length === 0 && <p className="hint">{SOLO ? "Connecting to the network…" : "Load a mesh in the capsule above to see the brains it lists."}</p>}
             <div className="brains">
               {s.meps.map((m, i) => (
                 <BrainCard key={m.mepId} index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
@@ -372,7 +407,7 @@ export default function App() {
 
       <footer className="foot-note">
         <span>fly<b>bnb</b> · bonded, settled and disputed on BNB Chain · model bytes on Greenfield</span>
-        <span>the relayer is replaceable: point the Mesh capsule at your own</span>
+        {!SOLO && <span>the relayer is replaceable: point the Mesh capsule at your own</span>}
       </footer>
     </div>
   );
