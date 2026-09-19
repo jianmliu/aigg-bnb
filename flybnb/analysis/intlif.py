@@ -28,7 +28,7 @@ class Net:
         self.n = n; self.post = post[o].astype(np.int64); self.w = w[o].astype(np.float64)
         self.indptr = np.zeros(n + 1, np.int64); np.cumsum(np.bincount(pre, minlength=n), out=self.indptr[1:])
 
-def run(net, seed, steps, stim_ids, silence_ids=None, t_from=None):
+def run(net, seed, steps, stim_ids, silence_ids=None, t_from=None, w_unit=W_UNIT_Q16):
     """-> (count, late): spike counts of every neuron over the run, and over steps > t_from (default: the second half).
 
     State is kept COMPACT: only free neurons that a spike has reached have a slot. Stimulated and silenced neurons have
@@ -59,7 +59,7 @@ def run(net, seed, steps, stim_ids, silence_ids=None, t_from=None):
                 I = np.bincount(p[ok], weights=net.w[k][ok], minlength=m).astype(np.int64)
         if m:
             gi = g[:m]; gi = gi - ((gi * DT_TAU_S_Q16) >> 16)
-            if I is not None: gi = gi + I * W_UNIT_Q16
+            if I is not None: gi = gi + I * w_unit   # the kind's weight unit: per connectome (aigg-porw: MEPRegistry.lifWeightUnit)
             np.clip(gi, I32_MIN, I32_MAX, out=gi); g[:m] = gi
             ri = refr[:m]; vi = v[:m]; act = ri == 0; vv = vi + (((gi - vi) * DT_TAU_M_Q16) >> 16); fired = act & (vv >= THRESH_Q16)
             v[:m] = np.where(act & ~fired, vv, 0); refr[:m] = np.where(fired, REFRACT, np.where(ri > 0, ri - 1, 0))
