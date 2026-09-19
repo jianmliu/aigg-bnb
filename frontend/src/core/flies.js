@@ -9,7 +9,7 @@
 // nobody hatches in that window needs `rearm`, which costs a whole BREED_FEE. A relayer running the hatch keeper
 // makes that window irrelevant; the Hatch button is for when nobody is.
 import { keccakWords, decodeUint, decodeAddress } from "./abi.js";
-import { state, call, send, eth, log, notify } from "./controller.js";
+import { state, call, send, read, log, notify } from "./controller.js";
 
 export const FEMALE = 0, MALE = 1, UNHATCHED = 2;
 export const WINDOW = 256; // block hashes the EVM keeps
@@ -17,7 +17,7 @@ const ZERO32 = "0x" + "0".repeat(64);
 const MAX_LISTED = 500; // the page walks ids 1..totalSupply (the contract has no owner index); past this it needs an indexer
 
 const words = (data) => { const h = data.slice(2); const out = []; for (let i = 0; i + 64 <= h.length; i += 64) out.push("0x" + h.slice(i, i + 64)); return out; };
-const blockNumber = async () => Number(await eth().request({ method: "eth_blockNumber" }));
+const blockNumber = async () => Number(await read("eth_blockNumber"));
 
 /** Individual, in the order the contract's getter returns it */
 function decodeIndividual(id, data) {
@@ -65,7 +65,7 @@ export async function loadFlies() {
 
 /** what the child will be, from the seed block's hash -- the same arithmetic as FlyCollection.hatch */
 async function previewOf(f, byId) {
-  const b = await eth().request({ method: "eth_getBlockByNumber", params: ["0x" + f.seedBlock.toString(16), false] });
+  const b = await read("eth_getBlockByNumber", ["0x" + f.seedBlock.toString(16), false]);
   if (!b || !b.hash) return null;
   const seed = keccakWords([byId.get(f.parentA).deltaHash, byId.get(f.parentB).deltaHash, f.parentA, f.parentB, f.id, b.hash]);
   return { seed, sex: Number(BigInt(seed) & 1n) };

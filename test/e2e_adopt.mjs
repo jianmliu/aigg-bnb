@@ -19,7 +19,24 @@ try {
   const R = await H.startRelayer(dep, H.KEYS[3], [base.mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
   const fe = await startFrontend(0); stop.push(() => fe.server.close()); const prompts = [];
   const launch = { headless: true }; if (process.env.PW_CHROMIUM) launch.executablePath = process.env.PW_CHROMIUM;
-  browser = await chromium.launch(launch); const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }); page.on("console", (m) => { if (m.type() === "error") console.error("page:", m.text()); });
+  browser = await chromium.launch(launch);
+
+  // ---- a visitor with NO wallet at all: looking needs none. Reads go to the RPC the deployment names ----
+  { const v = await browser.newPage({ viewport: { width: 1280, height: 900 } }); v.on("console", (m) => { if (m.type() === "error") console.error("visitor:", m.text()); });
+    await v.goto(fe.url + "/"); await v.waitForFunction(() => window.__ready === true);
+    check("the visitor's browser has no window.ethereum", await v.evaluate(() => window.ethereum === undefined));
+    await v.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase); await v.click("#btnDep");
+    check("the bond per vote is this deployment's UNIT, read from the chain (0.05 here), not a number in the page", await waitFor(async () => /a bond of 0\.05 BNB per vote/.test(await v.locator("#unitLine").innerText())));
+    check("and the owner's card says a collection is deployed here", /adoption open/.test(await v.locator("#collectionBadge").innerText()));
+    await v.click("#navFlies"); await v.click("#btnFlies");
+    check("the colony loads without a wallet", await waitFor(() => v.evaluate(() => !!window.app.state.flies && !window.app.state.flies.missing && window.app.state.flies.all.length === 0)));
+    check("with the price", /adoption\s*0\.1 BNB/.test(await v.locator("#adoptFee").innerText()));
+    await v.click("#btnGenesis");
+    check("and the hundred founders, to look at", await waitFor(() => v.evaluate(() => window.app.state.flies.genesis?.matches === true && window.app.state.flies.genesis.open.length === 100)));
+    check("adopting is the step that needs a wallet, and the page says so rather than throwing", await v.isDisabled("#btnAdopt-0") || /wallet/i.test(await v.locator("#adoptable").innerText()));
+    await v.close(); }
+
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }); page.on("console", (m) => { if (m.type() === "error") console.error("page:", m.text()); });
   await page.exposeFunction("__walletRequest", async (method, params) => {
     switch (method) {
       case "eth_requestAccounts": case "eth_accounts": return [W.account.address];

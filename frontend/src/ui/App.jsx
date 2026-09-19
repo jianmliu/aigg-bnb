@@ -26,6 +26,7 @@ import { BAKED_RELAYER, SOLO } from "./mode.js";
 import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
 
 const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
+const unitBnb = (wei) => (Number(wei) / 1e18).toFixed(6).replace(/0+$/, "").replace(/\.$/, ""); // 0.05, 0.005: an amount somebody types back in
 
 // Where the page points on first load. Locally that is a relayer on this machine; a deployed build gets
 // VITE_RELAYER_URL baked in, because `http://127.0.0.1:8788` on an https origin is blocked as mixed content
@@ -64,7 +65,7 @@ const toneOfLine = (line) => (!line ? null : /ERROR|FAIL|REVERT|DOES NOT MATCH/.
 
 export default function App() {
   useNodeState();
-  const s = C.state;
+  const s = C.state; const hasCollection = !!s.deployment?.addresses?.collection;
   const active = C.mepById(s.active);
 
   // hosting capacity: controlled, because the memory projection under the model line reprices as it is typed
@@ -195,24 +196,27 @@ export default function App() {
           <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. The experiments run on it are, for now, the ones the <a href="#/flybnb">FlyBnB atlas</a> needs — every cell type silenced and activated, in a hundred individuals — and the hosts who run them are paid in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
         </section>
 
-        {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the contracts now --
+        {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the contracts --
             aigg-porw's MEP terms set a share of every settled fee aside, and FlyCollection forwards it to whoever owns
-            the token -- but no collection is deployed on this network yet, and the card says both. A page about money
-            that is vague about which parts exist is the one thing this page may not be. */}
+            the token -- and whether a collection is deployed on THIS network is something the relayer says, so the
+            card says what is true here. A page about money that is vague about which parts exist is the one thing
+            this page may not be. */}
         <section className="ways">
           <article className="way">
             <span className="badge" data-tone="live">live on-chain</span>
             <h3>Host a brain, earn for the work</h3>
             <p>You bring a tab’s memory and a BNB deposit. Each epoch your tab proves the brain is resident; when sortition draws you for an experiment and your result agrees with the other hosts’, its fee is split between you.</p>
             <dl className="terms">
-              <dt>You put in</dt><dd>compute · a bond of 0.05 BNB per vote</dd>
+              <dt>You put in</dt><dd id="unitLine">compute · a bond of {s.unit ? unitBnb(s.unit) : "…"} BNB per vote</dd>
               <dt>You are paid</dt><dd>your share of each experiment’s fee, at settlement</dd>
               <dt>You can lose</dt><dd>the bond, if a result of yours loses a dispute</dd>
             </dl>
             <a className="btn" data-tone="money" href="#/host">Become a host</a>
           </article>
           <article className="way">
-            <span className="badge" data-tone="soon">royalty: in the contracts · no collection deployed yet</span>
+            {hasCollection
+              ? <span className="badge" data-tone="live" id="collectionBadge">live on-chain · adoption open</span>
+              : <span className="badge" data-tone="soon" id="collectionBadge">royalty: in the contracts · no collection deployed yet</span>}
             <h3>Own a fly, and its line</h3>
             <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours — and the atlas runs its battery on every listed individual.</p>
             <dl className="terms">
@@ -325,7 +329,8 @@ export default function App() {
             </div>
             <div className="row">
               <Field label="Amount (BNB)" htmlFor="amount" className="mid">
-                <input id="amount" type="number" defaultValue="0.5" step="0.05" min="0" />
+                {/* one vote's worth by default; remounted once, when the deployment has said what a vote costs here */}
+                <input id="amount" key={s.unit ? "unit" : "unknown"} type="number" defaultValue={s.unit ? unitBnb(s.unit) : ""} step={s.unit ? unitBnb(s.unit) : "any"} min="0" />
               </Field>
               <Button id="btnBond" tone="money" onClick={on(C.bond)} disabled={!s.wallet}>Bond</Button>
               <Button id="btnRefresh" onClick={on(C.refreshBond)} disabled={!s.wallet}>Refresh</Button>
