@@ -65,6 +65,13 @@ export async function startRelayer(dep, key, mepIds, { relayPort = 0, apiPort = 
   const api = async (p, body) => (await fetch(info.api + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
   return { ...info, apiBase: info.api, child, api, log: () => log, stop: () => child.kill() };
 }
+/** the gateway (gateway/gateway.mjs) as a child process, configured the way production is: from the environment. `env` wins. */
+export async function startGateway(R, key, env = {}) {
+  const child = fork(path.join(root, "gateway/gateway.mjs"), [], { env: { ...process.env, GATEWAY_KEY: key, GATEWAY_RELAYER: R.apiBase, GATEWAY_PORT: "0", ...env }, stdio: ["ignore", "pipe", "pipe", "ipc"] });
+  let log = ""; child.stdout.on("data", (d) => (log += d)); child.stderr.on("data", (d) => (log += d));
+  const info = await new Promise((res, rej) => { child.on("message", res); child.on("exit", (c) => rej(new Error("gateway exited " + c + "\n" + log))); setTimeout(() => rej(new Error("gateway start timeout\n" + log)), 60000); });
+  return { ...info, child, log: () => log, stop: () => new Promise((res) => { child.once("exit", res); child.kill("SIGKILL"); }) };
+}
 // ---- a mesh deployed from the build artifacts, and a two-fly collection ----
 // DeployBNB deploys everything, ExecutionDisputes included. The collection tests need only what the relayer reads
 // at startup, and should not wait on a contract they never touch -- so this deploys that part, from contracts/out.
@@ -89,9 +96,9 @@ export const GENESIS = (() => { const DF = keccak256("0x01"), DM = keccak256("0x
 export const FLY_PRICE = parseEther("0.06"), FLY_BREED_FEE = parseEther("0.01"), FLY_TREASURY = "0x0000000000000000000000000000000000007ea5";
 /** `baseMepFemale`: the base brain the collection answers for (and bonds adopters for, when `mintBond` > 0); `royaltyBps` > 0 registers
  *  its flies under terms and needs the market; `genesis` { root, size, baseModelId }: a real genesis set instead of the two-fly one */
-export const deployCollection = (dep, bounty, key = KEYS[0], { baseMepFemale = ZERO_WORD, royaltyBps = 0, genesis = null, mintPrice = FLY_PRICE, mintBond = 0n } = {}) => create(clientsFor(dep, key), "FlyCollection",
+export const deployCollection = (dep, bounty, key = KEYS[0], { baseMepFemale = ZERO_WORD, royaltyBps = 0, genesis = null, mintPrice = FLY_PRICE, mintBond = 0n, baseVendor = ZERO_ADDR, baseShareBps = 0, saleRoyaltyBps = 0, owner = ZERO_ADDR } = {}) => create(clientsFor(dep, key), "FlyCollection",
   [genesis ? genesis.baseModelId : keccak256("0x0f"), keccak256("0x0e"), genesis ? genesis.root : GENESIS.root, genesis ? genesis.size : 2, mintPrice, mintBond, FLY_BREED_FEE, bounty, FLY_TREASURY, dep.addresses.meps,
-   mintBond ? dep.addresses.instances : ZERO_ADDR, ZERO_ADDR, baseMepFemale, ZERO_WORD, royaltyBps ? dep.addresses.market : ZERO_ADDR, royaltyBps]);
+   mintBond ? dep.addresses.instances : ZERO_ADDR, ZERO_ADDR, baseMepFemale, ZERO_WORD, royaltyBps ? dep.addresses.market : ZERO_ADDR, royaltyBps, { baseVendor, baseShareBps, saleRoyaltyBps, owner }]);
 export async function adoptBoth(c, collection) { await sendTo(c, collection, "FlyCollection", "mint", [0, 0, GENESIS.DF, [GENESIS.L1]], FLY_PRICE); await sendTo(c, collection, "FlyCollection", "mint", [1, 1, GENESIS.DM, [GENESIS.L0]], FLY_PRICE); }
 /** the seed FlyCollection.hatch computes for child `id` of 1 x 2, given the hash of its seed block */
 export const flySeed = (id, blockHash) => keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "bytes32" }, { type: "uint256" }, { type: "uint256" }, { type: "uint256" }, { type: "bytes32" }], [GENESIS.DF, GENESIS.DM, 1n, 2n, BigInt(id), blockHash]));
