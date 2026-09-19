@@ -20,6 +20,16 @@ FlyBnB started as three questions, and they turn out to be three readings of one
 
 What makes it one dataset in practice is **the standard battery** ([`flybnb/battery/`](../../flybnb/battery/)): 13 stimuli × 3 seeds, the output of every descending neuron. Every individual gets it. The atlas perturbs it, the association analysis regresses its readouts on wiring, the selection experiment measures it in parents and offspring. Operationally there is one action: when an individual exists, minted or bred, its battery is posted as one batched task, the nodes that host that brain execute it, and its 39 rows land in the table. So an individual that somebody breeds because they like it is, without anybody deciding so, a data point in all three analyses, and the people who host it are in the acknowledgments.
 
+**Where the three stand** (generated from the committed results; the paper has the sections):
+
+<!-- BEGIN GENERATED: progress -->
+| analysis | first result | in the paper |
+|---|---|---|
+| the perturbation atlas | first slice, silencing under `sound`, 100 individuals: of 233 central effects detected on the published wiring, median replication 0.18; 0.77 for effects of ≥ 10 spikes | Section 3c |
+| the association analysis | 600 founders: a sparse-regime phenotype is its readout's direct inputs (median R² 0.40; the rest of the active network -0.12) | Section 3b |
+| the selection experiment | 6 generations, six lines: high lines +4.4 founder SD, low lines at the trait's floor; the leak under the gate 3.0 → 20.2 spikes in the high lines; with the line as the unit, 1 other phenotype(s) moved, of 256 an individual-level test flags | Section 3d |
+<!-- END GENERATED: progress -->
+
 The selection experiment is the one this system fits best, and the one a cluster cannot imitate: the crosses, the lineage and who chose to make them are on a chain. It was also the one with the most to prove, so it was piloted first (Section 3a): phenotypes are transmitted, and one generation of selection moves the selected one by two standard deviations.
 
 ## 2. What exists already

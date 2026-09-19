@@ -10,7 +10,7 @@
 | standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |
 | association analysis (Section 3b) | 600 unrelated founders, 71 phenotypes |
 | atlas, first slice (Section 3c) | silencing under sound, 100 individuals, 361 effects on the base |
-| multi-generation selection (Section 3d) | running |
+| multi-generation selection (Section 3d) | 6 generations, six lines |
 | the male brain (Section 3e) | battery and variance pilot, 100 founders, provisional |
 | the rest of the silencing atlas, the activation atlas | planned |
 | dataset on the Hugging Face Hub | prepared, not public |
@@ -167,7 +167,22 @@ What this does not show. One stimulus, one sex, silencing only. The detection ru
 The breeding pilot showed one generation of divergent selection. Several generations ask what one cannot: whether the response continues, whether it is symmetric, what drift alone does over the same time, and whether the cost the pilot found inside the selected circuit accumulates.
 
 <!-- BEGIN GENERATED: selection -->
-_Running._
+**Design.** Trait: DNge145 spikes under `sound` (founders 9.5 ± 6.0). Six lines from the same 100 founders: two selected up, two down, two controls with parents drawn at random; 6 generations of 40 offspring from 10 parents, every individual under the full battery.
+
+| generation | high lines (founder SD) | low lines | control lines | gate leak, high | low | control | low lines fully silenced by the gate |
+|---|---|---|---|---|---|---|---|
+| 1 | +1.70, +1.49 | -1.15, -1.15 | -0.06, +0.58 | 7.1 | 0.3 | 3.7 | 53% |
+| 2 | +2.16, +2.41 | -1.35, -1.31 | -0.10, +0.49 | 9.6 | 0.2 | 3.2 | 71% |
+| 3 | +2.97, +2.99 | -1.43, -1.48 | +0.04, +0.26 | 11.8 | 0.1 | 3.2 | 91% |
+| 4 | +3.71, +3.83 | -1.43, -1.45 | +0.19, +0.13 | 15.0 | 0.2 | 3.2 | 88% |
+| 5 | +4.10, +4.02 | -1.45, -1.54 | +0.04, -0.51 | 17.7 | 0.1 | 2.0 | 91% |
+| 6 | +4.47, +4.34 | -1.51, -1.45 | -0.06, -0.31 | 20.2 | 0.1 | 2.1 | 89% |
+
+**The response.** After 6 generations the high lines are at +4.40 founder SD and the low lines at -1.48, 5.9 SD apart; the control lines never left ±0.58. Upwards the response slows: +2.98 SD in generations 1–3, +1.43 in generations 4–6. Downwards it stops: 1.46 then 0.02, and the reason is arithmetic before it is genetics: a spike count cannot go below zero, which for this trait is -1.60 founder SD, and the low lines are 0.13 SD above it.
+
+**The cost inside the circuit accumulates.** The high lines' response with the gate neurons driven went from the founders' 3.0 spikes to 20.2; the low lines' to 0.1, with 89% of their individuals fully silenced by the gate against 8% in the controls. What the gate takes away grows much less than the response does: 11.9 spikes of 19.0 in the high lines at generation 1 (62%), 15.6 of 35.8 at generation 6 (44%). The gate behaves more like a subtraction than like a division, so selection on the response to sound alone outgrows it.
+
+**Other phenotypes, and how not to count them.** Tested individual by individual, 259 of 646 battery phenotypes differ between high and low lines at FDR 0.05. That test treats relatives as independent, and the control lines show what that is worth: by the same test 155 phenotypes differ between the unselected control lines and the founders. With the line as the unit — both high lines on one side of both low lines, and a gap larger than the 99th percentile (1.61 SD) of the gap between two lines of the *same* treatment — 4 remain, 1 of them not DNge145: DNge060 under sugar (-0.96, -1.92, -1.12, -1.11, -1.65, -1.63 by generation). Both replicates of a treatment start from the same ten founders, so a gap that is present at generation 1 and does not grow is what those founders carried; one that grows with the trait is a correlated response.
 <!-- END GENERATED: selection -->
 
 ## 3e. A second connectome: the male brain
