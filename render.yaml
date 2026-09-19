@@ -86,6 +86,13 @@ services:
       - key: PORW_MEP_NAMES
         value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a=FlyWire female (FAFB v783)"
 
+      # ---- whose tasks are sponsored. Third-party experiments are not open yet: every task on this network is one the
+      # FlyBnB dataset needs, posted by the project. The market is permissionless and cannot refuse anybody's task; what
+      # is withheld is this relayer's gas (a session key holds none of its own), and the page reads this list from
+      # /deployment and shows "not open yet" instead of a booking card. Remove the key to open the network.
+      - key: PORW_TASK_CLIENTS
+        value: "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa"
+
       # ---- the beacon follows demand: a cold epoch never rolls and costs nothing ----
       - key: PORW_BEACON_LAZY
         value: "1"
