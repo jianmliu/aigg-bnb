@@ -11,6 +11,8 @@ const here = path.dirname(fileURLToPath(import.meta.url)); const arg = (k) => { 
 const PROPOSAL = path.join(here, "proposal.md"), BREEDING = path.join(here, "..", "..", "flybnb", "results", "breeding", "heritability.json");
 const ASSOC = path.join(here, "..", "..", "flybnb", "results", "association", "association.json"), ATLAS = path.join(here, "..", "..", "flybnb", "results", "atlas", "robustness.json");
 const SELECTION = path.join(here, "..", "..", "flybnb", "results", "selection", "selection.json");
+const FB = path.join(here, "..", "..", "flybnb"), MALE = { m: path.join(FB, "results/variance/male.json"), fe: path.join(FB, "results/variance/female.json"), bat: path.join(FB, "battery/battery-male-v1.json"), dens: path.join(FB, "results/male/founder_density.json"), gc: path.join(FB, "results/male/gate_confounds.json") };
+export const maleInputs = () => (Object.values(MALE).every((p) => fs.existsSync(p)) ? Object.values(MALE).map((p) => JSON.parse(fs.readFileSync(p, "utf8"))) : null);
 const PAPER = path.join(here, "paper.md"), RESULTS = path.join(here, "results", "variance.json"), HOLDERS = path.join(here, "results", "holders.json");
 
 export function replaceBlock(text, name, body) {
@@ -110,6 +112,32 @@ export function selectionBlock(x) {
   ].join("\n");
 }
 
+export function maleBlock(m, fe, bat, dens, gc) {
+  const P = bat.population, snd = bat.stimuli.find((s) => s.name === "sound").outgoing_synapses_by_side, d = dens.ratios.find((r) => r.mean_ratio_q16 === P.mean_ratio_q16);
+  const ign = (x) => x.stimuli.filter((s) => s.base_regime === "sparse" && s.individuals_ignited > 0).map((s) => `${s.stimulus} ${Math.round(100 * s.individuals_ignited)}%`).join(", ") || "none";
+  const g = m.gate, gf = fe.gate, red = (x) => Math.round(100 * (1 - x.gate_mean / x.sound_mean));
+  return [
+    `**The same assay on another connectome.** ${bat.stimuli.length} stimuli × ${bat.seeds.length} seeds, ${bat.readout.neuron_index.length} descending neurons. Male individuals are drawn on the male's own base with the male's own variability model (dispersion from its two hemispheres; mean ratio ${f(P.mean_ratio_q16 / 65536)}, at which a founder has ${f(100 * d.synapses, 1)}% of the real male's synapses) and run under the male exec kind, weight unit ${P.w_unit_q16} (${f(P.w_unit_q16 / 18022)} of FlyWire's: MaleCNS counts the same connections 1.55–1.62 times higher).`,
+    "",
+    `**A reconstruction is not symmetric.** The right antenna's auditory neurons carry ${snd.R.toLocaleString("en-US")} synapses against ${snd.L.toLocaleString("en-US")} on the left: the male \`sound\` is a left-ear stimulus, and the battery records each stimulus's outgoing synapses by side so that this is visible in the data and not only here.`,
+    "",
+    `| | female (FlyWire v783) | male (MaleCNS v1.0) |`, "|---|---|---|",
+    `| founders × seeds | ${fe.individuals} × ${fe.seeds} | ${m.individuals} × ${m.seeds} |`,
+    `| phenotypes analysed | ${fe.summary.phenotypes} | ${m.summary.phenotypes} |`,
+    `| single-run ICC, median | ${f(fe.summary.icc_median)} | ${f(m.summary.icc_median)} |`,
+    `| ICC under \`sound\`, median | ${f(fe.stimuli.find((s) => s.stimulus === "sound").icc_median)} | ${f(m.stimuli.find((s) => s.stimulus === "sound").icc_median)} |`,
+    `| individuals that ignite under a stimulus the base wiring takes sparsely | ${ign(fe)} | ${ign(m)} |`,
+    `| DNge145 under sound → with the gate neurons driven | ${f(gf.sound_mean, 1)} → ${f(gf.gate_mean, 1)} spikes (−${red(gf)}%) | ${f(g.sound_mean, 1)} → ${f(g.gate_mean, 1)} (−${red(g)}%) |`,
+    `| individuals the gate silences in every seed / never | ${Math.round(100 * gf.individuals_silent_in_every_seed)}% / ${Math.round(100 * gf.individuals_never_silent)}% | ${Math.round(100 * g.individuals_silent_in_every_seed)}% / ${Math.round(100 * g.individuals_never_silent)}% |`,
+    "",
+    `**What carries over.** The share of a single run that belongs to the individual is ${Math.abs(fe.summary.icc_median - m.summary.icc_median) < 0.05 ? "the same" : "not the same"} in the two brains (${f(fe.summary.icc_median)} and ${f(m.summary.icc_median)}): that individuals differ reproducibly is not a property of one reconstruction. So is ignition as an individual phenotype, under different stimuli in each brain.`,
+    "",
+    `**What does not: the gate.** The homologous neurons exist (AN02A001 is the male type matched to AN_multi_8) and they do lower DNge145 below its sound response, in every seed in ${Math.round(100 * g.individuals_gate_below_sound_in_every_seed)}% of male individuals. But they remove ${red(g)}% of the response where the female gate removes ${red(gf)}%, and they silence ${g.individuals_silent_in_every_seed === 0 ? "no male individual" : Math.round(100 * g.individuals_silent_in_every_seed) + "% of male individuals"} completely. Two things could fake that, and neither does (base wirings, \`flybnb/male/gate_confounds.py\`): the male stimulus is one-eared, but the female gate driven through one ear still removes ${Math.round(100 * gc.female_one_ear.find((x) => x.stimulus === "sound_left").removed)}% of the response (a small one: ${f(gc.female_one_ear.find((x) => x.stimulus === "sound_left").without_gate, 1)} spikes, against ${f(gc.female_one_ear.find((x) => x.stimulus === "sound").without_gate, 1)} with both ears); the male runs under another weight unit, but between ${gc.male_by_unit[0].w_unit_q16} and ${gc.male_by_unit[gc.male_by_unit.length - 1].w_unit_q16} the male gate removes ${Math.round(100 * Math.min(...gc.male_by_unit.map((x) => x.removed)))}–${Math.round(100 * Math.max(...gc.male_by_unit.map((x) => x.removed)))}% throughout. What remains is the wiring: a difference between the sexes, between two reconstructions, or in how well a type match carries a function. One brain of each sex cannot say which.`,
+    "",
+    "Male results are provisional: the male kind is not declared and the male base not registered on any public network yet, so nobody else has executed these rows.",
+  ].join("\n");
+}
+
 async function holdersFromChain(rpc, collection) {
   const { createPublicClient, http, parseAbi } = await import("viem");
   const abi = parseAbi(["function totalSupply() view returns (uint256)", "function ownerOf(uint256) view returns (address)"]);
@@ -132,9 +160,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   text = replaceBlock(text, "acknowledgments", ackBlock(h));
   const as = fs.existsSync(ASSOC) ? JSON.parse(fs.readFileSync(ASSOC, "utf8")) : null, at = fs.existsSync(ATLAS) ? JSON.parse(fs.readFileSync(ATLAS, "utf8")) : null;
   const sel = fs.existsSync(SELECTION) ? JSON.parse(fs.readFileSync(SELECTION, "utf8")) : null;
-  text = replaceBlock(text, "status", ["| part | state |", "|---|---|", `| pilot (Section 3) | ${v ? `${v.individuals} founders × ${v.seeds} seeds, analysed` : "pending"} |`, `| breeding pilot (Section 3a) | ${br ? `${br.individuals.founders} founders, ${br.individuals.random + br.individuals.high + br.individuals.low} offspring, ${br.h2_distribution.n} phenotypes` : "pending"} |`, "| standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |", `| association analysis (Section 3b) | ${as ? `${as.individuals} unrelated founders, ${as.summary.phenotypes} phenotypes` : "pending"} |`, `| atlas, first slice (Section 3c) | ${at ? `silencing under sound, ${at.individuals} individuals, ${at.effects_detected_on_base} effects on the base` : "pending"} |`, `| multi-generation selection (Section 3d) | ${sel ? `${sel.generations} generations, six lines` : "running"} |`, "| the rest of the silencing atlas, the activation atlas, the male brain | planned |", "| dataset on the Hugging Face Hub | prepared, not public |", `| acknowledgments (Appendix A) | ${h ? `${h.holders.length} holder(s) at block ${h.block} on chain ${h.chainId}` : "no deployment read yet"} |`].join("\n"));
+  const male = maleInputs();
+  text = replaceBlock(text, "status", ["| part | state |", "|---|---|", `| pilot (Section 3) | ${v ? `${v.individuals} founders × ${v.seeds} seeds, analysed` : "pending"} |`, `| breeding pilot (Section 3a) | ${br ? `${br.individuals.founders} founders, ${br.individuals.random + br.individuals.high + br.individuals.low} offspring, ${br.h2_distribution.n} phenotypes` : "pending"} |`, "| standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |", `| association analysis (Section 3b) | ${as ? `${as.individuals} unrelated founders, ${as.summary.phenotypes} phenotypes` : "pending"} |`, `| atlas, first slice (Section 3c) | ${at ? `silencing under sound, ${at.individuals} individuals, ${at.effects_detected_on_base} effects on the base` : "pending"} |`, `| multi-generation selection (Section 3d) | ${sel ? `${sel.generations} generations, six lines` : "running"} |`, `| the male brain (Section 3e) | ${male ? `battery and variance pilot, ${male[0].individuals} founders, provisional` : "planned"} |`, "| the rest of the silencing atlas, the activation atlas | planned |", "| dataset on the Hugging Face Hub | prepared, not public |", `| acknowledgments (Appendix A) | ${h ? `${h.holders.length} holder(s) at block ${h.block} on chain ${h.chainId}` : "no deployment read yet"} |`].join("\n"));
   text = replaceBlock(text, "breeding", brText);
   text = replaceBlock(text, "selection", sel ? selectionBlock(sel) : "_Running._");
+  text = replaceBlock(text, "male", male ? maleBlock(...male) : "_Not run yet._");
   text = replaceBlock(text, "association", as ? associationBlock(as) : "_Not analysed yet._"); text = replaceBlock(text, "atlas", at ? atlasBlock(at) : "_Not run yet._");
   if (fs.existsSync(PROPOSAL)) fs.writeFileSync(PROPOSAL, replaceBlock(fs.readFileSync(PROPOSAL, "utf8"), "breeding", brText)); // the proposal carries the same block
   fs.writeFileSync(PAPER, text); console.log(`paper.md regenerated: pilot ${v ? "yes" : "no"}, holders ${h ? h.holders.length : "none"}`);
