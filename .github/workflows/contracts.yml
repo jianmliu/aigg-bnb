@@ -55,3 +55,8 @@ jobs:
       - run: node test/render_blueprint.mjs
 
       - run: node test/frontend_memory.mjs
+
+      # chain-free: the FlyBnB battery file is well formed and its batch form is order-preserving; the paper build never touches prose
+      - run: node test/flybnb_battery.mjs
+
+      - run: node test/flybnb_build.mjs
