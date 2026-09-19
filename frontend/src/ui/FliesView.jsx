@@ -11,6 +11,8 @@ import { Panel, Button } from "./primitives.jsx";
 import { Portrait } from "./Portrait.jsx";
 import { SOLO } from "./mode.js";
 
+// what reaches the owner, in basis points of the FEE: the royalty, less the base's part of it. Shown as it is, never rounded up
+const ownerBps = (f) => f.royaltyBps * (10000 - (f.baseShareBps || 0)) / 10000; const pct = (bps) => String(Math.round(bps) / 100);
 const bnb = (wei) => { const s = (Number(wei) / 1e18).toFixed(5).replace(/0+$/, "").replace(/\.$/, ""); return s === "" ? "0" : s; };
 const STAGE = {
   egg: { tone: "idle", text: "egg" },
@@ -87,7 +89,7 @@ export default function FliesView() {
         </div>
         {flies.royaltyBps > 0 && (
           <div className="row tight center" id="royaltyBar">
-            <span className="kv strong" id="owed">{flies.royaltyBps / 100}% of every fee paid for an experiment on your flies is yours · credited to you: {bnb(flies.owed)} BNB</span>
+            <span className="kv strong" id="owed">{pct(ownerBps(flies))}% of every fee paid for an experiment on your flies is yours{flies.baseShareBps > 0 ? ` (a ${pct(flies.royaltyBps)}% royalty, of which ${pct(flies.baseShareBps)}% is the base brain’s)` : ""} · credited to you: {bnb(flies.owed)} BNB</span>
             <Button id="btnWithdraw" tone="money" disabled={!s.wallet || flies.owed === 0n} onClick={C.wrap(F.withdraw)}>Withdraw</Button>
           </div>
         )}
@@ -100,7 +102,7 @@ export default function FliesView() {
       </Panel>
 
       <Panel title="Adopt" note={flies.genesis?.matches ? `${flies.genesis.open.length} of ${flies.genesis.size} founders open` : "the genesis set"}>
-        <p className="lede">The collection is a hundred founders, fixed before anyone adopted one: each is a real variant of the FlyWire brain, and each has already been run through the atlas’s battery. Adopting one makes it yours — its lineage, and {flies.royaltyBps > 0 ? `${flies.royaltyBps / 100}% of every fee paid for an experiment on it once you register its brain` : "whatever is measured about it"}.</p>
+        <p className="lede">The collection is a hundred founders, fixed before anyone adopted one: each is a real variant of the FlyWire brain, and each has already been run through the atlas’s battery. Adopting one makes it yours — its lineage, and {flies.royaltyBps > 0 ? `${pct(ownerBps(flies))}% of every fee paid for an experiment on it once you register its brain` : "whatever is measured about it"}.</p>
         <dl className="fees" id="adoptFee">
           <dt>adoption</dt><dd className="amt">{bnb(flies.mintPrice)} BNB</dd><dd className="why">one price, one transaction</dd>
           <dt className="part">your bond</dt><dd className="amt">{bnb(flies.mintBond)} BNB</dd><dd className="why">{flies.mintBond > 0n ? "stays yours: it makes you a host of the base brain, slashable only if a result of yours loses a dispute" : "this collection does not bond its adopters"}</dd>

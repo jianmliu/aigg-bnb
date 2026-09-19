@@ -222,8 +222,8 @@ is **not built**:
   under a bond and a challenge window: the ancestry a split would be computed from is on-chain and accountable. The
   testnet collection was deployed without it (`LINEAGE = 0`).
 
-**Proposal (FlyCollection, before mainnet — the collection is immutable):** the forwarded royalty is split once, in
-`_settle`: `BASE_SHARE_BPS` of it to the base's vendor, the rest to the owner. One level, fixed at deployment, no
+**Built (`FlyCollection`, `test/FlyCollectionRevision.t.sol`; not on the testnet, whose collection is immutable and
+predates it):** the forwarded royalty is split once, in `_settle`: `BASE_SHARE_BPS` of it to the base's vendor, the rest to the owner. One level, fixed at deployment, no
 recursion — a chain of cuts up a pedigree is a tax that grows with every generation, and it would make a bred fly worth
 less than a founder. **Decided: `BASE_SHARE_BPS = 1000`, and until a base has a vendor of its own the vendor is the
 collection's `TREASURY`.** Stated plainly in the terms the page shows: *of every fee, 10% is the royalty; of the
@@ -285,7 +285,7 @@ out whose digest the test recomputes; then the failure rows of §3, one by one.
 | M2 | registered in `aigg-src` as an OpenAI-compatible account with channel pricing; model-mapping sync | aigg-src (config only) |
 | M3 | wake by task client; `providers` in `/meps`; the Host view as a provider's dashboard (requests served, earned, models online) | aigg-bnb |
 | M4 | `model_subsidies` | aigg-src |
-| M5 | `BASE_SHARE_BPS`, with ERC-2981 / `owner()` / `tokenURI`, in the mainnet collection | aigg-bnb |
+| M5 ✔ | `BASE_SHARE_BPS` / `BASE_VENDOR`, ERC-2981, `owner()` with one power, `tokenURI` through an on-chain renderer: in the contract and the deploy script. Deploying it is a new collection | aigg-bnb |
 | M6 | `PlatformMEP` | aigg-src |
 
 ## 8. Decided, open, and to verify

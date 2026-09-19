@@ -55,6 +55,16 @@ contract FlyCollection {
     uint16 public immutable ROYALTY_BPS;
     /// @notice where the royalties are set aside (`TaskMarket.royalties`) and collected from (`withdrawRoyalty`)
     IRoyaltyMarket public immutable MARKET;
+    /// @notice The BASE's share of that royalty, in basis points OF THE ROYALTY (not of the fee), and who collects it. A fly
+    ///         is an edit of a released brain; whoever released the brain takes a fixed part of what its descendants earn.
+    ///         ONE level, fixed here: it does not compound down a pedigree, so a bred fly is worth what a founder is. At
+    ///         ROYALTY_BPS 1000 and BASE_SHARE_BPS 1000, of a fee of 1 the hosts share 0.90, the owner gets 0.09, the base 0.01.
+    uint16 public immutable BASE_SHARE_BPS;
+    address public immutable BASE_VENDOR;
+    /// @notice ERC-2981: what a marketplace is ASKED to pay on a resale, to the treasury. A request and nothing more -- no
+    ///         marketplace is bound by it and a plain transfer pays nothing -- which is why it is kept apart from the
+    ///         royalty above, the one the protocol enforces. Capped at 10%, the most any venue honours.
+    uint16 public immutable SALE_ROYALTY_BPS;
     /// @notice royalties already moved here and credited to an address, not yet withdrawn by it
     mapping(address => uint256) public owed;
     /// @notice one MEP pays one fly. Without this a second token registered to the same MEP could collect on it.
@@ -100,6 +110,25 @@ contract FlyCollection {
     /// the owner's location hint, when the MEP was already in the registry under somebody else's (see _bindMEP)
     event WeightsHint(uint256 indexed id, bytes32 indexed mepId, bytes weightsDA);
     event RoyaltySettled(uint256 indexed id, address indexed owner, uint256 amount);
+    event BaseShareSettled(uint256 indexed id, address indexed vendor, uint256 amount);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnerProposed(address indexed proposed);
+    event RendererSet(address indexed renderer);
+
+    // ---- the owner: what a marketplace calls `owner()`, and the one thing it can do ----
+    // Marketplaces let whoever `owner()` names edit the collection's page and set where a resale royalty is paid, so there
+    // has to be one. Here it has exactly ONE power: choosing the contract that draws a token (`tokenURI`). Not the genesis
+    // set, not a price, not a rate, not the treasury, not anybody's fly or money: those are immutable or the holders'.
+    // Handed over in two steps, so that it cannot be sent to an address nobody holds; renounced, the renderer is frozen.
+    address public owner;
+    address public proposedOwner;
+    /// @notice draws a token: name, attributes, picture. address(0): `tokenURI` is the empty string.
+    ITokenRenderer public renderer;
+    modifier onlyOwner() { require(msg.sender == owner, "owner"); _; }
+    function setRenderer(ITokenRenderer r) external onlyOwner { renderer = r; emit RendererSet(address(r)); }
+    function proposeOwner(address next) external onlyOwner { proposedOwner = next; emit OwnerProposed(next); }
+    function acceptOwner() external { require(msg.sender == proposedOwner, "proposed"); emit OwnershipTransferred(owner, msg.sender); owner = msg.sender; proposedOwner = address(0); }
+    function renounceOwner() external onlyOwner { emit OwnershipTransferred(owner, address(0)); owner = address(0); proposedOwner = address(0); }
 
     function ownerOf(uint256 id) public view returns (address o) { o = _ownerOf[id]; require(o != address(0), "no token"); }
     function balanceOf(address a) public view returns (uint256) { require(a != address(0), "zero"); return _balanceOf[a]; }
@@ -120,16 +149,25 @@ contract FlyCollection {
         transferFrom(from, to, id);
         require(to.code.length == 0 || IERC721Receiver(to).onERC721Received(msg.sender, from, id, data) == IERC721Receiver.onERC721Received.selector, "unsafe recipient");
     }
-    // ERC-165 and ERC-721, and not ERC721Metadata (0x5b5e139f): that id is name ^ symbol ^ tokenURI and there is no
-    // tokenURI here, so claiming it would send every indexer that believes ERC-165 into a revert. `name` and
-    // `symbol` are still there for anything that simply calls them. Claim it again in the change that adds tokenURI.
-    function supportsInterface(bytes4 i) external pure returns (bool) { return i == 0x01ffc9a7 || i == 0x80ac58cd; }
+    /// @notice ERC721Metadata. Drawn by `renderer`, which reads this contract's public state and holds none of its own; a
+    ///         renderer that reverts or runs away with the gas takes the picture down, never the token.
+    function tokenURI(uint256 id) external view returns (string memory) {
+        ownerOf(id); if (address(renderer) == address(0)) return "";
+        try renderer.tokenURI{gas: 5_000_000}(address(this), id) returns (string memory uri) { return uri; } catch { return ""; }
+    }
+    /// @notice ERC-2981. See SALE_ROYALTY_BPS: what is asked for, from whoever chooses to honour it.
+    function royaltyInfo(uint256, uint256 salePrice) external view returns (address receiver, uint256 royaltyAmount) { return (TREASURY, salePrice * SALE_ROYALTY_BPS / 10000); }
+    // ERC-165, ERC-721, ERC721Metadata (0x5b5e139f = name ^ symbol ^ tokenURI) and ERC-2981 (0x2a55205a)
+    function supportsInterface(bytes4 i) external pure returns (bool) { return i == 0x01ffc9a7 || i == 0x80ac58cd || i == 0x5b5e139f || i == 0x2a55205a; }
 
+    /// @notice who else is paid, and who `owner()` is -- one argument, because the constructor had sixteen already.
+    ///         `baseVendor` / `baseShareBps`: BASE_VENDOR / BASE_SHARE_BPS. `saleRoyaltyBps`: SALE_ROYALTY_BPS. `owner`: may be zero.
+    struct Shares { address baseVendor; uint16 baseShareBps; uint16 saleRoyaltyBps; address owner; }
     constructor(
         bytes32 baseFemale, bytes32 baseMale, bytes32 genesisRoot, uint32 genesisSize,
         uint256 mintPrice, uint256 mintBond, uint256 breedFee, uint256 hatchBounty, address treasury,
         IMEPRegistry meps, IInstanceBonding instances, LineageRegistry lineage, bytes32 baseMepFemale, bytes32 baseMepMale,
-        IRoyaltyMarket market, uint16 royaltyBps
+        IRoyaltyMarket market, uint16 royaltyBps, Shares memory shares
     ) {
         require(mintBond <= mintPrice, "bond > price"); require(hatchBounty <= breedFee, "bounty > fee"); require(treasury != address(0), "treasury");
         BASE_FEMALE = baseFemale; BASE_MALE = baseMale; GENESIS_ROOT = genesisRoot; GENESIS_SIZE = genesisSize;
@@ -137,6 +175,10 @@ contract FlyCollection {
         MEPS = meps; INSTANCES = instances; LINEAGE = lineage; BASE_MEP_FEMALE = baseMepFemale; BASE_MEP_MALE = baseMepMale;
         require(royaltyBps <= 10000 && (royaltyBps == 0 || address(market) != address(0)), "royalty"); // a rate needs somewhere to collect from
         MARKET = market; ROYALTY_BPS = royaltyBps;
+        require(shares.baseShareBps <= 10000 && (shares.baseShareBps == 0 || shares.baseVendor != address(0)), "base share"); // a share needs somebody to pay
+        require(shares.saleRoyaltyBps <= 1000, "sale royalty");
+        BASE_SHARE_BPS = shares.baseShareBps; BASE_VENDOR = shares.baseVendor; SALE_ROYALTY_BPS = shares.saleRoyaltyBps;
+        owner = shares.owner; emit OwnershipTransferred(address(0), shares.owner);
     }
 
     /// @notice Mint a genesis individual. The whole genesis set is committed at deployment as a Merkle root over
@@ -301,7 +343,10 @@ contract FlyCollection {
         bytes32 mepId = individuals[id].mepId;
         if (ROYALTY_BPS == 0 || mepId == bytes32(0) || MARKET.royalties(mepId) == 0) return 0; // withdrawRoyalty reverts on nothing
         amount = MARKET.withdrawRoyalty(mepId);
-        address o = _ownerOf[id]; owed[o] += amount; emit RoyaltySettled(id, o, amount);
+        // the base's share comes off the top, once; the rest is the owner's. Both are credited, neither is sent.
+        uint256 base = amount * BASE_SHARE_BPS / 10000; address o = _ownerOf[id];
+        if (base > 0) { owed[BASE_VENDOR] += base; emit BaseShareSettled(id, BASE_VENDOR, base); }
+        owed[o] += amount - base; emit RoyaltySettled(id, o, amount - base);
     }
     /// @notice collect everything credited to the caller
     function withdraw() external returns (uint256 amount) {
@@ -348,6 +393,8 @@ contract FlyCollection {
     }
 }
 
+/// draws a token of `collection`: a data: or https: URI of its ERC721Metadata JSON. It reads the collection's public state.
+interface ITokenRenderer { function tokenURI(address collection, uint256 id) external view returns (string memory); }
 interface IERC721Receiver { function onERC721Received(address, address, uint256, bytes calldata) external returns (bytes4); }
 
 /// @notice The sponsored-bonding call of aigg-porw's `InstanceRegistry`: a payer adds to someone else's bond (and only adds).

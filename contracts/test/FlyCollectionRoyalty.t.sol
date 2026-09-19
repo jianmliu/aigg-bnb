@@ -28,7 +28,7 @@ contract FlyCollectionRoyaltyTest is Test {
     }
     function profileId(IMEPRegistry.MEP memory m) internal pure returns (bytes32) { return PorwMeshHash.mepId(m.schemeDigest, m.modelId, m.execKind, m.neurons, m.synapses, m.synapseRoot); }
     function deploy(uint16 bps) internal returns (FlyCollection) {
-        return new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(market)), bps);
+        return new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(market)), bps, FlyCollection.Shares(address(0), 0, 0, address(0)));
     }
 
     function setUp() public {
@@ -92,7 +92,7 @@ contract FlyCollectionRoyaltyTest is Test {
 
     function test_the_whitelist_is_the_bases_and_the_collections_own_flies_bred_ones_included() public {
         bytes32 baseF = meps.registerMEP(mep(BASE_F));
-        FlyCollection w = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), baseF, bytes32(0), IRoyaltyMarket(address(market)), BPS);
+        FlyCollection w = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), baseF, bytes32(0), IRoyaltyMarket(address(market)), BPS, FlyCollection.Shares(address(0), 0, 0, address(0)));
         assertTrue(w.listed(baseF), "a base brain"); assertFalse(w.listed(bytes32(0)), "the unset male base is not a wildcard");
         vm.startPrank(alice);
         uint256 f = w.mint{value: PRICE}(0, 0, DF, proofFor(0)); uint256 m = w.mint{value: PRICE}(1, 1, DM, proofFor(1));
@@ -112,8 +112,8 @@ contract FlyCollectionRoyaltyTest is Test {
     }
 
     function test_a_royalty_needs_a_market_and_a_sane_rate() public {
-        vm.expectRevert(bytes("royalty")); new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(0)), BPS);
-        vm.expectRevert(bytes("royalty")); new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(market)), 10001);
+        vm.expectRevert(bytes("royalty")); new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(0)), BPS, FlyCollection.Shares(address(0), 0, 0, address(0)));
+        vm.expectRevert(bytes("royalty")); new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(market)), 10001, FlyCollection.Shares(address(0), 0, 0, address(0)));
     }
 
     /// the stand-in below is three lines of TaskMarket; this is the real one, to show the collection speaks to it
@@ -121,7 +121,7 @@ contract FlyCollectionRoyaltyTest is Test {
         InstanceRegistry inst = new InstanceRegistry(0.05 ether, 10);
         PoRWClaimManager cm = new PoRWClaimManager(IMEPRegistry(address(meps)), inst, new PorwVerifierKeccak(), 40, 10, 0.01 ether, 0.5 ether, IBeacon(address(0)));
         TaskMarket real = new TaskMarket(IMEPRegistry(address(meps)), inst, cm, 30);
-        FlyCollection live = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(real)), BPS);
+        FlyCollection live = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(real)), BPS, FlyCollection.Shares(address(0), 0, 0, address(0)));
         vm.startPrank(alice); uint256 id = live.mint{value: PRICE}(0, 0, DF, proofFor(0)); bytes32 mepId = live.register(id, DF, mep(keccak256("applied-f"))); vm.stopPrank();
         assertEq(real.royalties(mepId), 0); assertEq(live.settle(id), 0); // reads the real mapping, and does not call withdrawRoyalty on nothing (it would revert)
         vm.prank(alice); live.transferFrom(alice, bob, id); assertEq(live.ownerOf(id), bob);
