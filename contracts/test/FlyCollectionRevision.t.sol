@@ -118,6 +118,40 @@ contract FlyCollectionRevisionTest is Test {
         vm.prank(alice); c.transferFrom(alice, bob, id); assertEq(c.ownerOf(id), bob);
     }
 
+    // ---- nothing outside the collection can hold a fly up (the rule of the collection next door: "a failed DEX call must never block someone's fly") ----
+    event TreasuryCredited(uint256 amount); event RoyaltySettleFailed(uint256 indexed id);
+    function _with(address treasury_, IRoyaltyMarket market_) internal returns (FlyCollection) {
+        return new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, 0, treasury_, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), market_, 1000, FlyCollection.Shares(vendor, 1000, 500, admin));
+    }
+    function test_a_treasury_that_refuses_the_money_is_credited_and_the_adoption_goes_through() public {
+        MoodyTreasury t = new MoodyTreasury(); FlyCollection x = _with(address(t), IRoyaltyMarket(address(market)));
+        vm.expectEmit(address(x)); emit TreasuryCredited(PRICE); vm.prank(alice); uint256 id = x.mint{value: PRICE}(0, 0, DF, proofFor(0));
+        assertEq(x.ownerOf(id), alice); assertEq(x.owed(address(t)), PRICE); assertEq(address(x).balance, PRICE, "held for it, not lost");
+        t.open(true); vm.prank(address(t)); x.withdraw(); assertEq(address(t).balance, PRICE); assertEq(x.owed(address(t)), 0);
+        vm.prank(alice); x.mint{value: PRICE}(1, 1, DM, proofFor(1)); assertEq(address(t).balance, 2 * PRICE, "and a treasury that takes it is simply paid");
+    }
+    function test_a_treasury_cannot_make_an_adoption_arbitrarily_dear() public {
+        FlyCollection x = _with(address(new SpinningTreasury()), IRoyaltyMarket(address(market)));
+        uint256 g = gasleft(); vm.prank(alice); x.mint{value: PRICE}(0, 0, DF, proofFor(0)); g -= gasleft();
+        assertLt(g, 900_000, "the treasury's gas is capped"); assertEq(x.owed(x.TREASURY()), PRICE);
+    }
+    function test_a_market_that_refuses_cannot_freeze_a_fly_and_the_royalty_waits() public {
+        MoodyMarket mm = new MoodyMarket(meps); FlyCollection x = _with(treasury, IRoyaltyMarket(address(mm)));
+        vm.prank(alice); uint256 id = x.mint{value: PRICE}(0, 0, DF, proofFor(0)); vm.prank(alice); bytes32 mepId = x.register(id, DF, mep(keccak256("applied-f")));
+        mm.accrue{value: 1 ether}(mepId); mm.refuse(true);
+        vm.expectEmit(address(x)); emit RoyaltySettleFailed(id); vm.prank(alice); x.transferFrom(alice, bob, id);
+        assertEq(x.ownerOf(id), bob, "the transfer went through"); assertEq(mm.royalties(mepId), 1 ether, "and the royalty is where it was");
+        assertEq(x.settle(id), 0, "settle does not revert either");
+        mm.refuse(false); x.settle(id); assertEq(x.owed(bob), 0.9 ether, "settled by the first call that works, to whoever owns the fly then");
+    }
+
+    // ---- ERC-721 conformance ----
+    function test_getApproved_throws_for_a_token_that_does_not_exist() public {
+        uint256 id = adopt(alice, 0, 0, DF); assertEq(c.getApproved(id), address(0)); vm.prank(alice); c.approve(bob, id); assertEq(c.getApproved(id), bob);
+        vm.prank(bob); c.transferFrom(alice, bob, id); assertEq(c.getApproved(id), address(0), "cleared by the transfer");
+        vm.expectRevert(bytes("no token")); c.getApproved(99);
+    }
+
     // ---- ERC-4906: a marketplace that cached "egg" is told when it is not one any more ----
     event MetadataUpdate(uint256 _tokenId); event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
     function test_a_hatch_a_registration_and_a_new_renderer_each_say_the_metadata_moved() public {
@@ -141,6 +175,17 @@ contract FlyCollectionRevisionTest is Test {
             if (j < o.length) o[j++] = bytes1(uint8(w >> 16)); if (j < o.length) o[j++] = bytes1(uint8(w >> 8)); if (j < o.length) o[j++] = bytes1(uint8(w)); }
     }
     function _v(bytes1 ch) internal pure returns (uint256) { uint8 x = uint8(ch); if (x >= 65 && x <= 90) return x - 65; if (x >= 97 && x <= 122) return x - 71; if (x >= 48 && x <= 57) return x + 4; if (x == 43) return 62; if (x == 47) return 63; return 0; }
+}
+contract MoodyTreasury { bool public isOpen; function open(bool v) external { isOpen = v; } receive() external payable { require(isOpen, "closed"); } }
+contract SpinningTreasury { receive() external payable { uint256 x; while (true) x++; } }
+contract MoodyMarket is IRoyaltyMarket {
+    MEPRegistry immutable meps; mapping(bytes32 => uint256) public royalties; bool public refusing;
+    constructor(MEPRegistry m) { meps = m; }
+    function accrue(bytes32 mepId) external payable { royalties[mepId] += msg.value; } function refuse(bool v) external { refusing = v; }
+    function withdrawRoyalty(bytes32 mepId) external returns (uint256 amt) {
+        require(!refusing, "refusing"); (address ben,) = meps.termsOf(mepId); require(msg.sender == ben, "beneficiary");
+        amt = royalties[mepId]; require(amt > 0, "nothing"); royalties[mepId] = 0; (bool ok,) = msg.sender.call{value: amt}(""); require(ok, "withdraw");
+    }
 }
 contract RevertingRenderer is ITokenRenderer { function tokenURI(address, uint256) external pure returns (string memory) { revert("no"); } }
 contract SpinningRenderer is ITokenRenderer { function tokenURI(address, uint256) external pure returns (string memory) { uint256 x; while (true) x++; return ""; } }

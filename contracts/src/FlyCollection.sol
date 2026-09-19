@@ -96,7 +96,7 @@ contract FlyCollection {
     string public symbol = "FLYBRAIN";
     mapping(uint256 => address) internal _ownerOf;
     mapping(address => uint256) internal _balanceOf;
-    mapping(uint256 => address) public getApproved;
+    mapping(uint256 => address) internal _approved;
     mapping(address => mapping(address => bool)) public isApprovedForAll;
 
     event Transfer(address indexed from, address indexed to, uint256 indexed id);
@@ -111,6 +111,8 @@ contract FlyCollection {
     event WeightsHint(uint256 indexed id, bytes32 indexed mepId, bytes weightsDA);
     event RoyaltySettled(uint256 indexed id, address indexed owner, uint256 amount);
     event BaseShareSettled(uint256 indexed id, address indexed vendor, uint256 amount);
+    event TreasuryCredited(uint256 amount);      // the treasury refused a payment: it is in `owed`, and the fly was not held up
+    event RoyaltySettleFailed(uint256 indexed id); // the market refused: the transfer went through, the royalty is still there to settle
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnerProposed(address indexed proposed);
     event RendererSet(address indexed renderer);
@@ -136,16 +138,17 @@ contract FlyCollection {
 
     function ownerOf(uint256 id) public view returns (address o) { o = _ownerOf[id]; require(o != address(0), "no token"); }
     function balanceOf(address a) public view returns (uint256) { require(a != address(0), "zero"); return _balanceOf[a]; }
-    function approve(address spender, uint256 id) external { address o = ownerOf(id); require(msg.sender == o || isApprovedForAll[o][msg.sender], "not authorised"); getApproved[id] = spender; emit Approval(o, spender, id); }
+    function approve(address spender, uint256 id) external { address o = ownerOf(id); require(msg.sender == o || isApprovedForAll[o][msg.sender], "not authorised"); _approved[id] = spender; emit Approval(o, spender, id); }
+    function getApproved(uint256 id) external view returns (address) { ownerOf(id); return _approved[id]; } // ERC-721: throws for a token that does not exist
     function setApprovalForAll(address op, bool ok) external { isApprovedForAll[msg.sender][op] = ok; emit ApprovalForAll(msg.sender, op, ok); }
     function transferFrom(address from, address to, uint256 id) public {
         require(from == _ownerOf[id], "wrong from"); require(to != address(0), "zero to");
-        require(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id], "not authorised");
+        require(msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == _approved[id], "not authorised");
         // The bond belongs to an address, not to a token: transferring an individual moves the research subject
         // and its fee share, and nothing else. The new owner bonds themselves if they want to run a node.
         // The fee share moves from here on: what the fly earned up to this block is credited to the seller first.
         _settle(id);
-        _balanceOf[from]--; _balanceOf[to]++; _ownerOf[id] = to; delete getApproved[id];
+        _balanceOf[from]--; _balanceOf[to]++; _ownerOf[id] = to; delete _approved[id];
         emit Transfer(from, to, id);
     }
     function safeTransferFrom(address from, address to, uint256 id) external { safeTransferFrom(from, to, id, ""); }
@@ -214,7 +217,7 @@ contract FlyCollection {
             bytes32 baseMep = sex == FEMALE ? BASE_MEP_FEMALE : BASE_MEP_MALE; bytes32[] memory ids = new bytes32[](baseMep == bytes32(0) ? 0 : 1); if (baseMep != bytes32(0)) ids[0] = baseMep;
             INSTANCES.bondFor{value: MINT_BOND}(msg.sender, ids);
         }
-        (bool ok,) = TREASURY.call{value: MINT_PRICE - MINT_BOND}(""); require(ok, "treasury");
+        _toTreasury(MINT_PRICE - MINT_BOND);
     }
 
     /// @notice Breed one female and one male individual. Both must be held (or approved) by the caller.
@@ -253,7 +256,7 @@ contract FlyCollection {
         });
         _balanceOf[msg.sender]++; _ownerOf[id] = msg.sender;
         emit Transfer(address(0), msg.sender, id); emit Bred(id, a, b, seedBlock);
-        (bool ok,) = TREASURY.call{value: BREED_FEE - HATCH_BOUNTY}(""); require(ok, "treasury"); // the bounty stays here until hatch
+        _toTreasury(BREED_FEE - HATCH_BOUNTY); // the bounty stays here until hatch
     }
 
     /// @notice Give a bred individual its seed, and with it its sex, from the hash of its seed block. Anyone may
@@ -284,7 +287,7 @@ contract FlyCollection {
         require(ind.seedBlock != 0 && ind.seed == bytes32(0), "nothing to hatch");
         require(block.number > uint256(ind.seedBlock) + 256, "not expired");
         ind.seedBlock = uint64(block.number) + 1; emit Rearmed(id, ind.seedBlock);
-        (bool ok,) = TREASURY.call{value: msg.value}(""); require(ok, "treasury");
+        _toTreasury(msg.value);
     }
 
     /// @notice Claim this individual's delta (for a bred token) and register its MEP. Permissionless in spirit but
@@ -343,14 +346,24 @@ contract FlyCollection {
     ///         at the block of the sale. Credited, not sent: an owner that refuses ether must not be able to block a
     ///         transfer, or anybody else's settle. `withdraw` is the owner's own call.
     function settle(uint256 id) external returns (uint256 amount) { ownerOf(id); return _settle(id); }
+    /// @dev Every transfer passes through here, so nothing here may revert: a fly must stay transferable whatever the market
+    ///      does. If the market refuses, the royalty stays where it is -- still this fly's, settled by the next call that works.
     function _settle(uint256 id) internal returns (uint256 amount) {
-        bytes32 mepId = individuals[id].mepId;
-        if (ROYALTY_BPS == 0 || mepId == bytes32(0) || MARKET.royalties(mepId) == 0) return 0; // withdrawRoyalty reverts on nothing
-        amount = MARKET.withdrawRoyalty(mepId);
+        bytes32 mepId = individuals[id].mepId; if (ROYALTY_BPS == 0 || mepId == bytes32(0)) return 0;
+        try MARKET.royalties(mepId) returns (uint256 pending) { if (pending == 0) return 0; } catch { emit RoyaltySettleFailed(id); return 0; } // withdrawRoyalty reverts on nothing
+        try MARKET.withdrawRoyalty(mepId) returns (uint256 got) { amount = got; } catch { emit RoyaltySettleFailed(id); return 0; }
         // the base's share comes off the top, once; the rest is the owner's. Both are credited, neither is sent.
         uint256 base = amount * BASE_SHARE_BPS / 10000; address o = _ownerOf[id];
         if (base > 0) { owed[BASE_VENDOR] += base; emit BaseShareSettled(id, BASE_VENDOR, base); }
         owed[o] += amount - base; emit RoyaltySettled(id, o, amount - base);
+    }
+    /// @dev Pay the treasury -- and if it will not take the money, credit it instead (`owed`, collected with `withdraw` like
+    ///      anybody's). The treasury is fixed for the collection's life and may well be a contract that does something with
+    ///      what it receives (a splitter, a buyback); whatever that something is, its failing must never stop somebody's
+    ///      adoption or a birth. Gas is capped for the same reason: a treasury cannot make an adoption arbitrarily dear.
+    function _toTreasury(uint256 amount) internal {
+        if (amount == 0) return; (bool ok,) = TREASURY.call{value: amount, gas: 500_000}("");
+        if (!ok) { owed[TREASURY] += amount; emit TreasuryCredited(amount); }
     }
     /// @notice collect everything credited to the caller
     function withdraw() external returns (uint256 amount) {
@@ -388,7 +401,7 @@ contract FlyCollection {
 
     function _may(uint256 id) internal view returns (bool) {
         address o = ownerOf(id);
-        return msg.sender == o || isApprovedForAll[o][msg.sender] || msg.sender == getApproved[id];
+        return msg.sender == o || isApprovedForAll[o][msg.sender] || msg.sender == _approved[id];
     }
     function _verify(bytes32[] calldata proof, bytes32 root, bytes32 leaf) internal pure returns (bool) {
         bytes32 h = leaf;
