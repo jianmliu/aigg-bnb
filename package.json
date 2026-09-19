@@ -5,7 +5,7 @@
   "type": "module",
   "description": "BNB Chain deployment of the PoRW fly-brain mesh (Greenfield model store, opBNB/BSC settlement)",
   "scripts": {
-    "test": "node test/env_mapping.mjs && node test/render_blueprint.mjs && node js/test_greenfield.mjs && node test/e2e_anvil.mjs && node test/e2e_lazy_beacon.mjs && node test/e2e_sponsor_guard.mjs && node test/e2e_hosting.mjs && node test/e2e_keeper.mjs && node test/e2e_flybnb.mjs && node test/flybnb_build.mjs && node test/e2e_dispute.mjs",
+    "test": "node test/env_mapping.mjs && node test/render_blueprint.mjs && node js/test_greenfield.mjs && node test/e2e_anvil.mjs && node test/e2e_lazy_beacon.mjs && node test/e2e_sponsor_guard.mjs && node test/e2e_hosting.mjs && node test/e2e_keeper.mjs && node test/e2e_flybnb.mjs && node test/flybnb_build.mjs && node test/flybnb_battery.mjs && node test/e2e_dispute.mjs",
     "test:frontend": "npm run build:frontend && node test/frontend_memory.mjs && node test/e2e_frontend.mjs && node test/e2e_flies.mjs && node test/e2e_flybnb_page.mjs",
     "relayer": "node relayer/relayer.mjs",
     "flybnb:paper": "node docs/flybnb/build.mjs",

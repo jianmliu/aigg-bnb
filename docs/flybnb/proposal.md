@@ -8,6 +8,20 @@ The name: Fly + BnB. The brains are hosted in many people's browsers (the bed-an
 
 Silence and activate every cell type of the female (FlyWire) and the male (MaleCNS) fly brain, one at a time, under a battery of standard sensory stimuli, and record the output of every descending neuron. Then repeat each result in one hundred synthetic individuals whose wiring varies as much as the left and right hemispheres of a real brain do. The product is a public database in which every row is one whole-brain run (perturbation × stimulus × individual × seed) carrying a digest that anybody can recompute bit for bit. It supplies the control that connectome simulation owes: a conclusion drawn from one brain, does it hold in another?
 
+## 1a. One dataset, three analyses
+
+FlyBnB started as three questions, and they turn out to be three readings of one table. A row is one whole-brain run: *perturbation × stimulus × individual × seed*, with a digest. What differs is the axis that is opened.
+
+| analysis | the rows it reads | the question |
+|---|---|---|
+| **the perturbation atlas** | every perturbation, in every individual | which simulation results survive a change of brain? (Sections 5 to 6, H1 to H4) |
+| **the association analysis** | no perturbation, many individuals, with their wiring | which connections decide a phenotype? The pilot already has a first answer: the four direct gate connections do not (r = −0.27) |
+| **the selection experiment** | individuals that are crosses, with their parents | is a circuit phenotype transmitted, and does selecting one behaviour break another? |
+
+What makes it one dataset in practice is **the standard battery** ([`flybnb/battery/`](../../flybnb/battery/)): 13 stimuli × 3 seeds, the output of every descending neuron. Every individual gets it. The atlas perturbs it, the association analysis regresses its readouts on wiring, the selection experiment measures it in parents and offspring. Operationally there is one action: when an individual exists, minted or bred, its battery is posted as one batched task, the nodes that host that brain execute it, and its 39 rows land in the table. So an individual that somebody breeds because they like it is, without anybody deciding so, a data point in all three analyses, and the people who host it are in the acknowledgments.
+
+The selection experiment is the one this system fits best, and the one a cluster cannot imitate: the crosses, the lineage and who chose to make them are on a chain. It is also the one with the most to prove, and the breeding pilot (Section 3a) is its go or no-go.
+
 ## 2. What exists already
 
 - **Two whole brains under one execution rule.** FlyWire v783 (139,255 neurons, 8,840 annotated cell types, 1,303 descending neurons, 16,907 sensory neurons) and MaleCNS v1.0, both exported as `FLYBRAINv2` payloads and simulated under `aigg:exec:int-lif:v1`, an integer leaky integrate-and-fire rule that is bit-exact across implementations.
@@ -44,6 +58,16 @@ Three conclusions.
 The wiring itself: in each individual about 800,000 base connections fall below the threshold and about 790,000 rise above it, while the number of connections and of synapses stays stationary. On every phenotype the base wiring sits between the 29th and the 87th percentile of the individuals: it is an ordinary individual, not a special case.
 
 Not measured: narrow-sense heritability under the cross (it needs parent-offspring pairs); the other stimuli; the male brain. The variability model redraws every connection independently and may overstate the turnover of near-threshold connections; the dose-response of Section 9 is there for that.
+
+## 3a. The breeding pilot: is a phenotype transmitted?
+
+The assay is deterministic: for fixed seeds a phenotype is a function of the wiring and nothing else, so all of its variance between individuals is genetic. What is not given is how much of it a parent passes on. Under the collection's cross an offspring takes each connection from one parent or the other and then one connection in eight is redrawn around the base. A purely additive phenotype therefore regresses on the midparent with slope 7/8 = 0.875; how far a measured slope falls below that is how much of the phenotype lives in interactions between connections, which recombination breaks up.
+
+Design ([`flybnb/results/breeding/design.json`](../../flybnb/results/breeding/design.json)): the pilot's 100 founders; 100 offspring of founders paired at random (every founder a parent twice), for the midparent regression; and two divergent selection lines of 50 offspring each, bred among the 20 founders with the highest and the 20 with the lowest DNge145 response to sound. Every individual gets the full battery.
+
+<!-- BEGIN GENERATED: breeding -->
+_The breeding pilot is running._
+<!-- END GENERATED: breeding -->
 
 ## 4. Why the individual axis
 
