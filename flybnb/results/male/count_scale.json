@@ -1,0 +1,13 @@
+{
+ "types_shared": 7329,
+ "types_with_equal_cell_counts": 4910,
+ "connections_compared": 222457,
+ "sum_ratio_male_over_female": 1.6226125503973101,
+ "median_ratio": 1.5454545454545454,
+ "geometric_mean_ratio": 1.5714633627232444,
+ "median_ratio_large_connections": 1.3714285714285714,
+ "spearman": 0.7629435521581618,
+ "female_per_male_synapse": 0.6162900686027245,
+ "weight_unit_q16_female": 18022,
+ "weight_unit_q16_male_equivalent": 11107
+}
