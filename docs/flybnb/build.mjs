@@ -110,6 +110,16 @@ export function selectionBlock(x) {
   ].join("\n");
 }
 
+/** the proposal's "where the three analyses stand": one line each, from the same results the paper's sections are generated from */
+export function progressBlock(as, at, sel) {
+  const L = ["| analysis | first result | in the paper |", "|---|---|---|"];
+  if (at) L.push(`| the perturbation atlas | first slice, silencing under \`sound\`, ${at.individuals} individuals: of ${at.replication_central.n} central effects detected on the published wiring, median replication ${f(at.replication_central.median)}; ${f(at.replication_by_base_effect[at.replication_by_base_effect.length - 1].median_replication)} for effects of ${at.replication_by_base_effect[at.replication_by_base_effect.length - 1].abs_effect.replace(">= ", "≥ ")} spikes | Section 3c |`);
+  if (as) L.push(`| the association analysis | ${as.individuals} founders: a sparse-regime phenotype is its readout's direct inputs (median R² ${f(as.summary.median_r2_direct)}; the rest of the active network ${f(as.summary.median_r2_without_direct)}) | Section 3b |`);
+  if (sel) { const last = (line) => sel.by_generation.filter((r) => r.gen === sel.generations && r.line === line), m = (rows, k) => rows.reduce((a, r) => a + r[k], 0) / rows.length;
+    L.push(`| the selection experiment | ${sel.generations} generations, six lines: high lines ${m(last("high"), "trait_in_founder_sd") >= 0 ? "+" : ""}${f(m(last("high"), "trait_in_founder_sd"), 1)} founder SD, low lines at the trait's floor; the leak under the gate ${f(sel.founders.leak_mean, 1)} → ${f(m(last("high"), "leak_mean"), 1)} spikes in the high lines; with the line as the unit, ${sel.last_generation.moved_at_line_level_not_DNge145} other phenotype(s) moved, of ${sel.last_generation.of_which_not_DNge145} an individual-level test flags | Section 3d |`); }
+  return L.join("\n");
+}
+
 async function holdersFromChain(rpc, collection) {
   const { createPublicClient, http, parseAbi } = await import("viem");
   const abi = parseAbi(["function totalSupply() view returns (uint256)", "function ownerOf(uint256) view returns (address)"]);
@@ -136,6 +146,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   text = replaceBlock(text, "breeding", brText);
   text = replaceBlock(text, "selection", sel ? selectionBlock(sel) : "_Running._");
   text = replaceBlock(text, "association", as ? associationBlock(as) : "_Not analysed yet._"); text = replaceBlock(text, "atlas", at ? atlasBlock(at) : "_Not run yet._");
-  if (fs.existsSync(PROPOSAL)) fs.writeFileSync(PROPOSAL, replaceBlock(fs.readFileSync(PROPOSAL, "utf8"), "breeding", brText)); // the proposal carries the same block
+  if (fs.existsSync(PROPOSAL)) fs.writeFileSync(PROPOSAL, replaceBlock(replaceBlock(fs.readFileSync(PROPOSAL, "utf8"), "breeding", brText), "progress", progressBlock(as, at, sel))); // the proposal carries the same block
   fs.writeFileSync(PAPER, text); console.log(`paper.md regenerated: pilot ${v ? "yes" : "no"}, holders ${h ? h.holders.length : "none"}`);
 }

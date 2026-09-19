@@ -1,6 +1,6 @@
 // docs/flybnb/build.mjs regenerates blocks of a paper that people also write in. The one thing it must never do is
 // touch the prose: a block is replaced whole, everything outside the markers comes back byte for byte.
-import { replaceBlock, pilotBlock, ackBlock, breedingBlock, associationBlock, atlasBlock, selectionBlock } from "../docs/flybnb/build.mjs";
+import { replaceBlock, pilotBlock, ackBlock, breedingBlock, associationBlock, atlasBlock, selectionBlock, progressBlock } from "../docs/flybnb/build.mjs";
 import fs from "node:fs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
 const doc = "prose above\n<!-- BEGIN GENERATED: x -->\nold\n<!-- END GENERATED: x -->\nprose below\n<!-- BEGIN GENERATED: y -->\n<!-- END GENERATED: y -->\n";
@@ -24,4 +24,6 @@ check("the pilot block carries the design, the table and the gate numbers", /100
   check("the association and atlas blocks in the committed paper are exactly what the committed results generate", paper.includes(associationBlock(as)) && paper.includes(atlasBlock(at)) && /median replication 0\.\d\d/.test(atlasBlock(at))); }
 { const u = new URL("../flybnb/results/selection/selection.json", import.meta.url), paper = fs.readFileSync(new URL("../docs/flybnb/paper.md", import.meta.url), "utf8");
   check("the selection block in the committed paper is what the committed results generate (or says it is still running)", fs.existsSync(u) ? paper.includes(selectionBlock(JSON.parse(fs.readFileSync(u)))) : /BEGIN GENERATED: selection -->\n_Running\._/.test(paper)); }
+{ const J = (f) => JSON.parse(fs.readFileSync(new URL("../flybnb/results/" + f, import.meta.url))), prop = fs.readFileSync(new URL("../docs/flybnb/proposal.md", import.meta.url), "utf8");
+  check("the proposal's progress table is what the committed results generate", prop.includes(progressBlock(J("association/association.json"), J("atlas/robustness.json"), J("selection/selection.json")))); }
 console.log(fails ? `${fails} FAILURES` : "flybnb build: all checks passed"); process.exit(fails ? 1 : 0);
