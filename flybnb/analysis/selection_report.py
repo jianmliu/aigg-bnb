@@ -1,6 +1,6 @@
 """Multi-generation selection: the response per generation, what drift alone does, and what the selected circuit pays.
 
-  python flybnb/analysis/selection_report.py --work <dir of selection_experiment.py> [--out flybnb/results/selection/selection]
+  python flybnb/analysis/selection_report.py [--work <dir of selection_experiment.py>]     (default: the committed flybnb/results/selection/rows.jsonl.gz)
 
 Per generation and line: the selected trait (DNge145 under `sound`), the cost the breeding pilot found inside the same
 circuit (DNge145 under `sound_gate`: what leaks through the gate, and the suppression the gate still achieves), and the
@@ -11,7 +11,7 @@ phenotypes): which other behaviours the selection moved, and which moved in the 
 import os, sys, json, argparse, numpy as np
 from math import erf, sqrt
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-ap = argparse.ArgumentParser(); ap.add_argument("--work", required=True); ap.add_argument("--founder-rows", default=os.path.join(ROOT, "flybnb/results/breeding/rows.jsonl")); ap.add_argument("--out", default=os.path.join(ROOT, "flybnb/results/selection/selection")); a = ap.parse_args()
+ap = argparse.ArgumentParser(); ap.add_argument("--work", default=None, help="the experiment's directory (rows_gen<g>.jsonl)"); ap.add_argument("--rows", default=os.path.join(ROOT, "flybnb/results/selection/rows.jsonl.gz"), help="or: all generations in one file, as committed"); ap.add_argument("--founder-rows", default=os.path.join(ROOT, "flybnb/results/breeding/rows.jsonl")); ap.add_argument("--out", default=os.path.join(ROOT, "flybnb/results/selection/selection")); a = ap.parse_args()
 bat = json.load(open(os.path.join(ROOT, "flybnb/battery/battery-v1.json"))); G = json.load(open(os.path.join(ROOT, "flybnb/analysis/groups_flywire783.json"))); ct = json.load(open(os.path.join(ROOT, "flybnb/atlas/celltypes-flywire783.json")))
 dn = bat["readout"]["neuron_index"]; k145 = [dn.index(i) for i in G["DNge145"]]; tn = np.array(ct["type_of_neuron"])[np.array(dn)]; stims = [s["name"] for s in bat["stimuli"]]; nD = len(dn)
 def vecs(r):
@@ -19,10 +19,13 @@ def vecs(r):
     for x in r["rows"]: V[x["stim"]][x["dn_i"]] += np.array(x["dn_c"], dtype=float) / len(bat["seeds"])
     return V
 F = [vecs(r) for r in map(json.loads, open(a.founder_rows)) if r["kind"] == "founder"]; gens = {}
-g = 1
-while os.path.exists(os.path.join(a.work, f"rows_gen{g}.jsonl")):
-    for r in map(json.loads, open(os.path.join(a.work, f"rows_gen{g}.jsonl"))): gens.setdefault(g, {}).setdefault((r["line"], r["rep"]), []).append((vecs(r), r["geno"]))
-    g += 1
+import gzip
+def all_rows():
+    if a.work:
+        g = 1
+        while os.path.exists(os.path.join(a.work, f"rows_gen{g}.jsonl")): yield from map(json.loads, open(os.path.join(a.work, f"rows_gen{g}.jsonl"))); g += 1
+    else: yield from map(json.loads, gzip.open(a.rows, "rt") if a.rows.endswith(".gz") else open(a.rows))
+for r in all_rows(): gens.setdefault(r["gen"], {}).setdefault((r["line"], r["rep"]), []).append((vecs(r), r["geno"]))
 G_LAST = max(gens); trait = lambda V: float(V["sound"][k145].sum()); leak = lambda V: float(V["sound_gate"][k145].sum())
 f_t = np.array([trait(V) for V in F]); f_l = np.array([leak(V) for V in F]); sd = float(f_t.std(ddof=1))
 out = {"generations": G_LAST, "founders": {"trait_mean": float(f_t.mean()), "trait_sd": sd, "leak_mean": float(f_l.mean())}, "by_generation": []}
