@@ -50,10 +50,13 @@ let CLAIM_VALIDITY = 1; try { CLAIM_VALIDITY = Number(await ch.instances.read.cl
 let CHALLENGE = { windowBlocks: 0, depositWei: "0" }; try { CHALLENGE = { windowBlocks: Number(await ch.market.read.challengeWindow()), depositWei: String(await ch.market.read.challengeDepositWei()) }; } catch {}
 for (const id of cfg.meps) {
   const m = await ch.meps.read.getMEP([id]);
-  const isLif = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase();
-  const info = { mepId: id.toLowerCase(), modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
+  // int-lif is a FAMILY of kinds, one per weight unit (a connectome counted on another scale pins another unit); the
+  // chain knows which digests are int-lif and under what unit. Older deployments have no such getter: the default kind only.
+  let wUnitQ16 = 0; try { wUnitQ16 = Number(await ch.meps.read.lifWeightUnit([m.execKind])); } catch { wUnitQ16 = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? 18022 : 0; }
+  const isLif = wUnitQ16 !== 0;
+  const info = { mepId: id.toLowerCase(), modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", wUnitQ16: isLif ? wUnitQ16 : null, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
     weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || (cfg.mepNames || {})[id.toLowerCase()] || null };
-  const execKind = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? lifExecKind() : EXEC_INT_SPMV_Q16;
+  const execKind = isLif ? lifExecKind(wUnitQ16) : EXEC_INT_SPMV_Q16; // recomputed from the unit, so a kind the chain mis-stated would not reproduce the id below
   const mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
   if (hex(mep.mepId).toLowerCase() !== id.toLowerCase()) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind mismatch)`);
   meps.set(id.toLowerCase(), { mep, info, aggregators: new Map(), posted: new Set() });

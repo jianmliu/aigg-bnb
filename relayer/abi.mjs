@@ -76,6 +76,10 @@ export const MEPRegistryAbi = parseAbi([
   "function registerMEP(MEP m) returns (bytes32)",
   "function getMEP(bytes32 id) view returns (MEP)",
   "function exists(bytes32) view returns (bool)",
+  // int-lif kinds: the weight unit behind an execKind digest (0: not a declared int-lif kind). A connectome that counts
+  // synapses on another scale pins another unit, hence another kind; anybody may declare one, the digest is computed on chain
+  "function declareLifKind(uint32 wUnitQ16) returns (bytes32)",
+  "function lifWeightUnit(bytes32 execKind) view returns (uint32)",
 ]);
 export const BeaconAbi = parseAbi([
   "function EPOCH_BLOCKS() view returns (uint64)", "function COMMIT_BLOCKS() view returns (uint64)", "function REVEAL_BLOCKS() view returns (uint64)", "function DEPOSIT() view returns (uint256)",

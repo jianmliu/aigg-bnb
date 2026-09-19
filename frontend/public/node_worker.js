@@ -34,9 +34,9 @@ const ops = {
     const hdr = decodeHeader(b); const prof = V.profileOf(b, hdr); // model id AND the CSR roots: mep_id binds both now
     return { modelId: hex(prof.modelId), synapseRoot: hex(prof.synapseRoot), name: hdr.name, neurons: hdr.neurons, synapses: hdr.synapses, bytes: b.length };
   },
-  async host({ mepId, name, maxSteps, exec }) {
+  async host({ mepId, name, maxSteps, exec, wUnitQ16 = 0 }) {
     const bytes = pending.get(mepId); if (!bytes) throw new Error("no bytes prepared for this brain");
-    const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec });
+    const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec, wUnitQ16 }); // under another unit the same bytes are another MEP: the id check below is what catches a wrong one
     const local = hex(st.mep.mepId).toLowerCase();
     if (svc && local === mepId) svc.serve(st.mep.mepId);
     return { localMepId: local, matches: local === mepId, neurons: st.hdr.neurons };

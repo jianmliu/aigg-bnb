@@ -60,7 +60,7 @@ const widths = (m) => { const w = [m]; while (w[w.length - 1] > 1) w.push((w[w.l
  * @param hooks       { check(name, ok), log(msg) }
  */
 export async function driveDispute(A, B, opts, mod, hooks) {
-  const { taskId, disputes, mepIdBytes, n, steps, stride, seed, challengeBytes, sLie, neuron, delta, chunkSize, forgeRow = true } = opts;
+  const { taskId, disputes, mepIdBytes, n, steps, stride, seed, challengeBytes, sLie, neuron, delta, chunkSize, forgeRow = true, wUnitQ16 = undefined } = opts; // wUnitQ16: the MEP's kind's weight unit (default: FlyWire's)
   const { D, V, L, hex } = mod; const { check, log } = hooks;
   const gas = {};
   const send = async (X, fn, args) => {
@@ -109,7 +109,7 @@ export async function driveDispute(A, B, opts, mod, hooks) {
   const len = psA.sums.length, jStar = len >> 1;
   let bSums;
   if (forgeRow) { bSums = Array.from(psA.sums); for (let j = jStar; j < len; j++) bSums[j] += BigInt(delta);
-    check("the liar's forged row transitions to exactly the state it claimed (so the row check cannot catch it)", L.sameState(L.transition(prevSelf.state, bSums[len - 1], neuron, sLie, seed), stB)); }
+    check("the liar's forged row transitions to exactly the state it claimed (so the row check cannot catch it)", L.sameState(L.transition(prevSelf.state, bSums[len - 1], neuron, sLie, seed, wUnitQ16), stB)); }
   else bSums = Array.from((await B.nd.lifPartialSums(mepIdBytes, sLie, neuron)).sums);
   const row = (X, st, sums) => send(X, "postRowLif", [taskId, st.v, st.g, st.refr, st.flags, st.count, sums]);
   gas.row = await row(A, stA, Array.from(psA.sums)); await row(B, stB, bSums);
