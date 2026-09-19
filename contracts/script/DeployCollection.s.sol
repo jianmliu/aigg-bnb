@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import "../src/FlyCollection.sol";
 import "../src/CollectionWhitelist.sol";
 import "../src/FlyRenderer.sol";
+import "../src/TreasuryRouter.sol";
 
 /// Deploys the genesis FlyCollection against an existing mesh and, when the broadcaster is the whitelist's curator,
 /// lists it. The genesis set is not a parameter: it is read from the published file (flybnb/genesis/genesis-v1.json),
@@ -14,7 +15,7 @@ import "../src/FlyRenderer.sol";
 ///   MINT_PRICE, MINT_BOND, BREED_FEE, HATCH_BOUNTY, ROYALTY_BPS   (wei / bps). Mainnet intent: 0.1 / 0.05 / 0.05 / 0.001 BNB, 1000 bps
 ///   BASE_VENDOR (default: TREASURY), BASE_SHARE_BPS (1000: a tenth of the royalty), SALE_ROYALTY_BPS (500: ERC-2981, to TREASURY),
 ///   OWNER (default: the broadcaster: `owner()` for marketplaces; it can only choose the token renderer)
-///   TREASURY (default: the broadcaster), LINEAGE (default: none -- the legacy `register`), BASE_MALE (default: zero, no male base yet)
+///   TREASURY (default: a new TreasuryRouter owned by TREASURY_OWNER and forwarding to TREASURY_DESTINATION, both the broadcaster), LINEAGE (default: none -- the legacy `register`), BASE_MALE (default: zero, no male base yet)
 ///   forge script script/DeployCollection.s.sol --rpc-url $RPC --broadcast --private-key $PK
 contract DeployCollection is Script {
     using stdJson for string;
@@ -25,8 +26,12 @@ contract DeployCollection is Script {
         uint256 breedFee = vm.envOr("BREED_FEE", uint256(0.05 ether)); uint256 bounty = vm.envOr("HATCH_BOUNTY", uint256(0.001 ether));
         uint16 bps = uint16(vm.envOr("ROYALTY_BPS", uint256(1000)));
         address whitelist = vm.envOr("WHITELIST", address(0));
-        address treasury = vm.envOr("TREASURY", msg.sender); address baseVendor = vm.envOr("BASE_VENDOR", treasury); // until a base has a vendor of its own, it is the treasury
+        address treasury = vm.envOr("TREASURY", address(0));
         vm.startBroadcast();
+        // The treasury is immutable in the collection, so unless one is named it is a TreasuryRouter: a fixed address whose
+        // DESTINATION can change (owner: TREASURY_OWNER, two-step; both default to the broadcaster). Created inside the broadcast.
+        if (treasury == address(0)) { treasury = address(new TreasuryRouter(vm.envOr("TREASURY_OWNER", msg.sender), payable(vm.envOr("TREASURY_DESTINATION", msg.sender)))); console.log("treasury router", treasury); }
+        address baseVendor = vm.envOr("BASE_VENDOR", treasury); // until a base has a vendor of its own, it is the treasury
         c = new FlyCollection(baseFemale, vm.envOr("BASE_MALE", bytes32(0)), root, size, price, bond, breedFee, bounty, treasury,
             IMEPRegistry(vm.envAddress("MEPS")), IInstanceBonding(vm.envAddress("INSTANCES")), LineageRegistry(vm.envOr("LINEAGE", address(0))),
             vm.envBytes32("BASE_MEP_FEMALE"), vm.envOr("BASE_MEP_MALE", bytes32(0)), IRoyaltyMarket(vm.envAddress("MARKET")), bps, FlyCollection.Shares(baseVendor, uint16(vm.envOr("BASE_SHARE_BPS", uint256(1000))), uint16(vm.envOr("SALE_ROYALTY_BPS", uint256(500))), vm.envOr("OWNER", msg.sender)));

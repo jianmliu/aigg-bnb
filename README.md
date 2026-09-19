@@ -32,7 +32,7 @@ the chain and follows mints and transfers.
 | `test/` | end-to-end on a local anvil: `e2e_batch.mjs` (one task, many runs: posted, executed by two live nodes, settled, a row re-executed by the client; then a lie in one run bisected to on-chain and convicted); `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
 | `gateway/` | the OpenAI-compatible adapter (`docs/GATEWAY.md`, milestones 0-1): `POST /v1/responses` becomes an on-chain task paid by the gateway's own wallet, and the answer is a readout -- spike counts the providers returned, served only because they hash to the settled digest -- and a receipt. `npm run gateway`; it is not part of the relayer, because it holds money |
-| `deploy_collection.sh` | the genesis `FlyCollection` on top of a deployed mesh (`contracts/script/DeployCollection.s.sol`): the genesis root is read from `flybnb/genesis/genesis-v1.json`, the collection is listed on the mesh's `CollectionWhitelist`, and its address is saved as `PORW_COLLECTION` |
+| `deploy_collection.sh` | the genesis `FlyCollection` on top of a deployed mesh (`contracts/script/DeployCollection.s.sol`), with its `TreasuryRouter` (unless `TREASURY` names one) and its on-chain `FlyRenderer`: the genesis root is read from `flybnb/genesis/genesis-v1.json`, the collection is listed on the mesh's `CollectionWhitelist`, and its address is saved as `PORW_COLLECTION` |
 
 ## Layering (short version)
 
