@@ -13,7 +13,7 @@ contract FlyCollectionGenesisTest is Test {
         string memory j = vm.readFile(string.concat(vm.projectRoot(), "/../flybnb/genesis/genesis-v1.json"));
         bytes32 root = j.readBytes32(".root"); uint32 size = uint32(j.readUint(".size")); bytes32 base = j.readBytes32(".baseModelId");
         MEPRegistry meps = new MEPRegistry(); address treasury = address(0x7EA); uint256 PRICE = 0.1 ether;
-        FlyCollection c = new FlyCollection(base, bytes32(0), root, size, PRICE, 0, 0.05 ether, 0.001 ether, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(0)), 0);
+        FlyCollection c = new FlyCollection(base, bytes32(0), root, size, PRICE, 0, 0.05 ether, 0.001 ether, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(0)), 0, FlyCollection.Shares(address(0), 0, 0, address(0)));
         address alice = address(0xA11CE); vm.deal(alice, 10 ether); vm.startPrank(alice);
         uint32[4] memory picks = [uint32(0), 57, 98, 99]; // the ends, the middle, and the odd node that is carried up the tree
         for (uint256 k = 0; k < picks.length; k++) {

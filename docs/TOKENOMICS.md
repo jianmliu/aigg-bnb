@@ -387,11 +387,19 @@ nominal amount in a volatile asset.
 | `MINT_PRICE` | `UNIT` + fee | the fee is the treasury's only income |
 | genesis size | to set against the §5 memory bound | the old ≤ 200 was a CPU figure and no longer applies; split between the two sexes, since a skewed ratio throttles breeding |
 | `BREED_FEE` | to decide | the second sink, and the rate limit on new MEPs |
+| `ROYALTY_BPS` | 1000 | of every fee settled for a task on a registered fly; inside the `mep_id`, so fixed for the collection's life |
+| `BASE_SHARE_BPS`, `BASE_VENDOR` | 1000, the treasury | the base's part **of the royalty**, not of the fee: of a fee of 1 the hosts share 0.90, the owner gets 0.09, the base 0.01. One level -- it does not compound down a pedigree -- and the vendor is the treasury until a base has one of its own (docs/GATEWAY.md §4.1) |
+| `SALE_ROYALTY_BPS` | 500 | ERC-2981, to the treasury: what a marketplace is *asked* to pay on a resale. No venue is bound by it and a plain transfer pays nothing, which is why it is a different thing from the royalty the protocol enforces. Capped at 10% |
 
 Not an admin key. The neighbouring project lets its owner change the mint price, the swap route and the buyback
 recipient; that is a live hand on the economics. Immutable-with-known-flaws is a better failure mode than
 mutable-at-will, and where something genuinely must change it should be governed explicitly rather than by an
 owner address.
+
+The collection does have an `owner()`, because marketplaces hand the collection's page to whoever that names. It has
+one power: choosing the contract that draws a token (`tokenURI`; the first one, `FlyRenderer`, is on-chain and needs no
+server). Not a price, a rate, the treasury, the genesis set or anybody's fly. It moves in two steps and can be
+renounced, which freezes the renderer. A renderer that reverts or burns its gas takes the picture down, never the token.
 
 ---
 

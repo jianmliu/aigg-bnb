@@ -20,7 +20,7 @@ contract FlyCollectionTest is Test {
     function setUp() public {
         meps = new MEPRegistry();
         // MINT_BOND 0 here; FlyCollectionBond.t.sol mints with a real InstanceRegistry and a bond
-        c = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, BOUNTY, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(0)), 0);
+        c = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, 0, FEE, BOUNTY, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0), IRoyaltyMarket(address(0)), 0, FlyCollection.Shares(address(0), 0, 0, address(0)));
         vm.deal(alice, 10 ether); vm.deal(bob, 10 ether);
     }
 
@@ -162,9 +162,11 @@ contract FlyCollectionTest is Test {
 
     function test_erc165_claims_only_what_is_implemented() public view {
         assertTrue(c.supportsInterface(0x01ffc9a7), "ERC-165"); assertTrue(c.supportsInterface(0x80ac58cd), "ERC-721");
-        // ERC721Metadata is name ^ symbol ^ tokenURI, and there is no tokenURI: an indexer told otherwise calls it and reverts
+        // ERC721Metadata is name ^ symbol ^ tokenURI, and ERC-2981 is royaltyInfo: claimed because they are there (FlyCollectionRevision.t.sol)
         assertEq(bytes4(0x5b5e139f), bytes4(keccak256("name()")) ^ bytes4(keccak256("symbol()")) ^ bytes4(keccak256("tokenURI(uint256)")));
-        assertFalse(c.supportsInterface(0x5b5e139f), "ERC721Metadata"); assertFalse(c.supportsInterface(0xffffffff));
+        assertEq(bytes4(0x2a55205a), bytes4(keccak256("royaltyInfo(uint256,uint256)")));
+        assertTrue(c.supportsInterface(0x5b5e139f), "ERC721Metadata"); assertTrue(c.supportsInterface(0x2a55205a), "ERC-2981"); assertTrue(c.supportsInterface(0x49064906), "ERC-4906"); assertFalse(c.supportsInterface(0xffffffff));
+        assertFalse(c.supportsInterface(0xd9b67a26), "not ERC-1155");
     }
 
     function test_the_price_is_exact_and_the_economics_have_no_admin() public {

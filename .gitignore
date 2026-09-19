@@ -9,3 +9,6 @@ deployments/*.json
 relayer/config.json
 env.*.txt
 frontend/dist/
+
+# the gateway's calls (gateway/gateway.mjs, GATEWAY_STATE): task ids and receipts, written next to where it runs
+gateway-state.json*

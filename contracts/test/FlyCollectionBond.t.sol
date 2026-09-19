@@ -19,7 +19,7 @@ contract FlyCollectionBondTest is Test {
     function setUp() public {
         meps = new MEPRegistry(); inst = new InstanceRegistry(UNIT, 20);
         baseMep = meps.registerMEP(IMEPRegistry.MEP({ modelId: BASE_F, schemeDigest: SCHEME_SKETCH_TILE_KECCAK_V3, execKind: keccak256("aigg:exec:int-lif:v1"), neurons: 139255, synapses: 2700513, synapseRoot: keccak256("syn"), weightsDA: bytes("gnfd://aigg-brains/base.bin") }));
-        c = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, UNIT, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(inst)), LineageRegistry(address(0)), baseMep, bytes32(0), IRoyaltyMarket(address(0)), 0);
+        c = new FlyCollection(BASE_F, BASE_M, root(), 2, PRICE, UNIT, FEE, 0, treasury, IMEPRegistry(address(meps)), IInstanceBonding(address(inst)), LineageRegistry(address(0)), baseMep, bytes32(0), IRoyaltyMarket(address(0)), 0, FlyCollection.Shares(address(0), 0, 0, address(0)));
         vm.deal(alice, 1 ether);
     }
     function test_one_transaction_owns_an_individual_and_is_a_bonded_instance() public {

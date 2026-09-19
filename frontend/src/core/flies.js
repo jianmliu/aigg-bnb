@@ -48,7 +48,9 @@ export async function loadFlies() {
   const flies = { address, missing: false, truncated: n > MAX_LISTED, block: await blockNumber(),
     breedFee: decodeUint(await call(address, "BREED_FEE()")), bounty: decodeUint(await call(address, "HATCH_BOUNTY()")),
     mintPrice: decodeUint(await call(address, "MINT_PRICE()")), mintBond: decodeUint(await call(address, "MINT_BOND()")),
-    royaltyBps: Number(decodeUint(await call(address, "ROYALTY_BPS()"))), market: decodeAddress(await call(address, "MARKET()")),
+    royaltyBps: Number(decodeUint(await call(address, "ROYALTY_BPS()"))),
+    // the base's part OF THE ROYALTY (a collection from before the mainnet revision has no such getter: nothing comes off)
+    baseShareBps: await call(address, "BASE_SHARE_BPS()").then((r) => Number(decodeUint(r)), () => 0), market: decodeAddress(await call(address, "MARKET()")),
     genesisRoot: await call(address, "GENESIS_ROOT()"), owed: state.wallet ? decodeUint(await call(address, "owed(address)", [state.wallet])) : 0n,
     genesis: state.flies?.genesis || null,
     baseFemale: await call(address, "BASE_FEMALE()"), baseMale: await call(address, "BASE_MALE()"), all: [] };
