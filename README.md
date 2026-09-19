@@ -21,7 +21,7 @@ the chain and follows mints and transfers.
 | `docs/flybnb/` | **the FlyBnB paper, a living draft**: `paper.md` is prose plus generated blocks; `build.mjs` regenerates the pilot's numbers from `results/variance.json` and Appendix A (the acknowledgments) from the chain or a relayer; `.github/workflows/flybnb-paper.yml` re-runs it on a schedule once the repository variables name a deployment |
 | `docs/DESIGN.md` | the BNB-specific design: layering, beacon, parameters, costs, risks |
 | `docs/PROPOSAL.md` | the ecosystem proposal draft |
-| `contracts/` | `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
+| `contracts/` | `CollectionWhitelist` (which collections of brains the system recognises: a curated list of collections, each answering for its own brains, bred ones included), `CommitRevealBeacon` (IBeacon for BSC/opBNB), `GreenfieldDA` (weights pointer format), the deployment script |
 | `js/greenfield.js` | fetch a MEP's model bytes from a Greenfield storage provider and verify them against `model_id` before loading |
 | `js/fetch_brain.mjs` | the other half of publishing: fetch a registered MEP's payload from a storage provider and verify it against the on-chain `model_id` before it lands on disk |
 | `js/greenfield_admin.mjs` / `js/register_mep.mjs` | publisher tools: bridge-funded deployer account → create a public-read bucket, upload the payload (SDK, Reed-Solomon checksums), then register the MEP on-chain after verifying the SP serves bytes with the pinned `model_id` |
