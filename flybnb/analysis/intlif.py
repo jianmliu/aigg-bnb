@@ -1,8 +1,8 @@
 """`aigg:exec:int-lif:v1`, fast and exact, for the FlyBnB analyses.
 
 The published reference visits every record on every step; the pilot's runner visits only the outgoing records of neurons
-that spiked. This one also updates only the neurons that have ever been TOUCHED -- stimulated, silenced-and-irrelevant
-excepted, or reached by a spike. That is exact, not an approximation: int-lif has no background input, and a neuron
+that spiked. This one also keeps state only for the free neurons that a spike has ever REACHED, in compact arrays.
+That is exact, not an approximation: int-lif has no background input, and a neuron
 whose v, g and refr are 0 and whose input is 0 stays at 0 under the rule (g - (g*k >> 16) + 0 = 0, v + ((g - v)*k >> 16) = 0).
 In half a second a few hundred of the 139,255 neurons spike and a few tens of thousands are ever reached.
 
@@ -29,30 +29,41 @@ class Net:
         self.indptr = np.zeros(n + 1, np.int64); np.cumsum(np.bincount(pre, minlength=n), out=self.indptr[1:])
 
 def run(net, seed, steps, stim_ids, silence_ids=None, t_from=None):
-    """-> (count, late): spike counts of every neuron over the run, and over steps > t_from (default: the second half)"""
+    """-> (count, late): spike counts of every neuron over the run, and over steps > t_from (default: the second half).
+
+    State is kept COMPACT: only free neurons that a spike has reached have a slot. Stimulated and silenced neurons have
+    none -- a stimulated neuron's spikes come from the hash alone and a silenced one never spikes, and nothing else about
+    them enters a spike count -- and input addressed to them is dropped. With a few thousand slots instead of 139,255
+    the working set stays in cache, which is what lets eight of these run side by side at full speed."""
     n = net.n; t_from = steps // 2 if t_from is None else t_from
-    silent = np.zeros(n, bool)
-    if silence_ids is not None and len(silence_ids): silent[np.asarray(silence_ids, dtype=np.int64)] = True
-    stim_ids = np.asarray(stim_ids, dtype=np.int64); stim_live = stim_ids[~silent[stim_ids]]   # silence wins over the stimulus
-    stim = np.zeros(n, bool); stim[stim_ids] = True; h0 = fmix32((stim_live.astype(np.uint64) * GOLDEN32 + seed) & M32)
-    v = np.zeros(n, np.int64); g = np.zeros(n, np.int64); refr = np.zeros(n, np.int64); count = np.zeros(n, np.int64); late = np.zeros(n, np.int64)
-    touched = np.zeros(n, bool); idx = np.zeros(0, np.int64); sp_idx = np.zeros(0, np.int64)
+    pos = np.full(n, -1, np.int64)                       # neuron -> slot; -1 untouched, -2 never tracked (stimulated or silenced)
+    stim_ids = np.asarray(stim_ids, dtype=np.int64); pos[stim_ids] = -2
+    if silence_ids is not None and len(silence_ids): sil = np.asarray(silence_ids, dtype=np.int64); pos[sil] = -2; silent = np.zeros(n, bool); silent[sil] = True; stim_live = stim_ids[~silent[stim_ids]]   # silence wins over the stimulus
+    else: stim_live = stim_ids
+    h0 = fmix32((stim_live.astype(np.uint64) * GOLDEN32 + seed) & M32)
+    cap = 1024; m = 0; ids = np.zeros(cap, np.int64); v = np.zeros(cap, np.int64); g = np.zeros(cap, np.int64); refr = np.zeros(cap, np.int64)
+    count = np.zeros(n, np.int64); late = np.zeros(n, np.int64); sp_idx = np.zeros(0, np.int64)
     for s in range(1, steps + 1):
+        I = None
         if len(sp_idx):
             st = net.indptr[sp_idx]; ln = net.indptr[sp_idx + 1] - st; tot = int(ln.sum())
             if tot:
-                k = np.repeat(st - (np.cumsum(ln) - ln), ln) + np.arange(tot); tgt = net.post[k]
-                new = ~touched[tgt]
-                if new.any(): touched[tgt[new]] = True; idx = np.flatnonzero(touched)
-                I = np.bincount(tgt, weights=net.w[k], minlength=n).astype(np.int64)[idx]
-            else: I = 0
-        else: I = 0
-        if len(idx):
-            gi = g[idx]; gi = gi - ((gi * DT_TAU_S_Q16) >> 16) + I * W_UNIT_Q16; np.clip(gi, I32_MIN, I32_MAX, out=gi); g[idx] = gi
-            free = ~(stim[idx] | silent[idx]); ri = refr[idx]; vi = v[idx]
-            act = free & (ri == 0); vv = vi + (((gi - vi) * DT_TAU_M_Q16) >> 16); fired = act & (vv >= THRESH_Q16)
-            v[idx] = np.where(act & ~fired, vv, 0); refr[idx] = np.where(fired, REFRACT, np.where(free & (ri > 0), ri - 1, 0))
-            fired_idx = idx[fired]
+                k = np.repeat(st - (np.cumsum(ln) - ln), ln) + np.arange(tot); tgt = net.post[k]; p = pos[tgt]
+                fresh = p == -1
+                if fresh.any():
+                    add = np.unique(tgt[fresh]); need = m + len(add)
+                    if need > cap:
+                        cap = max(need, 2 * cap); grow = lambda a: np.concatenate([a, np.zeros(cap - len(a), np.int64)]); ids, v, g, refr = grow(ids), grow(v), grow(g), grow(refr)
+                    ids[m:need] = add; pos[add] = np.arange(m, need); m = need; p = pos[tgt]
+                ok = p >= 0
+                I = np.bincount(p[ok], weights=net.w[k][ok], minlength=m).astype(np.int64)
+        if m:
+            gi = g[:m]; gi = gi - ((gi * DT_TAU_S_Q16) >> 16)
+            if I is not None: gi = gi + I * W_UNIT_Q16
+            np.clip(gi, I32_MIN, I32_MAX, out=gi); g[:m] = gi
+            ri = refr[:m]; vi = v[:m]; act = ri == 0; vv = vi + (((gi - vi) * DT_TAU_M_Q16) >> 16); fired = act & (vv >= THRESH_Q16)
+            v[:m] = np.where(act & ~fired, vv, 0); refr[:m] = np.where(fired, REFRACT, np.where(ri > 0, ri - 1, 0))
+            fired_idx = ids[:m][fired]
         else: fired_idx = np.zeros(0, np.int64)
         e = fmix32((h0 + s * GOLDEN32) & M32) < EXT_P_Q32
         sp_idx = np.concatenate([fired_idx, stim_live[e]]) if len(fired_idx) else stim_live[e]
