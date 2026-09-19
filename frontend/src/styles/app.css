@@ -434,3 +434,13 @@ span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
 @media (max-width: 560px) { .docs-body .terms-grid .kv { flex-direction: column; gap: 2px; } .docs-body .amt.mono, .docs-body .amt.wide { text-align: left; } }
 
 .wallet-notice { padding: 12px 20px; margin: 12px 0; border: 1px solid currentColor; border-radius: 12px; overflow-wrap: anywhere; }
+
+/* ---- the Host view as a provider's dashboard: what this tab has served, and what it is holding ---- */
+.host-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.host-metrics > div { min-width: 0; }
+.host-metrics .metric-label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.host-metrics strong { display: block; font: 700 22px/1.3 var(--display); overflow-wrap: anywhere; }
+.host-models { list-style: none; padding: 0; margin: 16px 0 0; }
+.host-models li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.host-models li > span:first-child { font-weight: 700; }
+@media (max-width: 600px) { .host-metrics { grid-template-columns: 1fr; } }

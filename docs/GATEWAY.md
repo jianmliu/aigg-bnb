@@ -1,6 +1,6 @@
 # The gateway: a brain behind an inference API
 
-Status: design, 2026-09-19; **milestones 0, 1 and 2 are built** (`gateway/`, `test/e2e_gateway.mjs` — §7). Nothing else is. Where a
+Status: design, 2026-09-20; **milestones 0, 1, 2 and 3 are built** (`gateway/`, `test/e2e_gateway.mjs`, `test/e2e_gateway_wake.mjs` — §7). Where a
 statement is about code that exists it names the file;
 where it is a proposal it says so. §8 records what was decided on 2026-09-19, and what is still open.
 
@@ -154,7 +154,31 @@ therefore `tasks/flywire-gate/post_tasks.mjs: runTasks` behind an HTTP handler:
 blocks. Warm, a call is tens of seconds. **Cold is worse, and it is the real limit:** `postTask` requires the current
 epoch's beacon, the testnet beacon is lazy, and executors are eligible only with a claim no older than six epochs —
 after an idle period the first call waits up to two epochs (200 blocks each). The gateway keeps the network warm while
-it has traffic. **Proposal (relayer):** `/wake` accepts a listed task client, not only a bonded host.
+it has traffic. `/wake` accepts a signed request from an explicitly listed task client as well as the existing bonded-host request.
+The gateway coalesces wakes per epoch and renews them while requests need capacity. `GATEWAY_WAKE_TIMEOUT_MS`
+(default 300000 ms, maximum 3600000) bounds waiting, including stalled capacity RPCs. It waits through beacon
+recovery and then host eligibility recovery; no task fee is spent until both are ready. Request parameters and
+readout IDs are validated before waking. A caller disconnecting during this wait cancels its own request; after
+posting, the persisted task runs on. Background calls wait for capacity before returning their task ID.
+
+A cold stream sends SSE headers and keepalive comments while waiting. If capacity never returns, it ends with
+`response.failed`, a `503` status in the error and `retry_after` (HTTP status is already 200). Non-streaming calls
+return HTTP 503 and `Retry-After`. An already-warm epoch with insufficient hosts still fails immediately with
+`model_cold`; a call that started in a cold epoch waits for hosts within the same timeout.
+
+Task-client wake body: `{ client, epoch, signature }`, where `signature` is Ethereum personal-sign over the exact
+newline-separated fields returned by `relayer/wake.mjs:wakeMessage`: `aigg-bnb:wake:v1`, decimal chain ID,
+lowercase claims address, lowercase market address, lowercase relayer address, decimal epoch. Only explicit
+`PORW_TASK_CLIENTS` entries may use this path; an unrestricted sponsorship policy does not grant wake access.
+Current and previous epoch signatures are accepted, and replay can never extend the signed epoch's lease.
+
+**Proxy boundary:** these keepalives reach a direct gateway client. The regular ai.gg streaming handler emits
+its own downstream keepalive, but its OpenAI **passthrough** handler buffers comment lines until output starts.
+For that path, configure downstream timeouts above `GATEWAY_WAKE_TIMEOUT_MS` plus normal execution time, or use
+the regular handler. This implementation preserves the response ID as the eventual task ID; it does not invent
+an early, separately identified response merely to force a passthrough flush. Local tests do not establish the
+idle-timeout behavior of a deployed proxy.
+The legacy `{ instance }` host wake remains address-based: anyone can name a bonded host to request its wake.
 
 **Async.** `background: true` returns `{id, status: "queued"}` at step 3 and `GET /v1/responses/{id}` polls it — the
 Responses API's own shape. `aigg-src` has no async path of its own, but it does not need one: it sets no write timeout,
@@ -348,13 +372,29 @@ out whose digest the test recomputes; then the failure rows of §3, one by one.
 
 | | | repo |
 |---|---|---|
-| M0 ✔ | the adapter, receipt-only responses, capacity check, refunds, disputes, restart recovery; the gateway's address in `PORW_TASK_CLIENTS`. Not yet: batches (`n`), cell-type tables, the determinism cache, waking a cold epoch | aigg-bnb |
+| M0 ✔ | the adapter, receipt-only responses, capacity check, refunds, disputes, restart recovery; the gateway's address in `PORW_TASK_CLIENTS`. Not yet: batches (`n`), cell-type tables, the determinism cache | aigg-bnb |
 | M1 ✔ | `counts` in the announcement and the result; verified readouts; `GET /v1/tasks/{id}/counts`. Not yet: a batch's per-run counts | aigg-porw, aigg-bnb |
 | M2 ✔ | registered in `aigg-src` as an OpenAI-compatible account with channel pricing; model-mapping sync: the script and the wire conformance. Verified against the source and a stand-in built from it — **not yet run against a live ai.gg**, which needs the adapter deployed | aigg-bnb (aigg-src: config only) |
-| M3 | wake by task client; `providers` in `/meps`; the Host view as a provider's dashboard (requests served, earned, models online) | aigg-bnb |
+| M3 ✔ | wake by task client; `providers` in `/meps`; the Host view as a provider's dashboard (requests served, earned, models online) | aigg-bnb |
 | M4 | `model_subsidies` | aigg-src |
 | M5 ✔ | `BASE_SHARE_BPS` / `BASE_VENDOR`, ERC-2981, `owner()` with one power, `tokenURI` through an on-chain renderer: in the contract and the deploy script. Deploying it is a new collection | aigg-bnb |
 | M6 | `PlatformMEP` | aigg-src |
+
+### M3 host dashboard and relayer reads
+
+`GET /meps` adds `epoch`, `beacon`, `providers` (distinct eligible instances) and `votes` to each served model.
+Eligibility comes from the chain and is not a WebSocket-presence measurement; an eligible tab may have gone away.
+
+`GET /hosts?instance=0x…` returns `requestsServed`, decimal-string `earnedWei`, inclusive `fromBlock` / `toBlock`,
+plus the current `epoch`, `beacon` and `eligibleModels`. Earnings cover the latest **5,000 blocks**, not lifetime.
+The relayer pages settlement logs in 1,000-block ranges, sharing a ten-second cached scan across wallets. Each
+paid executor receives `(fee - royalty) / paidExecutorCount`, with Solidity integer rounding. Refunds contribute
+zero; batches count as one settled request. Gas costs are not subtracted, and later challenges do not reclaim
+already-paid fees. Failed reads produce an error rather than a fabricated zero.
+
+The Host view shows local resident models separately from on-chain eligibility, settled requests and earnings.
+It refreshes every five seconds while visible, labels the accounting block range, and shows unavailable/loading
+states instead of zero when data cannot be read.
 
 ## 8. Decided, open, and to verify
 
