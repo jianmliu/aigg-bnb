@@ -11,7 +11,8 @@ const anvil = await H.startAnvil(8555);
 try {
   const dep = await H.deploy(anvil.rpc); check("deployed; deployments/31337.json written", dep.addresses.claims && dep.epochBlocks === 40);
   const { mep, mepId, payload, steps } = await H.registerSyntheticMep(dep, H.KEYS[0]);
-  const R = await H.startRelayer(dep, H.KEYS[3], [mepId]); const d = await R.api("/deployment");
+  const PROJECT = H.clientsFor(dep, H.KEYS[0]).account.address; // the one client whose tasks are sponsored: third-party tasks are not open yet
+  const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_TASK_CLIENTS: PROJECT } }); const d = await R.api("/deployment");
   check("relayer up: relay + api + domains + mep", d.relay.startsWith("ws://") && d.domains.claimManager.verifyingContract === dep.addresses.claims && d.meps[0] === mepId.toLowerCase());
   // the harness deploys with EXIT_DELAY=5, so the default window (one epoch, 40) is cut to it; the deposit is the script's default
   check("a settled result is challengeable: window inside the exit delay, deposit published", d.challenge.windowBlocks === 5 && d.challenge.depositWei === String(parseEther("0.02")) && dep.challengeWindow === 5);
@@ -69,6 +70,12 @@ try {
   for (const X of [A, B]) { const resp = await client.request(H.hex(X.session.address), "task-announce", mepId, { taskId, stimulusSeed: 9, steps, commitStride: 1 }, { timeoutMs: 20000, responseType: "result" }); check(`executor ${X.addr.slice(0, 8)} returned a signed result over the relay`, resp.payload.taskId === taskId); }
   check("result sponsorship recovers the signed executor instead of trusting spoofed signer metadata", await waitFor(async () => A.results[0]?.relayer?.ok && B.results[0]?.relayer?.ok) && (await C.market.read.submitted([taskId, A.wallet.address])) && (await C.market.read.submitted([taskId, B.wallet.address])));
   await C.pub.waitForTransactionReceipt({ hash: await C.instances.write.bond([[mepId]], { value: parseEther("0.5") }) });
+  // a third party may post a task -- the market is permissionless -- but this relayer's gas is for the project's own
+  { const T3 = H.clientsFor(dep, H.KEYS[4]); const n3 = "0x" + "32".repeat(32); const task3 = { ...task, stimulusSeed: 10 };
+    await T3.pub.waitForTransactionReceipt({ hash: await T3.market.write.postTask([task3, n3], { value: task3.fee }) });
+    const before = (await R.api("/status")).txs.length; const third = await R.api("/tx/settle", { taskId: H.taskIdOf(task3, n3), instance: A.addr });
+    check(`a third party's task is posted on-chain and not sponsored (${String(third.error).slice(0, 44)}…)`, /not open to third parties/.test(third.error || "") && (await R.api("/status")).txs.length === before);
+    check("/deployment says whose tasks are sponsored", JSON.stringify((await R.api("/deployment")).taskClients) === JSON.stringify([PROJECT.toLowerCase()])); }
   const txCount = (await R.api("/status")).txs.length;
   const wrongPayer = await R.api("/tx/settle", { taskId, instance: C.account.address });
   check("settlement cannot spend an unrelated bonded instance's budget", /executor/.test(wrongPayer.error || "") && (await R.api("/status")).txs.length === txCount);
