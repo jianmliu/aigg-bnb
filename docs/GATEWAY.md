@@ -1,6 +1,7 @@
 # The gateway: a brain behind an inference API
 
-Status: design, 2026-09-19. Nothing here is built. Where a statement is about code that exists it names the file;
+Status: design, 2026-09-19; **milestone 0 is built** (`gateway/`, `test/e2e_gateway.mjs` — §7). Nothing else is. Where a
+statement is about code that exists it names the file;
 where it is a proposal it says so. §8 records what was decided on 2026-09-19, and what is still open.
 
 ## 0. The analogy, and where it stops
@@ -275,7 +276,7 @@ out whose digest the test recomputes; then the failure rows of §3, one by one.
 
 | | | repo |
 |---|---|---|
-| M0 | the adapter, receipt-only responses, capacity check, refunds; the gateway's address in `PORW_TASK_CLIENTS` | aigg-bnb |
+| M0 ✔ | the adapter, receipt-only responses, capacity check, refunds, disputes, restart recovery; the gateway's address in `PORW_TASK_CLIENTS`. Not yet: batches (`n`), cell-type tables, the determinism cache, waking a cold epoch | aigg-bnb |
 | M1 | `counts` in the announcement and the result; verified readouts | aigg-porw, aigg-bnb |
 | M2 | registered in `aigg-src` as an OpenAI-compatible account with channel pricing; model-mapping sync | aigg-src (config only) |
 | M3 | wake by task client; `providers` in `/meps`; the Host view as a provider's dashboard (requests served, earned, models online) | aigg-bnb |
