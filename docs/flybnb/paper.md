@@ -10,6 +10,7 @@
 | standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |
 | association analysis (Section 3b) | 600 unrelated founders, 71 phenotypes |
 | atlas, first slice (Section 3c) | silencing under sound, 100 individuals, 361 effects on the base |
+| multi-generation selection (Section 3d) | running |
 | the rest of the silencing atlas, the activation atlas, the male brain | planned |
 | dataset on the Hugging Face Hub | prepared, not public |
 | acknowledgments (Appendix A) | no deployment read yet |
@@ -159,6 +160,14 @@ This is the question the dataset exists for, asked of one stimulus. Silencing a 
 <!-- END GENERATED: atlas -->
 
 What this does not show. One stimulus, one sex, silencing only. The detection rule is a choice, and a stricter one would find fewer and more robust effects; the table by effect size is there so that the conclusion does not rest on the threshold. And the individuals are a model of variability, calibrated on the two hemispheres of one brain; the male brain's hemispheres give nearly the same dispersion table, which is the first independent check of it.
+
+## 3d. Selection over several generations
+
+The breeding pilot showed one generation of divergent selection. Several generations ask what one cannot: whether the response continues, whether it is symmetric, what drift alone does over the same time, and whether the cost the pilot found inside the selected circuit accumulates.
+
+<!-- BEGIN GENERATED: selection -->
+_Running._
+<!-- END GENERATED: selection -->
 
 ## 4. The dataset
 

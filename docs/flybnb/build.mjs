@@ -10,6 +10,7 @@ import fs from "node:fs"; import path from "node:path"; import { fileURLToPath }
 const here = path.dirname(fileURLToPath(import.meta.url)); const arg = (k) => { const i = process.argv.indexOf(k); return i < 0 ? null : process.argv[i + 1]; };
 const PROPOSAL = path.join(here, "proposal.md"), BREEDING = path.join(here, "..", "..", "flybnb", "results", "breeding", "heritability.json");
 const ASSOC = path.join(here, "..", "..", "flybnb", "results", "association", "association.json"), ATLAS = path.join(here, "..", "..", "flybnb", "results", "atlas", "robustness.json");
+const SELECTION = path.join(here, "..", "..", "flybnb", "results", "selection", "selection.json");
 const PAPER = path.join(here, "paper.md"), RESULTS = path.join(here, "results", "variance.json"), HOLDERS = path.join(here, "results", "holders.json");
 
 export function replaceBlock(text, name, body) {
@@ -91,6 +92,24 @@ export function atlasBlock(x) {
   ].join("\n");
 }
 
+export function selectionBlock(x) {
+  const G = x.generations, F = x.founders, by = (g, line) => x.by_generation.filter((r) => r.gen === g && r.line === line), mean = (rows, k) => rows.reduce((a, r) => a + r[k], 0) / rows.length, lg = x.last_generation;
+  const row = (g) => { const h = by(g, "high"), l = by(g, "low"), c = by(g, "control"); return `| ${g} | ${h.map((r) => sgn(r.trait_in_founder_sd)).join(", ")} | ${l.map((r) => sgn(r.trait_in_founder_sd)).join(", ")} | ${c.map((r) => sgn(r.trait_in_founder_sd)).join(", ")} | ${f(mean(h, "leak_mean"), 1)} | ${f(mean(l, "leak_mean"), 1)} | ${f(mean(c, "leak_mean"), 1)} | ${Math.round(100 * mean(l, "silenced_fraction"))}% |`; };
+  const sgn = (v) => (v >= 0 ? "+" : "") + f(v), gens = Array.from({ length: G }, (_, i) => i + 1), hi = (g) => mean(by(g, "high"), "trait_in_founder_sd"), lo = (g) => mean(by(g, "low"), "trait_in_founder_sd"), ct = (g) => mean(by(g, "control"), "trait_in_founder_sd");
+  const half = Math.max(1, Math.floor(G / 2)), dHi1 = hi(half), dHi2 = hi(G) - hi(half), dLo1 = -lo(half), dLo2 = -(lo(G) - lo(half)), floor = -F.trait_mean / F.trait_sd, ctlMax = Math.max(...x.by_generation.filter((r) => r.line === "control").map((r) => Math.abs(r.trait_in_founder_sd)));
+  return [
+    `**Design.** Trait: DNge145 spikes under \`sound\` (founders ${f(F.trait_mean, 1)} ± ${f(F.trait_sd, 1)}). Six lines from the same 100 founders: two selected up, two down, two controls with parents drawn at random; ${G} generations of 40 offspring from 10 parents, every individual under the full battery.`,
+    "",
+    "| generation | high lines (founder SD) | low lines | control lines | gate leak, high | low | control | low lines fully silenced by the gate |", "|---|---|---|---|---|---|---|---|", ...gens.map(row),
+    "",
+    `**The response.** After ${G} generations the high lines are at ${sgn(hi(G))} founder SD and the low lines at ${sgn(lo(G))}, ${f(hi(G) - lo(G), 1)} SD apart; the control lines never left ±${f(ctlMax)}. Upwards the response ${dHi2 > 0.5 * dHi1 ? "continues" : "slows"}: ${sgn(dHi1)} SD in generations 1–${half}, ${sgn(dHi2)} in generations ${half + 1}–${G}. Downwards it ${dLo2 < 0.34 * dLo1 ? "stops" : "continues"}: ${f(dLo1)} then ${f(dLo2)}${lo(G) - floor < 0.5 ? `, and the reason is arithmetic before it is genetics: a spike count cannot go below zero, which for this trait is ${f(floor)} founder SD, and the low lines are ${f(lo(G) - floor)} SD above it` : ` (the floor of the trait, zero spikes, is at ${f(floor)} founder SD)`}.`,
+    "",
+    `**The cost inside the circuit${mean(by(G, "high"), "leak_mean") > 1.15 * mean(by(half, "high"), "leak_mean") ? " accumulates" : ""}.** The high lines' response with the gate neurons driven went from the founders' ${f(F.leak_mean, 1)} spikes to ${f(mean(by(G, "high"), "leak_mean"), 1)}; the low lines' to ${f(mean(by(G, "low"), "leak_mean"), 1)}, with ${Math.round(100 * mean(by(G, "low"), "silenced_fraction"))}% of their individuals fully silenced by the gate against ${Math.round(100 * mean(by(G, "control"), "silenced_fraction"))}% in the controls. Selecting on the response to sound alone moves what the gate can hold back.`,
+    "",
+    `**Other phenotypes, and how not to count them.** Tested individual by individual, ${lg.moved_by_selection_q05} of ${lg.phenotypes} battery phenotypes differ between high and low lines at FDR 0.05. That test treats relatives as independent. With the line as the unit — both high lines on one side of both low lines, and a gap larger than the 99th percentile (${f(lg.replicate_gap_p99_sd)} SD) of the gap between two lines of the *same* treatment — ${lg.moved_at_line_level} remain, ${lg.moved_at_line_level_not_DNge145} of them not DNge145${lg.line_level_not_DNge145.length ? ": " + lg.line_level_not_DNge145.slice(0, 5).map((r) => `${r.phenotype.replace(" | ", " under ")} (${r.course_high_minus_low_sd.map(sgn).join(", ")} by generation)`).join("; ") : ""}. Both replicates of a treatment start from the same ten founders, so a gap that is present at generation 1 and does not grow is what those founders carried; one that grows with the trait is a correlated response.`,
+  ].join("\n");
+}
+
 async function holdersFromChain(rpc, collection) {
   const { createPublicClient, http, parseAbi } = await import("viem");
   const abi = parseAbi(["function totalSupply() view returns (uint256)", "function ownerOf(uint256) view returns (address)"]);
@@ -112,8 +131,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   text = replaceBlock(text, "pilot", v ? pilotBlock(v) : "_The pilot has not been analysed yet._");
   text = replaceBlock(text, "acknowledgments", ackBlock(h));
   const as = fs.existsSync(ASSOC) ? JSON.parse(fs.readFileSync(ASSOC, "utf8")) : null, at = fs.existsSync(ATLAS) ? JSON.parse(fs.readFileSync(ATLAS, "utf8")) : null;
-  text = replaceBlock(text, "status", ["| part | state |", "|---|---|", `| pilot (Section 3) | ${v ? `${v.individuals} founders × ${v.seeds} seeds, analysed` : "pending"} |`, `| breeding pilot (Section 3a) | ${br ? `${br.individuals.founders} founders, ${br.individuals.random + br.individuals.high + br.individuals.low} offspring, ${br.h2_distribution.n} phenotypes` : "pending"} |`, "| standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |", `| association analysis (Section 3b) | ${as ? `${as.individuals} unrelated founders, ${as.summary.phenotypes} phenotypes` : "pending"} |`, `| atlas, first slice (Section 3c) | ${at ? `silencing under sound, ${at.individuals} individuals, ${at.effects_detected_on_base} effects on the base` : "pending"} |`, "| the rest of the silencing atlas, the activation atlas, the male brain | planned |", "| dataset on the Hugging Face Hub | prepared, not public |", `| acknowledgments (Appendix A) | ${h ? `${h.holders.length} holder(s) at block ${h.block} on chain ${h.chainId}` : "no deployment read yet"} |`].join("\n"));
+  const sel = fs.existsSync(SELECTION) ? JSON.parse(fs.readFileSync(SELECTION, "utf8")) : null;
+  text = replaceBlock(text, "status", ["| part | state |", "|---|---|", `| pilot (Section 3) | ${v ? `${v.individuals} founders × ${v.seeds} seeds, analysed` : "pending"} |`, `| breeding pilot (Section 3a) | ${br ? `${br.individuals.founders} founders, ${br.individuals.random + br.individuals.high + br.individuals.low} offspring, ${br.h2_distribution.n} phenotypes` : "pending"} |`, "| standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |", `| association analysis (Section 3b) | ${as ? `${as.individuals} unrelated founders, ${as.summary.phenotypes} phenotypes` : "pending"} |`, `| atlas, first slice (Section 3c) | ${at ? `silencing under sound, ${at.individuals} individuals, ${at.effects_detected_on_base} effects on the base` : "pending"} |`, `| multi-generation selection (Section 3d) | ${sel ? `${sel.generations} generations, six lines` : "running"} |`, "| the rest of the silencing atlas, the activation atlas, the male brain | planned |", "| dataset on the Hugging Face Hub | prepared, not public |", `| acknowledgments (Appendix A) | ${h ? `${h.holders.length} holder(s) at block ${h.block} on chain ${h.chainId}` : "no deployment read yet"} |`].join("\n"));
   text = replaceBlock(text, "breeding", brText);
+  text = replaceBlock(text, "selection", sel ? selectionBlock(sel) : "_Running._");
   text = replaceBlock(text, "association", as ? associationBlock(as) : "_Not analysed yet._"); text = replaceBlock(text, "atlas", at ? atlasBlock(at) : "_Not run yet._");
   if (fs.existsSync(PROPOSAL)) fs.writeFileSync(PROPOSAL, replaceBlock(fs.readFileSync(PROPOSAL, "utf8"), "breeding", brText)); // the proposal carries the same block
   fs.writeFileSync(PAPER, text); console.log(`paper.md regenerated: pilot ${v ? "yes" : "no"}, holders ${h ? h.holders.length : "none"}`);
