@@ -1,0 +1,3005 @@
+{
+"note": "500 further founders for the association analysis: independent individuals, the same recipe format as the pilot's (seed 2000 + k). With the pilot's 100 founders that is 600 unrelated individuals under the battery.",
+"individuals": [
+{
+"id": "A0001",
+"kind": "founder",
+"seed": 2001,
+"name": "assoc1"
+},
+{
+"id": "A0002",
+"kind": "founder",
+"seed": 2002,
+"name": "assoc2"
+},
+{
+"id": "A0003",
+"kind": "founder",
+"seed": 2003,
+"name": "assoc3"
+},
+{
+"id": "A0004",
+"kind": "founder",
+"seed": 2004,
+"name": "assoc4"
+},
+{
+"id": "A0005",
+"kind": "founder",
+"seed": 2005,
+"name": "assoc5"
+},
+{
+"id": "A0006",
+"kind": "founder",
+"seed": 2006,
+"name": "assoc6"
+},
+{
+"id": "A0007",
+"kind": "founder",
+"seed": 2007,
+"name": "assoc7"
+},
+{
+"id": "A0008",
+"kind": "founder",
+"seed": 2008,
+"name": "assoc8"
+},
+{
+"id": "A0009",
+"kind": "founder",
+"seed": 2009,
+"name": "assoc9"
+},
+{
+"id": "A0010",
+"kind": "founder",
+"seed": 2010,
+"name": "assoc10"
+},
+{
+"id": "A0011",
+"kind": "founder",
+"seed": 2011,
+"name": "assoc11"
+},
+{
+"id": "A0012",
+"kind": "founder",
+"seed": 2012,
+"name": "assoc12"
+},
+{
+"id": "A0013",
+"kind": "founder",
+"seed": 2013,
+"name": "assoc13"
+},
+{
+"id": "A0014",
+"kind": "founder",
+"seed": 2014,
+"name": "assoc14"
+},
+{
+"id": "A0015",
+"kind": "founder",
+"seed": 2015,
+"name": "assoc15"
+},
+{
+"id": "A0016",
+"kind": "founder",
+"seed": 2016,
+"name": "assoc16"
+},
+{
+"id": "A0017",
+"kind": "founder",
+"seed": 2017,
+"name": "assoc17"
+},
+{
+"id": "A0018",
+"kind": "founder",
+"seed": 2018,
+"name": "assoc18"
+},
+{
+"id": "A0019",
+"kind": "founder",
+"seed": 2019,
+"name": "assoc19"
+},
+{
+"id": "A0020",
+"kind": "founder",
+"seed": 2020,
+"name": "assoc20"
+},
+{
+"id": "A0021",
+"kind": "founder",
+"seed": 2021,
+"name": "assoc21"
+},
+{
+"id": "A0022",
+"kind": "founder",
+"seed": 2022,
+"name": "assoc22"
+},
+{
+"id": "A0023",
+"kind": "founder",
+"seed": 2023,
+"name": "assoc23"
+},
+{
+"id": "A0024",
+"kind": "founder",
+"seed": 2024,
+"name": "assoc24"
+},
+{
+"id": "A0025",
+"kind": "founder",
+"seed": 2025,
+"name": "assoc25"
+},
+{
+"id": "A0026",
+"kind": "founder",
+"seed": 2026,
+"name": "assoc26"
+},
+{
+"id": "A0027",
+"kind": "founder",
+"seed": 2027,
+"name": "assoc27"
+},
+{
+"id": "A0028",
+"kind": "founder",
+"seed": 2028,
+"name": "assoc28"
+},
+{
+"id": "A0029",
+"kind": "founder",
+"seed": 2029,
+"name": "assoc29"
+},
+{
+"id": "A0030",
+"kind": "founder",
+"seed": 2030,
+"name": "assoc30"
+},
+{
+"id": "A0031",
+"kind": "founder",
+"seed": 2031,
+"name": "assoc31"
+},
+{
+"id": "A0032",
+"kind": "founder",
+"seed": 2032,
+"name": "assoc32"
+},
+{
+"id": "A0033",
+"kind": "founder",
+"seed": 2033,
+"name": "assoc33"
+},
+{
+"id": "A0034",
+"kind": "founder",
+"seed": 2034,
+"name": "assoc34"
+},
+{
+"id": "A0035",
+"kind": "founder",
+"seed": 2035,
+"name": "assoc35"
+},
+{
+"id": "A0036",
+"kind": "founder",
+"seed": 2036,
+"name": "assoc36"
+},
+{
+"id": "A0037",
+"kind": "founder",
+"seed": 2037,
+"name": "assoc37"
+},
+{
+"id": "A0038",
+"kind": "founder",
+"seed": 2038,
+"name": "assoc38"
+},
+{
+"id": "A0039",
+"kind": "founder",
+"seed": 2039,
+"name": "assoc39"
+},
+{
+"id": "A0040",
+"kind": "founder",
+"seed": 2040,
+"name": "assoc40"
+},
+{
+"id": "A0041",
+"kind": "founder",
+"seed": 2041,
+"name": "assoc41"
+},
+{
+"id": "A0042",
+"kind": "founder",
+"seed": 2042,
+"name": "assoc42"
+},
+{
+"id": "A0043",
+"kind": "founder",
+"seed": 2043,
+"name": "assoc43"
+},
+{
+"id": "A0044",
+"kind": "founder",
+"seed": 2044,
+"name": "assoc44"
+},
+{
+"id": "A0045",
+"kind": "founder",
+"seed": 2045,
+"name": "assoc45"
+},
+{
+"id": "A0046",
+"kind": "founder",
+"seed": 2046,
+"name": "assoc46"
+},
+{
+"id": "A0047",
+"kind": "founder",
+"seed": 2047,
+"name": "assoc47"
+},
+{
+"id": "A0048",
+"kind": "founder",
+"seed": 2048,
+"name": "assoc48"
+},
+{
+"id": "A0049",
+"kind": "founder",
+"seed": 2049,
+"name": "assoc49"
+},
+{
+"id": "A0050",
+"kind": "founder",
+"seed": 2050,
+"name": "assoc50"
+},
+{
+"id": "A0051",
+"kind": "founder",
+"seed": 2051,
+"name": "assoc51"
+},
+{
+"id": "A0052",
+"kind": "founder",
+"seed": 2052,
+"name": "assoc52"
+},
+{
+"id": "A0053",
+"kind": "founder",
+"seed": 2053,
+"name": "assoc53"
+},
+{
+"id": "A0054",
+"kind": "founder",
+"seed": 2054,
+"name": "assoc54"
+},
+{
+"id": "A0055",
+"kind": "founder",
+"seed": 2055,
+"name": "assoc55"
+},
+{
+"id": "A0056",
+"kind": "founder",
+"seed": 2056,
+"name": "assoc56"
+},
+{
+"id": "A0057",
+"kind": "founder",
+"seed": 2057,
+"name": "assoc57"
+},
+{
+"id": "A0058",
+"kind": "founder",
+"seed": 2058,
+"name": "assoc58"
+},
+{
+"id": "A0059",
+"kind": "founder",
+"seed": 2059,
+"name": "assoc59"
+},
+{
+"id": "A0060",
+"kind": "founder",
+"seed": 2060,
+"name": "assoc60"
+},
+{
+"id": "A0061",
+"kind": "founder",
+"seed": 2061,
+"name": "assoc61"
+},
+{
+"id": "A0062",
+"kind": "founder",
+"seed": 2062,
+"name": "assoc62"
+},
+{
+"id": "A0063",
+"kind": "founder",
+"seed": 2063,
+"name": "assoc63"
+},
+{
+"id": "A0064",
+"kind": "founder",
+"seed": 2064,
+"name": "assoc64"
+},
+{
+"id": "A0065",
+"kind": "founder",
+"seed": 2065,
+"name": "assoc65"
+},
+{
+"id": "A0066",
+"kind": "founder",
+"seed": 2066,
+"name": "assoc66"
+},
+{
+"id": "A0067",
+"kind": "founder",
+"seed": 2067,
+"name": "assoc67"
+},
+{
+"id": "A0068",
+"kind": "founder",
+"seed": 2068,
+"name": "assoc68"
+},
+{
+"id": "A0069",
+"kind": "founder",
+"seed": 2069,
+"name": "assoc69"
+},
+{
+"id": "A0070",
+"kind": "founder",
+"seed": 2070,
+"name": "assoc70"
+},
+{
+"id": "A0071",
+"kind": "founder",
+"seed": 2071,
+"name": "assoc71"
+},
+{
+"id": "A0072",
+"kind": "founder",
+"seed": 2072,
+"name": "assoc72"
+},
+{
+"id": "A0073",
+"kind": "founder",
+"seed": 2073,
+"name": "assoc73"
+},
+{
+"id": "A0074",
+"kind": "founder",
+"seed": 2074,
+"name": "assoc74"
+},
+{
+"id": "A0075",
+"kind": "founder",
+"seed": 2075,
+"name": "assoc75"
+},
+{
+"id": "A0076",
+"kind": "founder",
+"seed": 2076,
+"name": "assoc76"
+},
+{
+"id": "A0077",
+"kind": "founder",
+"seed": 2077,
+"name": "assoc77"
+},
+{
+"id": "A0078",
+"kind": "founder",
+"seed": 2078,
+"name": "assoc78"
+},
+{
+"id": "A0079",
+"kind": "founder",
+"seed": 2079,
+"name": "assoc79"
+},
+{
+"id": "A0080",
+"kind": "founder",
+"seed": 2080,
+"name": "assoc80"
+},
+{
+"id": "A0081",
+"kind": "founder",
+"seed": 2081,
+"name": "assoc81"
+},
+{
+"id": "A0082",
+"kind": "founder",
+"seed": 2082,
+"name": "assoc82"
+},
+{
+"id": "A0083",
+"kind": "founder",
+"seed": 2083,
+"name": "assoc83"
+},
+{
+"id": "A0084",
+"kind": "founder",
+"seed": 2084,
+"name": "assoc84"
+},
+{
+"id": "A0085",
+"kind": "founder",
+"seed": 2085,
+"name": "assoc85"
+},
+{
+"id": "A0086",
+"kind": "founder",
+"seed": 2086,
+"name": "assoc86"
+},
+{
+"id": "A0087",
+"kind": "founder",
+"seed": 2087,
+"name": "assoc87"
+},
+{
+"id": "A0088",
+"kind": "founder",
+"seed": 2088,
+"name": "assoc88"
+},
+{
+"id": "A0089",
+"kind": "founder",
+"seed": 2089,
+"name": "assoc89"
+},
+{
+"id": "A0090",
+"kind": "founder",
+"seed": 2090,
+"name": "assoc90"
+},
+{
+"id": "A0091",
+"kind": "founder",
+"seed": 2091,
+"name": "assoc91"
+},
+{
+"id": "A0092",
+"kind": "founder",
+"seed": 2092,
+"name": "assoc92"
+},
+{
+"id": "A0093",
+"kind": "founder",
+"seed": 2093,
+"name": "assoc93"
+},
+{
+"id": "A0094",
+"kind": "founder",
+"seed": 2094,
+"name": "assoc94"
+},
+{
+"id": "A0095",
+"kind": "founder",
+"seed": 2095,
+"name": "assoc95"
+},
+{
+"id": "A0096",
+"kind": "founder",
+"seed": 2096,
+"name": "assoc96"
+},
+{
+"id": "A0097",
+"kind": "founder",
+"seed": 2097,
+"name": "assoc97"
+},
+{
+"id": "A0098",
+"kind": "founder",
+"seed": 2098,
+"name": "assoc98"
+},
+{
+"id": "A0099",
+"kind": "founder",
+"seed": 2099,
+"name": "assoc99"
+},
+{
+"id": "A0100",
+"kind": "founder",
+"seed": 2100,
+"name": "assoc100"
+},
+{
+"id": "A0101",
+"kind": "founder",
+"seed": 2101,
+"name": "assoc101"
+},
+{
+"id": "A0102",
+"kind": "founder",
+"seed": 2102,
+"name": "assoc102"
+},
+{
+"id": "A0103",
+"kind": "founder",
+"seed": 2103,
+"name": "assoc103"
+},
+{
+"id": "A0104",
+"kind": "founder",
+"seed": 2104,
+"name": "assoc104"
+},
+{
+"id": "A0105",
+"kind": "founder",
+"seed": 2105,
+"name": "assoc105"
+},
+{
+"id": "A0106",
+"kind": "founder",
+"seed": 2106,
+"name": "assoc106"
+},
+{
+"id": "A0107",
+"kind": "founder",
+"seed": 2107,
+"name": "assoc107"
+},
+{
+"id": "A0108",
+"kind": "founder",
+"seed": 2108,
+"name": "assoc108"
+},
+{
+"id": "A0109",
+"kind": "founder",
+"seed": 2109,
+"name": "assoc109"
+},
+{
+"id": "A0110",
+"kind": "founder",
+"seed": 2110,
+"name": "assoc110"
+},
+{
+"id": "A0111",
+"kind": "founder",
+"seed": 2111,
+"name": "assoc111"
+},
+{
+"id": "A0112",
+"kind": "founder",
+"seed": 2112,
+"name": "assoc112"
+},
+{
+"id": "A0113",
+"kind": "founder",
+"seed": 2113,
+"name": "assoc113"
+},
+{
+"id": "A0114",
+"kind": "founder",
+"seed": 2114,
+"name": "assoc114"
+},
+{
+"id": "A0115",
+"kind": "founder",
+"seed": 2115,
+"name": "assoc115"
+},
+{
+"id": "A0116",
+"kind": "founder",
+"seed": 2116,
+"name": "assoc116"
+},
+{
+"id": "A0117",
+"kind": "founder",
+"seed": 2117,
+"name": "assoc117"
+},
+{
+"id": "A0118",
+"kind": "founder",
+"seed": 2118,
+"name": "assoc118"
+},
+{
+"id": "A0119",
+"kind": "founder",
+"seed": 2119,
+"name": "assoc119"
+},
+{
+"id": "A0120",
+"kind": "founder",
+"seed": 2120,
+"name": "assoc120"
+},
+{
+"id": "A0121",
+"kind": "founder",
+"seed": 2121,
+"name": "assoc121"
+},
+{
+"id": "A0122",
+"kind": "founder",
+"seed": 2122,
+"name": "assoc122"
+},
+{
+"id": "A0123",
+"kind": "founder",
+"seed": 2123,
+"name": "assoc123"
+},
+{
+"id": "A0124",
+"kind": "founder",
+"seed": 2124,
+"name": "assoc124"
+},
+{
+"id": "A0125",
+"kind": "founder",
+"seed": 2125,
+"name": "assoc125"
+},
+{
+"id": "A0126",
+"kind": "founder",
+"seed": 2126,
+"name": "assoc126"
+},
+{
+"id": "A0127",
+"kind": "founder",
+"seed": 2127,
+"name": "assoc127"
+},
+{
+"id": "A0128",
+"kind": "founder",
+"seed": 2128,
+"name": "assoc128"
+},
+{
+"id": "A0129",
+"kind": "founder",
+"seed": 2129,
+"name": "assoc129"
+},
+{
+"id": "A0130",
+"kind": "founder",
+"seed": 2130,
+"name": "assoc130"
+},
+{
+"id": "A0131",
+"kind": "founder",
+"seed": 2131,
+"name": "assoc131"
+},
+{
+"id": "A0132",
+"kind": "founder",
+"seed": 2132,
+"name": "assoc132"
+},
+{
+"id": "A0133",
+"kind": "founder",
+"seed": 2133,
+"name": "assoc133"
+},
+{
+"id": "A0134",
+"kind": "founder",
+"seed": 2134,
+"name": "assoc134"
+},
+{
+"id": "A0135",
+"kind": "founder",
+"seed": 2135,
+"name": "assoc135"
+},
+{
+"id": "A0136",
+"kind": "founder",
+"seed": 2136,
+"name": "assoc136"
+},
+{
+"id": "A0137",
+"kind": "founder",
+"seed": 2137,
+"name": "assoc137"
+},
+{
+"id": "A0138",
+"kind": "founder",
+"seed": 2138,
+"name": "assoc138"
+},
+{
+"id": "A0139",
+"kind": "founder",
+"seed": 2139,
+"name": "assoc139"
+},
+{
+"id": "A0140",
+"kind": "founder",
+"seed": 2140,
+"name": "assoc140"
+},
+{
+"id": "A0141",
+"kind": "founder",
+"seed": 2141,
+"name": "assoc141"
+},
+{
+"id": "A0142",
+"kind": "founder",
+"seed": 2142,
+"name": "assoc142"
+},
+{
+"id": "A0143",
+"kind": "founder",
+"seed": 2143,
+"name": "assoc143"
+},
+{
+"id": "A0144",
+"kind": "founder",
+"seed": 2144,
+"name": "assoc144"
+},
+{
+"id": "A0145",
+"kind": "founder",
+"seed": 2145,
+"name": "assoc145"
+},
+{
+"id": "A0146",
+"kind": "founder",
+"seed": 2146,
+"name": "assoc146"
+},
+{
+"id": "A0147",
+"kind": "founder",
+"seed": 2147,
+"name": "assoc147"
+},
+{
+"id": "A0148",
+"kind": "founder",
+"seed": 2148,
+"name": "assoc148"
+},
+{
+"id": "A0149",
+"kind": "founder",
+"seed": 2149,
+"name": "assoc149"
+},
+{
+"id": "A0150",
+"kind": "founder",
+"seed": 2150,
+"name": "assoc150"
+},
+{
+"id": "A0151",
+"kind": "founder",
+"seed": 2151,
+"name": "assoc151"
+},
+{
+"id": "A0152",
+"kind": "founder",
+"seed": 2152,
+"name": "assoc152"
+},
+{
+"id": "A0153",
+"kind": "founder",
+"seed": 2153,
+"name": "assoc153"
+},
+{
+"id": "A0154",
+"kind": "founder",
+"seed": 2154,
+"name": "assoc154"
+},
+{
+"id": "A0155",
+"kind": "founder",
+"seed": 2155,
+"name": "assoc155"
+},
+{
+"id": "A0156",
+"kind": "founder",
+"seed": 2156,
+"name": "assoc156"
+},
+{
+"id": "A0157",
+"kind": "founder",
+"seed": 2157,
+"name": "assoc157"
+},
+{
+"id": "A0158",
+"kind": "founder",
+"seed": 2158,
+"name": "assoc158"
+},
+{
+"id": "A0159",
+"kind": "founder",
+"seed": 2159,
+"name": "assoc159"
+},
+{
+"id": "A0160",
+"kind": "founder",
+"seed": 2160,
+"name": "assoc160"
+},
+{
+"id": "A0161",
+"kind": "founder",
+"seed": 2161,
+"name": "assoc161"
+},
+{
+"id": "A0162",
+"kind": "founder",
+"seed": 2162,
+"name": "assoc162"
+},
+{
+"id": "A0163",
+"kind": "founder",
+"seed": 2163,
+"name": "assoc163"
+},
+{
+"id": "A0164",
+"kind": "founder",
+"seed": 2164,
+"name": "assoc164"
+},
+{
+"id": "A0165",
+"kind": "founder",
+"seed": 2165,
+"name": "assoc165"
+},
+{
+"id": "A0166",
+"kind": "founder",
+"seed": 2166,
+"name": "assoc166"
+},
+{
+"id": "A0167",
+"kind": "founder",
+"seed": 2167,
+"name": "assoc167"
+},
+{
+"id": "A0168",
+"kind": "founder",
+"seed": 2168,
+"name": "assoc168"
+},
+{
+"id": "A0169",
+"kind": "founder",
+"seed": 2169,
+"name": "assoc169"
+},
+{
+"id": "A0170",
+"kind": "founder",
+"seed": 2170,
+"name": "assoc170"
+},
+{
+"id": "A0171",
+"kind": "founder",
+"seed": 2171,
+"name": "assoc171"
+},
+{
+"id": "A0172",
+"kind": "founder",
+"seed": 2172,
+"name": "assoc172"
+},
+{
+"id": "A0173",
+"kind": "founder",
+"seed": 2173,
+"name": "assoc173"
+},
+{
+"id": "A0174",
+"kind": "founder",
+"seed": 2174,
+"name": "assoc174"
+},
+{
+"id": "A0175",
+"kind": "founder",
+"seed": 2175,
+"name": "assoc175"
+},
+{
+"id": "A0176",
+"kind": "founder",
+"seed": 2176,
+"name": "assoc176"
+},
+{
+"id": "A0177",
+"kind": "founder",
+"seed": 2177,
+"name": "assoc177"
+},
+{
+"id": "A0178",
+"kind": "founder",
+"seed": 2178,
+"name": "assoc178"
+},
+{
+"id": "A0179",
+"kind": "founder",
+"seed": 2179,
+"name": "assoc179"
+},
+{
+"id": "A0180",
+"kind": "founder",
+"seed": 2180,
+"name": "assoc180"
+},
+{
+"id": "A0181",
+"kind": "founder",
+"seed": 2181,
+"name": "assoc181"
+},
+{
+"id": "A0182",
+"kind": "founder",
+"seed": 2182,
+"name": "assoc182"
+},
+{
+"id": "A0183",
+"kind": "founder",
+"seed": 2183,
+"name": "assoc183"
+},
+{
+"id": "A0184",
+"kind": "founder",
+"seed": 2184,
+"name": "assoc184"
+},
+{
+"id": "A0185",
+"kind": "founder",
+"seed": 2185,
+"name": "assoc185"
+},
+{
+"id": "A0186",
+"kind": "founder",
+"seed": 2186,
+"name": "assoc186"
+},
+{
+"id": "A0187",
+"kind": "founder",
+"seed": 2187,
+"name": "assoc187"
+},
+{
+"id": "A0188",
+"kind": "founder",
+"seed": 2188,
+"name": "assoc188"
+},
+{
+"id": "A0189",
+"kind": "founder",
+"seed": 2189,
+"name": "assoc189"
+},
+{
+"id": "A0190",
+"kind": "founder",
+"seed": 2190,
+"name": "assoc190"
+},
+{
+"id": "A0191",
+"kind": "founder",
+"seed": 2191,
+"name": "assoc191"
+},
+{
+"id": "A0192",
+"kind": "founder",
+"seed": 2192,
+"name": "assoc192"
+},
+{
+"id": "A0193",
+"kind": "founder",
+"seed": 2193,
+"name": "assoc193"
+},
+{
+"id": "A0194",
+"kind": "founder",
+"seed": 2194,
+"name": "assoc194"
+},
+{
+"id": "A0195",
+"kind": "founder",
+"seed": 2195,
+"name": "assoc195"
+},
+{
+"id": "A0196",
+"kind": "founder",
+"seed": 2196,
+"name": "assoc196"
+},
+{
+"id": "A0197",
+"kind": "founder",
+"seed": 2197,
+"name": "assoc197"
+},
+{
+"id": "A0198",
+"kind": "founder",
+"seed": 2198,
+"name": "assoc198"
+},
+{
+"id": "A0199",
+"kind": "founder",
+"seed": 2199,
+"name": "assoc199"
+},
+{
+"id": "A0200",
+"kind": "founder",
+"seed": 2200,
+"name": "assoc200"
+},
+{
+"id": "A0201",
+"kind": "founder",
+"seed": 2201,
+"name": "assoc201"
+},
+{
+"id": "A0202",
+"kind": "founder",
+"seed": 2202,
+"name": "assoc202"
+},
+{
+"id": "A0203",
+"kind": "founder",
+"seed": 2203,
+"name": "assoc203"
+},
+{
+"id": "A0204",
+"kind": "founder",
+"seed": 2204,
+"name": "assoc204"
+},
+{
+"id": "A0205",
+"kind": "founder",
+"seed": 2205,
+"name": "assoc205"
+},
+{
+"id": "A0206",
+"kind": "founder",
+"seed": 2206,
+"name": "assoc206"
+},
+{
+"id": "A0207",
+"kind": "founder",
+"seed": 2207,
+"name": "assoc207"
+},
+{
+"id": "A0208",
+"kind": "founder",
+"seed": 2208,
+"name": "assoc208"
+},
+{
+"id": "A0209",
+"kind": "founder",
+"seed": 2209,
+"name": "assoc209"
+},
+{
+"id": "A0210",
+"kind": "founder",
+"seed": 2210,
+"name": "assoc210"
+},
+{
+"id": "A0211",
+"kind": "founder",
+"seed": 2211,
+"name": "assoc211"
+},
+{
+"id": "A0212",
+"kind": "founder",
+"seed": 2212,
+"name": "assoc212"
+},
+{
+"id": "A0213",
+"kind": "founder",
+"seed": 2213,
+"name": "assoc213"
+},
+{
+"id": "A0214",
+"kind": "founder",
+"seed": 2214,
+"name": "assoc214"
+},
+{
+"id": "A0215",
+"kind": "founder",
+"seed": 2215,
+"name": "assoc215"
+},
+{
+"id": "A0216",
+"kind": "founder",
+"seed": 2216,
+"name": "assoc216"
+},
+{
+"id": "A0217",
+"kind": "founder",
+"seed": 2217,
+"name": "assoc217"
+},
+{
+"id": "A0218",
+"kind": "founder",
+"seed": 2218,
+"name": "assoc218"
+},
+{
+"id": "A0219",
+"kind": "founder",
+"seed": 2219,
+"name": "assoc219"
+},
+{
+"id": "A0220",
+"kind": "founder",
+"seed": 2220,
+"name": "assoc220"
+},
+{
+"id": "A0221",
+"kind": "founder",
+"seed": 2221,
+"name": "assoc221"
+},
+{
+"id": "A0222",
+"kind": "founder",
+"seed": 2222,
+"name": "assoc222"
+},
+{
+"id": "A0223",
+"kind": "founder",
+"seed": 2223,
+"name": "assoc223"
+},
+{
+"id": "A0224",
+"kind": "founder",
+"seed": 2224,
+"name": "assoc224"
+},
+{
+"id": "A0225",
+"kind": "founder",
+"seed": 2225,
+"name": "assoc225"
+},
+{
+"id": "A0226",
+"kind": "founder",
+"seed": 2226,
+"name": "assoc226"
+},
+{
+"id": "A0227",
+"kind": "founder",
+"seed": 2227,
+"name": "assoc227"
+},
+{
+"id": "A0228",
+"kind": "founder",
+"seed": 2228,
+"name": "assoc228"
+},
+{
+"id": "A0229",
+"kind": "founder",
+"seed": 2229,
+"name": "assoc229"
+},
+{
+"id": "A0230",
+"kind": "founder",
+"seed": 2230,
+"name": "assoc230"
+},
+{
+"id": "A0231",
+"kind": "founder",
+"seed": 2231,
+"name": "assoc231"
+},
+{
+"id": "A0232",
+"kind": "founder",
+"seed": 2232,
+"name": "assoc232"
+},
+{
+"id": "A0233",
+"kind": "founder",
+"seed": 2233,
+"name": "assoc233"
+},
+{
+"id": "A0234",
+"kind": "founder",
+"seed": 2234,
+"name": "assoc234"
+},
+{
+"id": "A0235",
+"kind": "founder",
+"seed": 2235,
+"name": "assoc235"
+},
+{
+"id": "A0236",
+"kind": "founder",
+"seed": 2236,
+"name": "assoc236"
+},
+{
+"id": "A0237",
+"kind": "founder",
+"seed": 2237,
+"name": "assoc237"
+},
+{
+"id": "A0238",
+"kind": "founder",
+"seed": 2238,
+"name": "assoc238"
+},
+{
+"id": "A0239",
+"kind": "founder",
+"seed": 2239,
+"name": "assoc239"
+},
+{
+"id": "A0240",
+"kind": "founder",
+"seed": 2240,
+"name": "assoc240"
+},
+{
+"id": "A0241",
+"kind": "founder",
+"seed": 2241,
+"name": "assoc241"
+},
+{
+"id": "A0242",
+"kind": "founder",
+"seed": 2242,
+"name": "assoc242"
+},
+{
+"id": "A0243",
+"kind": "founder",
+"seed": 2243,
+"name": "assoc243"
+},
+{
+"id": "A0244",
+"kind": "founder",
+"seed": 2244,
+"name": "assoc244"
+},
+{
+"id": "A0245",
+"kind": "founder",
+"seed": 2245,
+"name": "assoc245"
+},
+{
+"id": "A0246",
+"kind": "founder",
+"seed": 2246,
+"name": "assoc246"
+},
+{
+"id": "A0247",
+"kind": "founder",
+"seed": 2247,
+"name": "assoc247"
+},
+{
+"id": "A0248",
+"kind": "founder",
+"seed": 2248,
+"name": "assoc248"
+},
+{
+"id": "A0249",
+"kind": "founder",
+"seed": 2249,
+"name": "assoc249"
+},
+{
+"id": "A0250",
+"kind": "founder",
+"seed": 2250,
+"name": "assoc250"
+},
+{
+"id": "A0251",
+"kind": "founder",
+"seed": 2251,
+"name": "assoc251"
+},
+{
+"id": "A0252",
+"kind": "founder",
+"seed": 2252,
+"name": "assoc252"
+},
+{
+"id": "A0253",
+"kind": "founder",
+"seed": 2253,
+"name": "assoc253"
+},
+{
+"id": "A0254",
+"kind": "founder",
+"seed": 2254,
+"name": "assoc254"
+},
+{
+"id": "A0255",
+"kind": "founder",
+"seed": 2255,
+"name": "assoc255"
+},
+{
+"id": "A0256",
+"kind": "founder",
+"seed": 2256,
+"name": "assoc256"
+},
+{
+"id": "A0257",
+"kind": "founder",
+"seed": 2257,
+"name": "assoc257"
+},
+{
+"id": "A0258",
+"kind": "founder",
+"seed": 2258,
+"name": "assoc258"
+},
+{
+"id": "A0259",
+"kind": "founder",
+"seed": 2259,
+"name": "assoc259"
+},
+{
+"id": "A0260",
+"kind": "founder",
+"seed": 2260,
+"name": "assoc260"
+},
+{
+"id": "A0261",
+"kind": "founder",
+"seed": 2261,
+"name": "assoc261"
+},
+{
+"id": "A0262",
+"kind": "founder",
+"seed": 2262,
+"name": "assoc262"
+},
+{
+"id": "A0263",
+"kind": "founder",
+"seed": 2263,
+"name": "assoc263"
+},
+{
+"id": "A0264",
+"kind": "founder",
+"seed": 2264,
+"name": "assoc264"
+},
+{
+"id": "A0265",
+"kind": "founder",
+"seed": 2265,
+"name": "assoc265"
+},
+{
+"id": "A0266",
+"kind": "founder",
+"seed": 2266,
+"name": "assoc266"
+},
+{
+"id": "A0267",
+"kind": "founder",
+"seed": 2267,
+"name": "assoc267"
+},
+{
+"id": "A0268",
+"kind": "founder",
+"seed": 2268,
+"name": "assoc268"
+},
+{
+"id": "A0269",
+"kind": "founder",
+"seed": 2269,
+"name": "assoc269"
+},
+{
+"id": "A0270",
+"kind": "founder",
+"seed": 2270,
+"name": "assoc270"
+},
+{
+"id": "A0271",
+"kind": "founder",
+"seed": 2271,
+"name": "assoc271"
+},
+{
+"id": "A0272",
+"kind": "founder",
+"seed": 2272,
+"name": "assoc272"
+},
+{
+"id": "A0273",
+"kind": "founder",
+"seed": 2273,
+"name": "assoc273"
+},
+{
+"id": "A0274",
+"kind": "founder",
+"seed": 2274,
+"name": "assoc274"
+},
+{
+"id": "A0275",
+"kind": "founder",
+"seed": 2275,
+"name": "assoc275"
+},
+{
+"id": "A0276",
+"kind": "founder",
+"seed": 2276,
+"name": "assoc276"
+},
+{
+"id": "A0277",
+"kind": "founder",
+"seed": 2277,
+"name": "assoc277"
+},
+{
+"id": "A0278",
+"kind": "founder",
+"seed": 2278,
+"name": "assoc278"
+},
+{
+"id": "A0279",
+"kind": "founder",
+"seed": 2279,
+"name": "assoc279"
+},
+{
+"id": "A0280",
+"kind": "founder",
+"seed": 2280,
+"name": "assoc280"
+},
+{
+"id": "A0281",
+"kind": "founder",
+"seed": 2281,
+"name": "assoc281"
+},
+{
+"id": "A0282",
+"kind": "founder",
+"seed": 2282,
+"name": "assoc282"
+},
+{
+"id": "A0283",
+"kind": "founder",
+"seed": 2283,
+"name": "assoc283"
+},
+{
+"id": "A0284",
+"kind": "founder",
+"seed": 2284,
+"name": "assoc284"
+},
+{
+"id": "A0285",
+"kind": "founder",
+"seed": 2285,
+"name": "assoc285"
+},
+{
+"id": "A0286",
+"kind": "founder",
+"seed": 2286,
+"name": "assoc286"
+},
+{
+"id": "A0287",
+"kind": "founder",
+"seed": 2287,
+"name": "assoc287"
+},
+{
+"id": "A0288",
+"kind": "founder",
+"seed": 2288,
+"name": "assoc288"
+},
+{
+"id": "A0289",
+"kind": "founder",
+"seed": 2289,
+"name": "assoc289"
+},
+{
+"id": "A0290",
+"kind": "founder",
+"seed": 2290,
+"name": "assoc290"
+},
+{
+"id": "A0291",
+"kind": "founder",
+"seed": 2291,
+"name": "assoc291"
+},
+{
+"id": "A0292",
+"kind": "founder",
+"seed": 2292,
+"name": "assoc292"
+},
+{
+"id": "A0293",
+"kind": "founder",
+"seed": 2293,
+"name": "assoc293"
+},
+{
+"id": "A0294",
+"kind": "founder",
+"seed": 2294,
+"name": "assoc294"
+},
+{
+"id": "A0295",
+"kind": "founder",
+"seed": 2295,
+"name": "assoc295"
+},
+{
+"id": "A0296",
+"kind": "founder",
+"seed": 2296,
+"name": "assoc296"
+},
+{
+"id": "A0297",
+"kind": "founder",
+"seed": 2297,
+"name": "assoc297"
+},
+{
+"id": "A0298",
+"kind": "founder",
+"seed": 2298,
+"name": "assoc298"
+},
+{
+"id": "A0299",
+"kind": "founder",
+"seed": 2299,
+"name": "assoc299"
+},
+{
+"id": "A0300",
+"kind": "founder",
+"seed": 2300,
+"name": "assoc300"
+},
+{
+"id": "A0301",
+"kind": "founder",
+"seed": 2301,
+"name": "assoc301"
+},
+{
+"id": "A0302",
+"kind": "founder",
+"seed": 2302,
+"name": "assoc302"
+},
+{
+"id": "A0303",
+"kind": "founder",
+"seed": 2303,
+"name": "assoc303"
+},
+{
+"id": "A0304",
+"kind": "founder",
+"seed": 2304,
+"name": "assoc304"
+},
+{
+"id": "A0305",
+"kind": "founder",
+"seed": 2305,
+"name": "assoc305"
+},
+{
+"id": "A0306",
+"kind": "founder",
+"seed": 2306,
+"name": "assoc306"
+},
+{
+"id": "A0307",
+"kind": "founder",
+"seed": 2307,
+"name": "assoc307"
+},
+{
+"id": "A0308",
+"kind": "founder",
+"seed": 2308,
+"name": "assoc308"
+},
+{
+"id": "A0309",
+"kind": "founder",
+"seed": 2309,
+"name": "assoc309"
+},
+{
+"id": "A0310",
+"kind": "founder",
+"seed": 2310,
+"name": "assoc310"
+},
+{
+"id": "A0311",
+"kind": "founder",
+"seed": 2311,
+"name": "assoc311"
+},
+{
+"id": "A0312",
+"kind": "founder",
+"seed": 2312,
+"name": "assoc312"
+},
+{
+"id": "A0313",
+"kind": "founder",
+"seed": 2313,
+"name": "assoc313"
+},
+{
+"id": "A0314",
+"kind": "founder",
+"seed": 2314,
+"name": "assoc314"
+},
+{
+"id": "A0315",
+"kind": "founder",
+"seed": 2315,
+"name": "assoc315"
+},
+{
+"id": "A0316",
+"kind": "founder",
+"seed": 2316,
+"name": "assoc316"
+},
+{
+"id": "A0317",
+"kind": "founder",
+"seed": 2317,
+"name": "assoc317"
+},
+{
+"id": "A0318",
+"kind": "founder",
+"seed": 2318,
+"name": "assoc318"
+},
+{
+"id": "A0319",
+"kind": "founder",
+"seed": 2319,
+"name": "assoc319"
+},
+{
+"id": "A0320",
+"kind": "founder",
+"seed": 2320,
+"name": "assoc320"
+},
+{
+"id": "A0321",
+"kind": "founder",
+"seed": 2321,
+"name": "assoc321"
+},
+{
+"id": "A0322",
+"kind": "founder",
+"seed": 2322,
+"name": "assoc322"
+},
+{
+"id": "A0323",
+"kind": "founder",
+"seed": 2323,
+"name": "assoc323"
+},
+{
+"id": "A0324",
+"kind": "founder",
+"seed": 2324,
+"name": "assoc324"
+},
+{
+"id": "A0325",
+"kind": "founder",
+"seed": 2325,
+"name": "assoc325"
+},
+{
+"id": "A0326",
+"kind": "founder",
+"seed": 2326,
+"name": "assoc326"
+},
+{
+"id": "A0327",
+"kind": "founder",
+"seed": 2327,
+"name": "assoc327"
+},
+{
+"id": "A0328",
+"kind": "founder",
+"seed": 2328,
+"name": "assoc328"
+},
+{
+"id": "A0329",
+"kind": "founder",
+"seed": 2329,
+"name": "assoc329"
+},
+{
+"id": "A0330",
+"kind": "founder",
+"seed": 2330,
+"name": "assoc330"
+},
+{
+"id": "A0331",
+"kind": "founder",
+"seed": 2331,
+"name": "assoc331"
+},
+{
+"id": "A0332",
+"kind": "founder",
+"seed": 2332,
+"name": "assoc332"
+},
+{
+"id": "A0333",
+"kind": "founder",
+"seed": 2333,
+"name": "assoc333"
+},
+{
+"id": "A0334",
+"kind": "founder",
+"seed": 2334,
+"name": "assoc334"
+},
+{
+"id": "A0335",
+"kind": "founder",
+"seed": 2335,
+"name": "assoc335"
+},
+{
+"id": "A0336",
+"kind": "founder",
+"seed": 2336,
+"name": "assoc336"
+},
+{
+"id": "A0337",
+"kind": "founder",
+"seed": 2337,
+"name": "assoc337"
+},
+{
+"id": "A0338",
+"kind": "founder",
+"seed": 2338,
+"name": "assoc338"
+},
+{
+"id": "A0339",
+"kind": "founder",
+"seed": 2339,
+"name": "assoc339"
+},
+{
+"id": "A0340",
+"kind": "founder",
+"seed": 2340,
+"name": "assoc340"
+},
+{
+"id": "A0341",
+"kind": "founder",
+"seed": 2341,
+"name": "assoc341"
+},
+{
+"id": "A0342",
+"kind": "founder",
+"seed": 2342,
+"name": "assoc342"
+},
+{
+"id": "A0343",
+"kind": "founder",
+"seed": 2343,
+"name": "assoc343"
+},
+{
+"id": "A0344",
+"kind": "founder",
+"seed": 2344,
+"name": "assoc344"
+},
+{
+"id": "A0345",
+"kind": "founder",
+"seed": 2345,
+"name": "assoc345"
+},
+{
+"id": "A0346",
+"kind": "founder",
+"seed": 2346,
+"name": "assoc346"
+},
+{
+"id": "A0347",
+"kind": "founder",
+"seed": 2347,
+"name": "assoc347"
+},
+{
+"id": "A0348",
+"kind": "founder",
+"seed": 2348,
+"name": "assoc348"
+},
+{
+"id": "A0349",
+"kind": "founder",
+"seed": 2349,
+"name": "assoc349"
+},
+{
+"id": "A0350",
+"kind": "founder",
+"seed": 2350,
+"name": "assoc350"
+},
+{
+"id": "A0351",
+"kind": "founder",
+"seed": 2351,
+"name": "assoc351"
+},
+{
+"id": "A0352",
+"kind": "founder",
+"seed": 2352,
+"name": "assoc352"
+},
+{
+"id": "A0353",
+"kind": "founder",
+"seed": 2353,
+"name": "assoc353"
+},
+{
+"id": "A0354",
+"kind": "founder",
+"seed": 2354,
+"name": "assoc354"
+},
+{
+"id": "A0355",
+"kind": "founder",
+"seed": 2355,
+"name": "assoc355"
+},
+{
+"id": "A0356",
+"kind": "founder",
+"seed": 2356,
+"name": "assoc356"
+},
+{
+"id": "A0357",
+"kind": "founder",
+"seed": 2357,
+"name": "assoc357"
+},
+{
+"id": "A0358",
+"kind": "founder",
+"seed": 2358,
+"name": "assoc358"
+},
+{
+"id": "A0359",
+"kind": "founder",
+"seed": 2359,
+"name": "assoc359"
+},
+{
+"id": "A0360",
+"kind": "founder",
+"seed": 2360,
+"name": "assoc360"
+},
+{
+"id": "A0361",
+"kind": "founder",
+"seed": 2361,
+"name": "assoc361"
+},
+{
+"id": "A0362",
+"kind": "founder",
+"seed": 2362,
+"name": "assoc362"
+},
+{
+"id": "A0363",
+"kind": "founder",
+"seed": 2363,
+"name": "assoc363"
+},
+{
+"id": "A0364",
+"kind": "founder",
+"seed": 2364,
+"name": "assoc364"
+},
+{
+"id": "A0365",
+"kind": "founder",
+"seed": 2365,
+"name": "assoc365"
+},
+{
+"id": "A0366",
+"kind": "founder",
+"seed": 2366,
+"name": "assoc366"
+},
+{
+"id": "A0367",
+"kind": "founder",
+"seed": 2367,
+"name": "assoc367"
+},
+{
+"id": "A0368",
+"kind": "founder",
+"seed": 2368,
+"name": "assoc368"
+},
+{
+"id": "A0369",
+"kind": "founder",
+"seed": 2369,
+"name": "assoc369"
+},
+{
+"id": "A0370",
+"kind": "founder",
+"seed": 2370,
+"name": "assoc370"
+},
+{
+"id": "A0371",
+"kind": "founder",
+"seed": 2371,
+"name": "assoc371"
+},
+{
+"id": "A0372",
+"kind": "founder",
+"seed": 2372,
+"name": "assoc372"
+},
+{
+"id": "A0373",
+"kind": "founder",
+"seed": 2373,
+"name": "assoc373"
+},
+{
+"id": "A0374",
+"kind": "founder",
+"seed": 2374,
+"name": "assoc374"
+},
+{
+"id": "A0375",
+"kind": "founder",
+"seed": 2375,
+"name": "assoc375"
+},
+{
+"id": "A0376",
+"kind": "founder",
+"seed": 2376,
+"name": "assoc376"
+},
+{
+"id": "A0377",
+"kind": "founder",
+"seed": 2377,
+"name": "assoc377"
+},
+{
+"id": "A0378",
+"kind": "founder",
+"seed": 2378,
+"name": "assoc378"
+},
+{
+"id": "A0379",
+"kind": "founder",
+"seed": 2379,
+"name": "assoc379"
+},
+{
+"id": "A0380",
+"kind": "founder",
+"seed": 2380,
+"name": "assoc380"
+},
+{
+"id": "A0381",
+"kind": "founder",
+"seed": 2381,
+"name": "assoc381"
+},
+{
+"id": "A0382",
+"kind": "founder",
+"seed": 2382,
+"name": "assoc382"
+},
+{
+"id": "A0383",
+"kind": "founder",
+"seed": 2383,
+"name": "assoc383"
+},
+{
+"id": "A0384",
+"kind": "founder",
+"seed": 2384,
+"name": "assoc384"
+},
+{
+"id": "A0385",
+"kind": "founder",
+"seed": 2385,
+"name": "assoc385"
+},
+{
+"id": "A0386",
+"kind": "founder",
+"seed": 2386,
+"name": "assoc386"
+},
+{
+"id": "A0387",
+"kind": "founder",
+"seed": 2387,
+"name": "assoc387"
+},
+{
+"id": "A0388",
+"kind": "founder",
+"seed": 2388,
+"name": "assoc388"
+},
+{
+"id": "A0389",
+"kind": "founder",
+"seed": 2389,
+"name": "assoc389"
+},
+{
+"id": "A0390",
+"kind": "founder",
+"seed": 2390,
+"name": "assoc390"
+},
+{
+"id": "A0391",
+"kind": "founder",
+"seed": 2391,
+"name": "assoc391"
+},
+{
+"id": "A0392",
+"kind": "founder",
+"seed": 2392,
+"name": "assoc392"
+},
+{
+"id": "A0393",
+"kind": "founder",
+"seed": 2393,
+"name": "assoc393"
+},
+{
+"id": "A0394",
+"kind": "founder",
+"seed": 2394,
+"name": "assoc394"
+},
+{
+"id": "A0395",
+"kind": "founder",
+"seed": 2395,
+"name": "assoc395"
+},
+{
+"id": "A0396",
+"kind": "founder",
+"seed": 2396,
+"name": "assoc396"
+},
+{
+"id": "A0397",
+"kind": "founder",
+"seed": 2397,
+"name": "assoc397"
+},
+{
+"id": "A0398",
+"kind": "founder",
+"seed": 2398,
+"name": "assoc398"
+},
+{
+"id": "A0399",
+"kind": "founder",
+"seed": 2399,
+"name": "assoc399"
+},
+{
+"id": "A0400",
+"kind": "founder",
+"seed": 2400,
+"name": "assoc400"
+},
+{
+"id": "A0401",
+"kind": "founder",
+"seed": 2401,
+"name": "assoc401"
+},
+{
+"id": "A0402",
+"kind": "founder",
+"seed": 2402,
+"name": "assoc402"
+},
+{
+"id": "A0403",
+"kind": "founder",
+"seed": 2403,
+"name": "assoc403"
+},
+{
+"id": "A0404",
+"kind": "founder",
+"seed": 2404,
+"name": "assoc404"
+},
+{
+"id": "A0405",
+"kind": "founder",
+"seed": 2405,
+"name": "assoc405"
+},
+{
+"id": "A0406",
+"kind": "founder",
+"seed": 2406,
+"name": "assoc406"
+},
+{
+"id": "A0407",
+"kind": "founder",
+"seed": 2407,
+"name": "assoc407"
+},
+{
+"id": "A0408",
+"kind": "founder",
+"seed": 2408,
+"name": "assoc408"
+},
+{
+"id": "A0409",
+"kind": "founder",
+"seed": 2409,
+"name": "assoc409"
+},
+{
+"id": "A0410",
+"kind": "founder",
+"seed": 2410,
+"name": "assoc410"
+},
+{
+"id": "A0411",
+"kind": "founder",
+"seed": 2411,
+"name": "assoc411"
+},
+{
+"id": "A0412",
+"kind": "founder",
+"seed": 2412,
+"name": "assoc412"
+},
+{
+"id": "A0413",
+"kind": "founder",
+"seed": 2413,
+"name": "assoc413"
+},
+{
+"id": "A0414",
+"kind": "founder",
+"seed": 2414,
+"name": "assoc414"
+},
+{
+"id": "A0415",
+"kind": "founder",
+"seed": 2415,
+"name": "assoc415"
+},
+{
+"id": "A0416",
+"kind": "founder",
+"seed": 2416,
+"name": "assoc416"
+},
+{
+"id": "A0417",
+"kind": "founder",
+"seed": 2417,
+"name": "assoc417"
+},
+{
+"id": "A0418",
+"kind": "founder",
+"seed": 2418,
+"name": "assoc418"
+},
+{
+"id": "A0419",
+"kind": "founder",
+"seed": 2419,
+"name": "assoc419"
+},
+{
+"id": "A0420",
+"kind": "founder",
+"seed": 2420,
+"name": "assoc420"
+},
+{
+"id": "A0421",
+"kind": "founder",
+"seed": 2421,
+"name": "assoc421"
+},
+{
+"id": "A0422",
+"kind": "founder",
+"seed": 2422,
+"name": "assoc422"
+},
+{
+"id": "A0423",
+"kind": "founder",
+"seed": 2423,
+"name": "assoc423"
+},
+{
+"id": "A0424",
+"kind": "founder",
+"seed": 2424,
+"name": "assoc424"
+},
+{
+"id": "A0425",
+"kind": "founder",
+"seed": 2425,
+"name": "assoc425"
+},
+{
+"id": "A0426",
+"kind": "founder",
+"seed": 2426,
+"name": "assoc426"
+},
+{
+"id": "A0427",
+"kind": "founder",
+"seed": 2427,
+"name": "assoc427"
+},
+{
+"id": "A0428",
+"kind": "founder",
+"seed": 2428,
+"name": "assoc428"
+},
+{
+"id": "A0429",
+"kind": "founder",
+"seed": 2429,
+"name": "assoc429"
+},
+{
+"id": "A0430",
+"kind": "founder",
+"seed": 2430,
+"name": "assoc430"
+},
+{
+"id": "A0431",
+"kind": "founder",
+"seed": 2431,
+"name": "assoc431"
+},
+{
+"id": "A0432",
+"kind": "founder",
+"seed": 2432,
+"name": "assoc432"
+},
+{
+"id": "A0433",
+"kind": "founder",
+"seed": 2433,
+"name": "assoc433"
+},
+{
+"id": "A0434",
+"kind": "founder",
+"seed": 2434,
+"name": "assoc434"
+},
+{
+"id": "A0435",
+"kind": "founder",
+"seed": 2435,
+"name": "assoc435"
+},
+{
+"id": "A0436",
+"kind": "founder",
+"seed": 2436,
+"name": "assoc436"
+},
+{
+"id": "A0437",
+"kind": "founder",
+"seed": 2437,
+"name": "assoc437"
+},
+{
+"id": "A0438",
+"kind": "founder",
+"seed": 2438,
+"name": "assoc438"
+},
+{
+"id": "A0439",
+"kind": "founder",
+"seed": 2439,
+"name": "assoc439"
+},
+{
+"id": "A0440",
+"kind": "founder",
+"seed": 2440,
+"name": "assoc440"
+},
+{
+"id": "A0441",
+"kind": "founder",
+"seed": 2441,
+"name": "assoc441"
+},
+{
+"id": "A0442",
+"kind": "founder",
+"seed": 2442,
+"name": "assoc442"
+},
+{
+"id": "A0443",
+"kind": "founder",
+"seed": 2443,
+"name": "assoc443"
+},
+{
+"id": "A0444",
+"kind": "founder",
+"seed": 2444,
+"name": "assoc444"
+},
+{
+"id": "A0445",
+"kind": "founder",
+"seed": 2445,
+"name": "assoc445"
+},
+{
+"id": "A0446",
+"kind": "founder",
+"seed": 2446,
+"name": "assoc446"
+},
+{
+"id": "A0447",
+"kind": "founder",
+"seed": 2447,
+"name": "assoc447"
+},
+{
+"id": "A0448",
+"kind": "founder",
+"seed": 2448,
+"name": "assoc448"
+},
+{
+"id": "A0449",
+"kind": "founder",
+"seed": 2449,
+"name": "assoc449"
+},
+{
+"id": "A0450",
+"kind": "founder",
+"seed": 2450,
+"name": "assoc450"
+},
+{
+"id": "A0451",
+"kind": "founder",
+"seed": 2451,
+"name": "assoc451"
+},
+{
+"id": "A0452",
+"kind": "founder",
+"seed": 2452,
+"name": "assoc452"
+},
+{
+"id": "A0453",
+"kind": "founder",
+"seed": 2453,
+"name": "assoc453"
+},
+{
+"id": "A0454",
+"kind": "founder",
+"seed": 2454,
+"name": "assoc454"
+},
+{
+"id": "A0455",
+"kind": "founder",
+"seed": 2455,
+"name": "assoc455"
+},
+{
+"id": "A0456",
+"kind": "founder",
+"seed": 2456,
+"name": "assoc456"
+},
+{
+"id": "A0457",
+"kind": "founder",
+"seed": 2457,
+"name": "assoc457"
+},
+{
+"id": "A0458",
+"kind": "founder",
+"seed": 2458,
+"name": "assoc458"
+},
+{
+"id": "A0459",
+"kind": "founder",
+"seed": 2459,
+"name": "assoc459"
+},
+{
+"id": "A0460",
+"kind": "founder",
+"seed": 2460,
+"name": "assoc460"
+},
+{
+"id": "A0461",
+"kind": "founder",
+"seed": 2461,
+"name": "assoc461"
+},
+{
+"id": "A0462",
+"kind": "founder",
+"seed": 2462,
+"name": "assoc462"
+},
+{
+"id": "A0463",
+"kind": "founder",
+"seed": 2463,
+"name": "assoc463"
+},
+{
+"id": "A0464",
+"kind": "founder",
+"seed": 2464,
+"name": "assoc464"
+},
+{
+"id": "A0465",
+"kind": "founder",
+"seed": 2465,
+"name": "assoc465"
+},
+{
+"id": "A0466",
+"kind": "founder",
+"seed": 2466,
+"name": "assoc466"
+},
+{
+"id": "A0467",
+"kind": "founder",
+"seed": 2467,
+"name": "assoc467"
+},
+{
+"id": "A0468",
+"kind": "founder",
+"seed": 2468,
+"name": "assoc468"
+},
+{
+"id": "A0469",
+"kind": "founder",
+"seed": 2469,
+"name": "assoc469"
+},
+{
+"id": "A0470",
+"kind": "founder",
+"seed": 2470,
+"name": "assoc470"
+},
+{
+"id": "A0471",
+"kind": "founder",
+"seed": 2471,
+"name": "assoc471"
+},
+{
+"id": "A0472",
+"kind": "founder",
+"seed": 2472,
+"name": "assoc472"
+},
+{
+"id": "A0473",
+"kind": "founder",
+"seed": 2473,
+"name": "assoc473"
+},
+{
+"id": "A0474",
+"kind": "founder",
+"seed": 2474,
+"name": "assoc474"
+},
+{
+"id": "A0475",
+"kind": "founder",
+"seed": 2475,
+"name": "assoc475"
+},
+{
+"id": "A0476",
+"kind": "founder",
+"seed": 2476,
+"name": "assoc476"
+},
+{
+"id": "A0477",
+"kind": "founder",
+"seed": 2477,
+"name": "assoc477"
+},
+{
+"id": "A0478",
+"kind": "founder",
+"seed": 2478,
+"name": "assoc478"
+},
+{
+"id": "A0479",
+"kind": "founder",
+"seed": 2479,
+"name": "assoc479"
+},
+{
+"id": "A0480",
+"kind": "founder",
+"seed": 2480,
+"name": "assoc480"
+},
+{
+"id": "A0481",
+"kind": "founder",
+"seed": 2481,
+"name": "assoc481"
+},
+{
+"id": "A0482",
+"kind": "founder",
+"seed": 2482,
+"name": "assoc482"
+},
+{
+"id": "A0483",
+"kind": "founder",
+"seed": 2483,
+"name": "assoc483"
+},
+{
+"id": "A0484",
+"kind": "founder",
+"seed": 2484,
+"name": "assoc484"
+},
+{
+"id": "A0485",
+"kind": "founder",
+"seed": 2485,
+"name": "assoc485"
+},
+{
+"id": "A0486",
+"kind": "founder",
+"seed": 2486,
+"name": "assoc486"
+},
+{
+"id": "A0487",
+"kind": "founder",
+"seed": 2487,
+"name": "assoc487"
+},
+{
+"id": "A0488",
+"kind": "founder",
+"seed": 2488,
+"name": "assoc488"
+},
+{
+"id": "A0489",
+"kind": "founder",
+"seed": 2489,
+"name": "assoc489"
+},
+{
+"id": "A0490",
+"kind": "founder",
+"seed": 2490,
+"name": "assoc490"
+},
+{
+"id": "A0491",
+"kind": "founder",
+"seed": 2491,
+"name": "assoc491"
+},
+{
+"id": "A0492",
+"kind": "founder",
+"seed": 2492,
+"name": "assoc492"
+},
+{
+"id": "A0493",
+"kind": "founder",
+"seed": 2493,
+"name": "assoc493"
+},
+{
+"id": "A0494",
+"kind": "founder",
+"seed": 2494,
+"name": "assoc494"
+},
+{
+"id": "A0495",
+"kind": "founder",
+"seed": 2495,
+"name": "assoc495"
+},
+{
+"id": "A0496",
+"kind": "founder",
+"seed": 2496,
+"name": "assoc496"
+},
+{
+"id": "A0497",
+"kind": "founder",
+"seed": 2497,
+"name": "assoc497"
+},
+{
+"id": "A0498",
+"kind": "founder",
+"seed": 2498,
+"name": "assoc498"
+},
+{
+"id": "A0499",
+"kind": "founder",
+"seed": 2499,
+"name": "assoc499"
+},
+{
+"id": "A0500",
+"kind": "founder",
+"seed": 2500,
+"name": "assoc500"
+}
+]
+}

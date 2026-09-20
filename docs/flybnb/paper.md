@@ -8,7 +8,10 @@
 | pilot (Section 3) | 100 founders × 10 seeds, analysed |
 | breeding pilot (Section 3a) | 100 founders, 200 offspring, 674 phenotypes |
 | standard battery | v1: 13 stimuli × 3 seeds, 1,303 descending neurons read out |
-| silencing and activation atlas | planned |
+| association analysis (Section 3b) | 600 unrelated founders, 71 phenotypes |
+| atlas, first slice (Section 3c) | silencing under sound, 100 individuals, 361 effects on the base |
+| multi-generation selection (Section 3d) | 6 generations, six lines |
+| the rest of the silencing atlas, the activation atlas, the male brain | planned |
 | dataset on the Hugging Face Hub | prepared, not public |
 | acknowledgments (Appendix A) | no deployment read yet |
 <!-- END GENERATED: status -->
@@ -111,6 +114,75 @@ The assay is deterministic: for fixed seeds a phenotype is a function of the wir
 <!-- END GENERATED: breeding -->
 
 What this does not show. The cross is a model of inheritance over connections, not the genetics of a fly: a real animal inherits developmental programs, not synapse counts. What the pilot measures is the shape of the phenotype landscape around a real connectome under a recombination that the collection's contracts can verify. One generation is not a selection experiment; whether the response continues, plateaus, or costs other behaviours is what further generations are for.
+
+## 3b. Association: which connections decide a phenotype?
+
+<!-- BEGIN GENERATED: association -->
+**Design.** 600 unrelated founders under the battery. Predictors are an individual's counts on a stimulus's candidate connections: base records whose two ends are both active under it. 71 phenotypes (a descending cell type under a stimulus), for the stimuli under which nobody ignites.
+
+**A phenotype in the sparse regime is its readout's direct inputs.** Cross-validated R² from the connections *into* the readout cells: median 0.40 (DNge145 under sound: 0.86). From the rest of the active network *without* them: median -0.12, i.e. nothing. A model over all candidates (the 200 most correlated, chosen inside each training fold) does not beat the direct inputs alone (median 0.17). 61% of the connections significant at FDR 0.05 are direct inputs of the readout.
+
+**The gate, revisited.** The variance pilot found that the four direct gate connections do not explain who leaks (r = −0.27). Those were four of DNge145's direct inputs. All of them together, the auditory excitation and the gate's inhibition, give R² 0.63 for DNge145 under the gate: what decides the leak is the balance of one cell's inputs, not the network.
+
+**Ignition is an individual phenotype.** Under stimuli that leave the base wiring sparse, some individuals tip into the high-activity state: moist 27%, head_bristle 5%, bitter 3%, wind 2%, sugar 2%, taste_peg 2%, eye_bristle 2%. For those stimuli the candidate set is the whole ignited network and a connection-level question is the wrong one; they are reported here and not analysed.
+<!-- END GENERATED: association -->
+
+## 3c. The atlas, first slice: which silencing effects survive a change of brain?
+
+This is the question the dataset exists for, asked of one stimulus. Silencing a cell type with no active neuron is not run: int-lif has no background input, so such a run is the unperturbed run bit for bit, and its row is that row.
+
+<!-- BEGIN GENERATED: atlas -->
+**Design.** Stimulus `sound`; the base wiring and 100 founders; for every individual and seed, the unperturbed run and one run per cell type with an active neuron, silenced. A study of one brain *detects* an effect when all seeds agree in sign and mean |change| >= 1.0 spike. The rule is applied to the base wiring, and then unchanged to every individual: an effect's **replication rate** is the fraction of individuals in which the same study would have reported it.
+
+**Most effects found on one brain are not found on another.** 361 effects are detected on the base wiring, 128 of them by silencing part of the stimulus. Of the other 233: median replication 0.18; 7% replicate in at least 80% of individuals and 53% in at most 20%. 12 effects are detected in at least half of the individuals and *not* on the base.
+
+**The base wiring has no special place in this.** Take any individual as the one brain studied instead: it shows 208 central effects (range 76–578), and an effect found in one individual is found in another with probability 0.22 (64% of effects in at most 20% of the others). Part of any such shortfall is selection, since an effect is chosen for having been detected on the brain studied; that is the situation of every single-brain study, and it is what the number measures.
+
+| size of the effect on the base (spikes) | effects | median replication | median same sign | replicate in ≥ 80% |
+|---|---|---|---|---|
+| 1-2 | 78 | 0.08 | 0.46 | 0% |
+| 2-5 | 93 | 0.18 | 0.57 | 3% |
+| 5-10 | 39 | 0.39 | 0.73 | 10% |
+| >= 10 | 23 | 0.77 | 0.93 | 39% |
+
+**What predicts replication.** The size of the effect on the base (Spearman 0.51) and the synapses of a direct connection from the silenced type to the readout (0.48). Effects with a direct connection replicate at 0.45 on average, those without at 0.19.
+
+| silenced | readout | effect on the base | replication | same sign | mean ± SD over individuals |
+|---|---|---|---|---|---|
+| CB0478 | DNpe014 | -30.3 | 0.94 | 0.96 | -21.5 ± 14.4 |
+| DNg29 | DNg24 | -29.0 | 0.27 | 0.63 | -9.8 ± 11.3 |
+| DNg29 | DNg56 | +22.0 | 0.90 | 0.99 | +12.0 ± 7.5 |
+| DNg29 | DNp12 | +22.0 | 0.94 | 0.99 | +12.6 ± 8.7 |
+| CB3913 | DNg24 | -19.3 | 0.12 | 0.54 | -4.6 ± 7.9 |
+| SAD013 | DNg56 | +17.0 | 0.85 | 0.96 | +10.4 ± 6.6 |
+| CB0104 | DNg24 | -15.7 | 0.15 | 0.50 | -1.6 ± 3.1 |
+| CB2162 | DNpe014 | +15.0 | 0.86 | 0.95 | +10.8 ± 8.0 |
+<!-- END GENERATED: atlas -->
+
+What this does not show. One stimulus, one sex, silencing only. The detection rule is a choice, and a stricter one would find fewer and more robust effects; the table by effect size is there so that the conclusion does not rest on the threshold. And the individuals are a model of variability, calibrated on the two hemispheres of one brain; the male brain's hemispheres give nearly the same dispersion table, which is the first independent check of it.
+
+## 3d. Selection over several generations
+
+The breeding pilot showed one generation of divergent selection. Several generations ask what one cannot: whether the response continues, whether it is symmetric, what drift alone does over the same time, and whether the cost the pilot found inside the selected circuit accumulates.
+
+<!-- BEGIN GENERATED: selection -->
+**Design.** Trait: DNge145 spikes under `sound` (founders 9.5 ± 6.0). Six lines from the same 100 founders: two selected up, two down, two controls with parents drawn at random; 6 generations of 40 offspring from 10 parents, every individual under the full battery.
+
+| generation | high lines (founder SD) | low lines | control lines | gate leak, high | low | control | low lines fully silenced by the gate |
+|---|---|---|---|---|---|---|---|
+| 1 | +1.70, +1.49 | -1.15, -1.15 | -0.06, +0.58 | 7.1 | 0.3 | 3.7 | 53% |
+| 2 | +2.16, +2.41 | -1.35, -1.31 | -0.10, +0.49 | 9.6 | 0.2 | 3.2 | 71% |
+| 3 | +2.97, +2.99 | -1.43, -1.48 | +0.04, +0.26 | 11.8 | 0.1 | 3.2 | 91% |
+| 4 | +3.71, +3.83 | -1.43, -1.45 | +0.19, +0.13 | 15.0 | 0.2 | 3.2 | 88% |
+| 5 | +4.10, +4.02 | -1.45, -1.54 | +0.04, -0.51 | 17.7 | 0.1 | 2.0 | 91% |
+| 6 | +4.47, +4.34 | -1.51, -1.45 | -0.06, -0.31 | 20.2 | 0.1 | 2.1 | 89% |
+
+**The response.** After 6 generations the high lines are at +4.40 founder SD and the low lines at -1.48, 5.9 SD apart; the control lines never left ±0.58. Upwards the response slows: +2.98 SD in generations 1–3, +1.43 in generations 4–6. Downwards it stops: 1.46 then 0.02, and the reason is arithmetic before it is genetics: a spike count cannot go below zero, which for this trait is -1.60 founder SD, and the low lines are 0.13 SD above it.
+
+**The cost inside the circuit accumulates.** The high lines' response with the gate neurons driven went from the founders' 3.0 spikes to 20.2; the low lines' to 0.1, with 89% of their individuals fully silenced by the gate against 8% in the controls. What the gate takes away grows much less than the response does: 11.9 spikes of 19.0 in the high lines at generation 1 (62%), 15.6 of 35.8 at generation 6 (44%). The gate behaves more like a subtraction than like a division, so selection on the response to sound alone outgrows it.
+
+**Other phenotypes, and how not to count them.** Tested individual by individual, 259 of 646 battery phenotypes differ between high and low lines at FDR 0.05. That test treats relatives as independent, and the control lines show what that is worth: by the same test 155 phenotypes differ between the unselected control lines and the founders. With the line as the unit — both high lines on one side of both low lines, and a gap larger than the 99th percentile (1.61 SD) of the gap between two lines of the *same* treatment — 4 remain, 1 of them not DNge145: DNge060 under sugar (-0.96, -1.92, -1.12, -1.11, -1.65, -1.63 by generation). Both replicates of a treatment start from the same ten founders, so a gap that is present at generation 1 and does not grow is what those founders carried; one that grows with the trait is a correlated response.
+<!-- END GENERATED: selection -->
 
 ## 4. The dataset
 
