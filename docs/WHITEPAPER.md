@@ -24,7 +24,7 @@ Integer simulation of the fruit-fly connectome became the first application to e
 
 The proposed network organizes this work into a Biological Brain subnet and an LLM subnet. Models and derivatives use versioned MEPs within those subnets, connecting publication, financing, host service, execution evidence and settlement through a common model-service lifecycle. FlyBnB is the first application. Two partnership tracks follow in parallel: mammalian brain models and research collaborations within the Biological Brain subnet, and an open-source model partnership with a bounded inference-credit presale pilot within the LLM subnet. Both require scoped delivery and independent validation.
 
-The system's near-term value does not depend on commercial inference demand. Members of the public can fund particular individuals and experiments, maintain an ongoing relationship with the research, and receive acknowledgment tied to their contributions. Results are public, and identity, funding, and computation records can be checked. Paid experiments and other model workloads are subsequent expansion paths.
+The system's near-term value does not depend on commercial inference demand. Members of the public can fund particular individuals and experiments, maintain an ongoing relationship with the research, and receive holder acknowledgment through a release-specific NFT ownership snapshot. Results are public, and the snapshot and research evidence can be checked. Paid experiments and other model workloads are subsequent expansion paths.
 
 ## 1. The Problem and the Path to the Current Design
 
@@ -198,7 +198,7 @@ flowchart LR
     A[Public funds an individual or experiment] --> B[Research budget and explicit delivery scope]
     B --> C[Orchestration, execution and verification]
     C --> D[Public results and progress]
-    D --> E[Historical contribution records and acknowledgments]
+    D --> E[Release-specific NFT holder snapshot and acknowledgments]
     E --> F[Continued participation, sharing or renewed support]
     F --> A
 ```
@@ -211,21 +211,17 @@ Unless the relevant legal and tax status has been established, the frontend shou
 
 An NFT represents a synthetic research individual's identity, ownership, and operations defined by its collection. Recipes and research records connect a funding contribution to subsequent experiments. The NFT does not grant exclusive use of a public connectome or deterministic result, and the public need not buy an NFT to access research data.
 
-Three linked but separate records are proposed:
+For paper and dataset acknowledgments, use a release-specific ownership snapshot: identify the NFTs actually included in the research and read their holders at one stated block. Publish the release identifier, chain ID, collection address, block number and hash, included NFT IDs, and holder list. Founder and bred NFTs follow the same rule.
 
-1. **Ownership record:** who currently holds an individual and when transfers occurred.
-2. **Contribution record:** who funded, computed, created an individual, or contributed to research, and when.
-3. **Research record:** which experiments were proposed, funded, executed, verified, and published.
-
-A funder's historical contribution should survive transfer of the NFT. The recipient becomes the current holder without retroactively receiving credit for the original funding. Executors and holders must likewise remain distinct roles.
+The default list recognizes holders at the snapshot. It does not reconstruct who originally adopted, bred, paid for or computed each individual. A transfer before the snapshot changes the eligible holder; a transfer after publication does not rewrite the published list. Each subsequent release takes its own snapshot. Research evidence and financial accounting remain separate from this acknowledgment rule.
 
 ### 7.3 Acknowledgment and Research Independence
 
-Acknowledgment follows verifiable contributions and does not automatically confer paper authorship. Authorship depends on actual research contributions and applicable publication requirements. Public association of a name or ORCID with an address requires the participant's affirmative authorization; an address record is not verification of a person's identity.
+Holder acknowledgment follows the published snapshot and does not confer paper authorship. Authorship depends on actual research contributions and applicable publication requirements. Public association of a name or ORCID with an address requires the participant's affirmative authorization; an address record is not verification of a person's identity.
 
 NFT funding may influence which individuals or projects enter a study, but must not purchase a favorable result, exclude adverse findings, or manipulate analysis thresholds. Relationships among funders, researchers, executors, and holders should be disclosed. Refunds, unfinished experiments, and duplicate funding also need clear records.
 
-The existing CREDIT policy already distinguishes roles. Automated historical records for every role, identity binding, and complete acknowledgment generation still require capability-by-capability acceptance checks.
+The [CREDIT policy](flybnb/CREDIT.md) defines the snapshot fields, address ordering, optional names, and frozen publication list. Separate recognition of funders, breeders or compute providers is optional and requires its own evidence; a complete historical contribution ledger is not required. The existing holder-list generator still needs release-specific NFT selection and complete snapshot metadata before it satisfies this policy.
 
 ## 8. Funding and Sustainability
 
@@ -321,7 +317,7 @@ AIGG issuance, staked voting and multi-asset settlement are proposals, not deplo
 | Gateway and ai.gg integration tools | Implemented | Live upstream integration, billing, and restart recovery |
 | Cold-epoch wake-up and Host earnings dashboard | M3 branch implementation | Merge, end-to-end tests, and deployment verification |
 | Batched batteries and offline-result comparison | Tools and tests exist | Integration with budgets and durable research orchestration |
-| NFTs/collections, breeding, distributions, and acknowledgment policy | Implemented to varying degrees | Check enabled features per deployment; complete historical contribution records |
+| NFTs/collections, breeding, distributions, and acknowledgment policy | Implemented to varying degrees | Check enabled features per deployment; validate and freeze release-specific holder snapshots |
 | Automated funding-to-publication cycle | Planned integration work | Delivery, retries, archival, and notifications |
 | Exact GPU execution and unified TEE integration | Planned | Respective guarantee boundaries, compatibility, and cost experiments |
 | General LLM MEP registry and conformance primitives | Implemented in the separately inspected `aigg-mep` source | Catalog compatibility, versioned brain binding and task-evidence integration |
@@ -479,7 +475,7 @@ This v0.2.1 paper updates the system organization and model-service lifecycle. G
 
 - [FlyBnB dataset paper](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/flybnb/paper.md): scientific methods, results, limitations, and data availability.
 - [Research proposal](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/flybnb/proposal.md): experimental scope and hypotheses to test.
-- [Contribution and acknowledgment policy](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/flybnb/CREDIT.md): role-based contribution records and attribution rules.
+- [Holder acknowledgment policy](flybnb/CREDIT.md): release-specific NFT ownership snapshots, optional names, and authorship boundaries.
 - [Deployment and protocol design](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/DESIGN.md): BNB integration, parameters, and technical boundaries.
 - [Gateway design](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/GATEWAY.md): APIs, task lifecycle, and integration roadmap.
 - [Economic-model discussion](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/TOKENOMICS.md): parameters, cost measurements, and pricing units awaiting reconciliation.
