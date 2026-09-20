@@ -29,6 +29,8 @@ check("a perturbed battery is the same batch with a silence set on every run", p
   const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
   const M = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-male-v1.json", import.meta.url)));
   const f = JSON.parse(fs.readFileSync(new URL("../flybnb/male/malecns-v1.0-min2.v3.json", import.meta.url)));
+  const f5 = JSON.parse(fs.readFileSync(new URL("../flybnb/male/malecns-v1.0-min5.v3.json", import.meta.url), "utf8"));
+  check("both male brains are profiled under the same kind and differ only as substrate and published wiring", f5.execKind === f.execKind && f5.wUnitQ16 === f.wUnitQ16 && f5.neurons === f.neurons && f5.synapses < f.synapses && f5.mepId !== f.mepId && f5.modelId !== f.modelId);
   check(`the male profile's exec kind is what this aigg-porw computes for unit ${f.wUnitQ16}, and it is not the default kind`,
     f.execKind.toLowerCase() === hex(L.lifExecKind(f.wUnitQ16)).toLowerCase() && f.execKind.toLowerCase() !== hex(L.lifExecKind()).toLowerCase());
   check("and it is the brain the male battery's population names, at the battery's unit",
