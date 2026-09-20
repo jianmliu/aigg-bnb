@@ -1,7 +1,7 @@
 # AIGG Governance: Founder Bootstrap, Staked Voting, and NFT Returns
 
 **Date:** 2026-09-20
-**Revision:** v0.2 — Founder NFT bootstrap and treasury auctions
+**Revision:** v0.3 — Service-earned bootstrap followed by ongoing vote incentives
 
 **Status:** Proposed design; no token issuance, governance deployment, or contract changes are authorized by this document.
 **Scope:** AIGG allocation governance and its interfaces with NFT collections, task payments, and revenue distribution.
@@ -14,6 +14,17 @@ AIGG begins with a one-time bootstrap: the first AIGG issuance purchases all NFT
 After bootstrap, AIGG introduces a supplementary funding and incentive layer for aigg applications. Participants stake AIGG to vote on where a bounded issuance budget goes. Allocations purchase project NFTs. The receiving project uses the proceeds to fund tasks; providers choose whether to accept the offered payment asset and price. Stakers who vote for a project receive the associated incentives and returns under disclosed rules.
 
 This adapts the emission-direction and vote-incentive pattern associated with Proof of Liquidity to **NFT subscription**. It does not copy Berachain's validator or BGT architecture. NFTs carry the acquired project rights; the underlying task protocol determines whether computation meets its execution specification.
+
+The lifecycle has two distinct economic phases using the **same AIGG token**:
+
+| Phase | Purpose | Distribution and allocation mechanism |
+|---|---|---|
+| Initial FlyBnB service mining | Establish the first circulating holder base through useful work | The first issuance subscribes the Founder set; hosts earn the funded AIGG by providing verified services |
+| Ongoing stake-directed emissions | Let participants choose where subsequent issuance is deployed | AIGG holders stake and vote; admitted projects attract support with disclosed vote incentives and project returns; allocated issuance purchases their NFTs |
+
+The first phase solves initial token distribution; the second provides the continuing allocation mechanism. Service mining does not permanently replace vote incentives, and later vote incentives do not require repeating the Founder launch. Projects funded in the second phase can still pay hosts for verified work with the AIGG they receive. Treasury income and Founder auctions may continue across both phases.
+
+Project admission remains a separate control: ongoing allocation governance can begin while FlyBnB is the sole admitted project, then expand to additional approved projects. Enabling vote incentives does not itself grant permissionless registration. Voting eligibility depends on qualifying AIGG stake, not a permanent requirement that each voter personally mined their tokens in the first phase.
 
 The following requirements are established by the product discussion:
 
@@ -204,7 +215,7 @@ Claims use cumulative accounting so rounding does not depend on payment frequenc
 
 ### 7.3 Voting Incentives
 
-Open project competition is deferred. Later, projects may escrow approved tokens to attract votes. Offers must be funded, immutable for the relevant epoch, and explicit about whether payment depends only on votes or also on successful acquisition or delivery. The proposed launch-compatible default conditions any incentive on a finalized, successfully funded offer, with a disclosed partial-acquisition scaling rule.
+Vote incentives are the intended ongoing allocation mechanism after the service-earned bootstrap. Open project competition is deferred until admission expands; these are separate milestones. Participating admitted projects may escrow approved tokens to attract votes once the incentive module is enabled. Offers must be funded, immutable for the relevant epoch, and explicit about whether payment depends only on votes or also on successful acquisition or delivery. The proposed launch-compatible default conditions any incentive on a finalized, successfully funded offer, with a disclosed partial-acquisition scaling rule.
 
 A project issuing its own reward token can provide incentives without creating external economic value. Such a reward may pay even when the investment eventually fails. It must therefore remain separate from NFT operating returns and cannot be presented as proof of successful project selection.
 
