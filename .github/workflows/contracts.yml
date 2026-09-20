@@ -62,6 +62,10 @@ jobs:
       # the read quota is what runs out first, and what nobody can see: the arithmetic of it is checked
       - run: node test/greenfield_quota.mjs
 
+      # the brains' content addresses are copied by hand into a dozen files; they were rebuilt from the public
+      # FlyWire release on 2026-09-20 and must stay identical everywhere they are pinned
+      - run: node test/brain_addresses.mjs
+
       # DESIGN §4b says multi-currency settlement is not built: it must stay true of the code, or say otherwise
       - run: node test/settlement_assets.mjs
 

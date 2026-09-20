@@ -1,0 +1,21 @@
+13:54:44 founder #0's delta, from Greenfield: https://gnfd-testnet-sp2.bnbchain.org/view/aigg-brains/0xe7b3909dc043eab536a5bdba6c4b1f0b4388ee810b5e58576aa1edc12736d90a.delta
+13:54:45 the mesh serves: FlyWire female (FAFB v783) (0 bps), FlyWire female · the founders' base (≥ 2 synapses) (0 bps), fly #1 (1000 bps)
+13:54:45 loading the fly in the tab: 228-byte delta, then its base from Greenfield…
+13:54:56 loaded in 10.5s: 139255 neurons, 77.1 MB applied, model_id 0xbd6fbedc8734… MATCHES the MEP
+13:54:56 wallet connected: 0x3b3156a32db1944f14bc152c42960d3b51dcdd19
+13:55:01 session key delegated (wallet prompts so far: Delegation)
+13:55:10 node started; holding: 0x8ceaa292cfc35755909440332456a917a10c9384824045309236f4a495923d06
+  ok   the tab holds founder #0 under the collection's terms id
+--- the tab's own log ---
+[13:54:45] deployment loaded: 3 MEP(s)
+[13:54:46] fly #1: a 228-byte delta over FlyWire female · the founders' base (≥ 2 synapses) — fetching the base…
+[13:54:50] fly #1: 77.1 MB base downloaded, checking its model_id…
+[13:54:56] fly #1: model_id 0xbd6fbedc8734… matches the MEP
+[13:54:56] wallet connected
+[13:54:56] delegation signed by the wallet (the only wallet signature the node needs)
+[13:55:01] relayer submitted delegateBySig: ok
+[13:55:01] hosting 1 brain(s) will hold about 159 MB of wasm memory resident
+[13:55:03] fly #1: resident on the node, serving audits and tasks
+[13:55:03] released the 74 MB base the individuals were applied over
+[13:55:03] node running for 1 MEP(s)
+[13:55:06] fly #1 epoch 660728: claim announced (slot 39 ms)
