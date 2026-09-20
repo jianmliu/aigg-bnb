@@ -545,9 +545,11 @@ themselves. The gate experiment is starker still — six tasks, sixteen seconds 
 chain. It was an integration test, and should be described as one.
 
 **The atlas is a different thing.** Four million runs a sex is 20 days of a desktop at redundancy 2, and nobody
-re-runs that to check a row. What makes it a network's work is not the weight of a run — a fly brain fits in a browser
-tab, and always will — but their number. That is the shape this mesh fits: a model small enough to keep resident,
-asked millions of times.
+re-runs that to check a row. What makes it a network's work is not the weight of a run — a fly brain is a sparse graph
+and an ordinary computer's DRAM is what it wants — but their number. That is the shape this mesh fits *today*: a model
+small enough to keep resident, asked millions of times. It is not a ceiling. A mammalian connectome is the same
+protocol with a GPU under it, because what makes a result checkable is the arithmetic and not the size
+(docs/DESIGN.md §5c).
 
 **And the rows, once computed, are free.** They are published, they are a few kilobytes each, and anyone can download
 the lot; a deterministic result with a published recipe cannot be sold twice. So the atlas is not the revenue — it is
