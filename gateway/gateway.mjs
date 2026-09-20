@@ -90,14 +90,17 @@ async function models() { if (Date.now() - served.at > 5000) served = { at: Date
 const namesOf = (m) => [...Object.entries(cfg.aliases).filter(([, id]) => id === m.mepId).map(([k]) => k), ...(m.token != null ? [`fly-${m.token}`] : []), `mep:${m.mepId}`];
 async function resolveModel(name) { const want = String(name || "").toLowerCase(); const id = cfg.aliases[name] || (want.startsWith("mep:") ? want.slice(4) : null);
   return (await models()).find((m) => (id ? m.mepId === id : namesOf(m).some((n) => n.toLowerCase() === want))) || null; }
-/** the wei per step this call is priced at, and why: the brain's cost and the stimulus set's, both measured (pricing.json) */
+/** How many TOKENS a call is: one token is GATEWAY_WEI_PER_STEP of work, and a step of a brain under a stimulus set
+ *  costs `model_factor x set_factor` of them (pricing.json, measured). Everything is counted in this one unit -- the
+ *  fee below is `tokens x wei_per_token`, and the gas is divided by the same number -- because a caller's bill is
+ *  `price_per_token x tokens` and any factor that does not reach the token count is a factor somebody eats. */
 function priceOf(m, setName) {
   const P = cfg.pricing; // by any name the model answers to (`mep:0x…` counts as the bare id), then the id itself
   const keys = [...namesOf(m).map((n) => n.replace(/^mep:/, "")), m.name, m.mepId].filter(Boolean);
   const byModel = keys.map((k) => P.models?.[k]).find((v) => v !== undefined) ?? 1, bySet = (setName != null ? P.sets?.[setName] : null) ?? P.default_set ?? 1;
-  const wei = BigInt(Math.round(Number(cfg.weiPerStep) * byModel * bySet));
-  return { wei, model_factor: byModel, set_factor: bySet, set: setName ?? null };
+  return { model_factor: byModel, set_factor: bySet, set: setName ?? null, wei_per_token: String(cfg.weiPerStep) };
 }
+const tokensFor = (steps, redundancy, price) => Math.max(1, Math.round(steps * redundancy * price.model_factor * price.set_factor));
 async function capacity(mepId) { const epoch = await ch.claims.read.currentEpoch(); const votes = (await ch.instances.read.eligibleVotes([mepId, epoch])).map((a) => a.toLowerCase());
   return { epoch: Number(epoch), votes: votes.length, providers: new Set(votes).size, beacon: BigInt(await ch.claims.read.beacon([epoch])) !== 0n }; }
 
@@ -137,8 +140,8 @@ async function plan(body) {
   // int-lif commits a state root per segment: ten segments a run (what the gate task uses), inside the market's bounds (<= 512 of each)
   const commitStride = lif ? Math.min(512, Math.max(1, Math.ceil(steps / 10), Math.ceil(steps / 512))) : 1;
   let init = null; if (lif) try { init = state0Root(m.neurons, seed, stimulate, silence); } catch (err) { if (err instanceof RangeError) throw new Refusal(400, "invalid_request_error", err.message); throw err; }
-  const price = priceOf(m, x.stimulate?.set ?? null);
-  const fee = BigInt(steps) * BigInt(redundancy) * price.wei; const block = await blockNumber();
+  const price = priceOf(m, x.stimulate?.set ?? null); price.output_tokens = tokensFor(steps, redundancy, price);
+  const fee = BigInt(price.output_tokens) * cfg.weiPerStep; const block = await blockNumber();
   // the float ran dry: say so before the chain does, and in a way the operator's alerting can tell from a cold model
   const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + await gasHeadroom(redundancy)) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
   const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: block + BigInt(TASK_TIMEOUT), redundancy };
@@ -169,7 +172,7 @@ const wire = (t) => ({ ...t, fee: String(t.fee), deadline: String(t.deadline) })
 function create(p, body) {
   const nonce = "0x" + crypto.randomBytes(32).toString("hex"); const id = taskIdOf(p.task, nonce);
   const c = { id, created_at: Math.floor(Date.now() / 1000), status: "queued", model: body.model, mepId: p.m.mepId, exec: p.m.exec, task: wire(p.task), nonce,
-    stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, price: p.price ? { ...p.price, wei: String(p.price.wei) } : null, executors: [], results: {}, events: [], error: null, receipt: null };
+    stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, price: p.price || null, executors: [], results: {}, events: [], error: null, receipt: null };
   calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order
   save(); return c; // the INTENT is on disk before a wei moves: the id is the task's, so a restart can tell whether it was posted
 }
@@ -250,12 +253,17 @@ function view(c) {
   return { id: c.id, object: "response", created_at: c.created_at, status: c.status, model: c.model, system_fingerprint: `${c.exec}:${c.mepId.slice(0, 18)}`,
     output: done ? [{ type: "message", id: "msg_" + c.id.slice(2, 26), status: "completed", role: "assistant", content: [{ type: "output_text", text, annotations: [] }] }] : [],
     // Two kinds of token, worth the same (wei_per_step each), so one price per token covers both:
-    //   output: one step run by one provider -- the work, what the fee is proportional to (steps x redundancy)
+    //   output: the work -- steps x redundancy x the brain's factor x the stimulus set's (priceOf)
     //   input:  the call's gas, spent posting and settling it -- a fixed cost per call, whatever its length
+    // Both are in the SAME unit (GATEWAY_WEI_PER_STEP a token), so one price per token bills a call at exactly what it
+    // cost: fee = output_tokens x wei_per_token, gas = input_tokens x wei_per_token, and nothing is left behind.
     // Nothing is billed for a call that did not complete (ai.gg drops all-zero usage).
     usage: { input_tokens: done ? gasTokensOf(c) : 0, output_tokens: done ? tokensOf(c) : 0, total_tokens: done ? gasTokensOf(c) + tokensOf(c) : 0, input_tokens_details: { cached_tokens: 0 } }, error: c.error, receipt: c.receipt, executors: c.executors };
 }
-const tokensOf = (c) => c.task.steps * c.task.redundancy; const gasTokensOf = (c) => c.receipt?.gas?.tokens ?? 0;
+// the work, in tokens: steps x redundancy x the brain's factor x the stimulus set's. A call whose fee carries a factor
+// its token count does not is a call the gateway pays for out of its own pocket.
+const tokensOf = (c) => c.price?.output_tokens ?? c.task.steps * c.task.redundancy;
+const gasTokensOf = (c) => c.receipt?.gas?.tokens ?? 0;
 const done = (c) => new Promise((res) => { if (TERMINAL.has(c.status)) return res(); const b = bus.get(c.id); if (!b) return res(); const on = (ev) => { if (ev.type === "response.completed" || ev.type === "response.failed") { b.off("event", on); res(); } }; b.on("event", on); });
 
 // ---- HTTP ----
@@ -299,9 +307,11 @@ const server = http.createServer(async (req, res) => {
       const data = await Promise.all((await models()).map(async (m) => { const k = await capacity(m.mepId); const [id, ...aka] = namesOf(m);
         return { id, object: "model", owned_by: m.collection || "mesh", aliases: aka, mep_id: m.mepId, name: m.name, exec: m.exec, neurons: m.neurons, synapses: m.synapses, royalty_bps: m.royaltyBps, collection: m.collection, token: m.token,
           providers: k.providers, votes: k.votes, available: k.providers >= cfg.minRedundancy && k.beacon, min_redundancy: cfg.minRedundancy,
-          // what a step of THIS brain costs, and what a named stimulus set does to it: a run that ignites the brain is
-          // nine times the work of one that barely wakes it, and the price follows the work (gateway/pricing.json)
-          wei_per_step: String(priceOf(m, null).wei), set_factors: cfg.pricing.sets || {} }; }));
+          // ONE unit, one price: a token is `wei_per_token` of work, and a step of this brain costs `tokens_per_step`
+          // of them -- times a named stimulus set's factor, because a run that ignites the brain is nine times the work
+          // of one that barely wakes it (gateway/pricing.json, measured). The differences are in the COUNT, so that a
+          // single price per token bills each of them for what it actually cost.
+          wei_per_token: String(cfg.weiPerStep), tokens_per_step: priceOf(m, null).model_factor, set_factors: cfg.pricing.sets || {} }; }));
       return json(res, 200, { object: "list", data });
     }
     if (req.method === "POST" && (p === "/v1/responses" || p === "/responses")) return await respond(req, res, await readBody(req)); // ai.gg relays to /v1/responses; its admin "test connection" posts to /responses

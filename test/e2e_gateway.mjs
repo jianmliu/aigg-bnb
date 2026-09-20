@@ -53,7 +53,7 @@ try {
   // what a run costs a host is not one number: measured on the real brain the battery's stimuli span 9.4x and the
   // heavier export costs 1.54x. The gateway prices by both; here the warm brain is dear and `ears` dearer still.
   fs.writeFileSync(path.join(tmp, "pricing.json"), JSON.stringify({ models: { warm: 2, cold: 1 }, sets: { ears: 1.5, quiet: 1 }, default_set: 1 }));
-  const WEI = 10n ** 15n; const FEE = BigInt(STEPS) * 2n * WEI * 3n; // steps x redundancy x (wei x model 2 x set 1.5) // large next to gas, so "refunded" and "paid" are told apart by balances
+  const WEI = 10n ** 15n; const TOKENS = BigInt(STEPS) * 2n * 3n, FEE = TOKENS * WEI; // steps x redundancy x model 2 x set 1.5, one wei_per_token each // large next to gas, so "refunded" and "paid" are told apart by balances
   const genv = { GATEWAY_BEARER: "test-bearer", GATEWAY_MODELS: `warm=${warm.mepId},cold=${cold.mepId}`, GATEWAY_SETS: path.join(tmp, "sets.json"), GATEWAY_STATE: path.join(tmp, "state.json"),
     GATEWAY_WEI_PER_STEP: String(WEI), GATEWAY_PRICING: path.join(tmp, "pricing.json"), GATEWAY_KEEPALIVE_MS: "50", GATEWAY_RESULT_TIMEOUT_MS: "4000", GATEWAY_POLL_MS: "150" };
   { let refused = ""; try { await H.startGateway(R, H.KEYS[4], { ...genv, GATEWAY_BEARER: "" }); } catch (e) { refused = String(e.message); } check("without a bearer it refuses to start: anybody could spend the wallet", /GATEWAY_BEARER is not set/.test(refused)); }
@@ -66,7 +66,8 @@ try {
   check("no bearer, no service", (await call("/v1/models", null, {})).status === 401 && (await call("/v1/responses", { model: "warm" }, {})).status === 401);
   { const m = (await (await call("/v1/models")).json()).data; const w = m.find((x) => x.id === "warm"), c = m.find((x) => x.id === "cold");
     check(`/v1/models: the warm brain has 2 providers and is available; the cold one has none and is not`, w.providers === 2 && w.votes === 20 && w.available === true && c.providers === 0 && c.available === false && w.exec === "int-lif" && w.aliases.includes("mep:" + warm.mepId));
-    check(`and each brain carries its own price per step (warm ${w.wei_per_step} = 2x the cold one's ${c.wei_per_step}), with what a named stimulus set does to it`, BigInt(w.wei_per_step) === 2n * WEI && BigInt(c.wei_per_step) === WEI && w.set_factors.ears === 1.5); }
+    check(`one unit for everything (${w.wei_per_token} wei a token), and the brains differ in the COUNT: warm ${w.tokens_per_step} tokens a step against the cold one's ${c.tokens_per_step}, times a set's factor`,
+      BigInt(w.wei_per_token) === WEI && BigInt(c.wei_per_token) === WEI && w.tokens_per_step === 2 && c.tokens_per_step === 1 && w.set_factors.ears === 1.5); }
 
   // ---- a call ----
   const expected = await warm.probe.execute(warm.mep.mepId, { steps: STEPS, commitStride: 2, stimulusSeed: 7, stimulusIds: Uint32Array.from(sets.ears), silenceIds: Uint32Array.from(sets.quiet) });
@@ -78,14 +79,17 @@ try {
   if (r1.status !== 200) console.log("   ", r1.status, JSON.stringify(j1).slice(0, 600), "\n", GWY.log().split("\n").slice(-8).join("\n"));
   check("a call: 200, completed, settled on-chain by both providers", r1.status === 200 && j1.status === "completed" && rc.executors?.length === 2 && rc.executors.includes(A.addr) && rc.executors.includes(B.addr) && rc.finality === "settled");
   check("they ran the experiment it named: the state_0 root the gateway computed without the brain is the one they built", rc.init_state_root === H.hex(expected.result.initStateRoot) && rc.stimulated === 250 && rc.silence_ids.length === 6);
-  check(`the fee follows the work, not the step count: the dear brain (x2) under the dear set (x1.5) costs ${FEE} wei`, BigInt(rc.fee_wei) === FEE && rc.price.model_factor === 2 && rc.price.set_factor === 1.5 && rc.price.set === "ears");
+  check(`the fee follows the work, not the step count: the dear brain (x2) under the dear set (x1.5) is ${TOKENS} tokens = ${FEE} wei`, BigInt(rc.fee_wei) === FEE && rc.price.model_factor === 2 && rc.price.set_factor === 1.5 && rc.price.set === "ears" && rc.price.output_tokens === Number(TOKENS));
+  // the bill a platform computes is price_per_token x tokens, so every factor in the fee has to be in the token count
+  check(`and the usage says so: ${j1.usage.output_tokens} output tokens, the fee divided by the one unit -- nothing the gateway eats`, BigInt(j1.usage.output_tokens) === TOKENS && BigInt(j1.usage.output_tokens) * WEI === BigInt(rc.fee_wei));
   check("the receipt's digest and root are the ones anybody recomputes", rc.exec_digest === H.hex(expected.result.execDigest) && rc.exec_root === H.hex(expected.result.execRoot) && (await D.market.read.settledDigest([j1.id])) === rc.exec_digest);
-  check("the response id is the task id, an output token is one step by one provider (20 steps x 2), and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS * 2 && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
+  check("the response id is the task id and ten segments are committed", j1.id === rc.task && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
   const b1 = { g: await bal(GW), a: await bal(A.addr), b: await bal(B.addr) };
   check(`the gateway paid the fee (${FEE} wei) and the providers split it`, b1.a - b0.a === FEE / 2n && b1.b - b0.b === FEE / 2n && b0.g - b1.g > FEE && b0.g - b1.g < FEE + parseEther("0.01") && BigInt(rc.fee_wei) === FEE);
   // ---- the call's gas, as spent, billed as its input tokens at the same price per token: read both receipts back, redo the sum ----
   { const r1 = await D.pub.getTransactionReceipt({ hash: rc.post_tx }), r2 = await D.pub.getTransactionReceipt({ hash: rc.settle_tx }); const wei = r1.gasUsed * r1.effectiveGasPrice + r2.gasUsed * r2.effectiveGasPrice;
-    check(`the call's gas (${Number(r1.gasUsed) + Number(r2.gasUsed)} gas, ${wei} wei) is its input tokens: wei / wei-per-step, rounded up`, rc.gas.wei === String(wei) && rc.gas.post_task === Number(r1.gasUsed) && rc.gas.settle === Number(r2.gasUsed)
+    check(`the call's gas (${Number(r1.gasUsed) + Number(r2.gasUsed)} gas, ${wei} wei) is its input tokens, in the SAME unit as the output ones -- not the brain's rate, or the gas would be billed at the brain's factor`,
+      rc.gas.wei === String(wei) && rc.gas.post_task === Number(r1.gasUsed) && rc.gas.settle === Number(r2.gasUsed)
       && j1.usage.input_tokens === Number((wei + WEI - 1n) / WEI) && j1.usage.input_tokens >= 1 && j1.usage.total_tokens === j1.usage.input_tokens + j1.usage.output_tokens); }
 
   // ---- the readout: counts from the providers, served because they hash to the digest the task settled on ----
@@ -114,7 +118,7 @@ try {
     check(`settled, and challengeable for ${dep.challengeWindow} blocks`, v.receipt.finality === "settled" && v.receipt.final_after_block === v.receipt.settled_at + dep.challengeWindow);
     await anvil.mine(dep.challengeWindow + 1); check("after the window: final", (await (await call("/v1/responses/" + q.id)).json()).receipt.finality === "final"); }
   { const r = await call("/v1/chat/completions", { model: "warm", seed: 10, max_tokens: STEPS, messages: [{ role: "user", content: "{}" }] }); const j = await r.json();
-    check("the chat-completions alias answers in its own shape, with the same receipt", r.status === 200 && j.object === "chat.completion" && j.usage.completion_tokens === STEPS * 2 && j.receipt.executors.length === 2); }
+    check("the chat-completions alias answers in its own shape, with the same receipt", r.status === 200 && j.object === "chat.completion" && j.usage.completion_tokens === STEPS * 2 * 2 && j.receipt.executors.length === 2); }
 
   // ---- behind ai.gg (aigg-src, a sub2api fork): the wire as its OpenAI relay makes it, read from its source ----
   { // what a caller of ai.gg's /v1/chat/completions turns into: always stream:true, store:false, an `include`, injected instructions, the
@@ -127,7 +131,7 @@ try {
     check("the output opens right after `created`: ai.gg holds preamble events and comments until then, and its caller's proxy would hang up", types[0] === "response.created" && types[1] === "response.output_item.added");
     const out = delta.length === 1 ? JSON.parse(delta[0].data.delta) : null;
     check("the answer is sent as a text delta: for a chat-completions caller ai.gg builds the text from deltas and nothing else", !!out && out.readout.length === 2 && /^verified/.test(out.readout_status) && types.indexOf("response.output_text.delta") < types.indexOf("response.completed"));
-    check("the terminal event carries the usage where ai.gg reads it, on a line it does not skip (>= 72 bytes)", last.type === "response.completed" && last.data.response.usage.output_tokens === STEPS * 2 && last.data.response.usage.input_tokens === last.data.response.receipt.gas.tokens && last.data.response.usage.input_tokens >= 1 && last.line.length >= 72);
+    check("the terminal event carries the usage where ai.gg reads it, on a line it does not skip (>= 72 bytes)", last.type === "response.completed" && last.data.response.usage.output_tokens === STEPS * 2 * 2 * 1.5 && /* 2 tokens a step for this brain, and the call names `ears` (x1.5) */ last.data.response.usage.input_tokens === last.data.response.receipt.gas.tokens && last.data.response.usage.input_tokens >= 1 && last.line.length >= 72);
     check("the seed and the steps came from the experiment, not from the fields ai.gg drops or floors", last.data.response.receipt.seed === 31 && last.data.response.receipt.steps === STEPS && last.data.response.receipt.executors.length === 2);
     const probe = await call("/responses", { model: "warm", input: [{ role: "user", content: [{ type: "input_text", text: "hi" }] }], stream: true, instructions: "x" }); // aigg-src's admin "test connection", verbatim
     check("ai.gg's admin \"test connection\" posts prose to /responses: a plain 400 -- never a 401, which would disable the account, and nothing spent", probe.status === 400 && (await probe.json()).error.type === "invalid_request_error"); }
