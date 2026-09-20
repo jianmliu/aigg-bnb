@@ -215,7 +215,7 @@ Those factors go in the **count**, never in the rate, and the reason is arithmet
 of its own pocket — and a factor applied to *both* is charged twice. One rate for every model, and the gas divided by
 that same rate, is the only arrangement in which a caller's bill is exactly what the call cost. The
 gas is a second, fixed cost — two transactions, ~0.33–0.48 M gas whatever the length — and for a short call it is the
-larger one (100 steps at redundancy 2 and 0.1 gwei/step is 0.00002 BNB of fee against ~0.00004 of gas). So it is billed
+larger one (100 steps at redundancy 2 and 100 gwei/step is 0.00002 BNB of fee against ~0.00004 of gas). So it is billed
 too, as `input_tokens` worth the same `p` each: one price per token, input and output, and a call pays for what it
 cost. A call that fails is not billed, and its gas is the gateway's. The wallet is refused a call it could not finish:
 the fee plus the call's gas at the current price, twice over. In `aigg-src` it is a row per model in
@@ -369,7 +369,7 @@ Decided, 2026-09-19:
 Open:
 
 - **`p(model)`, the price of a step.** The testnet's working number is what `post_tasks.mjs` already pays: 0.001 tBNB
-  for 5,000 steps at redundancy 2, i.e. 0.1 gwei per step per executor. The mainnet number wants a measurement first:
+  for 5,000 steps at redundancy 2, i.e. 100 gwei (10⁻⁷ BNB) per step per executor. The mainnet number wants a measurement first:
   what a host's tab costs to keep a brain resident, against how often sortition draws it.
 
 To verify:

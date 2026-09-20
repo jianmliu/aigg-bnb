@@ -195,7 +195,8 @@ services:
       # two providers who do not know each other, or no call (503 model_cold)
       - key: GATEWAY_MIN_REDUNDANCY
         value: "2"
-      # 0.1 gwei per step per provider: 100 steps at redundancy 2 is 0.00002 tBNB
+      # 100 gwei (10^-7 BNB) per step per provider: 100 steps at redundancy 2 is 0.00002 tBNB.
+      # NOT the 0.1 gwei that turns up elsewhere -- that is the measured GAS price, a different quantity.
       - key: GATEWAY_WEI_PER_STEP
         value: "100000000000"
       # a host's page loads a brain with room for 100 steps unless its owner asks for more; a longer task would find no
