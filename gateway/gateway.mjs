@@ -24,6 +24,8 @@
 //                          market: the gateway does not send money to an address an HTTP endpoint told it
 //   GATEWAY_MODELS         "alias=0xmepId,alias=0xmepId": the names callers use. `mep:0x…` always works
 //   GATEWAY_SETS           a JSON file of named id sets, { "joLR": [ids…] }, for `stimulate` / `silence`
+//   GATEWAY_LOG_WINDOW     (5000) the eth_getLogs span asked for at once, and GATEWAY_SESSION_LOOKBACK (400000) how
+//                          far back a live session delegation is looked for: a public RPC refuses an unbounded scan
 //   GATEWAY_MIN_REDUNDANCY (2) GATEWAY_WEI_PER_STEP (100000000000) GATEWAY_DEFAULT_STEPS (100) GATEWAY_MAX_STEPS (20000)
 //   GATEWAY_PRICING        (gateway/pricing.json) what a run costs a host, measured: multipliers on the wei per step,
 //                          per brain and per named stimulus set. A step is not a step: on one core the thirteen battery
@@ -51,6 +53,8 @@ const cfg = { key: e.GATEWAY_KEY, bearer: e.GATEWAY_BEARER || null, open: e.GATE
   keep: num("GATEWAY_KEEP", 5000), countsWaitMs: num("GATEWAY_COUNTS_WAIT_MS", 15000), keepAliveMs: num("GATEWAY_KEEPALIVE_MS", 20000), resultTimeoutMs: num("GATEWAY_RESULT_TIMEOUT_MS", 600000), pollMs: num("GATEWAY_POLL_MS", 1000),
   aliases: Object.fromEntries((e.GATEWAY_MODELS || "").split(",").map((kv) => kv.split("=").map((s) => s.trim())).filter((kv) => kv.length === 2 && kv[0]).map(([k, v]) => [k, v.toLowerCase()])),
   sets: e.GATEWAY_SETS ? JSON.parse(fs.readFileSync(e.GATEWAY_SETS, "utf8")) : {},
+  // an eth_getLogs window a public RPC will actually answer, and how far back a live delegation is looked for
+  logWindow: BigInt(num("GATEWAY_LOG_WINDOW", 5000)), sessionLookback: BigInt(num("GATEWAY_SESSION_LOOKBACK", 400000)),
   pricing: JSON.parse(fs.readFileSync(e.GATEWAY_PRICING || path.join(here, "pricing.json"), "utf8")) };
 if (!cfg.key) throw new Error("GATEWAY_KEY: the wallet that pays the fees");
 if (!cfg.relayer) throw new Error("GATEWAY_RELAYER: the relayer's HTTP API");
@@ -163,8 +167,27 @@ const send = (fn) => { const p = sending.then(fn); sending = p.catch(() => {}); 
 const TASK_TUPLE = [{ type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" }, { name: "initStateRoot", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] }, { type: "bytes32" }];
 const taskIdOf = (t, nonce) => keccak256(encodeAbiParameters(TASK_TUPLE, [t, nonce]));
 const SESSION = parseAbiItem("event SessionKeySet(address indexed instance, address indexed session, uint64 expiry)");
-async function sessionOf(wallet) { const logs = await ch.pub.getLogs({ address: dep.addresses.instances, event: SESSION, args: { instance: wallet }, fromBlock: 0n }); const block = await blockNumber();
-  const live = logs.filter((l) => BigInt(l.args.expiry) > block); if (!live.length) throw new Error("no live session key"); return live.at(-1).args.session.toLowerCase(); }
+/** The executor's session key, which is the address its announcement has to be sent to.
+ *
+ *  The registry maps session -> instance, so the reverse is a log scan -- and on a live chain a public RPC simply
+ *  refuses an unbounded one. That is how the mesh's first real call died: `fromBlock: 0` came back as an RPC error
+ *  for both executors, nothing was announced, and the market refunded the fee at the timeout. An anvil node answers
+ *  it happily, which is why every test passed. So the scan is bounded and runs NEWEST FIRST, which is also the
+ *  right order: the newest live delegation is the one we want, so the first hit ends the search. */
+const sessions = new Map(); // instance -> { session, expiry } -- a delegation stays good until it expires
+async function sessionOf(wallet) {
+  const inst = wallet.toLowerCase(); const block = await blockNumber();
+  const had = sessions.get(inst); if (had && had.expiry > block) return had.session;
+  const floor = block > cfg.sessionLookback ? block - cfg.sessionLookback : 0n;
+  for (let to = block; ; to -= cfg.logWindow) {
+    const from = to - cfg.logWindow + 1n > floor ? to - cfg.logWindow + 1n : floor;
+    const logs = await ch.pub.getLogs({ address: dep.addresses.instances, event: SESSION, args: { instance: wallet }, fromBlock: from, toBlock: to });
+    const live = logs.filter((l) => BigInt(l.args.expiry) > block).at(-1);
+    if (live) { const s = { session: live.args.session.toLowerCase(), expiry: BigInt(live.args.expiry) }; sessions.set(inst, s); return s.session; }
+    if (from <= floor) break;
+  }
+  throw new Error(`no live session key in the last ${cfg.sessionLookback} blocks`);
+}
 /** the executors the chain drew, or none: `executors` reverts for a task that does not exist, and that is an answer here */
 const executorsOf = async (id) => { try { return (await ch.market.read.executors([id])).map((x) => x.toLowerCase()); } catch { return []; } };
 const wire = (t) => ({ ...t, fee: String(t.fee), deadline: String(t.deadline) }); const unwire = (t) => ({ ...t, fee: BigInt(t.fee), deadline: BigInt(t.deadline) });
