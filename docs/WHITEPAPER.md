@@ -269,7 +269,7 @@ The proposed bootstrap allocates an initial AIGG tranche to acquire FlyBnB Found
 
 Later governance may require staking AIGG to vote on issuance destinations among admitted projects, including NFT acquisition. Voting incentives and project returns may accrue to participating stakers under explicit distribution rules. Initially only FlyBnB is admitted for bootstrap funding; additional destinations require governance admission. Token prices, vote incentives and issuance received must be evaluated separately from delivered work and realized external revenue.
 
-The intended marketplace can accept BNB, AIGG and potentially stablecoins such as USDC for subscriptions or purchases and host payments. Each offer must specify its asset and a host must opt into the payment terms. Existing native-BNB contracts do not already provide arbitrary ERC-20 settlement: allowances, accounting, refunds, asset conversion and collateral exposure require implementation and acceptance tests. Wallet, Permit2 and x402 components are reusable integration candidates, not evidence that this multi-asset flow is live.
+The intended marketplace can accept BNB, AIGG and potentially stablecoins such as USDC for subscriptions or purchases and host payments. Each offer must specify its asset and a host must opt into the payment terms. The optional local multi-asset market and battery contracts now implement allowlisted ERC-20 settlement, host opt-in, separate accounting and refunds; an optional exact-output BNB conversion funds token battery jobs. These contracts need reviewed deployment and configuration; existing native-only deployments do not acquire ERC-20 support automatically. See [Multi-asset battery](MULTI_ASSET_BATTERY.md). Wallet, Permit2 and x402 components are reusable integration candidates, not evidence that this multi-asset flow is live.
 
 ## 9. The Model-Service Lifecycle
 
@@ -304,7 +304,7 @@ Several constituent modules exist today. A durable, end-to-end research orchestr
 
 Immutable contract parameters can limit arbitrary administrative changes, but can also freeze mistaken assumptions. The roadmap needs migration, exit, and version-identification mechanisms. Powers over collection recognition lists, treasury destinations, renderers, and service configuration should be described contract by contract. A claim of complete decentralization cannot replace an inventory of authority.
 
-AIGG issuance, staked voting and multi-asset settlement are proposals, not deployed capabilities established by this paper. BNB/tBNB currently serve native payment, bonding and transaction functions on their respective networks. Governance must disclose admissions, treasury custody, issuance limits, voting incentives and conflicts. A project can attract votes through token-price manipulation without delivering valuable service; restricted admission at launch reduces scope but does not eliminate this risk. Credit liabilities, slashable collateral and treasury assets require separate accounting.
+AIGG issuance and staked voting remain proposals. Multi-asset task and battery settlement has an optional local implementation; this paper does not establish a live production deployment. BNB/tBNB currently serve native payment, bonding and transaction functions on their respective networks. Governance must disclose admissions, treasury custody, issuance limits, voting incentives and conflicts. A project can attract votes through token-price manipulation without delivering valuable service; restricted admission at launch reduces scope but does not eliminate this risk. Credit liabilities, slashable collateral and treasury assets require separate accounting.
 
 ## 11. Current Capability Matrix
 
@@ -323,7 +323,8 @@ AIGG issuance, staked voting and multi-asset settlement are proposals, not deplo
 | General LLM MEP registry and conformance primitives | Implemented in the separately inspected `aigg-mep` source | Catalog compatibility, versioned brain binding and task-evidence integration |
 | Agent wallets, Permit2, x402 and GCC billing | Components exist in `aigg-src`; configuration and integration vary | Authorized spend, idempotent redemption, recovery and end-to-end reconciliation |
 | Two-subnet organization, LLM credit presales and shared revenue terms | Proposed integration | Explicit admission, capacity-backed obligations and workload-specific acceptance |
-| AIGG bootstrap, staking and multi-asset settlement | Proposed | Implement and review token, custody, accounting and opt-in payment flows |
+| AIGG bootstrap and staking | Proposed | Implement and review issuance, custody and governance |
+| Multi-asset task and battery settlement | Optional local implementation | Review and deploy compatible contracts, enable assets and configure opt-in payment routes |
 | Mammalian model and research partnerships | Proposed near-term partner search; no partner announced here | Scoped research question, data permissions, reference results and a costed execution pilot |
 | Larger mammalian execution and scaled operations | Longer-term validation work | Model-specific runtime, verification, resource and scientific acceptance |
 

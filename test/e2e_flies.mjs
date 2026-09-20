@@ -50,6 +50,10 @@ try {
   await page.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
   await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.deployment !== null);
   await page.click("#btnConnect"); await page.waitForFunction(() => window.app.state.wallet !== null);
+  // Another extension may replace the global after connection. Breed approvals and host asset opt-in
+  // must continue using the provider selected by the wallet controller.
+  await page.evaluate(() => { window.ethereum = { request: async () => { throw new Error("wrong wallet provider"); } }; });
+
 
   check("on a mesh that names no task clients (a local one) the booking card is open", (await page.locator("#btnPostTask").count()) === 1 && (await page.locator("#bookingClosed").count()) === 0);
   // ---- the colony ----

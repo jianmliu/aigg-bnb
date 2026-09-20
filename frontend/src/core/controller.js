@@ -32,9 +32,11 @@ export const log = (m) => {
 };
 
 export const state = { deployment: null, unit: null /* wei per vote, read from this deployment */, meps: [], hosted: new Set(), active: null, wallet: null, chainId: null, chainOk: false,
+  walletConnecting: false, walletError: null, walletName: null,
   balance: 0n, bonded: 0n, weight: 0n, exitAt: 0n, inMep: [], session: null, delegation: null, resolved: null, epochInfo: null,
   prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null,
-  flies: null }; // the collection, as flies.js reads it: null until a deployment that names one is loaded
+  flies: null, // the collection, as flies.js reads it: null until a deployment that names one is loaded
+  flyTerms: null }; // its terms alone -- what a fly costs and how a fee is split. The docs page needs these and no individual
 
 // ---- the worker that actually runs the node ----
 let worker = null, nextReq = 1; const waiting = new Map();
@@ -57,7 +59,25 @@ async function onTaskResult(res) {
   const r = await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
   log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
 }
-export const eth = () => window.ethereum;
+// EIP-6963 avoids the last-installed extension winning window.ethereum. Keep the
+// chosen provider for all reads and signatures, even if another extension replaces the global.
+const walletProviders = new Map();
+let selectedWallet = null;
+window.addEventListener?.("eip6963:announceProvider", ({ detail }) => {
+  if (detail?.info?.uuid && typeof detail.provider?.request === "function") walletProviders.set(detail.info.uuid, detail);
+});
+const discoverWallets = () => window.dispatchEvent?.(new Event("eip6963:requestProvider"));
+discoverWallets();
+function preferredWallet() {
+  const announced = [...walletProviders.values()];
+  const meta = announced.find((w) => w.info.rdns === "io.metamask");
+  if (meta) return { provider: meta.provider, name: "MetaMask" };
+  const legacy = window.ethereum?.providers?.find((p) => p.isMetaMask && !p.isTrust && !p.isBraveWallet);
+  if (legacy) return { provider: legacy, name: "MetaMask" };
+  if (announced.length) return { provider: announced[0].provider, name: announced[0].info.name };
+  return { provider: window.ethereum, name: window.ethereum?.isMetaMask ? "MetaMask" : "wallet" };
+}
+export const eth = () => selectedWallet || window.ethereum;
 // Looking needs no wallet. A read goes through the wallet only when one is connected AND on this deployment's chain --
 // the node that just mined your transaction is the one that knows about it -- and otherwise to the deployment's own RPC,
 // which the relayer names: a visitor without a wallet can still see the colony, and a wallet left on another chain
@@ -98,11 +118,30 @@ export async function loadDeployment() {
   try { state.unit = decodeUint(await call(deployment.addresses.instances, "UNIT()")); onChange(); } catch (e) { log("could not read UNIT: " + (e.message || e)); }
 }
 export async function connect() {
-  if (!eth()) throw new Error("no wallet (window.ethereum)");
-  const accts = await eth().request({ method: "eth_requestAccounts" }); state.wallet = accts[0].toLowerCase();
-  const cid = Number(await eth().request({ method: "eth_chainId" })); state.chainId = cid; state.chainOk = cid === state.deployment.chainId;
-  if (!state.chainOk) { try { await eth().request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + state.deployment.chainId.toString(16) }] }); state.chainOk = Number(await eth().request({ method: "eth_chainId" })) === state.deployment.chainId; } catch (e) { log("chain switch refused: " + (e.message || e)); } }
-  onChange(); log("wallet connected"); await refreshBond();
+  if (state.walletConnecting) return;
+  state.walletConnecting = true; state.walletError = null;
+  try {
+    discoverWallets();
+    const choice = selectedWallet ? { provider: selectedWallet, name: state.walletName } : preferredWallet();
+    if (!choice.provider) throw new Error("No wallet detected. Enable MetaMask for this site, or open this page in the MetaMask mobile browser.");
+    selectedWallet = choice.provider; state.walletName = choice.name; onChange();
+    const accts = await eth().request({ method: "eth_requestAccounts" });
+    if (!accts?.length) throw new Error("No account selected. Open your wallet and approve the connection.");
+    state.wallet = accts[0].toLowerCase();
+    const cid = Number(await eth().request({ method: "eth_chainId" })); state.chainId = cid; state.chainOk = cid === state.deployment.chainId;
+    if (!state.chainOk) {
+      try { await eth().request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + state.deployment.chainId.toString(16) }] }); }
+      catch (e) { state.walletError = "Switch your wallet to chain " + state.deployment.chainId + ": " + (e.message || e); log(state.walletError); }
+      state.chainId = Number(await eth().request({ method: "eth_chainId" })); state.chainOk = state.chainId === state.deployment.chainId;
+    }
+    onChange(); log("wallet connected"); await refreshBond();
+  } catch (e) {
+    state.walletError = Number(e.code) === -32002 ? "A connection request is already pending. Open your wallet extension to approve or cancel it."
+      : Number(e.code) === 4001 ? "Connection rejected. Click Connect wallet to try again."
+      : String(e.message || e);
+    if (!state.wallet) selectedWallet = null;
+    throw new Error(state.walletError);
+  } finally { state.walletConnecting = false; onChange(); }
 }
 export async function refreshBond() {
   const a = state.deployment.addresses.instances;
@@ -141,12 +180,111 @@ export async function delegate() {
 /** load the ACTIVE MEP's brain (file or URL). The bytes go straight to the worker, which recomputes the keccak
  *  weights root over every 4 KiB tile and reports it back: a brain is accepted only if that reproduces the
  *  model_id the MEP pins on-chain, so a wrong or hostile source can only waste the download. */
+/** Fetch a brain's bytes, and SAY what went wrong when they do not arrive.
+ *
+ *  A storage provider answers a refusal with a body, not a hang, and the page used to drop both on the floor: the
+ *  error went to the log, `loaded` was never set, and every view kept showing "loading" for ever. That is how a
+ *  spent read quota looks from a tab -- the commonest failure a host will meet, because a hundred individuals of a
+ *  collection all pull the same tens of megabytes of base, and the bucket's allowance is finite. Greenfield answers
+ *  it as 406 with `<Message>bucket quota overflow</Message>`, which is a sentence worth passing on rather than
+ *  swallowing: nothing about it is the host's fault, and nothing about it gets better by waiting. */
+async function fetchOne(url) {
+  let r; try { r = await fetch(url); } catch (e) { throw new Error(`could not reach ${new URL(url, location.href).host} — ${e.message}`); }
+  // A static host that does not have the file often says so with a PAGE rather than a status: Cloudflare Pages
+  // answers 200 and its index.html for anything missing. Taking that for a brain gets "bad payload magic" three
+  // steps later, so it is read here for what it is -- the file is not there, whatever the status line claims.
+  if (r.ok && /^text\/html/i.test(r.headers.get("content-type") || "")) throw new Error("answered 404 in spirit: a web page where a brain should be");
+  if (!r.ok) {
+    const body = await r.text().catch(() => ""); const said = /<Message>([^<]+)<\/Message>/.exec(body)?.[1] || body.trim().slice(0, 120);
+    const hint = r.status === 406 ? " — a spent read quota: it has to be topped up, or the brain fetched from somewhere else" : "";
+    throw new Error(`answered ${r.status}${said ? ` (${said})` : ""}${hint}`);
+  }
+  return new Uint8Array(await r.arrayBuffer());
+}
+/** A brain from a host that will not take it whole.
+ *
+ *  Cloudflare Pages refuses any file over 25 MiB and a brain is tens of megabytes, so a mirror there publishes
+ *  parts and a manifest beside them. Nothing about that is trusted: the parts are concatenated and the worker
+ *  recomputes model_id over the result, which the chain pins -- a missing part, a reordered part or a hostile part
+ *  fails exactly as a wrong whole file does. The manifest only says where to look next.
+ *  Tried only when the whole object is not there, so a mirror that can hold it just holds it. */
+async function fetchParts(url, what) {
+  const r = await fetch(url + ".parts.json"); if (!r.ok) throw new Error(`answered ${r.status}, and has no .parts.json either`);
+  const m = await r.json();
+  if (!Number.isInteger(m.parts) || m.parts < 1 || m.parts > 4096 || !Number.isInteger(m.size) || m.size < 1) throw new Error("its .parts.json makes no sense");
+  log(`${what}: not there whole — taking it in ${m.parts} parts`);
+  const chunks = []; let got = 0;
+  for (let i = 0; i < m.parts; i++) {
+    const p = await fetch(`${url}.part${i}`); if (!p.ok) throw new Error(`part ${i} of ${m.parts} answered ${p.status}`);
+    const b = new Uint8Array(await p.arrayBuffer()); chunks.push(b); got += b.length;
+  }
+  if (got !== m.size) throw new Error(`the parts came to ${got} bytes and the manifest said ${m.size}`);
+  const all = new Uint8Array(got); let at = 0; for (const c of chunks) { all.set(c, at); at += c.length; }
+  return all;
+}
+/** Try each source in turn. Every refusal is reported in the words it came in -- a source that is out of quota and
+ *  one that is unreachable are different problems and a host can act on the difference. */
+async function fetchBrain(sources, what) {
+  if (!sources.length) throw new Error(`${what}: nowhere to fetch it from`);
+  const failed = [];
+  for (const [i, s] of sources.entries()) {
+    try {
+      let bytes; try { bytes = await fetchOne(s.url); }
+      catch (whole) { if (!/answered 404/.test(whole.message)) throw whole; bytes = await fetchParts(s.url, `${what}: ${s.where}`); }
+      if (i > 0 || sources.length > 1) log(`${what}: served by ${s.where}`); return bytes;
+    }
+    catch (e) { failed.push(`${s.where}: ${e.message}`); if (i < sources.length - 1) log(`${what}: ${s.where} — ${e.message}; trying the next source`); }
+  }
+  throw new Error(`${what}: no source had it — ${failed.join(" | ")}`);
+}
+/** The URL a MEP's `weightsDA` points at, given a storage provider. */
+const daUrl = (da, sp) => (da || "").startsWith("gnfd://") && sp ? sp.replace(/\/$/, "") + "/view/" + da.slice(7) : da;
+/** Everywhere a brain's bytes might be, best first.
+ *
+ *  A brain is CONTENT ADDRESSED: the worker recomputes model_id over the bytes and the page refuses them unless it
+ *  matches what the MEP pins on-chain. So a mirror cannot lie, only fail -- which is what makes an ordinary static
+ *  host safe here, and worth having. Without one, every host of a collection pulls the same tens of megabytes from
+ *  the one storage provider the MEP names: a single point of failure, and a read quota that empties as the mesh
+ *  grows. The pointer on-chain stays what it was; these are only ways of carrying it.
+ *
+ *  Mirrors first, the storage provider last: the SP is the thing whose allowance runs out. */
+const sourcesFor = (da, sp) => {
+  const out = []; const object = (da || "").startsWith("gnfd://") ? da.slice(7) : null;
+  if (object) for (const m of state.deployment?.brainMirrors || []) out.push({ url: `${m.replace(/\/$/, "")}/${object}`, where: new URL(m, location.href).host });
+  const direct = daUrl(da, sp); if (direct) out.push({ url: direct, where: object ? `the storage provider${sp ? ` (${new URL(sp, location.href).host})` : ""}` : "the link given" });
+  return out;
+};
+/** A base this deployment already serves, by model id: an individual is published as a delta over one of them, and
+ *  the collection's bases are served for exactly this reason, so the page never has to be told where to find one. */
+const servedBaseFor = (modelId) => state.meps.find((x) => x.modelId?.toLowerCase() === modelId.toLowerCase());
+
 export async function loadModel() {
   const m = mepById(state.active); let bytes; const f = $("file").files[0];
   if (f) bytes = new Uint8Array(await f.arrayBuffer());
-  else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = new Uint8Array(await (await fetch(url)).arrayBuffer()); }
-  log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB downloaded, checking its model_id…`);
-  const r = await ask("prepare", { mepId: m.mepId, bytes: bytes.buffer }, [bytes.buffer]); // transferred, not copied
+  else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = await fetchBrain([{ url, where: "the link given" }], mepName(m)); }
+  // An individual of a collection is published as a DELTA -- a few hundred bytes of edits over a base the network
+  // already holds -- so what arrives may not be a brain at all. The bytes say which, and the delta says which base
+  // it edits; the base is then whichever served MEP has that model id, fetched the same way as any other brain.
+  let delta = null, baseModelId = null;
+  const info = await ask("deltaInfo", { bytes: bytes.buffer });
+  if (info.isDelta) {
+    delta = bytes; baseModelId = info.baseModelId; bytes = null;
+    const base = servedBaseFor(baseModelId);
+    if (!base) throw new Error(`this is a delta over model ${baseModelId.slice(0, 12)}…, which this mesh does not serve: nothing to apply it to`);
+    // The individuals of one collection all edit the SAME base, so the worker keeps the last one it applied: the
+    // second fly costs a 228-byte download rather than another 77 MB of somebody's connection.
+    const held = await ask("hasBase", { modelId: baseModelId });
+    if (held.held) log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)}, whose base is already here — nothing to download`);
+    else {
+      const sources = sourcesFor(base.weightsDA, $("sp")?.value);
+      if (!sources.length) throw new Error(`this is a delta over ${mepName(base)}; give that brain's storage provider above, or name a mirror, so its base can be fetched`);
+      log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)} — fetching the base from ${sources.length === 1 ? sources[0].where : `${sources.length} possible sources`}…`);
+      bytes = await fetchBrain(sources, `${mepName(m)}: its base (${mepName(base)})`);
+    }
+  }
+  if (bytes) log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB ${delta ? "base " : ""}downloaded, checking its model_id…`);
+  const r = await ask("prepare", { mepId: m.mepId, ...(bytes ? { bytes: bytes.buffer } : {}), ...(delta ? { delta: delta.buffer, baseModelId } : {}) },
+    [bytes?.buffer, delta?.buffer].filter(Boolean)); // transferred, not copied
   const ok = r.modelId.toLowerCase() === m.modelId.toLowerCase();
   state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, bytes: r.bytes, modelId: r.modelId, ok };
   if (state.node) await hostOnNode(m); // hot-add to a running node
@@ -187,7 +325,10 @@ export async function hostOnNode(m) {
   requireMemory(state.node.memoryBytes + bytes);
   // Reserve before awaiting: concurrent hot-adds, mismatched MEPs and failed loads still consume heap.
   state.node.memoryBytes += bytes;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0 }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
+  // The TERMS, when the brain is an individual of a collection: its mep id is keccak(profile, beneficiary, bps) and
+  // the terms are nowhere in the bytes, so a host that is not told them serves an id the chain never draws.
+  const terms = m.royaltyBps > 0 && m.beneficiary ? { beneficiary: m.beneficiary, royaltyBps: m.royaltyBps } : null;
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, terms }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
   if (!r.matches) { log(`WARNING ${mepName(m)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
   log(`${mepName(m)}: resident on the node, serving audits and tasks`);
@@ -205,6 +346,8 @@ export async function startNode() {
   await ask("relay", { url: state.deployment.relay });
   state.node = { models: new Map(), memoryBytes: 0 }; // the page's view of what the worker holds resident
   for (const id of ready) await hostOnNode(mepById(id));
+  // Nothing is prepared from here on, so the base kept for applying deltas is dead weight in the worker's heap.
+  { const f = await ask("releaseBase"); if (f.freed) log(`released the ${MB(f.freed)} base the individuals were applied over`); }
   log(`node running for ${state.node.models.size} MEP(s)`);
   setInterval(() => loop().catch((e) => log("loop error: " + (e.message || e))), 3000); onChange();
 }
@@ -242,7 +385,7 @@ export function host(id, on) { on ? state.hosted.add(id) : state.hosted.delete(i
 /** the MEP's gnfd:// pointer plus an SP endpoint is a fetchable URL; filling the box beats making anyone paste it */
 export function autofillUrl() {
   const m = mepById(state.active); const url = $("url"), sp = $("sp"); if (!m || !url || !sp) return;
-  if (!url.value && m.weightsDA.startsWith("gnfd://") && sp.value) url.value = sp.value.replace(/\/$/, "") + "/view/" + m.weightsDA.slice(7);
+  if (!url.value) { const u = daUrl(m.weightsDA, sp.value); if (u && u !== m.weightsDA) url.value = u; }
 }
 /** every action the UI can fire, wrapped so a rejection lands in the log instead of an unhandled rejection */
 export const wrap = (fn) => async (...args) => { try { return await fn(...args); } catch (e) { state.errors.push(String(e.message || e)); log("ERROR " + (e.message || e)); onChange(); } };

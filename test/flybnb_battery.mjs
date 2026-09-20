@@ -14,4 +14,13 @@ check("run k is stimulus floor(k / seeds) under seed k mod seeds, and rowOf says
 check("the announcement is small because sets are named once", JSON.stringify(b).length < 40000);
 const p = batteryBatch(B, { silence: [5, 6, 7] }), rr = resolvedRuns(p);
 check("a perturbed battery is the same batch with a silence set on every run", p.runs.length === b.runs.length && p.runs.every((r) => r.silenceSet === "__silence") && rr.every((r) => r.silenceIds.length === 3) && resolvedRuns(b).every((r) => r.silenceIds === null));
+// the male battery: the same assay, and the population its individuals are drawn from
+{ const M = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-male-v1.json", import.meta.url))), P = M.population, lr = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/lr_conditional.json", import.meta.url)));
+  check(`male battery v${M.version}: ${M.stimuli.length} stimuli x ${M.seeds.length} seeds, ${M.readout.neuron_index.length} descending neurons, same steps, stride, seeds and window as the female one`, M.stimuli.length >= 10 && M.readout.neuron_index.length === 1314 && M.steps === B.steps && M.commit_stride === B.commit_stride && JSON.stringify(M.seeds) === JSON.stringify(B.seeds) && M.readout.window === B.readout.window);
+  check("it names its population: the min2 base it was built on, weight unit 7209, mean ratio 0.93, and the dispersion table measured on the male hemispheres", P && P.base_model_id === M.payload_model_id && P.w_unit_q16 === 7209 && P.mean_ratio_q16 === 60948 && P.min_syn === 5 && JSON.stringify(P.r_table_q8) === JSON.stringify(lr.r_table_q8) && P.r_table_q8.length === 10);
+  check("the female battery names none, so it keeps the defaults its committed rows were run under", B.population === undefined);
+  check("every male stimulus is a sorted set with a body id each, and records its outgoing synapses by side", M.stimuli.every((s) => s.n === s.neuron_index.length && s.body_id.length === s.n && s.neuron_index.every((x, i) => i === 0 || x > s.neuron_index[i - 1]) && Object.values(s.outgoing_synapses_by_side).reduce((a, b) => a + b, 0) > 0));
+  const snd = M.stimuli.find((s) => s.name === "sound").outgoing_synapses_by_side;
+  check("which is how it shows that the right ear of this reconstruction is nearly disconnected, and why there is no sound_left", snd.R * 20 < snd.L && !M.stimuli.some((s) => s.name === "sound_left"));
+  const mb = batteryBatch(M); check(`as a batch: ${mb.runs.length} runs naming ${Object.keys(mb.sets).length} sets`, mb.runs.length === M.stimuli.length * M.seeds.length && Object.keys(mb.sets).length === M.stimuli.length); }
 console.log(fails ? `${fails} FAILURES` : "flybnb battery: all checks passed"); process.exit(fails ? 1 : 0);

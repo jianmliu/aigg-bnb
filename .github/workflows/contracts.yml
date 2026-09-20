@@ -50,13 +50,27 @@ jobs:
       - run: npm ci
 
       - run: node test/env_mapping.mjs
+      # the gateway's registration with ai.gg, against a stand-in for its admin API: no chain, no network
+      - run: node test/aigg_src_sync.mjs
 
       # render.yaml is edited next to a key file: no secret has a value, and the brains it names are known ones
       - run: node test/render_blueprint.mjs
 
+      # the fee rate is stated in three documents and charged in one place: they must be the same number
+      - run: node test/fee_rate_units.mjs
+
+      # the read quota is what runs out first, and what nobody can see: the arithmetic of it is checked
+      - run: node test/greenfield_quota.mjs
+
+      # DESIGN §4b distinguishes optional multi-asset contracts from the legacy native gateway
+      - run: node test/settlement_assets.mjs
+
       # the genesis set is committed to once, at deployment: the published file is what the generator writes and every proof opens
       - run: node test/genesis_set.mjs
+      # where each measured individual stands among the founders, and that the published files still match the runs
+      - run: node test/phenotypes.mjs
 
+      - run: node test/frontend_wallet.mjs
       - run: node test/frontend_memory.mjs
 
       # chain-free: the FlyBnB battery file is well formed and its batch form is order-preserving; the paper build never touches prose

@@ -1,0 +1,18 @@
+05:54:40 relayer 0x5e050B111D8b0B70B7aa404ee8d91C2533fb5E40, relay wss://aigg-bnb-relayer-testnet.onrender.com/relay, MEP 0x312dda12d3…, wallet 0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa
+05:54:45 bond 0.05 BNB: success 0x403ede44de06a9b4836d7cefee46c48629bbef409937a89980beb011ac1d9ca5
+05:54:45 bonded 0.05 BNB, 10 vote(s)
+05:54:50 delegateBySig via relayer: ok 0x3596b1e374f63ee597daa5a5d25731bac0fe4e4492502993890703f71d1ff12c
+05:54:50 model resident: 139255 neurons, mep 0x312dda12d3… (matches the registered MEP), 0.5 s
+05:54:51 epoch 659451: woke the relayer's beacon through 659453
+05:55:54 epoch 659452: woke the relayer's beacon through 659454
+05:56:09 epoch 659452: claim announced 0xc1c5a09b7f… (slot 0.0 s — residency only, no inference)
+05:57:28 epoch 659453: woke the relayer's beacon through 659455
+05:57:33 epoch 659452: materializeClaim via relayer ok gas 112106 0x96b05184566f07480cb170095fd402e496b40819603f06dca891ebbd7ed27cc2
+05:57:33 loop error: The contract function "postTask" reverted with the following reason:
+no beacon
+05:57:48 epoch 659453: claim announced 0xba5bb82b9a… (slot 0.0 s — residency only, no inference)
+05:57:57 task 0x4845f8a22b… posted 0xb968706c8ee56fb8939e4718732335c3fe6829a0454938c07084255a4c7b7c34; executors 0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa
+05:58:04 result submitted via relayer: ok 0x88db63742a77243682ed9a91c4b6552c7809922f54d7c66e7a5906702aadbba2
+05:58:05 executed over the relay: execDigest 0x688bc3909079…
+05:58:10 settled 0x642d9dc534db0216681ba8465e4268737685df1aee1933cb8810e1020d578d19; fee paid to 0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa
+05:58:25 done {"bond":"0x403ede44de06a9b4836d7cefee46c48629bbef409937a89980beb011ac1d9ca5","delegate":"0x3596b1e374f63ee597daa5a5d25731bac0fe4e4492502993890703f71d1ff12c","materialize":"0x96b05184566f07480cb170095fd402e496b40819603f06dca891ebbd7ed27cc2","postTask":"0xb968706c8ee56fb8939e4718732335c3fe6829a0454938c07084255a4c7b7c34","result":"0x88db63742a77243682ed9a91c4b6552c7809922f54d7c66e7a5906702aadbba2","settle":"0x642d9dc534db0216681ba8465e4268737685df1aee1933cb8810e1020d578d19"}

@@ -1,0 +1,47 @@
+{
+  "paidExecutors": 1,
+  "receipts": [
+    {
+      "step": "bond",
+      "hash": "0x403ede44de06a9b4836d7cefee46c48629bbef409937a89980beb011ac1d9ca5",
+      "blockNumber": "131890254",
+      "gasUsed": "138937",
+      "status": "success"
+    },
+    {
+      "step": "delegate",
+      "hash": "0x3596b1e374f63ee597daa5a5d25731bac0fe4e4492502993890703f71d1ff12c",
+      "blockNumber": "131890266",
+      "gasUsed": "55055",
+      "status": "success"
+    },
+    {
+      "step": "materialize",
+      "hash": "0x96b05184566f07480cb170095fd402e496b40819603f06dca891ebbd7ed27cc2",
+      "blockNumber": "131890627",
+      "gasUsed": "112106",
+      "status": "success"
+    },
+    {
+      "step": "postTask",
+      "hash": "0xb968706c8ee56fb8939e4718732335c3fe6829a0454938c07084255a4c7b7c34",
+      "blockNumber": "131890680",
+      "gasUsed": "272443",
+      "status": "success"
+    },
+    {
+      "step": "result",
+      "hash": "0x88db63742a77243682ed9a91c4b6552c7809922f54d7c66e7a5906702aadbba2",
+      "blockNumber": "131890698",
+      "gasUsed": "114803",
+      "status": "success"
+    },
+    {
+      "step": "settle",
+      "hash": "0x642d9dc534db0216681ba8465e4268737685df1aee1933cb8810e1020d578d19",
+      "blockNumber": "131890709",
+      "gasUsed": "132733",
+      "status": "success"
+    }
+  ]
+}

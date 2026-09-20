@@ -70,6 +70,36 @@ producer. The claim manager here takes an `IBeacon`:
 | `RelayRegistry` bond | 1 BNB | operator identity; ≥ 2 relays per instance |
 | beacon `COMMIT/REVEAL_BLOCKS` | ≈ 2 / 2 minutes; committer deposit 0.1 BNB | RANDAO-style, deposit-bounded bias |
 
+## 4b. Settlement assets: one mechanism, several currencies
+
+**Implemented as an optional local deployment; not a claim that production is configured.**
+The upstream native market remains unchanged. This repository adds `MultiAssetTaskMarket`,
+`TokenBatteryBudget` and `TokenBatteryJob`; see [the implementation and deployment limits](MULTI_ASSET_BATTERY.md).
+
+BNB, AIGG and conventional ERC-20 assets such as USDC can denominate task settlement.
+ERC-20 assets must be allowlisted, and hosts must explicitly opt in. Fees, executor earnings,
+refunds and royalties remain denominated in the task's asset; amounts from different assets are never added.
+
+| Path | Current behavior |
+|---|---|
+| Treasury adoption | An existing NFT is sold for its BNB listing price; proceeds enter treasury, without creating a host bond. |
+| Collection mint and breed | Collection fees remain native BNB. Breeding separately locks a battery execution budget. |
+| Native battery | Native budget and jobs continue posting and settling BNB tasks. |
+| Token battery | Token budgets escrow the configured asset. An optional reviewed router can convert BNB into the exact AIGG budget for breeding, subject to a maximum input and deadline. Job refunds return the task asset. |
+| Host | Bonds and transaction gas remain BNB. Hosts choose whether to accept each enabled token; the panel shows native and token earnings separately. |
+| Royalties | The updated collection supports per-token credits and withdrawal, alongside native credits. Existing deployments need compatible contracts and configuration. |
+
+Native task ABI and IDs are preserved. Token task IDs wrap the legacy task hash with the
+asset, client, chain and market, so signatures and sortition bind the settlement asset without
+changing upstream native task IDs. This is a local market implementation, not a change to
+the upstream `Task` struct.
+
+Multi-currency settlement is a **protocol capability**; treasury allocations and liquidity management
+are **governance** policy. Buying an NFT does not automatically swap proceeds or add liquidity.
+The optional breed conversion is an explicit funded route, not a universal conversion rule.
+AIGG issuance, token addresses, asset enablement and a production router/liquidity pool require
+separate configuration. Supporting USDC in this mechanism does not mean a USDC route is live.
+
 ## 5. Cost model (measured gas × assumed prices)
 
 Measured in aigg-porw (anvil, keccak scheme): tile fraud proof ≈ 1.11M gas; `submitClaim`
@@ -138,6 +168,54 @@ runs one after another.
   one EIP-712 Delegation), and posting an experiment is one more transaction, from whoever pays its fee. The session key lives in
   `localStorage` (per-viewer convenience: it is worth nothing without the on-chain delegation, and
   `revokeSessionKey` cuts it off).
+
+## 5c. What this scales to, and where the line actually falls
+
+*(And a note on names, since this is the section that says why they matter: **`aigg` is the protocol**, **`aigg-bnb`
+this deployment of it**, and **FlyBnB a dataset** — the fly atlas being produced on it. The protocol's subject is any
+model whose arithmetic is exact, so a mouse atlas would be another dataset with another name and nothing here would
+change. README states the three layers.)*
+
+The line is not the size of the model. It is the **arithmetic**.
+
+| | deterministic, fixed point | floating point |
+|---|---|---|
+| what it is | any connectome simulation — the fly, the larva, zebrafish, **the mouse** — under `aigg:exec:int-lif:v1` or a kind like it | an LLM layer: dense GEMM, MoE |
+| residency provable | yes | yes — the sketch fuses into the weight-tile load of the inference kernel itself (aigg-porw `gpu/triton/porw_sketch`) |
+| **result** provable | **yes, bit for bit** | **no**: two GPUs, two batch shapes or two kernel versions do not agree to the last bit, so there is nothing to compare |
+| what runs it | CPU or GPU, whichever the model's size and the memory bandwidth ask for | GPU |
+
+The reason the first column holds at any size is the same one that lets a host skip the work it does not need
+(aigg-porw #31, #32): **integer sums are exact and order-independent**. A parallel reduction on a GPU, in any order,
+over any number of lanes, gives the same integer as a single-threaded loop — so a redundant executor on other hardware
+reproduces the state root to the bit. Floating point has no such property, and that, not scale, is why an LLM cannot be
+checked by agreement.
+
+So a mammalian connectome is the same protocol with a different execution layer, not a different system: residency
+claims, sortition, redundancy and the bisection dispute are untouched, and only the kernel under `execKind` changes.
+What moves with size is *where* it runs, and that is a bandwidth question rather than a compute one. A connectome is a
+sparse graph and propagating activation through it is an SpMV of about 0.06 flop per byte — one to two orders of
+magnitude below any CPU's roofline knee, so it is **memory-bandwidth-bound and tensor cores do not help it**
+(aigg-porw `gpu/triton/demo/fly_brain/WHY-CPU.md`). That is why the fly runs on an ordinary computer: not because the
+system is small, but because DRAM is what the work wants, and every machine has DRAM. A brain two orders of magnitude
+larger wants HBM, and then the host is a GPU.
+
+**This is what the fly closes.** PoRW began against LLMs, and there it is half a mechanism: residency can be proved,
+and the result cannot — a network can show that a model was really in memory and still not show that what came out of
+it was that model's answer. Every route around it costs something. Redundancy needs bit-identity that floating point
+does not give. A tolerance turns "wrong" into a threshold somebody has to argue for, and an executor can sit just
+inside it. A TEE moves the question to a vendor's attestation. A zero-knowledge proof of the inference is orders of
+magnitude too expensive at this size.
+
+A connectome simulation has none of that difficulty, and not by luck: it is integer because it was written to be, and
+integer is what makes agreement mean something. So the loop closes — **residency proved, execution proved, disagreement
+adjudicable to a single synapse term, and the loser slashed** — and it closes the same way at mouse scale as at fly
+scale. The LLM case is not solved here; it is set aside, with what remains of it (a provable claim that the weights are
+resident) clearly separated from what does not follow (that the output is right).
+
+None of which says the mesh is *needed* for the fly. It is not: the pilot is a few CPU-hours and the atlas is
+about 4 million runs (docs/TOKENOMICS.md §9). The point of this section is narrower — that nothing in the design caps
+it there, and the thing that would change at mouse scale is the hardware under one interface, not the protocol.
 
 ## 6. Risks and limits specific to BNB
 

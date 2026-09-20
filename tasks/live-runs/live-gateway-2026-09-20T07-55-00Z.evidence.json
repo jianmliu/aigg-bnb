@@ -1,0 +1,121 @@
+{
+ "network": {
+  "chainId": 97,
+  "market": "0x71120BcF8EFDcc6E4c0299e035676dB6d0d68F19",
+  "instances": "0x50b015f2a2a04E2D177343bE4bDB652AFf8100B1",
+  "claims": "0x2E9da33606a21e31DDceD22d960b906bAc199c1F"
+ },
+ "read_at_block": 132104026,
+ "tasks": [
+  {
+   "id": "0xa6c86c794fd72f69d8533750bd30dba745bbb7a34f126151d9ced6ad2fae083e",
+   "via": "hosted gateway, before the fix",
+   "post": "0x45f6169ac60c50133d60d5ff8c062486ebd402265ab81f47ab1d1e0a242c7fc4",
+   "settle": "0xc79f0e3b431496fb79e924d7f2cca2fbad794bba4ce75b7d8254233a6f6f107b",
+   "executors": [
+    "0x966d94f5504a6bd4b34ed6d667ab41c2919006d2",
+    "0x3b3156a32db1944f14bc152c42960d3b51dcdd19"
+   ],
+   "results": {
+    "0x966d94f5504a6bd4b34ed6d667ab41c2919006d2": {
+     "submitted": false,
+     "execDigest": null,
+     "execRoot": null
+    },
+    "0x3b3156a32db1944f14bc152c42960d3b51dcdd19": {
+     "submitted": false,
+     "execDigest": null,
+     "execRoot": null
+    }
+   },
+   "roots_identical": false,
+   "distinct_roots": 0,
+   "post_block": 132098504,
+   "post_status": "success",
+   "post_gas": 448719,
+   "settle_block": 132098909,
+   "settle_status": "success",
+   "settle_gas": 56553
+  },
+  {
+   "id": "0x8f3093311731d7e338fcd0e9bffd10abe679e7409a5aaf7bc6437f9bc85aea4c",
+   "via": "local gateway with the fix, against the live mesh",
+   "post": "0xb03f61eef5d8877ec8f1c699a0471f50bff466ad9481bc31bca8205302acdfad",
+   "settle": "0xd0d9c4962c9c2fd153e7bd00991324273f1275b2c530d53674851deca0ff57a0",
+   "executors": [
+    "0x3b3156a32db1944f14bc152c42960d3b51dcdd19",
+    "0x966d94f5504a6bd4b34ed6d667ab41c2919006d2"
+   ],
+   "results": {
+    "0x3b3156a32db1944f14bc152c42960d3b51dcdd19": {
+     "submitted": true,
+     "execDigest": "0xd121fbf48ca507dfa1c836db5fb178de38fbb5875e50eee19358e2cac453d546",
+     "execRoot": "0x974d5b9d4070e5e7ecaae95c8759c3feb423c919b1d1125080ef879055c31a70"
+    },
+    "0x966d94f5504a6bd4b34ed6d667ab41c2919006d2": {
+     "submitted": true,
+     "execDigest": "0xd121fbf48ca507dfa1c836db5fb178de38fbb5875e50eee19358e2cac453d546",
+     "execRoot": "0x974d5b9d4070e5e7ecaae95c8759c3feb423c919b1d1125080ef879055c31a70"
+    }
+   },
+   "roots_identical": true,
+   "distinct_roots": 1,
+   "post_block": 132099364,
+   "post_status": "success",
+   "post_gas": 412977,
+   "settle_block": 132099396,
+   "settle_status": "success",
+   "settle_gas": 155864
+  },
+  {
+   "id": "0x61c919f28cb6b6848c6ca0daef2ec611f89da953edee4f12a7241ca341773585",
+   "via": "hosted gateway, after the fix was deployed",
+   "post": "0xfb4064cbbb7412d1316f0b3b9d65733b0f87ea683d8376ef843d7db17ed3394f",
+   "settle": "0x8f94a3f566556667b0624cbe6389fe13fdb6b6b09fc36d425122a7d227fd4646",
+   "executors": [
+    "0x3b3156a32db1944f14bc152c42960d3b51dcdd19",
+    "0x966d94f5504a6bd4b34ed6d667ab41c2919006d2"
+   ],
+   "results": {
+    "0x3b3156a32db1944f14bc152c42960d3b51dcdd19": {
+     "submitted": true,
+     "execDigest": "0x17f62cc4bd58d1c981b4a6563279d61d58987edc2a88d8a071af59137cc94197",
+     "execRoot": "0xe1fbf78fc959d19b1ead53308a84e96b002dc3d7e60dff8617c4441fdc41e231"
+    },
+    "0x966d94f5504a6bd4b34ed6d667ab41c2919006d2": {
+     "submitted": true,
+     "execDigest": "0x17f62cc4bd58d1c981b4a6563279d61d58987edc2a88d8a071af59137cc94197",
+     "execRoot": "0xe1fbf78fc959d19b1ead53308a84e96b002dc3d7e60dff8617c4441fdc41e231"
+    }
+   },
+   "roots_identical": true,
+   "distinct_roots": 1,
+   "post_block": 132102996,
+   "post_status": "success",
+   "post_gas": 462438,
+   "settle_block": 132103045,
+   "settle_status": "success",
+   "settle_gas": 155864
+  }
+ ],
+ "hosts": [
+  {
+   "address": "0x3b3156A32dB1944F14bC152C42960D3b51DCDD19",
+   "balance_tbnb": "0.0050098317",
+   "bonded_tbnb": "0.005",
+   "weight": 1,
+   "enrolled_for_mep": true
+  },
+  {
+   "address": "0x966d94F5504a6BD4B34Ed6D667aB41C2919006D2",
+   "balance_tbnb": "0.0050098317",
+   "bonded_tbnb": "0.005",
+   "weight": 1,
+   "enrolled_for_mep": true
+  }
+ ],
+ "gateway_wallet": {
+  "address": "0xf5cfcb350268aec30e8d814e48dab01cbe54b5a7",
+  "balance_tbnb": "0.0997907585"
+ }
+}

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { formatEther, formatUnits } from "viem";
 import * as C from "../core/controller.js";
 import * as F from "../core/flies.js";
+import { loadPhenotypes, phenotypesOf, standing } from "../core/phenotypes.js";
 import { Panel, Button } from "./primitives.jsx";
 import { Portrait } from "./Portrait.jsx";
 import { SOLO } from "./mode.js";
@@ -21,6 +22,25 @@ const STAGE = {
   unregistered: { tone: "idle", text: "born · no MEP yet" },
   registered: { tone: "ok", text: "registered" },
 };
+
+/** What the battery measured about this individual, and where that puts it among the hundred founders. Nothing is
+ *  invented: a fly whose runs do not exist has no line here, and says so, because that is the state of the world
+ *  until somebody runs its battery. */
+function Phenotypes({ fly, stage }) {
+  const p = stage === "egg" || stage === "unborn" ? null : phenotypesOf(fly.deltaHash);
+  if (!p) return (
+    <div className="pheno" id={`pheno-${fly.id}`}>
+      <span className="counts">{stage === "egg" ? "an egg has no phenotype: it has no seed yet, so there is nothing to run"
+        : "not measured yet — running its battery (13 stimuli × 3 seeds) is what says whether it is unusual"}</span>
+    </div>);
+  return (
+    <div className="pheno" id={`pheno-${fly.id}`}>
+      <span className="counts">{p.standout.length ? `${p.standout.length} of ${p.phenotypes} phenotypes stand out among the founders` : `${p.phenotypes} phenotypes measured, none unusual`}</span>
+      {p.standout.slice(0, 4).map((r) => { const s = standing(r.percentile); return (
+        <div className="kv" key={r.name}><span className="why">{r.name}</span>
+          <span className="amt" data-tone={s.high ? "high" : "low"}>{r.value} · {s.text}</span></div>); })}
+    </div>);
+}
 
 function FlyCard({ fly, byId, slot, onPick }) {
   const stage = F.stageOf(fly); const st = STAGE[stage]; const left = F.blocksLeft(fly);
@@ -40,6 +60,7 @@ function FlyCard({ fly, byId, slot, onPick }) {
         {stage === "egg" ? `seed block ${fly.seedBlock}` : stage === "unborn" ? `seed ${fly.seed.slice(0, 12)}… · no delta yet` : `delta ${fly.deltaHash.slice(0, 12)}…`} · base {fly.baseModelId.slice(0, 10)}…{fly.mine ? "" : " · not yours"}
       </div>
       <div className="state" data-tone={st.tone}>{st.text}</div>
+      <Phenotypes fly={fly} stage={stage} />
       {fly.pending > 0n && (
         <div className="egg" id={`royalty-${fly.id}`}>
           <div className="foot"><span className="counts">{bnb(fly.pending)} BNB earned, not yet settled to {fly.mine ? "you" : "its owner"}</span>

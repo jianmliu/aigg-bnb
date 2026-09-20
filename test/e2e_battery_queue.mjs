@@ -10,6 +10,7 @@ import fs from "node:fs"; import path from "node:path"; import os from "node:os"
 import { parseEther, keccak256 } from "viem";
 import {batteryBatch,resolvedRuns} from "../flybnb/battery/battery_batch.mjs";
 import * as H from "./harness.mjs";
+import {state0Root} from "../gateway/state0.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
 const TOKEN=process.env.TEST_TOKEN_BATTERY==='1';
 const factoryName=TOKEN?'TokenBatteryBudget':'BatteryBudget',jobName=TOKEN?'TokenBatteryJob':'BatteryJob';
@@ -73,8 +74,11 @@ try {
   await H.sendTo(payer,collection,"FlyCollection","register",[1n,H.GENESIS.DF,{modelId:H.hex(mep.modelId),schemeDigest:H.hex(mep.schemeDigest),execKind:H.hex(mep.execKind),neurons:n,synapses:pst.hdr.synapses,synapseRoot:H.hex(pst.csr.synapseRoot),weightsDA:"0x"}]);
   const spec={version:1,neurons:n,steps:STEPS,commit_stride:STRIDE,seeds:[3,4,5],stimuli:[{name:"ears",neuron_index:sets.ears},{name:"quiet",neuron_index:sets.quiet}],readout:{neuron_index:[0,1,2]}};
   const raw=JSON.stringify(spec);fs.writeFileSync(path.join(tmp,'battery.json'),raw);
-  const rr=resolvedRuns(batteryBatch(spec));const inputs=await probe.batchRunsRoot(mep.mepId,rr);
-  const policy={versionHash:keccak256(Buffer.from(raw)),runsRoot:H.hex(inputs.runsRoot),runs:rr.length,steps:STEPS,stride:STRIDE,redundancy:2,attempts:2,fee:parseEther('0.01'),lifetime:3600};
+  const rr=resolvedRuns(batteryBatch(spec));
+  // Use the deployment policy's model-independent input commitment. Reusing the probe after
+  // a trajectory replay retains upstream incremental-tree state and can commit stale leaves.
+  const inputRoot=V.merkleRoot(rr.map((r,k)=>B.runLeaf(k,r.stimulusSeed,state0Root(n,r.stimulusSeed,[...r.stimulusIds]).root)));
+  const policy={versionHash:keccak256(Buffer.from(raw)),runsRoot:H.hex(inputRoot),runs:rr.length,steps:STEPS,stride:STRIDE,redundancy:2,attempts:2,fee:parseEther('0.01'),lifetime:3600};
   const factory=await H.create(payer,factoryName,[collection,dep.addresses.market,op.account.address,policy,...(TOKEN?[token,'0x'+'0'.repeat(40)]:[])]);
   if(TOKEN){await H.sendTo(payer,token,'TestToken','mint',[payer.account.address,parseEther('0.02')]);await H.sendTo(payer,token,'TestToken','approve',[factory,parseEther('0.02')]);}
   await H.sendTo(payer,factory,factoryName,'fund',[1n],TOKEN?0n:parseEther('0.02'));
@@ -85,11 +89,12 @@ try {
   fs.writeFileSync(path.join(tmp,'deployment.json'),JSON.stringify(dep));
   let output='';const start=()=>{worker=spawn(process.execPath,['battery/worker.mjs'],{cwd:H.root,env:{...process.env,BATTERY_ASSET_MODE:TOKEN?'token':'native',BATTERY_DEPLOYMENT:path.join(tmp,'deployment.json'),BATTERY_BUDGET:factory,BATTERY_KEY:H.KEYS[4],BATTERY_SPEC:path.join(tmp,'battery.json'),BATTERY_MODELS:path.join(tmp,'models'),BATTERY_STATE:path.join(tmp,'state'),BATTERY_RELAY:d0.relay,BATTERY_PORT:'0',BATTERY_POLL_MS:'100',BATTERY_RESULT_TIMEOUT_MS:'10000'},stdio:['ignore','pipe','pipe']});worker.stdout.on('data',x=>output+=x);worker.stderr.on('data',x=>output+=x);};
   start();
-  check('queue posted a real batched task',await waitFor(async()=>await H.readFrom(payer,job,jobName,'taskId')!=='0x'+'0'.repeat(64),30000));
+  const posted=await waitFor(async()=>{if(worker.exitCode!==null)throw Error('battery worker exited: '+output);return await H.readFrom(payer,job,jobName,'taskId')!=='0x'+'0'.repeat(64);},30000);
+  check('queue posted a real batched task',posted);if(!posted)throw Error('queue did not post: '+output);
   const tid=await H.readFrom(payer,job,jobName,'taskId');
   check('hosts executed and the task settled',await waitFor(async()=>{const t=await payer.pub.readContract({address:dep.addresses.market,abi:H.artifact('TaskMarket').abi,functionName:'tasks',args:[tid]});return t[6];},30000));
   // Restart after settlement, before finality: the chain retains task identity and budget consumption.
-  worker.kill('SIGTERM');await new Promise(r=>worker.once('exit',r));start();
+  worker.kill('SIGTERM');await new Promise(r=>{if(worker.exitCode!==null)r();else worker.once('exit',r);});start();
   await anvil.mine(100);
   check('restarted queue verifies and publishes delivered output',await waitFor(async()=>await H.readFrom(payer,job,jobName,'artifactHash')!=='0x'+'0'.repeat(64),30000));
   check('restart did not submit another paid attempt',await H.readFrom(payer,job,jobName,'attempt')===1n);

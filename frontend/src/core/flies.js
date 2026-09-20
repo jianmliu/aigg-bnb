@@ -9,7 +9,8 @@
 // nobody hatches in that window needs `rearm`, which costs a whole BREED_FEE. A relayer running the hatch keeper
 // makes that window irrelevant; the Hatch button is for when nobody is.
 import { keccakWords, decodeUint, decodeAddress } from "./abi.js";
-import { state, call, send, read, log, notify } from "./controller.js";
+import { state, call, send, read, log, notify, eth } from "./controller.js";
+import { loadPhenotypes } from "./phenotypes.js";
 
 export const FEMALE = 0, MALE = 1, UNHATCHED = 2;
 export const WINDOW = 256; // block hashes the EVM keeps
@@ -40,17 +41,31 @@ export function lineage(f, byId) {
   return `#${f.id} ${sexMark(f.sex)} · gen ${f.generation}${f.parentA ? ` · ${p(f.parentA)} × ${p(f.parentB)}` : " · genesis"}`;
 }
 
+/** The collection's TERMS alone: what it costs, and how a fee is divided. Reading every individual to answer that
+ *  would be a hundred calls for five numbers, which is what the docs page would otherwise have to do -- and a second
+ *  copy of these reads is how a documentation page starts quietly disagreeing with the thing it documents. So both
+ *  pages come through here: `loadFlies` calls it and takes the numbers from it. */
+export async function loadTerms() {
+  const address = state.deployment?.addresses?.collection;
+  if (!address) { state.flyTerms = { missing: true }; notify(); return state.flyTerms; }
+  // a collection from before the mainnet revision has no BASE_SHARE_BPS or SALE_ROYALTY_BPS getter: nothing comes off
+  const num = (sig, dflt = 0n) => call(address, sig).then((r) => decodeUint(r), () => dflt);
+  state.flyTerms = { address, missing: false,
+    mintPrice: await num("MINT_PRICE()"), mintBond: await num("MINT_BOND()"), breedFee: await num("BREED_FEE()"), bounty: await num("HATCH_BOUNTY()"),
+    royaltyBps: Number(await num("ROYALTY_BPS()")), baseShareBps: Number(await num("BASE_SHARE_BPS()")), saleRoyaltyBps: Number(await num("SALE_ROYALTY_BPS()")) };
+  notify(); return state.flyTerms;
+}
+
 /** read the whole collection: the fees, and every individual with whether this wallet holds it */
 export async function loadFlies() {
+  await loadPhenotypes(); // what the published runs measured about these individuals; absent, the page says so per fly
   const address = state.deployment?.addresses?.collection;
   if (!address) { state.flies = { missing: true, all: [] }; notify(); return; }
+  const T = await loadTerms();
   const n = Number(decodeUint(await call(address, "totalSupply()")));
   const flies = { address, missing: false, truncated: n > MAX_LISTED, block: await blockNumber(),
-    breedFee: decodeUint(await call(address, "BREED_FEE()")), bounty: decodeUint(await call(address, "HATCH_BOUNTY()")),
-    mintPrice: decodeUint(await call(address, "MINT_PRICE()")), mintBond: decodeUint(await call(address, "MINT_BOND()")),
-    royaltyBps: Number(decodeUint(await call(address, "ROYALTY_BPS()"))),
-    // the base's part OF THE ROYALTY (a collection from before the mainnet revision has no such getter: nothing comes off)
-    baseShareBps: await call(address, "BASE_SHARE_BPS()").then((r) => Number(decodeUint(r)), () => 0), market: decodeAddress(await call(address, "MARKET()")),
+    breedFee: T.breedFee, bounty: T.bounty, mintPrice: T.mintPrice, mintBond: T.mintBond,
+    royaltyBps: T.royaltyBps, baseShareBps: T.baseShareBps, market: decodeAddress(await call(address, "MARKET()")),
     genesisRoot: await call(address, "GENESIS_ROOT()"), owed: state.wallet ? decodeUint(await call(address, "owed(address)", [state.wallet])) : 0n,
     genesis: null, sale: null,
     baseFemale: await call(address, "BASE_FEMALE()"), baseMale: await call(address, "BASE_MALE()"), all: [] };
@@ -169,7 +184,7 @@ export async function adopt(id) {
     await loadFlies(); await loadGenesis();
   } finally { pendingAdoptions.delete(key); x.pending = false; notify(); }
 }
-const ethChainId = () => window.ethereum.request({ method: "eth_chainId" });
+const ethChainId = () => eth().request({ method: "eth_chainId" });
 // ---- the royalty: set aside by the market per brain, moved to the fly's owner by `settle`, collected by `withdraw` ----
 export async function settle(id) { await send(state.flies.address, "settle(uint256)", [id]); await loadFlies(); }
 export async function withdraw() { await send(state.flies.address, "withdraw()"); await loadFlies(); }

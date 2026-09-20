@@ -1,0 +1,81 @@
+{
+ "read_at": "2026-09-20T18:10:36.756Z",
+ "epoch": 660898,
+ "relay": {
+  "received": 12,
+  "forwarded": 12,
+  "dropped": 0,
+  "censored": 0,
+  "reaped": 0,
+  "clients": 2
+ },
+ "fly_epochs": [
+  {
+   "epoch": 660891,
+   "claims": 1,
+   "rejected": 0,
+   "posted": true
+  },
+  {
+   "epoch": 660892,
+   "claims": 1,
+   "rejected": 0,
+   "posted": true
+  },
+  {
+   "epoch": 660893,
+   "claims": 1,
+   "rejected": 0,
+   "posted": true
+  },
+  {
+   "epoch": 660894,
+   "claims": 1,
+   "rejected": 0,
+   "posted": true
+  },
+  {
+   "epoch": 660895,
+   "claims": 1,
+   "rejected": 0,
+   "posted": true
+  },
+  {
+   "epoch": 660896,
+   "claims": 1,
+   "rejected": 0,
+   "posted": true
+  },
+  {
+   "epoch": 660897,
+   "claims": 1,
+   "rejected": 0,
+   "posted": true
+  },
+  {
+   "epoch": 660898,
+   "claims": 1,
+   "rejected": 0,
+   "posted": false
+  }
+ ],
+ "counted": [
+  660891,
+  660892,
+  660893,
+  660894,
+  660895,
+  660896,
+  660897,
+  660898
+ ],
+ "proofs": {
+  "660896": "included (posted=true)",
+  "660897": "included (posted=true)",
+  "660898": "not included"
+ },
+ "base_fetch": {
+  "status": 406,
+  "body": "<Error><Code>30004</Code><Message>bucket quota overflow</Message></Error>"
+ }
+}

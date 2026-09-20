@@ -1,0 +1,52 @@
+{
+  "chainId": 97,
+  "rpc": "https://bsc-testnet-rpc.publicnode.com",
+  "epochBlocks": 200,
+  "network": "bsc-testnet",
+  "addresses": {
+    "verifier": "0xcE023ee73A1Ab3A8Ca481B4EA540E48AE24F3365",
+    "meps": "0xC779151b405513B48787B8F1111f79FAC10CDb7A",
+    "instances": "0x50b015f2a2a04E2D177343bE4bDB652AFf8100B1",
+    "beacon": "0x3F4AB29555b696BACbB2450188ad640013941484",
+    "claims": "0x2E9da33606a21e31DDceD22d960b906bAc199c1F",
+    "market": "0x71120BcF8EFDcc6E4c0299e035676dB6d0d68F19",
+    "disputes": "0xeEC51cFaB44B45dEc8d34941F75044C5230841de",
+    "relays": "0x50Cd9B2A00b4B8B33a130C879E7095A9Da7f29Ce",
+    "collection": "0xE0a5a93CD9398BdFcA992F877d513e49E18E7AA4",
+    "whitelist": "0xAd8e7206A9bE4F24Ce0aa2c861F1E9331A16681C"
+  },
+  "taskClients": [
+    "0xfe560af8f5cfc209794b3df7dc7e281d4ef81eda"
+  ],
+  "relay": "wss://aigg-bnb-relayer-testnet.onrender.com/relay",
+  "relayer": "0x5e050B111D8b0B70B7aa404ee8d91C2533fb5E40",
+  "domains": {
+    "claimManager": {
+      "name": "PoRW Mesh",
+      "version": "1",
+      "chainId": 97,
+      "verifyingContract": "0x2E9da33606a21e31DDceD22d960b906bAc199c1F"
+    },
+    "market": {
+      "name": "PoRW Mesh",
+      "version": "1",
+      "chainId": 97,
+      "verifyingContract": "0x71120BcF8EFDcc6E4c0299e035676dB6d0d68F19"
+    },
+    "registry": {
+      "name": "PoRW Mesh",
+      "version": "1",
+      "chainId": 97,
+      "verifyingContract": "0x50b015f2a2a04E2D177343bE4bDB652AFf8100B1"
+    }
+  },
+  "claimValidityEpochs": 6,
+  "challenge": {
+    "windowBlocks": 200,
+    "depositWei": "20000000000000000"
+  },
+  "meps": [
+    "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a",
+    "0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50"
+  ]
+}

@@ -387,6 +387,8 @@ nominal amount in a volatile asset.
 | `MINT_PRICE` | `UNIT` + fee | the fee is the treasury's only income |
 | genesis size | to set against the §5 memory bound | the old ≤ 200 was a CPU figure and no longer applies; split between the two sexes, since a skewed ratio throttles breeding |
 | `BREED_FEE` | to decide | the second sink, and the rate limit on new MEPs |
+
+What these two are really buying is in §9: a mint is what pays for measuring the individual it creates.
 | `ROYALTY_BPS` | 1000 | of every fee settled for a task on a registered fly; inside the `mep_id`, so fixed for the collection's life |
 | `BASE_SHARE_BPS`, `BASE_VENDOR` | 1000, the treasury | the base's part **of the royalty**, not of the fee: of a fee of 1 the hosts share 0.90, the owner gets 0.09, the base 0.01. One level -- it does not compound down a pedigree -- and the vendor is the treasury until a base has one of its own (docs/GATEWAY.md §4.1) |
 | `TREASURY` | a `TreasuryRouter` | immutable in the collection, and a collection outlives any wallet, multisig or buyback scheme: so it is a fixed address whose *destination* can change. Not a proxy -- no delegatecall, no replaceable logic; everything it holds can leave only to the destination, which is why `sweep` / `collect` / `rescue` are anybody's to call. Its owner chooses the destination (two-step; renounceable) and reaches nothing else. `receive` does no work: the collection caps the gas it hands its treasury and credits what it will not take, and work belongs to the destination |
@@ -467,3 +469,88 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
    dropped records in place as zero weights makes `child_tile[t] = G(parent tiles[t], seed)`, which admits a one-step
    fraud proof on a single record (the sampler's Q256 arithmetic is the EVM's word size). It fixes the payload layout,
    so it has to be decided before the first child is registered.
+
+---
+
+## 9. Who pays for the atlas, and what a measurement costs
+
+Measured, not assumed. One battery run (5,000 steps, commit stride 500) in the wasm node on one core of an M-series
+Mac, on the brain the battery is built on (`flywire-783-min5`, 139,255 neurons, 2,700,513 synapses) and on the heavier
+export the founders vary (`flywire-783-min2`, 7,595,967 synapses):
+
+| | |
+|---|---|
+| one battery run, by stimulus | **0.23 s to 2.16 s**, mean **0.82 s** over the thirteen — the sparse ones cost least, the two that ignite the network (pheromone, cold: ~7,000 neurons spiking) most |
+| the same before aigg-porw #31 and #32 | **14.1 s** flat: the simulation went 12.4 → 0.4 s (event-driven), the commitments 1.5 → 0.4 s (incremental) |
+| one individual's standard battery (13 stimuli × 3 seeds = 39 runs) | **32 seconds of CPU** per host — a minute at redundancy 2 |
+| its fee at 100 gwei per step per provider | 195,000 steps × 2 × 10⁻⁷ = **0.039 BNB** |
+| its gas | one `postBatch` + one `settle` for all 39 runs: ~0.00004 BNB, three orders of magnitude below the fee |
+| what a mint puts in the treasury | `MINT_PRICE − MINT_BOND` = **0.05 BNB** (the bond is the minter's own stake, and stays theirs) |
+| what a breed puts in | `BREED_FEE − HATCH_BOUNTY` = **0.049 BNB** |
+| what the **pilot** costs in compute | 11,739 runs ≈ **2.7 CPU-hours** |
+| what the **atlas** costs (proposal §5.4: ~4 M runs a sex, the silencing part already pruned) | **~950 CPU-hours a sex**, ~1,900 for both, **~3,800 at redundancy 2** — 20 days on eight cores, 8 hours on 500 |
+
+**So a mint buys, almost exactly, one measurement of the individual it creates.** At the breeding study's scale — 301
+individuals, 11,739 runs — the compute costs about 11.7 BNB, and 100 adoptions plus 201 breedings bring in about 14.8.
+The atlas is funded by the people who adopt and breed the flies, not by the project: **the treasury is a conduit**, and
+the project is the task client only in the sense that it spends what adopters put in.
+
+### Where the price comes from, and where it does not
+
+The 100 gwei (10⁻⁷ BNB) per step per provider is **derived from the budget, not from the cost**: it is what the atlas can pay per
+row if a mint is to cover an individual's battery. Against the cost of the compute it is very high — 0.0195 BNB per
+host per battery, now 32 seconds of CPU, is **2.2 BNB per CPU-hour**: five orders of magnitude above what an ordinary
+cloud core costs, and two more than before the kernel was made event-driven and its commitments incremental.
+
+That is a choice, not an error: a host must be paid enough to bother keeping a brain resident, and early on the price
+has to be generous. But it should be said plainly, because two things follow. First, hosting is profitable long before
+it is efficient, so the margin is where competition will show up. Second, the headroom is large enough to spend on
+**redundancy** instead of profit: three or five independent providers per row, at the same total price, buys more
+agreement than a fatter margin does.
+
+**A price per step ignored the brain, and the stimulus.** It carries both now (`gateway/pricing.json`, measured):
+min2 is 1.54× min5 for the same 5,000 steps, and across the battery's thirteen stimuli a run spans 9.4× — `ocelli`
+0.28, `pheromone` 2.64.
+
+**That is cost. Value differs too, and it differs by fly.** What the atlas shows to be an outlier gets asked about;
+an individual that nothing distinguishes does not. But that difference arrives as **volume**, not as a rate: the
+royalty is a fixed share of a fee the caller pays, so an interesting fly earns by being called more often, and what
+capitalises is its resale price — the scarce thing is a measured phenotype, not a token. Earnings will be a power law,
+most individuals will earn close to nothing, and nothing on the page should suggest otherwise.
+
+**The invariant to keep.** `MINT_PRICE − MINT_BOND ≥ steps × runs × redundancy × p(model)` for the standard battery:
+a mint must cover the measurement of the individual it creates. It holds today (0.05 against 0.039) with about 20%
+spare. Change the price, the battery's size or the redundancy and the other side has to move with it, or the collection
+sells individuals it cannot afford to measure.
+
+### The circle, and what opens it
+
+While the project is the only task client, the money goes: minters → treasury → task fees → hosts (and a royalty back
+to the individuals' owners). A holder's royalty is therefore, today, a rebate of other minters' money. **This is
+disclosed, not hidden** — the paper says it, and so does the page. The circle opens when fees arrive from outside:
+that, and not the token, is what the gateway (docs/GATEWAY.md) is for. Until then the atlas has a budget, not a
+revenue: 100 founders sell once, and breeding is what continues it.
+
+### What it means for a call's latency
+
+A real battery task is 5,000 steps: **about three seconds of CPU per provider on one core**, of which more than half
+is now the commitments rather than the simulation. A host's page sizes its slot for 100 steps by default; an
+individual's battery needs 5,000, which is why `GATEWAY_MAX_STEPS` and what the hosts load have to be raised together.
+
+### And what it does not mean
+
+**The pilot never needed a network.** 2.7 CPU-hours is an afternoon on a laptop, and while a result is that cheap to
+reproduce, re-running it is the cheapest possible audit there is: redundancy buys a reader nothing they could not buy
+themselves. The gate experiment is starker still — six tasks, sixteen seconds of CPU, three and a half minutes on the
+chain. It was an integration test, and should be described as one.
+
+**The atlas is a different thing.** Four million runs a sex is 20 days of a desktop at redundancy 2, and nobody
+re-runs that to check a row. What makes it a network's work is not the weight of a run — a fly brain is a sparse graph
+and an ordinary computer's DRAM is what it wants — but their number. That is the shape this mesh fits *today*: a model
+small enough to keep resident, asked millions of times. It is not a ceiling. A mammalian connectome is the same
+protocol with a GPU under it, because what makes a result checkable is the arithmetic and not the size
+(docs/DESIGN.md §5c).
+
+**And the rows, once computed, are free.** They are published, they are a few kilobytes each, and anyone can download
+the lot; a deterministic result with a published recipe cannot be sold twice. So the atlas is not the revenue — it is
+the reference, and the reason anybody would bring a question to it (docs/GATEWAY.md §4.2).

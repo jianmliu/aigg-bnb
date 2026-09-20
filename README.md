@@ -1,4 +1,12 @@
-# aigg-bnb — PoRW fly-brain mesh on BNB Chain
+# aigg-bnb — a PoRW mesh for deterministic brain models, on BNB Chain
+
+**Three names, three layers, and they are not interchangeable.** `aigg` is the protocol — proof of resident weights,
+sortition, redundancy, the bisection dispute — and it is about *arithmetic*, not about flies: anything whose execution
+is exact and integer can be verified by it, at any size (docs/DESIGN.md §5c). **`aigg-bnb`** is this repository: that
+protocol deployed on BNB Chain, with the contracts, the relayer, the page and the gateway. **FlyBnB** is a *dataset*:
+the whole-brain perturbation atlas of the fly, the first thing this network is being used to produce (`flybnb/`,
+`docs/flybnb/`). A mouse atlas would be another dataset with another name, on the same protocol and the same chain;
+"the FlyBnB network" is a phrase to avoid.
 
 The BNB Chain deployment of the browser fly-brain mesh: **BNB** as the bond and settlement
 asset, **BSC / opBNB** as the settlement chain, **Greenfield** as the content-addressed store
@@ -28,10 +36,10 @@ the chain and follows mints and transfers.
 | `js/greenfield_admin.mjs` / `js/register_mep.mjs` | publisher tools: bridge-funded deployer account → create a public-read bucket, upload the payload (SDK, Reed-Solomon checksums), then register the MEP on-chain after verifying the SP serves bytes with the pinned `model_id` |
 | `contracts/src/LineageRegistry.sol` | **who a derived brain is, provably**: bases proven from their first tile; `register(delta, model_id)` with a bond and a challenge window; one-record and static-byte challenges through aigg-porw's `FlyDeltaRecordVerifier`; finalization generation by generation. `FlyCollection.registerDerived` accepts only final registrations and, for bred tokens, only the recipe the contract recorded |
 | `relayer/` | **the relayer service**: stage-1 relay hub + epoch aggregator (one root per MEP per epoch) + commit-reveal beacon participant / epoch roller + gas-sponsoring transaction submitter for bonded instances (`delegateBySig`, `materializeClaim`, `submitResult`, `settle`) with a small HTTP API |
-| `frontend/` | **flybnb — the page** (Vite + React). A bed & breakfast for fly brains, organised on BNB Chain: a brain is a *listing*, whoever holds it resident is its *host* and posts a deposit (the bond), and a scientist *books* an experiment on it. Three views — **Brains** (the listings, each with a portrait drawn from its `model_id`; what hosting and owning pay today, and what they do not yet; the booking card), **Host** (deposit → house key → move a brain in → open the doors) and **Flies** (the colony and breeding). Underneath it is the node page it always was: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
+| `frontend/` | **the page** (its current skin is FlyBnB's, because the fly atlas is what the network is producing) (Vite + React). A bed & breakfast for fly brains, organised on BNB Chain: a brain is a *listing*, whoever holds it resident is its *host* and posts a deposit (the bond), and a scientist *books* an experiment on it. Three views — **Brains** (the listings, each with a portrait drawn from its `model_id`; what hosting and owning pay today, and what they do not yet; the booking card), **Host** (deposit → house key → move a brain in → open the doors) and **Flies** (the colony and breeding). Underneath it is the node page it always was: connect wallet → choose the brains to host → bond BNB for all of them → delegate a session key (one EIP-712 signature) → load a model per brain (model_id verified locally; a Greenfield SP endpoint fills the URL from the MEP's `gnfd://` pointer) → run the node (a claim per brain per epoch, materialize when wanted, audits and tasks for every hosted brain over the relay); the selector switches which brain the model panel shows |
 | `test/` | end-to-end on a local anvil: `e2e_batch.mjs` (one task, many runs: posted, executed by two live nodes, settled, a row re-executed by the client; then a lie in one run bisected to on-chain and convicted); `e2e_anvil.mjs` (the whole loop without a browser) and `e2e_frontend.mjs` (headless Chromium with a wallet simulated outside the page) |
 | `deploy.sh` | opBNB testnet / BSC testnet deployment (Foundry) |
-| `gateway/` | the OpenAI-compatible adapter (`docs/GATEWAY.md`, milestones 0-1): `POST /v1/responses` becomes an on-chain task paid by the gateway's own wallet, and the answer is a readout -- spike counts the providers returned, served only because they hash to the settled digest -- and a receipt. `npm run gateway`; it is not part of the relayer, because it holds money |
+| `gateway/` | the OpenAI-compatible adapter (`docs/GATEWAY.md`, milestones 0-1): `POST /v1/responses` becomes an on-chain task paid by the gateway's own wallet, and the answer is a readout -- spike counts the providers returned, served only because they hash to the settled digest -- and a receipt. `npm run gateway`; it is not part of the relayer, because it holds money. `npm run gateway:aigg plan` / `apply` registers it with ai.gg (aigg-src) as an upstream account -- group, account with passthrough, priced channel -- and keeps the model list in step |
 | `deploy_collection.sh` | the genesis `FlyCollection` on top of a deployed mesh (`contracts/script/DeployCollection.s.sol`), with its `TreasuryRouter` (unless `TREASURY` names one) and its on-chain `FlyRenderer`: the genesis root is read from `flybnb/genesis/genesis-v1.json`, the collection is listed on the mesh's `CollectionWhitelist`, and its address is saved as `PORW_COLLECTION` |
 
 ## Layering (short version)
@@ -184,6 +192,12 @@ not committing env files, and that habit stays: `render.yaml` carries addresses 
 `test/render_blueprint.mjs` fails the build if a secret ever gets a value in it or a stray 32-byte hex string shows up.
 A redeployment is now a pull request that changes that block, followed by a manual deploy (the Blueprint keeps
 auto-deploy off: a restart drops the beacon secret committed for the next epoch).
+
+The page itself is published to Cloudflare Pages with `npm run deploy:frontend` (project `aigg-fly`, live at
+`fly.ai.gg`). A deployed build **bakes its relayer in** — `VITE_RELAYER_URL`, which the script defaults to the hosted
+testnet relayer — and that is what makes it connect on open instead of showing the developer's Mesh capsule. Built
+without it the bundle is perfectly valid and knows no relayer, which looks like a broken site and nothing in the build
+says so, so `test/deployed_build.mjs` runs between the build and the upload and refuses to publish one.
 
 Everything else is as before. `deploy.sh` writes `.env.<network>` (`PORW_CHAIN_ID`, `PORW_RPC`, `PORW_EPOCH_BLOCKS`,
 `PORW_VERIFIER`, `PORW_MEP_REGISTRY`, `PORW_INSTANCES`, `PORW_BEACON`, `PORW_CLAIMS`, `PORW_MARKET`,
@@ -376,3 +390,20 @@ cd contracts && forge test          # remappings point at contracts/lib/aigg-por
 cd .. && npm install && npm test    # js/test_greenfield.mjs (a local server stands in for the storage provider)
 NETWORK=anvil ./deploy.sh           # deploy the BNB-parameterized mesh to a local anvil (or opbnb-testnet / bsc-testnet)
 ```
+
+### Gateway M3: cold epochs and hosting activity
+
+The gateway can wake a lazy mesh using its task wallet, which must be explicitly listed in
+`PORW_TASK_CLIENTS`. Set `GATEWAY_WAKE_TIMEOUT_MS` to bound the wait for a beacon and eligible hosts
+(default 300000 ms). Streaming requests stay alive during the wait; a timeout posts no task and spends
+no task fee. An already-warm mesh with too few hosts still returns `503 model_cold` immediately.
+See [Gateway M3](docs/GATEWAY.md#7-order-of-work) for signed wake and timeout semantics.
+
+The **Host** view shows models resident in this tab, eligible hosts, settled requests and BNB paid to
+your wallet in the latest 5,000 blocks. It labels the block range and reports unavailable reads explicitly.
+Relayer reads: `/meps` includes distinct `providers` and `votes`; `/hosts?instance=0x…` returns recent
+settlement totals and eligibility. These are eligibility counts, not a guarantee a tab is still connected.
+
+Run `npm run test:gateway:m3` for cold-wake, capacity and earnings checks, and `npm run test:frontend`
+for the browser suite. Local integration tests require Foundry (`FOUNDRY_BIN`) and Node 22+; browser
+tests can use an installed Chromium through `PW_CHROMIUM`.

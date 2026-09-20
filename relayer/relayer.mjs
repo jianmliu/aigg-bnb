@@ -10,7 +10,9 @@
 // HTTP API (JSON): GET /deployment  GET /epoch?mep=0x..  GET /proof?mep&epoch&instance  GET /status
 //                  POST /tx/delegate {instance,session,expiry,sig}  POST /tx/materialize {mep,epoch,instance}
 //                  POST /tx/result {taskId,execDigest,execRoot,signature}  POST /tx/settle {taskId,instance}
+import { verifyMessage } from "viem";
 import { providerModels, hostStats } from "./providers.mjs";
+import { wakeMessage } from "./wake.mjs";
 import fs from "node:fs"; import http from "node:http"; import path from "node:path"; import { fileURLToPath } from "node:url";
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
@@ -333,7 +335,7 @@ const readHostStats = hostStats(ch, dep.addresses.market);
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
     if (u.pathname === "/meps") return json(res, 200, await providerModels(ch, meps));
     if (u.pathname === "/hosts") {
@@ -355,6 +357,19 @@ api.on("request", async (req, res) => {
     // a bonded instance saying it is here, so the lazy beacon keeps producing (see warmth()). The bonded check is
     // skipped while we are already warm through that epoch, so a tab polling once an epoch costs no RPC at all.
     if (u.pathname === "/wake") {
+      // A signed-client request is never allowed to fall back to the legacy host path.
+      if ("client" in b || "signature" in b) {
+        const client = String(b.client || "").toLowerCase();
+        if (!TASK_CLIENTS?.has(client) || !Number.isSafeInteger(b.epoch) || b.epoch < 0 || typeof b.signature !== "string") return json(res, 403, { error: "invalid task-client wake" });
+        const current = Number(await ch.claims.read.currentEpoch());
+        if (b.epoch > current || b.epoch < current - 1) return json(res, 403, { error: "wake epoch expired or in the future" });
+        let valid = false;
+        try { valid = await verifyMessage({ address: client, message: wakeMessage(dep, ch.account.address, b.epoch), signature: b.signature }); } catch {}
+        if (!valid) return json(res, 403, { error: "invalid wake signature" });
+        // Replaying this signature cannot extend its signed epoch's lease.
+        wakeUntil = Math.max(wakeUntil, b.epoch + WAKE_EPOCHS); status.beacon.wakeUntil = wakeUntil;
+        return json(res, 200, { ok: true, lazy: LAZY, epoch: current, wakeUntil });
+      }
       if (lastBlock === 0n) return json(res, 503, { error: "no block seen yet" }); // the first tick has not run
       const e = Number(lastBlock / BigInt(EPOCH_BLOCKS)); // the last block a tick saw: up to one poll stale, which at
       // worst attributes a wake near an epoch boundary to the previous epoch. Harmless: WAKE_EPOCHS covers it and the

@@ -24,7 +24,7 @@ export default function HostDashboard({ active }) {
    }catch(e){if(live)setAssetError(e.message);}})();}return()=>{live=false;};
   },[active,key,s.chainOk,deployment?.addresses?.tokenBatteryBudget]);
   const toggleAsset=async()=>{if(!asset||asset.key!==key||!s.chainOk)throw Error('Connect on the deployment chain');
-   setSaving(true);try{const chain=await window.ethereum.request({method:'eth_chainId'});if(Number(chain)!==Number(deployment.chainId))throw Error('Wrong wallet chain');
+   setSaving(true);try{const chain=await C.eth().request({method:'eth_chainId'});if(Number(chain)!==Number(deployment.chainId))throw Error('Wrong wallet chain');
     const r=await C.send(deployment.addresses.market,'setAcceptedToken(address,bool)',[asset.token,asset.accepted?0:1]);if(r.status!=='0x1')throw Error('Preference transaction reverted');
     setAsset({...asset,accepted:!asset.accepted});
    }finally{setSaving(false);}};
