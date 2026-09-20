@@ -59,8 +59,8 @@ struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStr
 | `stream: true` | progress events, and the keep-alive that carries a minutes-long call through a proxy |
 | the response `id` | `taskId` |
 | `system_fingerprint` | the scheme digest and the exec kind: what "the same model" means here |
-| `usage.output_tokens` | `steps × redundancy × runs`: the work |
-| `usage.input_tokens` | the call's gas, as spent posting and settling it, in steps: `⌈gas wei / wei per step⌉` — a fixed cost per call |
+| `usage.output_tokens` | the work: `steps × redundancy × runs × the brain's factor × the stimulus set's` |
+| `usage.input_tokens` | the call's gas, as spent posting and settling it, in the **same** unit: `⌈gas wei / wei per token⌉` |
 
 `seed`, `steps` and `redundancy` may also ride **inside the experiment**, and there they win — because behind ai.gg a caller
 of `/v1/chat/completions` has every top-level field it does not know dropped (`seed`), `max_tokens` floored at 128, and on
@@ -198,13 +198,17 @@ gateway pays nobody and keeps no ledger of what it owes: it sells balance and sp
 difference. That is also why none of `aigg-src`'s payout machinery (`provider_owner_user_id`, the withdrawal queue) is
 needed here.
 
-**Price.** `fee = steps × runs × redundancy × p(model, stimulus)` = `output_tokens × p`, with `p` wei per step per
-provider. **A step is not a step.** Measured on one core, the thirteen battery stimuli span **9.4×** — 0.23 s for
-`ocelli`, which barely wakes the brain, against 2.16 s for `pheromone`, which ignites it (~7,000 neurons spiking) — and
-the ≥ 2-synapse export costs **1.54×** the ≥ 5-synapse one for the same 5,000 steps. One price per step would pay a
-host the same for nine times the work, and charge a caller the same for a ninth of it. So `p` carries both factors,
-measured and written down in `gateway/pricing.json`, and `/v1/models` reports each brain's own price with what a named
-stimulus set does to it. The
+**Price. One unit, one rate, and every difference in the count.** A token is `GATEWAY_WEI_PER_STEP` of work. A call
+is `output_tokens = steps × runs × redundancy × model factor × set factor` of them, and its fee is
+`output_tokens × wei_per_token`; its gas is `input_tokens` of the same unit. **A step is not a step**: measured on one
+core, the thirteen battery stimuli span **9.4×** — 0.23 s for `ocelli`, which barely wakes the brain, against 2.16 s
+for `pheromone`, which ignites it (~7,000 neurons spiking) — and the ≥ 2-synapse export costs **1.54×** the ≥ 5-synapse
+one for the same 5,000 steps (`gateway/pricing.json`, measured).
+
+Those factors go in the **count**, never in the rate, and the reason is arithmetic: a platform bills
+`price per token × tokens`, so a factor that reaches the fee but not the token count is a factor the gateway pays out
+of its own pocket — and a factor applied to *both* is charged twice. One rate for every model, and the gas divided by
+that same rate, is the only arrangement in which a caller's bill is exactly what the call cost. The
 gas is a second, fixed cost — two transactions, ~0.33–0.48 M gas whatever the length — and for a short call it is the
 larger one (100 steps at redundancy 2 and 0.1 gwei/step is 0.00002 BNB of fee against ~0.00004 of gas). So it is billed
 too, as `input_tokens` worth the same `p` each: one price per token, input and output, and a call pays for what it
