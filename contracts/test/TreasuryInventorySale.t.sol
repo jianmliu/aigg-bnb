@@ -48,6 +48,15 @@ contract TreasuryInventorySaleTest is Test {
         sale = new TreasuryInventorySale(address(c), alice);
         vm.startPrank(alice); c.approve(address(sale), id); sale.list(id, 1 ether, block.timestamp + 100); vm.stopPrank();
     }
+    function test_sellerCanPausePurchasesDuringStocking() public {
+        vm.prank(bob); (bool unauthorized,) = address(sale).call(abi.encodeWithSignature("setPaused(bool)", true));
+        assertFalse(unauthorized);
+        vm.prank(alice); (bool ok,) = address(sale).call(abi.encodeWithSignature("setPaused(bool)", true));
+        assertTrue(ok); assertFalse(sale.available(id));
+        vm.prank(bob); vm.expectRevert("unavailable"); sale.buy{value: 1 ether}(id, 1 ether, 1, block.timestamp + 10);
+        vm.prank(alice); (ok,) = address(sale).call(abi.encodeWithSignature("setPaused(bool)", false));
+        assertTrue(ok); assertTrue(sale.available(id));
+    }
     function test_inventoryPurchasePaysSellerWithoutMintOrBond() public {
         uint256 before = alice.balance;
         vm.prank(bob); sale.buy{value: 1 ether}(id, 1 ether, 1, block.timestamp + 10);

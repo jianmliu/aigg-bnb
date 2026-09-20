@@ -200,6 +200,7 @@ contract FlyCollection {
     ///         least one UNIT upstream, so MINT_BOND is either 0 (no bonding) or >= UNIT. Joining their own individual's
     ///         MEP is a later top-up once it is registered.
     function mint(uint32 genesisIndex, uint8 sex, bytes32 deltaHash, bytes32[] calldata proof) external payable returns (uint256 id) {
+        _authorizeGenesisMint();
         require(msg.value == MINT_PRICE, "price");
         require(genesisIndex < GENESIS_SIZE && !genesisMinted[genesisIndex], "index");
         require(sex == FEMALE || sex == MALE, "sex");
@@ -220,6 +221,9 @@ contract FlyCollection {
         }
         _toTreasury(MINT_PRICE - MINT_BOND);
     }
+
+    /// @dev Legacy collections permit public genesis mint; inventory collections override this guard.
+    function _authorizeGenesisMint() internal view virtual {}
 
     /// @notice Breed one female and one male individual. Both must be held (or approved) by the caller.
     /// @dev    The child is a variant of ONE base — a delta's ops are indices into one base's root-id table, and

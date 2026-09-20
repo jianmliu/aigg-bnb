@@ -18,6 +18,8 @@ contract TreasuryInventorySale {
     struct Listing { uint256 price; uint256 expiresAt; uint256 revision; }
     mapping(uint256 => Listing) public listings;
     bool private entered;
+    bool public paused;
+    event PauseChanged(bool paused);
     event Listed(uint256 indexed tokenId, uint256 price, uint256 expiresAt, uint256 revision);
     event Cancelled(uint256 indexed tokenId, uint256 revision);
     event Adopted(uint256 indexed tokenId, address indexed buyer, uint256 price, uint256 revision);
@@ -27,7 +29,9 @@ contract TreasuryInventorySale {
         require(nft.code.length > 0 && seller != address(0), "configuration");
         collection = IInventoryNFT(nft); treasury = seller;
     }
+    function setPaused(bool value) external onlyTreasury { paused = value; emit PauseChanged(value); }
     function available(uint256 id) public view returns (bool) {
+        if (paused) return false;
         Listing memory q = listings[id];
         if (q.price == 0 || block.timestamp > q.expiresAt) return false;
         try collection.ownerOf(id) returns (address owner) {
