@@ -237,6 +237,17 @@ try {
     const frames = await text;
     check("cold stream stays alive, then posts and settles once hosts are eligible", /: waiting on the chain/.test(frames) && /event: response.created/.test(frames) && /event: response.completed/.test(frames) && !/event: response.failed/.test(frames));
   }
+  // ---- health is whether it can do its job, and this is LAST because it takes the relayer away ----
+  // A gateway with no relay connection cannot announce to anybody: it takes the call, spends the fee posting it on
+  // chain, and refunds three minutes later. /healthz answered `ok: true` through exactly that, twice on the live
+  // testnet, because `ok` was a constant.
+  { const h = await (await fetch(GWY.url + "/healthz")).json();
+    check("healthz reports the relay it cannot work without", h.ok === true && h.relay?.connected >= 1, JSON.stringify(h));
+    await R.stop(); await H.sleep(2000); // the relayer goes away, as a redeploy does
+    const r = await fetch(GWY.url + "/healthz"); const h2 = await r.json();
+    check("with no relay it says so, and stops answering 200", h2.ok === false && r.status === 503, `${r.status} ${JSON.stringify(h2)}`);
+    check("and it names the consequence, which is what an operator needs", /refunded/.test(h2.relay?.note || ""), JSON.stringify(h2.relay)); }
+
 } catch (e) { console.error(e); fails++; }
 finally { for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); fs.rmSync(tmp, { recursive: true, force: true }); }
 console.log(fails ? `${fails} FAILURES` : "gateway: all checks passed"); process.exit(fails ? 1 : 0);
