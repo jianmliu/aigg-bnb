@@ -474,17 +474,20 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
 
 ## 9. Who pays for the atlas, and what a measurement costs
 
-Measured, not assumed. One battery run of the real brain (`flywire-783-min2`, 139,255 neurons, 7,595,967 synapses;
-5,000 steps, commit stride 500) in the wasm node on one core of an M-series Mac:
+Measured, not assumed. One battery run (5,000 steps, commit stride 500) in the wasm node on one core of an M-series
+Mac, on the brain the battery is built on (`flywire-783-min5`, 139,255 neurons, 2,700,513 synapses) and on the heavier
+export the founders vary (`flywire-783-min2`, 7,595,967 synapses):
 
 | | |
 |---|---|
-| one run | **32.3 s** (30.6 s of it the simulation, 1.6 s the segment commitments), 196 MB resident, 377 MB while loading |
-| one individual's standard battery (13 stimuli × 3 seeds = 39 runs) | **21 minutes of CPU** per host — 42 at redundancy 2 |
+| one run, min5 / min2 | **2.6 s / 3.0 s** — of which 1.7 s is the segment commitments, which are now the larger half |
+| the same before the event-driven step (aigg-porw #31) | 14.1 s / 33.8 s: the simulation went 12.4 → 0.8 s and 32.1 → 1.4 s |
+| one individual's standard battery (13 stimuli × 3 seeds = 39 runs) | **1.7 minutes of CPU** per host — 3.4 at redundancy 2 |
 | its fee at 0.1 gwei per step per provider | 195,000 steps × 2 × 10⁻¹⁰ = **0.039 BNB** |
 | its gas | one `postBatch` + one `settle` for all 39 runs: ~0.00004 BNB, three orders of magnitude below the fee |
 | what a mint puts in the treasury | `MINT_PRICE − MINT_BOND` = **0.05 BNB** (the bond is the minter's own stake, and stays theirs) |
 | what a breed puts in | `BREED_FEE − HATCH_BOUNTY` = **0.049 BNB** |
+| what the whole atlas costs in compute | 11,739 runs ≈ **5 CPU-hours** — the repository's own sparse analysis runner does it in about 100 minutes on eight cores |
 
 **So a mint buys, almost exactly, one measurement of the individual it creates.** At the breeding study's scale — 301
 individuals, 11,739 runs — the compute costs about 11.7 BNB, and 100 adoptions plus 201 breedings bring in about 14.8.
@@ -495,13 +498,19 @@ the project is the task client only in the sense that it spends what adopters pu
 
 The 0.1 gwei per step per provider is **derived from the budget, not from the cost**: it is what the atlas can pay per
 row if a mint is to cover an individual's battery. Against the cost of the compute it is very high — 0.0195 BNB per
-host per battery is **0.056 BNB per CPU-hour**, some three orders of magnitude above what an ordinary cloud core costs.
+host per battery, now 1.7 minutes of CPU, is **0.7 BNB per CPU-hour**: four orders of magnitude above what an ordinary
+cloud core costs, and a further order of magnitude more than before the kernel was made event-driven.
 
 That is a choice, not an error: a host must be paid enough to bother keeping a brain resident, and early on the price
 has to be generous. But it should be said plainly, because two things follow. First, hosting is profitable long before
 it is efficient, so the margin is where competition will show up. Second, the headroom is large enough to spend on
 **redundancy** instead of profit: three or five independent providers per row, at the same total price, buys more
 agreement than a fatter margin does.
+
+**A price per step ignores the brain.** The fee is `steps × redundancy × p`, and `p` is one number for the whole
+gateway — but min2 costs a host nearly twice what min5 does for the same 5,000 steps, and a larger connectome would
+cost far more. `p` belongs to the model, not to the network: `/v1/models` already carries a price per model, and only
+the configuration is still global.
 
 **The invariant to keep.** `MINT_PRICE − MINT_BOND ≥ steps × runs × redundancy × p(model)` for the standard battery:
 a mint must cover the measurement of the individual it creates. It holds today (0.05 against 0.039) with about 20%
@@ -518,6 +527,17 @@ revenue: 100 founders sell once, and breeding is what continues it.
 
 ### What it means for a call's latency
 
-A real battery task is 5,000 steps: half a minute of CPU per provider on one core, less with a worker pool, and about
-three times less on the ≥ 5-synapse export. A host's page sizes its slot for 100 steps by default; an individual's
-battery needs 5,000, which is why `GATEWAY_MAX_STEPS` and what the hosts load have to be raised together.
+A real battery task is 5,000 steps: **about three seconds of CPU per provider on one core**, of which more than half
+is now the commitments rather than the simulation. A host's page sizes its slot for 100 steps by default; an
+individual's battery needs 5,000, which is why `GATEWAY_MAX_STEPS` and what the hosts load have to be raised together.
+
+### And what it does not mean
+
+None of this says the atlas needs a network to be computed. Five CPU-hours is a desktop overnight, and the repository's
+own runner does the whole breeding study in about 100 minutes on eight cores. While a result is that cheap to
+reproduce, **re-running it is the cheapest possible audit**, and redundancy buys nothing a reader could not buy
+themselves. What the mesh buys is elsewhere: a market and a royalty for the individuals, a contribution record that is
+a query rather than a list (docs/flybnb/CREDIT.md), and — through the gateway — a result somebody who is *paying* can
+trust without re-running it, because independent providers agreed on it with bonds at risk. The compute argument only
+starts to hold at a scale where nobody can re-run the thing: a connectome two orders of magnitude larger, or tens of
+thousands of individuals.
