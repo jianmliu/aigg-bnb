@@ -193,6 +193,12 @@ not committing env files, and that habit stays: `render.yaml` carries addresses 
 A redeployment is now a pull request that changes that block, followed by a manual deploy (the Blueprint keeps
 auto-deploy off: a restart drops the beacon secret committed for the next epoch).
 
+The page itself is published to Cloudflare Pages with `npm run deploy:frontend` (project `aigg-fly`, live at
+`fly.ai.gg`). A deployed build **bakes its relayer in** — `VITE_RELAYER_URL`, which the script defaults to the hosted
+testnet relayer — and that is what makes it connect on open instead of showing the developer's Mesh capsule. Built
+without it the bundle is perfectly valid and knows no relayer, which looks like a broken site and nothing in the build
+says so, so `test/deployed_build.mjs` runs between the build and the upload and refuses to publish one.
+
 Everything else is as before. `deploy.sh` writes `.env.<network>` (`PORW_CHAIN_ID`, `PORW_RPC`, `PORW_EPOCH_BLOCKS`,
 `PORW_VERIFIER`, `PORW_MEP_REGISTRY`, `PORW_INSTANCES`, `PORW_BEACON`, `PORW_CLAIMS`, `PORW_MARKET`,
 `PORW_DISPUTES`, `PORW_RELAYS`, plus the deployer that owns the registries: `PORW_DEPLOYER`, `PORW_DEPLOYER_KEY`); the relayer reads the environment (`relayer/env.mjs`) and serves the
