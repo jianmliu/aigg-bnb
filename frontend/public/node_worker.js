@@ -21,6 +21,9 @@ const reply = (m, data) => self.postMessage({ ok: true, reqId: m.reqId, ...data 
 const say = (op, data) => self.postMessage({ op, ...data });
 
 let node = null, rc = null, svc = null;
+// The base a delta was applied over, kept between prepares: the individuals of one collection all edit the same one,
+// and re-fetching it per fly is tens of megabytes each time. One at a time, and only until `releaseBase`.
+let heldBase = null;
 const pending = new Map(); // mepId -> bytes, kept here so the page never holds a 28 MB payload
 
 const ops = {
@@ -42,8 +45,16 @@ const ops = {
     if (d.layout !== undefined && d.layout !== LAYOUT.inplace) throw new Error("this delta is in the compact layout, which the page cannot apply yet");
     return { isDelta: true, baseModelId: hex(d.baseModelId), name: d.name ?? null, bytes: b.length };
   },
+  /** Does this worker still hold the base a delta needs? Every individual of a collection is a delta over the same
+   *  base, so preparing a second one should not mean fetching 77 MB again. Held only while brains are being
+   *  prepared, and only one: `releaseBase` is what ends it, and the page calls that once the node is up. */
+  async hasBase({ modelId }) { return { held: heldBase?.modelId === modelId?.toLowerCase(), bytes: heldBase?.bytes.length ?? 0 }; },
+  async releaseBase() { const was = heldBase?.bytes.length ?? 0; heldBase = null; return { freed: was }; },
   async prepare({ mepId, bytes, delta = null, baseModelId = null }) {
-    let b = new Uint8Array(bytes);
+    let b = bytes ? new Uint8Array(bytes) : null;
+    if (!b && delta && baseModelId && heldBase?.modelId === baseModelId.toLowerCase()) b = heldBase.bytes; // the base is already here
+    if (!b) throw new Error("no bytes to prepare from");
+    if (delta && baseModelId) heldBase = { modelId: baseModelId.toLowerCase(), bytes: b }; // keep it for the next individual
     // Applying is what produces the individual: byte for byte what a direct publication of it would have been, and
     // so the same model_id. The in-place layout applies in plain JS, which is why this needs no kernel and can run
     // before the node exists -- the page prepares a brain long before it decides to host one.

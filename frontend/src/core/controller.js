@@ -188,17 +188,23 @@ export async function loadModel() {
   let delta = null, baseModelId = null;
   const info = await ask("deltaInfo", { bytes: bytes.buffer });
   if (info.isDelta) {
-    delta = bytes; baseModelId = info.baseModelId;
+    delta = bytes; baseModelId = info.baseModelId; bytes = null;
     const base = servedBaseFor(baseModelId);
     if (!base) throw new Error(`this is a delta over model ${baseModelId.slice(0, 12)}…, which this mesh does not serve: nothing to apply it to`);
-    const url = daUrl(base.weightsDA, $("sp")?.value);
-    if (!url) throw new Error(`this is a delta over ${mepName(base)}; give that brain's storage provider above so its base can be fetched`);
-    log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)} — fetching the base…`);
-    bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    // The individuals of one collection all edit the SAME base, so the worker keeps the last one it applied: the
+    // second fly costs a 228-byte download rather than another 77 MB of somebody's connection.
+    const held = await ask("hasBase", { modelId: baseModelId });
+    if (held.held) log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)}, whose base is already here — nothing to download`);
+    else {
+      const url = daUrl(base.weightsDA, $("sp")?.value);
+      if (!url) throw new Error(`this is a delta over ${mepName(base)}; give that brain's storage provider above so its base can be fetched`);
+      log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)} — fetching the base…`);
+      bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    }
   }
-  log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB ${delta ? "base " : ""}downloaded, checking its model_id…`);
-  const r = await ask("prepare", { mepId: m.mepId, bytes: bytes.buffer, ...(delta ? { delta: delta.buffer, baseModelId } : {}) },
-    delta ? [bytes.buffer, delta.buffer] : [bytes.buffer]); // transferred, not copied
+  if (bytes) log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB ${delta ? "base " : ""}downloaded, checking its model_id…`);
+  const r = await ask("prepare", { mepId: m.mepId, ...(bytes ? { bytes: bytes.buffer } : {}), ...(delta ? { delta: delta.buffer, baseModelId } : {}) },
+    [bytes?.buffer, delta?.buffer].filter(Boolean)); // transferred, not copied
   const ok = r.modelId.toLowerCase() === m.modelId.toLowerCase();
   state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, bytes: r.bytes, modelId: r.modelId, ok };
   if (state.node) await hostOnNode(m); // hot-add to a running node
@@ -260,6 +266,8 @@ export async function startNode() {
   await ask("relay", { url: state.deployment.relay });
   state.node = { models: new Map(), memoryBytes: 0 }; // the page's view of what the worker holds resident
   for (const id of ready) await hostOnNode(mepById(id));
+  // Nothing is prepared from here on, so the base kept for applying deltas is dead weight in the worker's heap.
+  { const f = await ask("releaseBase"); if (f.freed) log(`released the ${MB(f.freed)} base the individuals were applied over`); }
   log(`node running for ${state.node.models.size} MEP(s)`);
   setInterval(() => loop().catch((e) => log("loop error: " + (e.message || e))), 3000); onChange();
 }
