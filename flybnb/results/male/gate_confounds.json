@@ -1,0 +1,43 @@
+{
+ "readout": "DNge145, late spikes, mean of the battery's seeds, base wiring",
+ "female_one_ear": [
+  {
+   "stimulus": "sound",
+   "without_gate": 8.333333333333334,
+   "with_gate": 1.3333333333333333,
+   "removed": 0.8400000000000001
+  },
+  {
+   "stimulus": "sound_left",
+   "without_gate": 1.0,
+   "with_gate": 0.0,
+   "removed": 1.0
+  }
+ ],
+ "male_by_unit": [
+  {
+   "w_unit_q16": 6308,
+   "without_gate": 11.0,
+   "with_gate": 6.666666666666667,
+   "removed": 0.3939393939393939
+  },
+  {
+   "w_unit_q16": 7209,
+   "without_gate": 16.333333333333332,
+   "with_gate": 8.666666666666666,
+   "removed": 0.4693877551020408
+  },
+  {
+   "w_unit_q16": 8110,
+   "without_gate": 20.333333333333332,
+   "with_gate": 12.666666666666666,
+   "removed": 0.3770491803278688
+  },
+  {
+   "w_unit_q16": 9011,
+   "without_gate": 24.0,
+   "with_gate": 16.0,
+   "removed": 0.33333333333333337
+  }
+ ]
+}

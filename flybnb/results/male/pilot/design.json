@@ -1,0 +1,609 @@
+{
+ "note": "male variance pilot: the published wiring and 100 unrelated founders (seeds 1000..1099, as the female pilot)",
+ "individuals": [
+  {
+   "id": "BASE",
+   "kind": "base"
+  },
+  {
+   "id": "M000",
+   "kind": "founder",
+   "seed": 1000,
+   "name": "pilot0"
+  },
+  {
+   "id": "M001",
+   "kind": "founder",
+   "seed": 1001,
+   "name": "pilot1"
+  },
+  {
+   "id": "M002",
+   "kind": "founder",
+   "seed": 1002,
+   "name": "pilot2"
+  },
+  {
+   "id": "M003",
+   "kind": "founder",
+   "seed": 1003,
+   "name": "pilot3"
+  },
+  {
+   "id": "M004",
+   "kind": "founder",
+   "seed": 1004,
+   "name": "pilot4"
+  },
+  {
+   "id": "M005",
+   "kind": "founder",
+   "seed": 1005,
+   "name": "pilot5"
+  },
+  {
+   "id": "M006",
+   "kind": "founder",
+   "seed": 1006,
+   "name": "pilot6"
+  },
+  {
+   "id": "M007",
+   "kind": "founder",
+   "seed": 1007,
+   "name": "pilot7"
+  },
+  {
+   "id": "M008",
+   "kind": "founder",
+   "seed": 1008,
+   "name": "pilot8"
+  },
+  {
+   "id": "M009",
+   "kind": "founder",
+   "seed": 1009,
+   "name": "pilot9"
+  },
+  {
+   "id": "M010",
+   "kind": "founder",
+   "seed": 1010,
+   "name": "pilot10"
+  },
+  {
+   "id": "M011",
+   "kind": "founder",
+   "seed": 1011,
+   "name": "pilot11"
+  },
+  {
+   "id": "M012",
+   "kind": "founder",
+   "seed": 1012,
+   "name": "pilot12"
+  },
+  {
+   "id": "M013",
+   "kind": "founder",
+   "seed": 1013,
+   "name": "pilot13"
+  },
+  {
+   "id": "M014",
+   "kind": "founder",
+   "seed": 1014,
+   "name": "pilot14"
+  },
+  {
+   "id": "M015",
+   "kind": "founder",
+   "seed": 1015,
+   "name": "pilot15"
+  },
+  {
+   "id": "M016",
+   "kind": "founder",
+   "seed": 1016,
+   "name": "pilot16"
+  },
+  {
+   "id": "M017",
+   "kind": "founder",
+   "seed": 1017,
+   "name": "pilot17"
+  },
+  {
+   "id": "M018",
+   "kind": "founder",
+   "seed": 1018,
+   "name": "pilot18"
+  },
+  {
+   "id": "M019",
+   "kind": "founder",
+   "seed": 1019,
+   "name": "pilot19"
+  },
+  {
+   "id": "M020",
+   "kind": "founder",
+   "seed": 1020,
+   "name": "pilot20"
+  },
+  {
+   "id": "M021",
+   "kind": "founder",
+   "seed": 1021,
+   "name": "pilot21"
+  },
+  {
+   "id": "M022",
+   "kind": "founder",
+   "seed": 1022,
+   "name": "pilot22"
+  },
+  {
+   "id": "M023",
+   "kind": "founder",
+   "seed": 1023,
+   "name": "pilot23"
+  },
+  {
+   "id": "M024",
+   "kind": "founder",
+   "seed": 1024,
+   "name": "pilot24"
+  },
+  {
+   "id": "M025",
+   "kind": "founder",
+   "seed": 1025,
+   "name": "pilot25"
+  },
+  {
+   "id": "M026",
+   "kind": "founder",
+   "seed": 1026,
+   "name": "pilot26"
+  },
+  {
+   "id": "M027",
+   "kind": "founder",
+   "seed": 1027,
+   "name": "pilot27"
+  },
+  {
+   "id": "M028",
+   "kind": "founder",
+   "seed": 1028,
+   "name": "pilot28"
+  },
+  {
+   "id": "M029",
+   "kind": "founder",
+   "seed": 1029,
+   "name": "pilot29"
+  },
+  {
+   "id": "M030",
+   "kind": "founder",
+   "seed": 1030,
+   "name": "pilot30"
+  },
+  {
+   "id": "M031",
+   "kind": "founder",
+   "seed": 1031,
+   "name": "pilot31"
+  },
+  {
+   "id": "M032",
+   "kind": "founder",
+   "seed": 1032,
+   "name": "pilot32"
+  },
+  {
+   "id": "M033",
+   "kind": "founder",
+   "seed": 1033,
+   "name": "pilot33"
+  },
+  {
+   "id": "M034",
+   "kind": "founder",
+   "seed": 1034,
+   "name": "pilot34"
+  },
+  {
+   "id": "M035",
+   "kind": "founder",
+   "seed": 1035,
+   "name": "pilot35"
+  },
+  {
+   "id": "M036",
+   "kind": "founder",
+   "seed": 1036,
+   "name": "pilot36"
+  },
+  {
+   "id": "M037",
+   "kind": "founder",
+   "seed": 1037,
+   "name": "pilot37"
+  },
+  {
+   "id": "M038",
+   "kind": "founder",
+   "seed": 1038,
+   "name": "pilot38"
+  },
+  {
+   "id": "M039",
+   "kind": "founder",
+   "seed": 1039,
+   "name": "pilot39"
+  },
+  {
+   "id": "M040",
+   "kind": "founder",
+   "seed": 1040,
+   "name": "pilot40"
+  },
+  {
+   "id": "M041",
+   "kind": "founder",
+   "seed": 1041,
+   "name": "pilot41"
+  },
+  {
+   "id": "M042",
+   "kind": "founder",
+   "seed": 1042,
+   "name": "pilot42"
+  },
+  {
+   "id": "M043",
+   "kind": "founder",
+   "seed": 1043,
+   "name": "pilot43"
+  },
+  {
+   "id": "M044",
+   "kind": "founder",
+   "seed": 1044,
+   "name": "pilot44"
+  },
+  {
+   "id": "M045",
+   "kind": "founder",
+   "seed": 1045,
+   "name": "pilot45"
+  },
+  {
+   "id": "M046",
+   "kind": "founder",
+   "seed": 1046,
+   "name": "pilot46"
+  },
+  {
+   "id": "M047",
+   "kind": "founder",
+   "seed": 1047,
+   "name": "pilot47"
+  },
+  {
+   "id": "M048",
+   "kind": "founder",
+   "seed": 1048,
+   "name": "pilot48"
+  },
+  {
+   "id": "M049",
+   "kind": "founder",
+   "seed": 1049,
+   "name": "pilot49"
+  },
+  {
+   "id": "M050",
+   "kind": "founder",
+   "seed": 1050,
+   "name": "pilot50"
+  },
+  {
+   "id": "M051",
+   "kind": "founder",
+   "seed": 1051,
+   "name": "pilot51"
+  },
+  {
+   "id": "M052",
+   "kind": "founder",
+   "seed": 1052,
+   "name": "pilot52"
+  },
+  {
+   "id": "M053",
+   "kind": "founder",
+   "seed": 1053,
+   "name": "pilot53"
+  },
+  {
+   "id": "M054",
+   "kind": "founder",
+   "seed": 1054,
+   "name": "pilot54"
+  },
+  {
+   "id": "M055",
+   "kind": "founder",
+   "seed": 1055,
+   "name": "pilot55"
+  },
+  {
+   "id": "M056",
+   "kind": "founder",
+   "seed": 1056,
+   "name": "pilot56"
+  },
+  {
+   "id": "M057",
+   "kind": "founder",
+   "seed": 1057,
+   "name": "pilot57"
+  },
+  {
+   "id": "M058",
+   "kind": "founder",
+   "seed": 1058,
+   "name": "pilot58"
+  },
+  {
+   "id": "M059",
+   "kind": "founder",
+   "seed": 1059,
+   "name": "pilot59"
+  },
+  {
+   "id": "M060",
+   "kind": "founder",
+   "seed": 1060,
+   "name": "pilot60"
+  },
+  {
+   "id": "M061",
+   "kind": "founder",
+   "seed": 1061,
+   "name": "pilot61"
+  },
+  {
+   "id": "M062",
+   "kind": "founder",
+   "seed": 1062,
+   "name": "pilot62"
+  },
+  {
+   "id": "M063",
+   "kind": "founder",
+   "seed": 1063,
+   "name": "pilot63"
+  },
+  {
+   "id": "M064",
+   "kind": "founder",
+   "seed": 1064,
+   "name": "pilot64"
+  },
+  {
+   "id": "M065",
+   "kind": "founder",
+   "seed": 1065,
+   "name": "pilot65"
+  },
+  {
+   "id": "M066",
+   "kind": "founder",
+   "seed": 1066,
+   "name": "pilot66"
+  },
+  {
+   "id": "M067",
+   "kind": "founder",
+   "seed": 1067,
+   "name": "pilot67"
+  },
+  {
+   "id": "M068",
+   "kind": "founder",
+   "seed": 1068,
+   "name": "pilot68"
+  },
+  {
+   "id": "M069",
+   "kind": "founder",
+   "seed": 1069,
+   "name": "pilot69"
+  },
+  {
+   "id": "M070",
+   "kind": "founder",
+   "seed": 1070,
+   "name": "pilot70"
+  },
+  {
+   "id": "M071",
+   "kind": "founder",
+   "seed": 1071,
+   "name": "pilot71"
+  },
+  {
+   "id": "M072",
+   "kind": "founder",
+   "seed": 1072,
+   "name": "pilot72"
+  },
+  {
+   "id": "M073",
+   "kind": "founder",
+   "seed": 1073,
+   "name": "pilot73"
+  },
+  {
+   "id": "M074",
+   "kind": "founder",
+   "seed": 1074,
+   "name": "pilot74"
+  },
+  {
+   "id": "M075",
+   "kind": "founder",
+   "seed": 1075,
+   "name": "pilot75"
+  },
+  {
+   "id": "M076",
+   "kind": "founder",
+   "seed": 1076,
+   "name": "pilot76"
+  },
+  {
+   "id": "M077",
+   "kind": "founder",
+   "seed": 1077,
+   "name": "pilot77"
+  },
+  {
+   "id": "M078",
+   "kind": "founder",
+   "seed": 1078,
+   "name": "pilot78"
+  },
+  {
+   "id": "M079",
+   "kind": "founder",
+   "seed": 1079,
+   "name": "pilot79"
+  },
+  {
+   "id": "M080",
+   "kind": "founder",
+   "seed": 1080,
+   "name": "pilot80"
+  },
+  {
+   "id": "M081",
+   "kind": "founder",
+   "seed": 1081,
+   "name": "pilot81"
+  },
+  {
+   "id": "M082",
+   "kind": "founder",
+   "seed": 1082,
+   "name": "pilot82"
+  },
+  {
+   "id": "M083",
+   "kind": "founder",
+   "seed": 1083,
+   "name": "pilot83"
+  },
+  {
+   "id": "M084",
+   "kind": "founder",
+   "seed": 1084,
+   "name": "pilot84"
+  },
+  {
+   "id": "M085",
+   "kind": "founder",
+   "seed": 1085,
+   "name": "pilot85"
+  },
+  {
+   "id": "M086",
+   "kind": "founder",
+   "seed": 1086,
+   "name": "pilot86"
+  },
+  {
+   "id": "M087",
+   "kind": "founder",
+   "seed": 1087,
+   "name": "pilot87"
+  },
+  {
+   "id": "M088",
+   "kind": "founder",
+   "seed": 1088,
+   "name": "pilot88"
+  },
+  {
+   "id": "M089",
+   "kind": "founder",
+   "seed": 1089,
+   "name": "pilot89"
+  },
+  {
+   "id": "M090",
+   "kind": "founder",
+   "seed": 1090,
+   "name": "pilot90"
+  },
+  {
+   "id": "M091",
+   "kind": "founder",
+   "seed": 1091,
+   "name": "pilot91"
+  },
+  {
+   "id": "M092",
+   "kind": "founder",
+   "seed": 1092,
+   "name": "pilot92"
+  },
+  {
+   "id": "M093",
+   "kind": "founder",
+   "seed": 1093,
+   "name": "pilot93"
+  },
+  {
+   "id": "M094",
+   "kind": "founder",
+   "seed": 1094,
+   "name": "pilot94"
+  },
+  {
+   "id": "M095",
+   "kind": "founder",
+   "seed": 1095,
+   "name": "pilot95"
+  },
+  {
+   "id": "M096",
+   "kind": "founder",
+   "seed": 1096,
+   "name": "pilot96"
+  },
+  {
+   "id": "M097",
+   "kind": "founder",
+   "seed": 1097,
+   "name": "pilot97"
+  },
+  {
+   "id": "M098",
+   "kind": "founder",
+   "seed": 1098,
+   "name": "pilot98"
+  },
+  {
+   "id": "M099",
+   "kind": "founder",
+   "seed": 1099,
+   "name": "pilot99"
+  }
+ ]
+}

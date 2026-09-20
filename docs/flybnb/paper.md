@@ -11,7 +11,8 @@
 | association analysis (Section 3b) | 600 unrelated founders, 71 phenotypes |
 | atlas, first slice (Section 3c) | silencing under sound, 100 individuals, 361 effects on the base |
 | multi-generation selection (Section 3d) | 6 generations, six lines |
-| the rest of the silencing atlas, the activation atlas, the male brain | planned |
+| the male brain (Section 3e) | battery and variance pilot, 100 founders, provisional |
+| the rest of the silencing atlas, the activation atlas | planned |
 | dataset on the Hugging Face Hub | prepared, not public |
 | acknowledgments (Appendix A) | no deployment read yet |
 <!-- END GENERATED: status -->
@@ -159,7 +160,7 @@ This is the question the dataset exists for, asked of one stimulus. Silencing a 
 | CB2162 | DNpe014 | +15.0 | 0.86 | 0.95 | +10.8 ± 8.0 |
 <!-- END GENERATED: atlas -->
 
-What this does not show. One stimulus, one sex, silencing only. The detection rule is a choice, and a stricter one would find fewer and more robust effects; the table by effect size is there so that the conclusion does not rest on the threshold. And the individuals are a model of variability, calibrated on the two hemispheres of one brain; the male brain's hemispheres give nearly the same dispersion table, which is the first independent check of it.
+What this does not show. One stimulus, one sex, silencing only. The detection rule is a choice, and a stricter one would find fewer and more robust effects; the table by effect size is there so that the conclusion does not rest on the threshold. And the individuals are a model of variability, calibrated on the two hemispheres of one brain; the male brain's hemispheres give a dispersion table of the same shape (Section 3e), which is the first independent check of it.
 
 ## 3d. Selection over several generations
 
@@ -183,6 +184,32 @@ The breeding pilot showed one generation of divergent selection. Several generat
 
 **Other phenotypes, and how not to count them.** Tested individual by individual, 259 of 646 battery phenotypes differ between high and low lines at FDR 0.05. That test treats relatives as independent, and the control lines show what that is worth: by the same test 155 phenotypes differ between the unselected control lines and the founders. With the line as the unit — both high lines on one side of both low lines, and a gap larger than the 99th percentile (1.61 SD) of the gap between two lines of the *same* treatment — 4 remain, 1 of them not DNge145: DNge060 under sugar (-0.96, -1.92, -1.12, -1.11, -1.65, -1.63 by generation). Both replicates of a treatment start from the same ten founders, so a gap that is present at generation 1 and does not grow is what those founders carried; one that grows with the trait is a correlated response.
 <!-- END GENERATED: selection -->
+
+## 3e. A second connectome: the male brain
+
+Everything above is one reconstruction of one female. The male central nervous system (Janelia MaleCNS v1.0: brain and ventral nerve cord, CC-BY 4.0) is an independent one, from another laboratory, with another segmentation and another way of counting synapses. Running the same assay on it asks which of the results are about flies and which are about FlyWire.
+
+<!-- BEGIN GENERATED: male -->
+**The same assay on another connectome.** 14 stimuli × 3 seeds, 1314 descending neurons. Male individuals are drawn on the male's own base with the male's own variability model (dispersion from its two hemispheres; mean ratio 0.93, at which a founder has 100.6% of the real male's synapses) and run under the male exec kind, weight unit 7209 (0.40 of FlyWire's: MaleCNS counts the same connections 1.55–1.62 times higher).
+
+**A reconstruction is not symmetric.** The right antenna's auditory neurons carry 835 synapses against 25,201 on the left: the male `sound` is a left-ear stimulus, and the battery records each stimulus's outgoing synapses by side so that this is visible in the data and not only here.
+
+| | female (FlyWire v783) | male (MaleCNS v1.0) |
+|---|---|---|
+| founders × seeds | 500 × 3 | 100 × 3 |
+| phenotypes analysed | 518 | 396 |
+| single-run ICC, median | 0.93 | 0.93 |
+| ICC under `sound`, median | 0.87 | 0.87 |
+| individuals that ignite under a stimulus the base wiring takes sparsely | wind 2%, sugar 2%, bitter 3%, taste_peg 2%, head_bristle 3%, eye_bristle 1%, moist 25% | wind 2%, taste_labellar 24%, taste_leg 29%, ppk23 3% |
+| DNge145 under sound → with the gate neurons driven | 10.1 → 2.9 spikes (−71%) | 14.6 → 9.4 (−36%) |
+| individuals the gate silences in every seed / never | 11% / 46% | 0% / 99% |
+
+**What carries over.** The share of a single run that belongs to the individual is the same in the two brains (0.93 and 0.93): that individuals differ reproducibly is not a property of one reconstruction. So is ignition as an individual phenotype, under different stimuli in each brain.
+
+**What does not: the gate.** The homologous neurons exist (AN02A001 is the male type matched to AN_multi_8) and they do lower DNge145 below its sound response, in every seed in 99% of male individuals. But they remove 36% of the response where the female gate removes 71%, and they silence no male individual completely. Two things could fake that, and neither does (base wirings, `flybnb/male/gate_confounds.py`): the male stimulus is one-eared, but the female gate driven through one ear still removes 100% of the response (a small one: 1.0 spikes, against 8.3 with both ears); the male runs under another weight unit, but between 6308 and 9011 the male gate removes 33–47% throughout. What remains is the wiring: a difference between the sexes, between two reconstructions, or in how well a type match carries a function. One brain of each sex cannot say which.
+
+Male results are provisional: the male kind is not declared and the male base not registered on any public network yet, so nobody else has executed these rows.
+<!-- END GENERATED: male -->
 
 ## 4. The dataset
 
