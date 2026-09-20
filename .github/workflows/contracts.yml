@@ -61,6 +61,7 @@ jobs:
       # where each measured individual stands among the founders, and that the published files still match the runs
       - run: node test/phenotypes.mjs
 
+      - run: node test/frontend_wallet.mjs
       - run: node test/frontend_memory.mjs
 
       # chain-free: the FlyBnB battery file is well formed and its batch form is order-preserving; the paper build never touches prose
