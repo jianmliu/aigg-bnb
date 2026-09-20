@@ -1,9 +1,15 @@
-// The male brain's standard battery, on the LIVE BSC testnet: one bonded instance holds MaleCNS v1.0 at weight
+// A male brain's standard battery, on the LIVE BSC testnet: one bonded instance holds the payload at weight
 // unit 7209, the project posts the 42-run battery as ONE batched task, that instance executes it, the result is
 // submitted through the relayer and settled -- and then the digests the network signed are joined, run by run,
 // with the ones numpy produced offline for the same brain -- the payload as registered, not the dataset's "base".
 //
-//   source .env.bsc-testnet; PORW_RELAYER_API=https://… node test/live_male_battery.mjs <malecns-v1.0-min2.bin>
+//   source .env.bsc-testnet; PORW_RELAYER_API=https://… [PORW_MEP=0x… PORW_REF=/abs/row.json PORW_MODEL_NAME=…] \\
+//     node test/live_male_battery.mjs <payload.bin>
+//
+// PORW_MEP picks the brain (default: the registered male base). For a minted fly it is that token's MEP and the
+// payload is its base with its delta applied; PORW_REF is then the row run_battery.py already wrote for the same
+// individual -- which, for an individual, needs no special reference: a genotype zeroes what falls under min_syn,
+// so its payload and its offline row are the same network.
 //
 // The join is the point. A row of this dataset is a claim about a brain, and it is worth what can be checked:
 // here the wasm kernel on the network and numpy at a desk have to produce the same counts digest for all 42 runs,
@@ -24,13 +30,13 @@ const [payloadPath] = process.argv.slice(2);
 const API = (process.env.PORW_RELAYER_API || "http://127.0.0.1:8799").replace(/\/$/, "");
 const api = async (p, body) => (await fetch(API + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
 const battery = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-male-v1.json", import.meta.url)));
-const REF = new URL("../flybnb/results/male/live/registered-base.json", import.meta.url);
+const REF = process.env.PORW_REF ? new URL(process.env.PORW_REF, "file://") : new URL("../flybnb/results/male/live/registered-base.json", import.meta.url);
 if (!payloadPath) { console.error("usage: live_male_battery.mjs <malecns-v1.0-min2.bin>"); process.exit(2); }
 
 const dep = deploymentFromEnv(); const pk = process.env.PORW_DEPLOYER_KEY; if (!dep || !pk) throw new Error("source .env.bsc-testnet first");
 const c = clients(dep, pk); const wallet = c.account.address;
 const d = await api("/deployment");
-const MALE = "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214";
+const MALE = (process.env.PORW_MEP || "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214").toLowerCase();
 const served = await api("/meps");
 const info = served.find((m) => m.mepId.toLowerCase() === MALE);
 if (!info) throw new Error("the relayer does not serve the male brain");
@@ -62,8 +68,13 @@ const porw = { batch: await H.porw("batch.js"), verify: await H.porw("verify.js"
 const payload = new Uint8Array(fs.readFileSync(payloadPath));
 const nd = new PorwNode(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), { privHex: H.hex(session.priv), domains: d.domains, delegation: del });
 let t0 = Date.now();
-const st = await nd.loadModel("malecns-v1.0-min2", payload, { maxSteps: battery.steps, exec: "lif", wUnitQ16: battery.population.w_unit_q16 });
-if (H.hex(st.mep.mepId).toLowerCase() !== MALE) throw new Error(`this payload under unit ${battery.population.w_unit_q16} is MEP ${H.hex(st.mep.mepId)}, not the registered male brain`);
+// A brain that belongs to a collection is registered WITH TERMS, and the terms are inside the id: the profile of
+// the same bytes is a different MEP, and the terms are nowhere in the payload, so a node must be told them. This
+// is what the relayer does too; without it a minted fly looks like the wrong payload.
+const terms = info.beneficiary && info.royaltyBps ? { beneficiary: info.beneficiary, royaltyBps: info.royaltyBps } : null;
+if (terms) log(`terms: ${terms.royaltyBps} bps to ${terms.beneficiary.slice(0, 10)}… -- the MEP id wraps them`);
+const st = await nd.loadModel(process.env.PORW_MODEL_NAME || "malecns-v1.0-min2", payload, { maxSteps: battery.steps, exec: "lif", wUnitQ16: battery.population.w_unit_q16, terms });
+if (H.hex(st.mep.mepId).toLowerCase() !== MALE) throw new Error(`this payload under unit ${battery.population.w_unit_q16} is MEP ${H.hex(st.mep.mepId)}, not ${MALE}`);
 log(`resident: ${st.hdr.neurons} neurons, ${st.hdr.synapses} synapses, mepId reproduces (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 
 const rc = new RelayClient([d.relay], nd.key); await rc.connect();

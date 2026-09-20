@@ -1,0 +1,448 @@
+{
+ "chainId": 97,
+ "wallet": "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa",
+ "mepId": "0xd46638da826e9ea779f46cc5b71e77db96266e099214a96848622fe6dcd35b4c",
+ "wUnitQ16": 7209,
+ "battery": {
+  "name": "flybnb-battery-male",
+  "version": 1,
+  "runs": 42
+ },
+ "txs": {
+  "delegate": "0xb6edfd03b07f231c87020ac7b54d991a347eb4ce133135892a476e0819f888c6",
+  "materialize": "0x35d593c853f2743d32505f9874434e0fd9ba957498517a2d9e297b767d12bbde",
+  "postBatch": "0xd5f9a8269da54a15f745f29e498613a74cc4272cc114f52ae85d7147a2d34168",
+  "result": "0x0a83ed4841357e9fe2af16bfa5f8da56c22bf277c90145f018917b3ce883a52b",
+  "settle": "0x737b7739fdd5c1fb49c615a117a14986d65fc419f492e9dd81d2a4764f2cb686"
+ },
+ "taskId": "0x4df627a8ee0e35a0cfefeec08d76e8d7092e37756ad62adf9a287d13f6f27d32",
+ "gasUsed": 328065,
+ "settled": {
+  "onChain": [
+   "0xc8ccb0f9310cbf3cdaca9cc9ebce226bcc4143d76df70e910a0bfd9bce795ec6"
+  ],
+  "matches": true
+ },
+ "offline": {
+  "id": "M000",
+  "runs": 42,
+  "expected": 42,
+  "matched": 42,
+  "mismatches": [],
+  "ok": true
+ },
+ "attestation": {
+  "battery": {
+   "name": "flybnb-battery-male",
+   "version": 1,
+   "brain": "malecns-v1.0-male",
+   "silence": 0
+  },
+  "mepId": "0xd46638da826e9ea779f46cc5b71e77db96266e099214a96848622fe6dcd35b4c",
+  "taskId": "0x4df627a8ee0e35a0cfefeec08d76e8d7092e37756ad62adf9a287d13f6f27d32",
+  "txHash": "0xd5f9a8269da54a15f745f29e498613a74cc4272cc114f52ae85d7147a2d34168",
+  "block": 132223716,
+  "gasUsed": 328065,
+  "chainId": 97,
+  "market": "0x71120BcF8EFDcc6E4c0299e035676dB6d0d68F19",
+  "runsRoot": "0x19adedd6dad78ddd4f3630aaf88bee9cc77eff88cab28b22df38a8e6ece1c538",
+  "fee": "2000000000000000",
+  "redundancy": 1,
+  "executors": [
+   "0xfe560af8f5cfc209794b3df7dc7e281d4ef81eda"
+  ],
+  "replies": [
+   {
+    "executor": "0xfe560af8f5cfc209794b3df7dc7e281d4ef81eda",
+    "session": "0xedd91eecba8174ffb56a4bb8eab936f4f66523f2",
+    "error": null,
+    "execRoot": "0xc8ccb0f9310cbf3cdaca9cc9ebce226bcc4143d76df70e910a0bfd9bce795ec6",
+    "consistent": true
+   }
+  ],
+  "agreed": false,
+  "batchRoot": "0xc8ccb0f9310cbf3cdaca9cc9ebce226bcc4143d76df70e910a0bfd9bce795ec6",
+  "rows": [
+   {
+    "run": 0,
+    "stimulus": "sound",
+    "seed": 7,
+    "execRoot": "0x9f7ba4d1b782d05f191a9a59a70bc218cd41b13c044da4a999d279543997f2ca",
+    "initStateRoot": "0xd7e35cb5f32e77f81fe951d25eedf86c0c24626b14a069c216867af330a15561",
+    "countsDigest": "0x583c615d71ab86e4d83894c748f4f0dceecc1adb0e31765e4af57bb3c65bb906",
+    "agree": true
+   },
+   {
+    "run": 1,
+    "stimulus": "sound",
+    "seed": 8,
+    "execRoot": "0xf1bb2fbf1d8e4378b1233f521ca4fcc38d37455c1ac04b85ca6a5765303686da",
+    "initStateRoot": "0xd7e35cb5f32e77f81fe951d25eedf86c0c24626b14a069c216867af330a15561",
+    "countsDigest": "0x0ac592461438859f8ca2f3a22b793e175639b4b0421d0cebf127bcdf39da3a4b",
+    "agree": true
+   },
+   {
+    "run": 2,
+    "stimulus": "sound",
+    "seed": 9,
+    "execRoot": "0x029c03c50ad252c9127c486f88d1a308dd7eacb54d827e2b92b221feb796be1e",
+    "initStateRoot": "0xd7e35cb5f32e77f81fe951d25eedf86c0c24626b14a069c216867af330a15561",
+    "countsDigest": "0x2c1ca071b552c7897c08bab8a2231bf529fec8264a501ba7b17d3871dc4ef469",
+    "agree": true
+   },
+   {
+    "run": 3,
+    "stimulus": "sound_gate",
+    "seed": 7,
+    "execRoot": "0x6c912fef1fdac350126adbc08af416abcb534e2edcdcb71236560051cf6d4c6e",
+    "initStateRoot": "0x44f075ce7efff71cdf8f56d5a86388302d6fa5e4ad0318501aded941d07daac0",
+    "countsDigest": "0xcc66dbb4882986e3c1c7f214f1886e9bc0c1dd3cb6ec828e7b765326e2d3817f",
+    "agree": true
+   },
+   {
+    "run": 4,
+    "stimulus": "sound_gate",
+    "seed": 8,
+    "execRoot": "0xcf6655b602ec516b12c72b2a0c328c7cafbd8989005a5b9efc1b1627c7a3ec70",
+    "initStateRoot": "0x44f075ce7efff71cdf8f56d5a86388302d6fa5e4ad0318501aded941d07daac0",
+    "countsDigest": "0x019d00946fc26c36a87d236763eac0e6cb90f3a4864357d1e9a06e51983abc4d",
+    "agree": true
+   },
+   {
+    "run": 5,
+    "stimulus": "sound_gate",
+    "seed": 9,
+    "execRoot": "0x40a3e68010bf6cefcd4e8a542b2f2e93161c150b99af988488628cf0c5b55f88",
+    "initStateRoot": "0x44f075ce7efff71cdf8f56d5a86388302d6fa5e4ad0318501aded941d07daac0",
+    "countsDigest": "0xb01a42d332677e8406bec2ff4c747222de40f30583d7186dde8967fc8a1c6107",
+    "agree": true
+   },
+   {
+    "run": 6,
+    "stimulus": "wind",
+    "seed": 7,
+    "execRoot": "0x252159097d46f46eb5c7c84cc4763ea2432e59928c5f5dad12f9ba9b543b0281",
+    "initStateRoot": "0x31d0e54d8fcb739cab7b17a4ba91b3905f5347c9fd4796bb330f320b881b2cf9",
+    "countsDigest": "0xda84c9a12ac182203d9803b359253293793d9a63bf821c62dbbb89b963f098dc",
+    "agree": true
+   },
+   {
+    "run": 7,
+    "stimulus": "wind",
+    "seed": 8,
+    "execRoot": "0xf8bb1b6a2cbe12651c98df996f0dd465f30b4519294da8fd92ae13d3d06c2bf8",
+    "initStateRoot": "0x31d0e54d8fcb739cab7b17a4ba91b3905f5347c9fd4796bb330f320b881b2cf9",
+    "countsDigest": "0x1f32efd0dbc52892427849ff53db158210050c2be6ae729ea737bf5a42d2478c",
+    "agree": true
+   },
+   {
+    "run": 8,
+    "stimulus": "wind",
+    "seed": 9,
+    "execRoot": "0xbef3b8f631df9fdec547741e9183571700760a1c562de1d724b53e2ff079cfad",
+    "initStateRoot": "0x31d0e54d8fcb739cab7b17a4ba91b3905f5347c9fd4796bb330f320b881b2cf9",
+    "countsDigest": "0x5f47064474686c3d3aef61a514fdc15d9cd4dce68a40d440723e2e2bbdd6bf9d",
+    "agree": true
+   },
+   {
+    "run": 9,
+    "stimulus": "taste_labellar",
+    "seed": 7,
+    "execRoot": "0xe03f1bb8c0598e1f2e6839327b0ff420d6817ce7033001640bc2a1a92df99c03",
+    "initStateRoot": "0xff6ae3e5e348d44f7269c9b50209f1af1fb9f8fcaa09015d0ecd4545b4cd2aa4",
+    "countsDigest": "0x511f88e855c4b3e08eeb989e18607cdb98f8cb3e54844bbf463c41a5fe321a83",
+    "agree": true
+   },
+   {
+    "run": 10,
+    "stimulus": "taste_labellar",
+    "seed": 8,
+    "execRoot": "0x8b31d940b83ef59887cf99673210e40fa1302e902348665e50642f00e1258b7c",
+    "initStateRoot": "0xff6ae3e5e348d44f7269c9b50209f1af1fb9f8fcaa09015d0ecd4545b4cd2aa4",
+    "countsDigest": "0x2ad1928d6a0f5c0f711497940b26eddab5fce7d4374c20ae3fec60782bc27bec",
+    "agree": true
+   },
+   {
+    "run": 11,
+    "stimulus": "taste_labellar",
+    "seed": 9,
+    "execRoot": "0xc28c335b1131ebfb46f08e642f6f20c52ba020c140baf855c0d68002c8ffabf0",
+    "initStateRoot": "0xff6ae3e5e348d44f7269c9b50209f1af1fb9f8fcaa09015d0ecd4545b4cd2aa4",
+    "countsDigest": "0xb9dc84e305f2ca3332b44fd85574cbca64472e42d128c03c7351f288c88b7c1c",
+    "agree": true
+   },
+   {
+    "run": 12,
+    "stimulus": "taste_peg",
+    "seed": 7,
+    "execRoot": "0xace6dd8ed90417067f2132d72f543071eb4728e3e442cf5274c16f8017fe5ccd",
+    "initStateRoot": "0x47cb52985db484492b3f00b7bae6f720d0d4c0cd6405769510cac05a97c554b7",
+    "countsDigest": "0x55fb6e8b91ac524611b00f7e4435983d33612af082e3b1a8c299918e5b1270f5",
+    "agree": true
+   },
+   {
+    "run": 13,
+    "stimulus": "taste_peg",
+    "seed": 8,
+    "execRoot": "0x53b27d52b5a6aa72c4af011615961884fd1953554aef9608c1e5a087a0e3dfcb",
+    "initStateRoot": "0x47cb52985db484492b3f00b7bae6f720d0d4c0cd6405769510cac05a97c554b7",
+    "countsDigest": "0x84ba727e5e912f1b639636ed542b7c47cec9b1204f90d0c57918f4a1011df62f",
+    "agree": true
+   },
+   {
+    "run": 14,
+    "stimulus": "taste_peg",
+    "seed": 9,
+    "execRoot": "0x25779c460687dd8e00ab6e3d088f5fd58b940c652dc0ce1c2471f0de7c32ce39",
+    "initStateRoot": "0x47cb52985db484492b3f00b7bae6f720d0d4c0cd6405769510cac05a97c554b7",
+    "countsDigest": "0x30ddfb69fcc23e92d377b926c1f4edc49093e307d737c0a1ae179a5d65b1b646",
+    "agree": true
+   },
+   {
+    "run": 15,
+    "stimulus": "taste_leg",
+    "seed": 7,
+    "execRoot": "0xea0e26f8bf1e58b55d2ee563b0be6b0cbe19e8b18a5ade42aad273ea0ac65fbd",
+    "initStateRoot": "0xced565c4e93b4e0f9a6641f74674cfb870bf16fa47f8254f491841566d959535",
+    "countsDigest": "0xd6a4a4b22a488426a400fc52be3bad938616a17976b276923ec7e8ba49a5d10d",
+    "agree": true
+   },
+   {
+    "run": 16,
+    "stimulus": "taste_leg",
+    "seed": 8,
+    "execRoot": "0x1dc7518f45e4520fa102d52929e3c795565433a8ab0e79234b1795b5b8beb133",
+    "initStateRoot": "0xced565c4e93b4e0f9a6641f74674cfb870bf16fa47f8254f491841566d959535",
+    "countsDigest": "0x7fa13d873b766372c07f78f4a4328b0a80a4d98c2323bff566ea24c985073bdd",
+    "agree": true
+   },
+   {
+    "run": 17,
+    "stimulus": "taste_leg",
+    "seed": 9,
+    "execRoot": "0xfa1602c826c17bf71a6199c1b9679d89273e71a95277e09f4cdc5b14d42be18a",
+    "initStateRoot": "0xced565c4e93b4e0f9a6641f74674cfb870bf16fa47f8254f491841566d959535",
+    "countsDigest": "0x76ae1977b2ffa80b277617d90d268693becc5aaaafa3943d13b091518ec6b76a",
+    "agree": true
+   },
+   {
+    "run": 18,
+    "stimulus": "ppk23",
+    "seed": 7,
+    "execRoot": "0x36fbfc665a88b077eea8189b8ed3ad826f12fc1a2c44e845bef5beeb40543ee0",
+    "initStateRoot": "0x9da4150c8523578dca023f245df19b50507796419f5e3756c4ed22a03b58ebc2",
+    "countsDigest": "0x110df77f63c109399339c71eef93505976ced198acfd30be02dc2c984c2d9daa",
+    "agree": true
+   },
+   {
+    "run": 19,
+    "stimulus": "ppk23",
+    "seed": 8,
+    "execRoot": "0xa1858c18d29f2f9fa88ce8beb0b5fb3d869acc21b94371b9878dfeff13e87c05",
+    "initStateRoot": "0x9da4150c8523578dca023f245df19b50507796419f5e3756c4ed22a03b58ebc2",
+    "countsDigest": "0x0e4863717054ac9314af37663ea212eab6ca1e67ed359b7bea7df6bc93056122",
+    "agree": true
+   },
+   {
+    "run": 20,
+    "stimulus": "ppk23",
+    "seed": 9,
+    "execRoot": "0xa62358b26fad60a1bb11cfb42336c7573416cd47457ccb69824e5dc530b0526f",
+    "initStateRoot": "0x9da4150c8523578dca023f245df19b50507796419f5e3756c4ed22a03b58ebc2",
+    "countsDigest": "0xd394d05c63ae76d1421730ad039cf265ea261a29f39f831f0548cc5f294508a9",
+    "agree": true
+   },
+   {
+    "run": 21,
+    "stimulus": "touch_leg",
+    "seed": 7,
+    "execRoot": "0x781ec8be716156e669d11fced55431c246f9650621767c2fde08c953de18b7a2",
+    "initStateRoot": "0x92039558bbfa164e74525b1dbfb708cdb950d218b3e6096ec7292572717ea9c8",
+    "countsDigest": "0x5388482a5593394288e817be1df1f152156889e70555f61aa463f9e1e4ec4410",
+    "agree": true
+   },
+   {
+    "run": 22,
+    "stimulus": "touch_leg",
+    "seed": 8,
+    "execRoot": "0x0b3d71932d3dbdacd5fcf483a5b936ad55f697186c63206034d29fd68853810e",
+    "initStateRoot": "0x92039558bbfa164e74525b1dbfb708cdb950d218b3e6096ec7292572717ea9c8",
+    "countsDigest": "0x4efdd017e8bdbe81a9fc82145aaec3ee5af118baabcdb70fc71d17006c248ebf",
+    "agree": true
+   },
+   {
+    "run": 23,
+    "stimulus": "touch_leg",
+    "seed": 9,
+    "execRoot": "0x361811250350660ebf06f621012bd31d55c4ac5984bd6cccebc9cbcbf025ed37",
+    "initStateRoot": "0x92039558bbfa164e74525b1dbfb708cdb950d218b3e6096ec7292572717ea9c8",
+    "countsDigest": "0x05fdbccaabb9f9010bdea69ad330fdb1a003cfbd4529c1924780f6843d608146",
+    "agree": true
+   },
+   {
+    "run": 24,
+    "stimulus": "grooming",
+    "seed": 7,
+    "execRoot": "0xf0c1fa92d06fb6795ed3f6a9af482e06495616bfd054365e812c7fc78046d801",
+    "initStateRoot": "0x4bbcfe96ed0eaafa00e7aaa1f25b9f20789415ccfc469ece6e37a20c03b4c75a",
+    "countsDigest": "0x8d5a17e00ccaf55a81bddb411aa2d5d48dfdd4a7b391b67e179525b9f330df7d",
+    "agree": true
+   },
+   {
+    "run": 25,
+    "stimulus": "grooming",
+    "seed": 8,
+    "execRoot": "0x7cc398402c36bfe8f1e1428ae53d6a00511b0f4cede8d43d695f5efb53ad2fa2",
+    "initStateRoot": "0x4bbcfe96ed0eaafa00e7aaa1f25b9f20789415ccfc469ece6e37a20c03b4c75a",
+    "countsDigest": "0x5976beb28117dea99b5d46321b5c365f06b565ef4f5b17e83b08a3f4108b5af5",
+    "agree": true
+   },
+   {
+    "run": 26,
+    "stimulus": "grooming",
+    "seed": 9,
+    "execRoot": "0x129178ee7e2d72b5fbbe7b2fe01d1c2478733a65eec428d2477d281a2e6f5c50",
+    "initStateRoot": "0x4bbcfe96ed0eaafa00e7aaa1f25b9f20789415ccfc469ece6e37a20c03b4c75a",
+    "countsDigest": "0xf8b9761af102275df31285ad401c49e64e1dfda303d1ddbb044673cc98ec9645",
+    "agree": true
+   },
+   {
+    "run": 27,
+    "stimulus": "chordotonal",
+    "seed": 7,
+    "execRoot": "0xb61968b84e4a9595481dea98417975124416055e60ec2e468f048773100a0546",
+    "initStateRoot": "0x1354f81b947af15fcde5a99985709e61615fac803fe72c8bc7fb1bafcc66b9bd",
+    "countsDigest": "0x3fc26f4135354d5abf6a4b0f1373933f8218c5ded9f224cf15bd120b06dbdc5f",
+    "agree": true
+   },
+   {
+    "run": 28,
+    "stimulus": "chordotonal",
+    "seed": 8,
+    "execRoot": "0xc62beda42d4e4ea226f1c9746735782ecf2a1caa39fdad242ac6e2f9b2d3315c",
+    "initStateRoot": "0x1354f81b947af15fcde5a99985709e61615fac803fe72c8bc7fb1bafcc66b9bd",
+    "countsDigest": "0xbaf2ebf44e23dd857a38369913f895dcd8078c1e88cce4ac8f55b46532416d4b",
+    "agree": true
+   },
+   {
+    "run": 29,
+    "stimulus": "chordotonal",
+    "seed": 9,
+    "execRoot": "0x531e042cb455079dfdfb8a97f4d41c1033582d2ba83396f56829dcb620fff327",
+    "initStateRoot": "0x1354f81b947af15fcde5a99985709e61615fac803fe72c8bc7fb1bafcc66b9bd",
+    "countsDigest": "0x5486bf9d73fa57a7c8d46d30ee19a008ddef501f8a998883b68e42928efd13ce",
+    "agree": true
+   },
+   {
+    "run": 30,
+    "stimulus": "campaniform",
+    "seed": 7,
+    "execRoot": "0x3da5eff7640a2667bf1730120f4f09bf45fb420c17b9524b54f61c1fe4740995",
+    "initStateRoot": "0x2168c8411c134d85c918b5245a501a8add2ae044a08500e6d57b2f5c5356395c",
+    "countsDigest": "0x48651cafbed31f54b8a105153f0bd3540a040ecc46bd04306790ae5f211c4821",
+    "agree": true
+   },
+   {
+    "run": 31,
+    "stimulus": "campaniform",
+    "seed": 8,
+    "execRoot": "0xae44dedf10f8c0a593ec9d3d86abfe7a4fb94b468c15501c9f46d8d78ae4799b",
+    "initStateRoot": "0x2168c8411c134d85c918b5245a501a8add2ae044a08500e6d57b2f5c5356395c",
+    "countsDigest": "0x29086ddbc79de9254e82547c0b7cadd2f8f2a792af3d46f63d911bfaeea520de",
+    "agree": true
+   },
+   {
+    "run": 32,
+    "stimulus": "campaniform",
+    "seed": 9,
+    "execRoot": "0x3d59775381e7598e51220925234b7f158e889e921425baba4d5f359cae49f9d9",
+    "initStateRoot": "0x2168c8411c134d85c918b5245a501a8add2ae044a08500e6d57b2f5c5356395c",
+    "countsDigest": "0x84bf8d40710674c7c9ec69e832b009cf590b5d1e8a93a8a0e1c6fed3547c5e16",
+    "agree": true
+   },
+   {
+    "run": 33,
+    "stimulus": "haltere",
+    "seed": 7,
+    "execRoot": "0xa538415c57ebf8c736cebd0b6bfe94d62a95324874b73e3c6a109f6fbb093fa2",
+    "initStateRoot": "0xf4e7d1c4820cd47a2df83a9f9ec38a8f63a15fe1427aad300660babcdfa90665",
+    "countsDigest": "0xba1d992ada9e87412d459303aa3401a7bb1ebddeca043a1b7866ed8c4af63503",
+    "agree": true
+   },
+   {
+    "run": 34,
+    "stimulus": "haltere",
+    "seed": 8,
+    "execRoot": "0x8b009d77f3ab0ced0a059a385fa4c6f5d72b1213b961e8125714a3fa2dcfd750",
+    "initStateRoot": "0xf4e7d1c4820cd47a2df83a9f9ec38a8f63a15fe1427aad300660babcdfa90665",
+    "countsDigest": "0xea4f58ccad2b3a7abdded910e87882ca130302114ff9a2840140ae144a484ce9",
+    "agree": true
+   },
+   {
+    "run": 35,
+    "stimulus": "haltere",
+    "seed": 9,
+    "execRoot": "0xbf8a37a0fea3255b9c0bd8ce65ab1c96937f708c8292b95a4aae1185a907fd04",
+    "initStateRoot": "0xf4e7d1c4820cd47a2df83a9f9ec38a8f63a15fe1427aad300660babcdfa90665",
+    "countsDigest": "0x39571e15e821463cc48177711435c85b87bf72b54e6ce399b065bb4962f3621b",
+    "agree": true
+   },
+   {
+    "run": 36,
+    "stimulus": "hygro",
+    "seed": 7,
+    "execRoot": "0x723497ce8b34d978a683f9cb34c3b32cd041a2fa61e76c209fb24993182e77c3",
+    "initStateRoot": "0x488bf2103ed151ad07c411fed723b9a3ae05073972f0efa40fb08b3d4b7abe2d",
+    "countsDigest": "0x16e1b353496cb7669e3b6bc87d5d963d6d64ef2bea4d0dff52408294c416c327",
+    "agree": true
+   },
+   {
+    "run": 37,
+    "stimulus": "hygro",
+    "seed": 8,
+    "execRoot": "0xbacaaa1717ec40cea8db131d656cfd0d797bf454f7806f1052fc606c5e6cad07",
+    "initStateRoot": "0x488bf2103ed151ad07c411fed723b9a3ae05073972f0efa40fb08b3d4b7abe2d",
+    "countsDigest": "0x9fe29cb6a0ef4ef379154475a62f4e7d820f0ba38665b2fef5c07d040e7f63a0",
+    "agree": true
+   },
+   {
+    "run": 38,
+    "stimulus": "hygro",
+    "seed": 9,
+    "execRoot": "0x5af827e11d1176a3b7cb808d10d79e75d3ba3193d9ee735eea26c63c49d9aa68",
+    "initStateRoot": "0x488bf2103ed151ad07c411fed723b9a3ae05073972f0efa40fb08b3d4b7abe2d",
+    "countsDigest": "0xbcdc67fc8d03a5bca44468964297cd8e5522f5338f865e1a4fd9165270912cb3",
+    "agree": true
+   },
+   {
+    "run": 39,
+    "stimulus": "thermo",
+    "seed": 7,
+    "execRoot": "0xfb69de253c2cbcf6e44fb54fec91bfbc17e5fd8a5a44f06fd60082083b7099ea",
+    "initStateRoot": "0x7d32c87d7acba7aa1e5feb5240792fb5c28b1f1406b6bce216fa3ae8231d94ba",
+    "countsDigest": "0xbe1f3165ea8ddd26a6304a4ce6b8ee774b4db151706d5a19e59ff500b1096fa8",
+    "agree": true
+   },
+   {
+    "run": 40,
+    "stimulus": "thermo",
+    "seed": 8,
+    "execRoot": "0xea8f858f83dc627758e1fba6b55b727a218c89ff06aa3612a559eb42d2144737",
+    "initStateRoot": "0x7d32c87d7acba7aa1e5feb5240792fb5c28b1f1406b6bce216fa3ae8231d94ba",
+    "countsDigest": "0x5ce8ae19b45cfc046f4c0c6db0ef53677a81733a0895baa16d68a02189bc2076",
+    "agree": true
+   },
+   {
+    "run": 41,
+    "stimulus": "thermo",
+    "seed": 9,
+    "execRoot": "0x8f029034f430b5c329f47629f854778b93f8bc35c6cdf0d181673728b3d0c0ec",
+    "initStateRoot": "0x7d32c87d7acba7aa1e5feb5240792fb5c28b1f1406b6bce216fa3ae8231d94ba",
+    "countsDigest": "0xb88d7efea687f0adf8d7375f6160eca3156fc0631ec04f5c981b5e13cd67499a",
+    "agree": true
+   }
+  ],
+  "complete": true
+ },
+ "note": "complete / batchRoot / settled.matches derived from the replies recorded here (the mini's copy of post_battery.mjs predated the field); `agreed` is false because one executor cannot agree with anybody."
+}

@@ -1,6 +1,6 @@
 // The standard battery and its batch form. The battery file is data that every later row of the dataset depends on,
 // so what is checked is that it is well formed and that turning it into a batch is order-preserving and total.
-import fs from "node:fs";
+import fs from "node:fs"; import zlib from "node:zlib";
 import { batteryBatch, rowOf, resolvedRuns } from "../flybnb/battery/battery_batch.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
 const B = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-v1.json", import.meta.url)));
@@ -45,4 +45,12 @@ check("a perturbed battery is the same batch with a silence set on every run", p
     a.rows.length === M.stimuli.length * M.seeds.length && a.complete === true && a.rows.every((r) => r.agree) && att.settled.matches === true && root === a.batchRoot && att.settled.onChain.every((r) => r === a.batchRoot));
   check(`and all ${att.offline.expected} counts digests equal what numpy computes for the registered payload (unit ${ref.w_unit_q16})`, att.offline.ok === true && att.offline.matched === att.offline.expected && ref.model_id.toLowerCase() === M.population.base_model_id.toLowerCase());
   check("the reference is the payload as registered, not the dataset's thresholded base", ref.records > M.population.min_syn * 0 && ref.records === 15283237 && /no min_syn threshold/.test(ref.kind)); }
+// a MINTED fly, on the live network: the individual case, where no special reference is needed at all
+{ const F = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/fly101.json", import.meta.url))), a = F.attestation;
+  const rows = zlib.gunzipSync(fs.readFileSync(new URL("../flybnb/results/male/pilot/rows.jsonl.gz", import.meta.url))).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  const m0 = rows.find((r) => r.id === F.offline.id);
+  check(`fly #101 on chain IS the pilot founder ${F.offline.id}: the same FLYDELTA recipe, by delta id`, m0 && F.offline.id === "M000" && m0.delta_id === "0x68ac445c99252b618b2f70958bff1a271c613081eee008ccb0e88af197db6bbd");
+  check(`its battery was settled on chain and all ${F.offline.expected} digests equal the row committed here`, a.complete === true && F.settled.matches === true && F.offline.ok === true && F.offline.matched === m0.rows.length);
+  const want = new Map(m0.rows.map((w) => [w.stim + "|" + w.seed, w.digest.toLowerCase()]));
+  check("checked against the committed rows themselves, not against the summary in the file", a.rows.every((r) => want.get(r.stimulus + "|" + r.seed) === r.countsDigest.toLowerCase())); }
 console.log(fails ? `${fails} FAILURES` : "flybnb battery: all checks passed"); process.exit(fails ? 1 : 0);
