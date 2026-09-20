@@ -34,7 +34,8 @@ export const log = (m) => {
 export const state = { deployment: null, unit: null /* wei per vote, read from this deployment */, meps: [], hosted: new Set(), active: null, wallet: null, chainId: null, chainOk: false,
   balance: 0n, bonded: 0n, weight: 0n, exitAt: 0n, inMep: [], session: null, delegation: null, resolved: null, epochInfo: null,
   prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null,
-  flies: null }; // the collection, as flies.js reads it: null until a deployment that names one is loaded
+  flies: null, // the collection, as flies.js reads it: null until a deployment that names one is loaded
+  flyTerms: null }; // its terms alone -- what a fly costs and how a fee is split. The docs page needs these and no individual
 
 // ---- the worker that actually runs the node ----
 let worker = null, nextReq = 1; const waiting = new Map();

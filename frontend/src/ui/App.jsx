@@ -24,6 +24,7 @@ import { BrainCard } from "./BrainCard.jsx";
 import FliesView from "./FliesView.jsx";
 import { BAKED_RELAYER, SOLO } from "./mode.js";
 import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
+import DocsView from "./DocsView.jsx";
 
 const bnb = (wei) => (Number(wei) / 1e18).toFixed(4);
 const unitBnb = (wei) => (Number(wei) / 1e18).toFixed(6).replace(/0+$/, "").replace(/\.$/, ""); // 0.05, 0.005: an amount somebody types back in
@@ -48,7 +49,8 @@ function Logo() {
   );
 }
 
-const VIEWS = { "#/host": "host", "#/flies": "flies", "#/flybnb": "flybnb" };
+// the docs view keeps its own tab in the hash (#/docs, #/docs/how) so a link can land on either audience's half
+const VIEWS = { "#/host": "host", "#/flies": "flies", "#/flybnb": "flybnb", "#/docs": "docs", "#/docs/how": "docs" };
 const viewOf = () => VIEWS[window.location.hash] || "stay";
 
 /** the one-line health of the whole page, in the order things go wrong */
@@ -155,6 +157,7 @@ export default function App() {
           <a id="navHost" href="#/host" data-active={view === "host"}>Host</a>
           <a id="navFlies" href="#/flies" data-active={view === "flies"}>Flies</a>
           <a id="navFlyBnb" href="#/flybnb" data-active={view === "flybnb"}>Paper</a>
+          <a id="navDocs" href="#/docs" data-active={view === "docs"}>Docs</a>
         </nav>
 
         <div className="me">
@@ -184,9 +187,10 @@ export default function App() {
         </div>
       </div>
 
-      {view !== "flybnb" && <FlyBnbBanner />}
+      {view !== "flybnb" && view !== "docs" && <FlyBnbBanner />}
       {view === "flies" && <FliesView />}
       {view === "flybnb" && <FlyBnbView />}
+      {view === "docs" && <DocsView />}
 
       {/* ---------------- Brains: the listings, and booking an experiment on one ---------------- */}
       <div className="main stay" hidden={view !== "stay"}>
