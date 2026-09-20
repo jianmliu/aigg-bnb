@@ -86,15 +86,17 @@ services:
       # of), so that one is not pinned here; it arrives through the list.
       - key: PORW_WHITELIST
         value: "0xAd8e7206A9bE4F24Ce0aa2c861F1E9331A16681C"
-      # PINNED on top of the list: the >= 5-synapse export the gate task and test/live_bsc.mjs run on, and the MALE base
-      # (MaleCNS v1.0, >= 2 synapses). Both belong to no collection, so without this line nobody would serve them.
+      # PINNED on top of the list: the >= 5-synapse export the gate task and test/live_bsc.mjs run on, and BOTH male
+      # brains (MaleCNS v1.0). None of them belongs to a collection, so without this line nobody would serve them.
+      # The male pair is the same distinction the female pair is: >= 2 is the substrate individuals are drawn on,
+      # >= 5 is the published wiring, and a battery posted for one does NOT reproduce the other's rows.
       # The male one is the first brain here that is NOT int-lif at FlyWire's weight unit: its exec kind pins 7209
       # (0.40 of 18022, because MaleCNS counts the same connections 1.55-1.62x higher and at 18022 every male stimulus
       # ignites the whole network). The relayer asks the chain for a kind's unit, so nothing here has to say it twice.
       - key: PORW_MEP_IDS
-        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a,0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214"
+        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a,0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214,0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc"
       - key: PORW_MEP_NAMES
-        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a=FlyWire female (FAFB v783),0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50=FlyWire female · the founders' base (≥ 2 synapses),0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214=MaleCNS v1.0 male · brain and nerve cord (≥ 2 synapses)"
+        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a=FlyWire female (FAFB v783),0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50=FlyWire female · the founders' base (≥ 2 synapses),0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214=MaleCNS v1.0 male · brain and nerve cord (≥ 2 synapses),0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc=MaleCNS v1.0 male · the published wiring (≥ 5 synapses)"
 
       # ---- whose tasks are sponsored. Third-party experiments are not open yet: every task on this network is one the
       # FlyBnB dataset needs, posted by the project. The market is permissionless and cannot refuse anybody's task; what

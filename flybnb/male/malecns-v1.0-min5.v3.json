@@ -1,0 +1,15 @@
+{
+ "name": "malecns-v1.0-min5",
+ "sha256": "c5619f702895d1b4792c918d6712b70aa21a2c4a66af4d150dc42e7146e852c9",
+ "schemeId": "aigg:porw:sketch-tile-keccak:v3",
+ "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+ "mepId": "0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc",
+ "modelId": "0x1ea92843693217431f137ff8a7953ef7259daa3fa7c167f2ffb7ef3398ef8a71",
+ "execKind": "0x716c4516187684f44e9110292af25ccb03bd4a98c030fc595a16838bb7173e3e",
+ "wUnitQ16": 7209,
+ "neurons": 166700,
+ "synapses": 6242118,
+ "synapseRoot": "0x151f70653e238941c84c2267e4ea02ac4db111f3bb194d359b5ba52ca4b3196c",
+ "weightsDA": "gnfd://aigg-brains/malecns-v1.0-min5.bin",
+ "note": "the PUBLISHED male wiring: the same network run_battery.py calls the base (the >= 2 export thresholded at min_syn 5), as its own payload. A battery posted for this MEP reproduces the dataset's base row; one posted for malecns-v1.0-min2 measures the denser substrate individuals are drawn on. Registered on BSC testnet 2026-09-20."
+}
