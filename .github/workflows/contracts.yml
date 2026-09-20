@@ -66,6 +66,10 @@ jobs:
       - run: node test/brain_addresses.mjs
       - run: node test/runtime_id.mjs
 
+      # the agent skill tells an agent what to run against a real chain: every path, route, field and price in it
+      # is held against the code it describes, because an agent follows a stale instruction without checking
+      - run: node test/skill_flybnb.mjs
+
       # DESIGN §4b distinguishes optional multi-asset contracts from the legacy native gateway
       - run: node test/settlement_assets.mjs
 
