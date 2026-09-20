@@ -1,0 +1,12 @@
+{
+  "repoCommit": "2ae726f7d8352dc009fc181e5966185936f49d5b",
+  "porwCommit": "994ccf494bdf2309a9dd3462609aa7c131c931a0",
+  "baseMep": "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a",
+  "baseRoyaltyBps": 0,
+  "collectionRoyaltyBps": 1000,
+  "listed": [
+    false,
+    "0x0000000000000000000000000000000000000000"
+  ],
+  "coverage": "live_bsc exercises the base MEP; nonzero royalty accrual and unlisted-MEP rejection are not exercised"
+}

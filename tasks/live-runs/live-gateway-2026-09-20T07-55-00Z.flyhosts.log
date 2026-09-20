@@ -1,0 +1,94 @@
+09:22:15 A: 0x3b3156A32dB1944F14bC152C42960D3b51DCDD19 · fly #1 resident in 8.3s · 0.004897648 tBNB · 1 vote(s)
+09:22:24 B: 0x966d94F5504a6BD4B34Ed6D667aB41C2919006D2 · fly #1 resident in 8.1s · 0.0049013734 tBNB · 1 vote(s)
+09:22:24 both hosts on the fly 0x8ceaa292cfc35755909440332456a917a10c9384824045309236f4a495923d06 (relayer serves it)
+09:22:24 epoch 660546: beacon woken through 660548
+09:22:24 A: epoch 660546 claim announced
+09:22:24 B: epoch 660546 claim announced
+09:22:24 epoch 660546: 0/2 eligible on the fly, 0 vote(s)
+09:22:30 epoch 660547: beacon woken through 660549
+09:22:46 A: epoch 660546 claim materialized 0x2eac97a0656d7cf85055e0dadcefadb21649bb92da1ba71a582a38986a61e505
+09:22:51 B: epoch 660546 claim materialized 0x8241db2e7faa85d3eb8c95a8785a4027c008d25ac9e9f41b08933a4a164633bc
+09:22:57 A: epoch 660547 claim announced
+09:22:57 B: epoch 660547 claim announced
+09:23:08 epoch 660547: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:23:41 epoch 660547: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:24:03 epoch 660548: beacon woken through 660550
+09:24:14 A: epoch 660547 claim materialized 0xda86aaf4b844c6f8f2fb0766004120992fcb48a2369e2a4da7e2f1d37c893c54
+09:24:19 B: epoch 660547 claim materialized 0x65422da35411af0979f37fe0b9c97ae729021295971651ee2f0b554155a24bd9
+09:24:25 A: epoch 660548 claim announced
+09:24:25 B: epoch 660548 claim announced
+09:24:25 epoch 660548: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:24:58 epoch 660548: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:25:31 epoch 660549: beacon woken through 660551
+09:25:31 epoch 660549 (not rolled): 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:25:47 A: epoch 660548 claim materialized 0x83efca7eb4e62f9cf12722d3d4d110bfb96464d478d528fe19fd7b1abbf824db
+09:25:53 B: epoch 660548 claim materialized 0x647e63a30716ca7519cc364ca8843de2b2b8c8887393f2ed594d0dc6dd0a2fb6
+09:25:58 A: epoch 660549 claim announced
+09:25:58 B: epoch 660549 claim announced
+09:26:15 epoch 660549: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:26:48 epoch 660549: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:26:59 epoch 660550: beacon woken through 660551
+09:27:21 A: epoch 660549 claim materialized 0x9e36afd1761a518b51465129fca643f291c84fe0e06cac647ce777059031d4d9
+09:27:31 B: epoch 660549 claim materialized 0x8b5638c36e1dae1bf338e1f145b90672a5eae05432212e9a1647b76745944669
+09:27:36 A: epoch 660550 claim announced
+09:27:36 B: epoch 660550 claim announced
+09:27:36 epoch 660550: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:28:10 epoch 660550: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:28:32 epoch 660551: beacon woken through 660553
+09:28:43 A: epoch 660550 claim materialized 0xe1cbbcf7ef27a235a81a74484136e673085e84e99e7b20639f8dca54de419c44
+09:28:48 B: epoch 660550 claim materialized 0x61599a8ba4d27b4b61e2e16cf84e0f4e0dc52d2e91bf44fe39f088c6b90e8b71
+09:28:54 A: epoch 660551 claim announced
+09:28:54 B: epoch 660551 claim announced
+09:28:54 epoch 660551: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:29:27 epoch 660551: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:29:40 A: task 0x26beefeb8e… executed, submitResult ok 0x8472f70927…
+09:29:41 B: task 0x26beefeb8e… executed, submitResult ok 0x76111ebd54…
+09:30:00 epoch 660552: beacon woken through 660554
+09:30:00 epoch 660552 (not rolled): 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:30:12 A: epoch 660551 claim materialized 0x2e4ee487174319023ffc6d0d2cf7234c1f0f35b4c47834a640f3b14c2e10485e
+09:30:17 B: epoch 660551 claim materialized 0xefd81abed4c0fdd39d344ad5cd219e5f98b2d04a73a7c28975859fe03795d9fa
+09:30:23 A: epoch 660552 claim announced
+09:30:23 B: epoch 660552 claim announced
+09:30:40 epoch 660552: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:31:13 epoch 660552: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:31:29 epoch 660553: beacon woken through 660554
+09:31:46 A: epoch 660552 claim materialized 0x6de081917557943cbe9b610e52aae6245d75c7b00d2d004eb3030b8acf6de076
+09:31:51 B: epoch 660552 claim materialized 0x538165f4699f72542db728d2f68d5da4216a992a06023679d465f132d1122939
+09:31:56 A: epoch 660553 claim announced
+09:31:56 B: epoch 660553 claim announced
+09:31:56 epoch 660553: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:32:30 epoch 660553: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:33:03 epoch 660554: beacon woken through 660556
+09:33:03 epoch 660554 (not rolled): 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:33:19 A: epoch 660553 claim materialized 0xea19ec9618e6d6895096db10f2e045e63b5e8d252b478c0b14ae44d41f79033d
+09:33:25 B: epoch 660553 claim materialized 0x40f8d14e5e599d542fbd696b8be680216fbf04134251d21380e54059bfc55528
+09:33:30 A: epoch 660554 claim announced
+09:33:30 B: epoch 660554 claim announced
+09:33:47 epoch 660554: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:34:20 epoch 660554: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:34:31 epoch 660555: beacon woken through 660557
+09:34:42 A: epoch 660554 claim materialized 0xf3777fda015e35e2079c2975783911d1e02fef71c91158c596df215bc1411e3e
+09:34:47 B: epoch 660554 claim materialized 0x400f681b907b853845b941711315dd412c59fde1e3c3ca8232ebfc58313464c3
+09:34:53 A: epoch 660555 claim announced
+09:34:53 B: epoch 660555 claim announced
+09:35:04 epoch 660555: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:35:37 epoch 660555: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:35:59 epoch 660556: beacon woken through 660557
+09:36:15 A: epoch 660555 claim materialized 0x9eabb5acaadf5b01f5ead189a001b8e3b53043a7ccc0b593db720f80f1de75c7
+09:36:16 B: epoch 660555 claim materialized 0xae58a45f4595ed1a337031dae9dd0b7ad8f0689cb03fb5457ed1a0aef941221e
+09:36:16 epoch 660556 (not rolled): 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:36:22 A: epoch 660556 claim announced
+09:36:22 B: epoch 660556 claim announced
+09:36:49 epoch 660556: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:37:23 epoch 660556: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:37:34 epoch 660557: beacon woken through 660559
+09:37:45 A: epoch 660556 claim materialized 0xe88729146ca18e6b0c59df9cae974afa96ab138a2e412b423abcc2e1d77cd545
+09:37:50 B: epoch 660556 claim materialized 0x4274ee4d4ba0cf06501b1b4149dfb82db1f47d59cc17c7499c1dad5a8f93153f
+09:37:55 A: epoch 660557 claim announced
+09:37:55 B: epoch 660557 claim announced
+09:38:06 epoch 660557: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:38:39 epoch 660557: 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn
+09:39:02 epoch 660558: beacon woken through 660560
+09:39:18 A: epoch 660557 claim materialized 0x28f265011ba1c990839233f8e4366791b9f3891e813f079f21fbaf1ad3dd4f41
+09:39:27 B: epoch 660557 claim materialized 0x5b46b11dae8f48b9edbdd1b27ef4bdd4fee91a7827e157f9236d19724ed45a00
+09:39:27 epoch 660558 (not rolled): 2/2 eligible on the fly, 2 vote(s) -- a task at redundancy 2 can be drawn

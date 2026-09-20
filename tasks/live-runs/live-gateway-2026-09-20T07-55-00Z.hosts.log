@@ -1,0 +1,305 @@
+07:59:30 A: 0x3b3156A32dB1944F14bC152C42960D3b51DCDD19 · 139255 neurons resident in 5.8s · mep 0x312dda12d3… · 1 vote(s), enrolled true
+07:59:32 B: 0x966d94F5504a6BD4B34Ed6D667aB41C2919006D2 · 139255 neurons resident in 1.9s · mep 0x312dda12d3… · 1 vote(s), enrolled true
+07:59:32 both hosts on 0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a (relayer serves it)
+07:59:33 epoch 660491: woke the lazy beacon until 660493
+07:59:33 A: epoch 660491 claim announced
+07:59:33 B: epoch 660491 claim announced
+07:59:33 epoch 660491: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+07:59:48 epoch 660491: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:00:05 epoch 660492: woke the lazy beacon until 660494
+08:00:05 epoch 660492 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:00:20 A: epoch 660492 claim announced
+08:00:27 A: epoch 660491 claim materialized 0x9d5db61b455eae09bd5d3e53a64eae25edb93b6ca24c84f1f692937660519c1a
+08:00:27 B: epoch 660492 claim announced
+08:00:32 B: epoch 660491 claim materialized 0xa9e571422199937a83a66685b303f3fd346e98060db6c6aa75ac7a1f484a89b4
+08:00:32 epoch 660492: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:00:48 epoch 660492: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:01:03 epoch 660492: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:01:19 epoch 660492: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:01:35 epoch 660493: woke the lazy beacon until 660495
+08:01:35 epoch 660493 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:01:50 A: epoch 660493 claim announced
+08:01:51 B: epoch 660493 claim announced
+08:01:57 B: epoch 660492 claim materialized 0x57903766603461599ee90261f47c3c2f768db979bc2bac1dd88678f158bd0247
+08:01:57 epoch 660493: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:02:13 epoch 660493: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:02:29 epoch 660493: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:02:45 epoch 660493: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:03:00 epoch 660494: woke the lazy beacon until 660495
+08:03:01 epoch 660494 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:03:17 epoch 660494 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:03:33 A: epoch 660494 claim announced
+08:03:33 B: epoch 660494 claim announced
+08:03:33 epoch 660494: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:03:49 epoch 660494: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:04:05 epoch 660494: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:04:20 epoch 660494: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:04:36 epoch 660495: woke the lazy beacon until 660497
+08:04:36 epoch 660495 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:04:52 A: epoch 660495 claim announced
+08:04:53 A: epoch 660494 claim materialized 0x179d43a4a63e7166f7374334ce4ece5b999461602a6aba4d6b65e3705af0c999
+08:04:53 B: epoch 660495 claim announced
+08:04:58 B: epoch 660494 claim materialized 0xa1c05bddec4fc22caaf3b7451607d2b3a71518a489fd7d28be8eb6daccf16894
+08:04:58 epoch 660495: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:05:14 epoch 660495: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:05:30 epoch 660495: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:05:45 epoch 660495: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:06:01 epoch 660496: woke the lazy beacon until 660498
+08:06:01 epoch 660496 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:06:22 B: epoch 660495 claim materialized 0x4ddf2a7da774ec9c0c83db1815f7f88af9e2aabb9e926caed4192d83caa09bd3
+08:06:22 epoch 660496 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:06:38 A: epoch 660496 claim announced
+08:06:38 B: epoch 660496 claim announced
+08:06:38 epoch 660496: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:06:53 epoch 660496: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:07:09 epoch 660496: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:07:25 A: task 0x8f30933117… executed, submitResult ok 0x2fc28d57b6…
+08:07:25 epoch 660496: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:07:26 B: task 0x8f30933117… executed, submitResult ok 0x9e30cab59e…
+08:07:41 epoch 660497: woke the lazy beacon until 660499
+08:07:46 A: epoch 660496 claim materialized 0xb4af714ce7ba4115e3867632a05fcfb37f84ad14ffafecccffbb7e6b032beb3f
+08:07:51 B: epoch 660496 claim materialized 0xc8969c46f44eabd094ed0c03ab7c358789b519c0dd45f53cc54d051d67d48bef
+08:07:51 epoch 660497 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:08:06 A: epoch 660497 claim announced
+08:08:06 B: epoch 660497 claim announced
+08:08:06 epoch 660497: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:08:22 epoch 660497: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:08:38 epoch 660497: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:08:53 epoch 660497: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:09:09 epoch 660498: woke the lazy beacon until 660500
+08:09:10 epoch 660498 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:09:25 A: epoch 660498 claim announced
+08:09:26 A: epoch 660497 claim materialized 0xf8bff58117fd91f95ba6e097ef23fb5051895d5f9d977d7b2ebc69808cdf6c65
+08:09:26 B: epoch 660498 claim announced
+08:09:31 B: epoch 660497 claim materialized 0xb0dddb0a49abbf0bd8b582e1eee7b50a87379560f0316224eb9d0019011bde5a
+08:09:31 epoch 660498: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:09:47 epoch 660498: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:10:03 epoch 660498: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:10:18 epoch 660498: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:10:34 epoch 660499: woke the lazy beacon until 660501
+08:10:34 epoch 660499 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:10:50 A: epoch 660499 claim announced
+08:10:51 A: epoch 660498 claim materialized 0x5ec224876cc3fbda241ac8c1f46287ecadc6ac1fa974d9cac4883629401decf7
+08:10:51 B: epoch 660499 claim announced
+08:10:56 B: epoch 660498 claim materialized 0x881b854b12f004dd6c18443420e20fa675f4509c0612e19c31ab1e53f2b69554
+08:10:56 epoch 660499: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:11:12 epoch 660499: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:11:28 epoch 660499: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:11:43 epoch 660499: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:11:59 epoch 660500: woke the lazy beacon until 660501
+08:11:59 epoch 660500 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:12:16 A: epoch 660499 claim materialized 0x5947a75600155eaaad6ae1bc20dd7ce30a6659477c7ba4994e402d516d62f5b3
+08:12:21 B: epoch 660499 claim materialized 0x42c1b0cf2709a94d6252dacb42d5015c69b5ab842ea7eea6931a578356efe689
+08:12:21 epoch 660500 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:12:37 A: epoch 660500 claim announced
+08:12:37 B: epoch 660500 claim announced
+08:12:37 epoch 660500: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:12:53 epoch 660500: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:13:08 epoch 660500: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:13:24 epoch 660500: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:13:40 epoch 660501: woke the lazy beacon until 660503
+08:13:41 A: epoch 660500 claim materialized 0x2750f24f1138b99bf32306060c9ff2e88bccfe2c7783c12280f9b82766bd1279
+08:13:46 B: epoch 660500 claim materialized 0x984c120269fdeec01b0ab23bfa867c49b327eb9a5576f0f35ca32c5844be0945
+08:13:46 epoch 660501 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:14:01 A: epoch 660501 claim announced
+08:14:01 B: epoch 660501 claim announced
+08:14:01 epoch 660501: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:14:17 epoch 660501: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:14:33 epoch 660501: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:14:49 epoch 660501: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:15:04 epoch 660502: woke the lazy beacon until 660504
+08:15:05 epoch 660502 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:15:20 A: epoch 660502 claim announced
+08:15:25 A: epoch 660501 claim materialized 0x2dcd6316d0c10327d825f53db47a00dbf36124e242a4d71592e889c2ebac4794
+08:15:25 B: epoch 660502 claim announced
+08:15:26 B: epoch 660501 claim materialized 0xfcad2a677cf875c61dcf714c231e6b55d1170ac56eab54476437f837883627d7
+08:15:26 epoch 660502: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:15:42 epoch 660502: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:15:58 epoch 660502: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:16:13 epoch 660502: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:16:29 epoch 660503: woke the lazy beacon until 660504
+08:16:29 epoch 660503 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:16:50 A: epoch 660502 claim materialized 0xb4db33cae5327d1ff4f4663a3481f77ff803d4cf166ac2f9fcd485c9062288f0
+08:16:59 B: epoch 660502 claim materialized 0x58db6aea3a86f8e8ac065433cc5fb2235c0f569d57e48e0a01d6a6094afe9cb1
+08:16:59 epoch 660503 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:17:15 A: epoch 660503 claim announced
+08:17:15 B: epoch 660503 claim announced
+08:17:15 epoch 660503: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:17:31 epoch 660503: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:17:46 epoch 660503: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:18:02 epoch 660504: woke the lazy beacon until 660505
+08:18:02 epoch 660504 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:18:27 A: epoch 660503 claim materialized 0x07f04b3ef6831d23299cbfa88b19f7cad8526f86a15436b4483075b1bbe08099
+08:18:32 B: epoch 660503 claim materialized 0xbe7243beafc54ffb9ed1691a9131a82d89ba5cdc94a7e7bf320dde306fb0fa12
+08:18:32 epoch 660504 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:18:48 A: epoch 660504 claim announced
+08:18:48 B: epoch 660504 claim announced
+08:18:48 epoch 660504: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:19:04 epoch 660504: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:19:19 epoch 660504: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:19:35 epoch 660505: woke the lazy beacon until 660507
+08:19:36 epoch 660505 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:19:51 A: epoch 660505 claim announced
+08:19:52 A: epoch 660504 claim materialized 0x351ce6f4916f2e3c3472109ed556124260b4ae066be72df77602fbd8ba3959e0
+08:19:52 B: epoch 660505 claim announced
+08:19:57 B: epoch 660504 claim materialized 0x5d71f81b88317cf7a33adff2d05a74c7f2a479b8a51b3090a8fe20787a638481
+08:19:57 epoch 660505: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:20:13 epoch 660505: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:20:29 epoch 660505: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:20:45 epoch 660505: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:21:00 epoch 660506: woke the lazy beacon until 660507
+08:21:01 epoch 660506 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:21:21 A: epoch 660505 claim materialized 0x55b97b18e571084cc468671a14aee069993b2dc12bc10be53b3f84d52d067be6
+08:21:27 B: epoch 660505 claim materialized 0x801076c395d11bce6031e42738a85ab07a5956da964193a9da05d0f012140ea0
+08:21:27 epoch 660506 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:21:42 A: epoch 660506 claim announced
+08:21:42 B: epoch 660506 claim announced
+08:21:42 epoch 660506: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:21:58 epoch 660506: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:22:14 epoch 660506: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:22:29 epoch 660507: woke the lazy beacon until 660508
+08:22:30 epoch 660507 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:22:46 A: epoch 660506 claim materialized 0xd4f8f0bffa456d4e5589eeaa8d98d3c42c9e5b6c1e1e6d5d6c148c1ca06ebb7c
+08:22:51 B: epoch 660506 claim materialized 0xe0551980d39cbb9c8200dd955c94a59b5e9ba6d9aaa9e38a26b8c8ab5ae1729c
+08:22:52 epoch 660507 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:23:07 A: epoch 660507 claim announced
+08:23:07 B: epoch 660507 claim announced
+08:23:07 epoch 660507: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:23:23 epoch 660507: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:23:39 epoch 660507: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:23:54 epoch 660507: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:24:10 epoch 660508: woke the lazy beacon until 660510
+08:24:12 A: epoch 660507 claim materialized 0x0fc35a90925184dc88f5cacf163f01cdb21fc258c83a408595129e9c59f20e99
+08:24:17 B: epoch 660507 claim materialized 0x0b005ddc90d9625a18afe7f0511b7986a22289eb170db98334caea0c772337be
+08:24:17 epoch 660508 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:24:32 A: epoch 660508 claim announced
+08:24:32 B: epoch 660508 claim announced
+08:24:32 epoch 660508: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:24:48 epoch 660508: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:25:04 epoch 660508: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:25:19 epoch 660508: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:25:35 epoch 660509: woke the lazy beacon until 660511
+08:25:40 A: epoch 660508 claim materialized 0x82ba21b9a8cf860c9461343e3d1a8f6aa241801117a2fe8bade8c923f6fc4da2
+08:25:45 B: epoch 660508 claim materialized 0x133a34f0b97cf94e7516140908687623beb773c9a0301a029999917389214403
+08:25:45 epoch 660509 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:26:01 A: epoch 660509 claim announced
+08:26:01 B: epoch 660509 claim announced
+08:26:01 epoch 660509: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:26:17 epoch 660509: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:26:32 epoch 660509: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:26:48 epoch 660509: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:27:04 epoch 660510: woke the lazy beacon until 660512
+08:27:04 epoch 660510 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:27:19 A: epoch 660510 claim announced
+08:27:27 A: epoch 660509 claim materialized 0x6124cc7d27e42c5b26999c2316d5e1644cf9f288e1e0b41d1548d2e5e74c64ed
+08:27:27 B: epoch 660510 claim announced
+08:27:33 B: epoch 660509 claim materialized 0xd08fb8a17b838e00394ae406ce9dfef291fcc7427e309ab6db00f6c9197ac915
+08:27:33 epoch 660510: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:27:48 epoch 660510: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:28:04 epoch 660510: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:28:20 epoch 660510: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:28:35 epoch 660511: woke the lazy beacon until 660513
+08:28:36 epoch 660511 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:28:51 A: epoch 660511 claim announced
+08:28:51 B: epoch 660511 claim announced
+08:28:57 B: epoch 660510 claim materialized 0xba9357b79da4332db0846ebfe2ad17805647f55b88493a63ece1977f9e432def
+08:28:58 epoch 660511: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:29:13 epoch 660511: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:29:29 epoch 660511: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:29:45 epoch 660511: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:30:01 epoch 660512: woke the lazy beacon until 660513
+08:30:01 epoch 660512 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:30:17 epoch 660512 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:30:33 A: epoch 660512 claim announced
+08:30:33 B: epoch 660512 claim announced
+08:30:33 epoch 660512: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:30:49 epoch 660512: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:31:05 epoch 660512: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:31:21 epoch 660512: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:31:36 epoch 660513: woke the lazy beacon until 660515
+08:31:37 epoch 660513 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:31:52 A: epoch 660513 claim announced
+08:31:57 A: epoch 660512 claim materialized 0xf719735a241ba0eecc8b5b758440474972a54b571482644cf8594df6d08682d3
+08:31:57 B: epoch 660513 claim announced
+08:32:02 B: epoch 660512 claim materialized 0x620a794e7b25e43f91b3ec927cbf40cac90ed939dcbd11a7651241315e508f59
+08:32:02 epoch 660513: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:32:18 epoch 660513: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:32:34 epoch 660513: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:32:49 epoch 660513: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:33:05 epoch 660514: woke the lazy beacon until 660516
+08:33:05 epoch 660514 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:33:21 A: epoch 660514 claim announced
+08:33:26 A: epoch 660513 claim materialized 0x9547a79163e60783475aa9221ac89dc43922b34ae3f3508b14f6a7e6cff47a1f
+08:33:26 B: epoch 660514 claim announced
+08:33:27 B: epoch 660513 claim materialized 0x651ac7db7a744d1a7269b1ab6a05b2a64fdc22c7f3ad8305c930f6c8593eb6e3
+08:33:27 epoch 660514: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:33:43 epoch 660514: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:33:59 epoch 660514: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:34:14 epoch 660514: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:34:30 epoch 660515: woke the lazy beacon until 660516
+08:34:30 epoch 660515 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:34:42 B: task 0x61c919f28c… executed, submitResult ok 0xce7f2dafa8…
+08:34:46 epoch 660515 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:34:51 A: task 0x61c919f28c… executed, submitResult ok 0xead75940b2…
+08:35:02 A: epoch 660515 claim announced
+08:35:02 B: epoch 660515 claim announced
+08:35:07 B: epoch 660514 claim materialized 0x3a9eee400f5df6574fa2226b75c177d1255d9d9bc4c4bc2ea0cf76b3fde42e2a
+08:35:07 epoch 660515: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:35:23 epoch 660515: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:35:38 epoch 660515: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:35:54 epoch 660515: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:36:10 epoch 660516: woke the lazy beacon until 660518
+08:36:10 epoch 660516 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:36:26 A: epoch 660516 claim announced
+08:36:31 A: epoch 660515 claim materialized 0x04b69686ea8c9246348c3789fc18199727797b8a28aea0c30c6c4b3815bfc128
+08:36:31 B: epoch 660516 claim announced
+08:36:36 B: epoch 660515 claim materialized 0xdeb97219e85976a113f951bbd873337e87a602fa82e72ddccfe2050cffb835cb
+08:36:36 epoch 660516: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:36:52 epoch 660516: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:37:07 epoch 660516: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:37:23 epoch 660516: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:37:39 epoch 660517: woke the lazy beacon until 660519
+08:37:44 A: epoch 660516 claim materialized 0x0c3a3cea1797f6ab8ef5e70a324041f285717bdb417cbddcfcd05566769774cc
+08:37:49 B: epoch 660516 claim materialized 0xe390ab62e9422a5a3c9e5de47c032c4324cf574322be9d8e95063b6cb3f41b63
+08:37:49 epoch 660517 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:38:05 A: epoch 660517 claim announced
+08:38:05 B: epoch 660517 claim announced
+08:38:05 epoch 660517: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:38:21 epoch 660517: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:38:36 epoch 660517: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:38:52 epoch 660517: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:39:08 epoch 660518: woke the lazy beacon until 660520
+08:39:13 A: epoch 660517 claim materialized 0xa4e1545977af5598538485fd10fda9b64b423a511dc32d4dcdacc762e80f932a
+08:39:14 B: epoch 660517 claim materialized 0x72ba78d74b67cfb900e403f0b946917df3ce5aab8bb546c14234bb361040729e
+08:39:14 epoch 660518 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:39:29 A: epoch 660518 claim announced
+08:39:30 B: epoch 660518 claim announced
+08:39:30 epoch 660518: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:39:45 epoch 660518: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:40:01 epoch 660518: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:40:16 epoch 660518: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:40:32 epoch 660519: woke the lazy beacon until 660521
+08:40:32 epoch 660519 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:40:48 A: epoch 660519 claim announced
+08:40:52 A: epoch 660518 claim materialized 0x8ea3fe919a8f99584d1bcda40a786472b5893177c239cfa72f22ecf16326d6d4
+08:40:52 B: epoch 660519 claim announced
+08:40:53 B: epoch 660518 claim materialized 0xfba4390f4f10cf9400a409e483dbe030f28a13e387f0a746567983f9a4a0e362
+08:40:53 epoch 660519: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:41:09 epoch 660519: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:41:24 epoch 660519: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:41:40 epoch 660519: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:41:55 epoch 660519: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:42:11 epoch 660520: woke the lazy beacon until 660522
+08:42:16 B: epoch 660519 claim materialized 0xa8dc6c5ee2c9fd61fd281ebad08eecc95363fac48b7380ce186c649459597f59
+08:42:17 epoch 660520 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:42:32 A: epoch 660520 claim announced
+08:42:32 B: epoch 660520 claim announced
+08:42:32 epoch 660520: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:42:48 epoch 660520: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:43:04 epoch 660520: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:43:19 epoch 660520: 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:43:35 epoch 660521: woke the lazy beacon until 660523
+08:43:36 epoch 660521 (not rolled): 2/2 eligible, 2 vote(s) for this brain -- a task at redundancy 2 can be drawn
+08:43:51 A: epoch 660521 claim announced
+08:43:56 A: epoch 660520 claim materialized 0x9ce0b5892853bb7a08d25ab127aec84c2830d6430c3e79d1a4ceef23a45cd4ec
+08:43:56 B: epoch 660521 claim announced
