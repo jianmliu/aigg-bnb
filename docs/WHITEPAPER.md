@@ -1,14 +1,14 @@
-# aigg: An Open Network for Model Computation and Verifiable Research
+# AIGG: Open Model Infrastructure and Independent Research Applications
 
 ## System White Paper and Roadmap
 
-**Version:** v0.2.1 · Discussion draft
+**Version:** v0.3 · Discussion draft
 
 **Date:** 2026-09-20
 
 **Original brain implementation baseline:** `aigg-bnb` main at [`09c9de9`](https://github.com/jianmliu/aigg-bnb/tree/09c9de9)
 
-**Revision evidence:** This revision additionally draws on source inspection of `aigg-bnb` at `dd03b3f`, `aigg-mep` at `c6bdd28`, and `aigg-src` at `4100220`. The original baseline remains attached to historical capability statements. Source inspection does not establish deployment status. The two-subnet organization and cross-repository integration below are proposed architecture.
+**Revision evidence:** This revision additionally draws on source inspection of `aigg-bnb` at `dd03b3f`, `aigg-mep` at `c6bdd28`, and `aigg-src` at `4100220`. The original baseline remains attached to historical capability statements. Source inspection does not establish deployment status. The Brain and LLM service families and cross-repository integration below describe a technical platform, not a shared token economy. This revision supersedes the earlier AIGG platform-token proposal; the current design issues no AIGG token. FlyBnB instead proposes its independent FLYBNB project token. Multi-asset implementation references include aigg-bnb at db84f4e; they do not establish production deployment.
 
 **Scope:** System architecture, delivery guarantees, public research funding, governance, and milestones. This document does not replace the protocol specification or equate testnet operation with production security validation.
 
@@ -22,7 +22,7 @@ The project began by extending unified model APIs, such as sub2api, toward P2P i
 
 Integer simulation of the fruit-fly connectome became the first application to exercise the full computation path. Browser tabs lower the barrier to participation; PoRW evidence of model possession supports provider eligibility; task-level redundant execution and dispute mechanisms support result verification. FlyBnB applies these capabilities to research on simulation robustness under connectome variation and produces an open dataset.
 
-The proposed network organizes this work into a Biological Brain subnet and an LLM subnet. Models and derivatives use versioned MEPs within those subnets, connecting publication, financing, host service, execution evidence and settlement through a common model-service lifecycle. FlyBnB is the first application. Two partnership tracks follow in parallel: mammalian brain models and research collaborations within the Biological Brain subnet, and an open-source model partnership with a bounded inference-credit presale pilot within the LLM subnet. Both require scoped delivery and independent validation.
+The AIGG technical platform organizes reusable capabilities into Biological Brain and LLM service families, also called workload subnets. Models and derivatives use versioned MEPs within those subnets, connecting publication, financing, host service, execution evidence and settlement through a common model-service lifecycle. FlyBnB is the first application. Two partnership tracks follow in parallel: mammalian brain models and research collaborations within the Biological Brain subnet, and an open-source model partnership with a bounded inference-credit presale pilot within the LLM subnet. Both require scoped delivery and independent validation.
 
 The system's near-term value does not depend on commercial inference demand. Members of the public can fund particular individuals and experiments, maintain an ongoing relationship with the research, and receive holder acknowledgment through a release-specific NFT ownership snapshot. Results are public, and the snapshot and research evidence can be checked. Paid experiments and other model workloads are subsequent expansion paths.
 
@@ -46,7 +46,7 @@ Extending this architecture to mammals means that larger deterministic models ma
 
 ## 2. One Network, Two Subnets, Multiple Model Profiles
 
-**AIGG is the network and proposed shared governance and funding layer on BNB Chain.** Its initial architecture distinguishes two workload subnets: **Biological Brain** and **LLM**. A subnet coordinates a service family, eligible hosts, acceptance policies, funding, and delivery obligations. It can contain many models and Model Execution Profiles (MEPs); registering a model or derivative does not automatically create another subnet.
+**AIGG is the technical platform and code-support layer; the current design issues no AIGG platform token.** It supplies reusable MEP, verification, hosting, task-market, settlement, gateway and wallet infrastructure. Its initial architecture distinguishes two workload subnets: **Biological Brain** and **LLM**. These organize service families and technical interfaces; each application defines its own eligible hosts, acceptance policies, funding and delivery obligations. It can contain many models and Model Execution Profiles (MEPs); registering a model or derivative does not automatically create another subnet.
 
 | Layer | Biological Brain subnet | LLM subnet |
 |---|---|---|
@@ -56,15 +56,17 @@ Extending this architecture to mammals means that larger deterministic models ma
 | Acceptance and metering | Supported deterministic execution, disputes; simulation steps and redundancy | Versioned inference receipts and acceptance policies; defined inference usage units |
 | Funding and obligations | Research funding, NFT purchases and paid experiments | Customer payments and potentially presold inference credits with explicit delivery liabilities |
 
-**FlyBnB is the first application of the Biological Brain subnet and produces a research dataset.** Future mammalian workloads can join that subnet after independent model, resource and verification validation. An LLM and its derivatives can belong to the LLM subnet with distinct profiles, hosts and commercial terms. These are organizational boundaries, not a requirement to deploy a new chain or issue a token for each subnet.
+**FlyBnB is the first application of the Biological Brain subnet and produces a research dataset.** Future mammalian workloads can join that subnet after independent model, resource and verification validation. An LLM and its derivatives can belong to the LLM subnet with distinct profiles, hosts and commercial terms. These are technical organizational boundaries. FlyBnB has its own proposed FLYBNB token, treasury and project governance. Other research or LLM applications may choose different funding and token arrangements; using AIGG code neither requires FLYBNB nor creates a claim on its treasury.
 
 PoRW, execution verification and settlement remain separate mechanisms. Shared infrastructure may provide model identity, lineage references, agent wallets, authorization, payments and contribution records. Each subnet must specify its own execution semantics, evidence, resource units, collateral exposure and service obligations. Shared interfaces do not make those guarantees interchangeable.
 
 ```mermaid
 flowchart TB
-    A[AIGG network: shared governance and funding] --> B[Biological Brain subnet]
-    A --> C[LLM subnet]
-    B --> D[FlyBnB models and derivatives / future mammalian models]
+    A[AIGG technical platform and code support] --> B[Biological Brain service family]
+    A --> C[LLM service family]
+    B --> D[FlyBnB models and derivatives]
+    B --> M[Independent future mammalian projects]
+    K[FlyBnB treasury and FLYBNB project token] --> D
     C --> E[Open LLMs and derivatives]
     D --> F[Versioned MEPs and service terms]
     E --> F
@@ -77,7 +79,7 @@ flowchart TB
 
 `aigg-mep` supplies reusable model and execution-profile primitives; `aigg-porw` supplies possession and supported execution protocols; `aigg-bnb` contains the brain market, BNB integration, Gateway, relayer and application. `aigg-src` supplies the model API and billing infrastructure, with wallet, agent authorization and payment components as integration candidates. Their existence in source does not establish a deployed, unified network.
 
-Launch admission remains restricted: FlyBnB is the initial funded application. Defining the LLM subnet now does not open unrestricted competition for AIGG issuance. Research operators remain accountable for scheduling experiments, reserving budgets and publishing delivery status.
+FlyBnB initially restricts its own incentive program to its research workload. Defining an LLM service family does not create a shared emissions market or access to the FlyBnB treasury. Research operators remain accountable for scheduling experiments, reserving budgets and publishing delivery status.
 
 ## 3. System Roles
 
@@ -87,8 +89,8 @@ Launch admission remains restricted: FlyBnB is the initial funded application. D
 | Funder | Support individuals, experiments, or a research budget | No guaranteed return or automatic authorship |
 | Individual holder | Hold a transferable individual identity and use the collection's permitted operations | No exclusive right to use the underlying public data |
 | Model publisher / derivative author | Publish artifacts, licenses, lineage and supported profiles | Registration does not prove derivation or create rights absent from the license |
-| Credit issuer / service operator | Define eligible services, reserve delivery capacity and honor credit terms | A credit sale is not completed inference or an AIGG treasury guarantee |
-| AIGG governance participant | Under the proposed design, stake and vote on admitted funding destinations | Voting does not establish service quality or scientific validity |
+| Credit issuer / service operator | Define eligible services, reserve delivery capacity and honor credit terms | A credit sale is not completed inference or a platform or FlyBnB treasury guarantee |
+| FlyBnB governance participant | Under the proposed design, stake FLYBNB and vote on eligible project research and funding destinations | Voting does not establish service quality or scientific validity |
 | Host / executor | Hold models, submit eligibility evidence, and execute tasks | A bond or online presence alone does not guarantee selection or payment |
 | Relayer / aggregator | Forward messages, aggregate and submit records, and sponsor gas according to policy | Should not be the final authority on result correctness; can affect availability |
 | Auditor / challenger | Recompute independently, detect errors, and challenge within the window | Permission to challenge does not ensure that auditors will participate |
@@ -187,7 +189,7 @@ A pilot should identify a scientific lead, the model and its license, the resear
 
 Acceptance requires faithful artifact reconstruction, a supported execution profile, reference comparisons, measured memory and CPU/GPU costs, and an assurance policy appropriate to the model. Existing fly integer semantics and dispute contracts do not automatically cover an arbitrary mammalian simulator. GPU use alone does not require a TEE; compatibility with the promised evidence and verification method determines the execution path.
 
-Research success is measured through delivered experiments, reproducibility, useful scientific outputs and renewed collaboration. Commercial inference revenue is not a prerequisite for this track. Research funding, paid experiments and eligible AIGG support must each retain explicit budgets and obligations.
+Research success is measured through delivered experiments, reproducibility, useful scientific outputs and renewed collaboration. Commercial inference revenue is not a prerequisite for this track. Research funding, paid experiments and explicit project incentives must each retain explicit budgets and obligations.
 
 ## 7. Public Funding, NFTs, and Contribution Acknowledgments
 
@@ -255,21 +257,64 @@ Royalties allocate fees incurred within this marketplace. They do not prevent ex
 
 The LLM subnet may finance future inference capacity by preselling credits redeemable for specified services. Each offering must identify its issuer, eligible models and profiles, metering and pricing rules, accepted assets, validity and transfer rules, capacity limits, failure handling and refund terms. If a model is retired or a host exits, substitution or refund follows the accepted terms rather than an implicit network-wide promise.
 
-Presale proceeds come with an outstanding delivery obligation. Account separately for funds received, reserved delivery costs, redeemed usage, refunds and earned service revenue. Set issuance limits against available capacity and reserves; do not distribute funds needed to honor outstanding credits as royalties or governance returns. A subnet's obligations are not automatically guaranteed by another subnet or the AIGG treasury.
+Presale proceeds come with an outstanding delivery obligation. Account separately for funds received, reserved delivery costs, redeemed usage, refunds and earned service revenue. Set issuance limits against available capacity and reserves; do not distribute funds needed to honor outstanding credits as royalties or governance returns. A subnet's obligations are not automatically guaranteed by another subnet or the FlyBnB treasury.
 
 Open-source LLMs and derivatives can carry accepted marketplace revenue terms for model creators and service providers. Such distributions require valid licenses, explicit beneficiary rules and an enforceable settlement path. Lineage or a creator-policy commitment alone cannot impose royalties on every external use of downloadable weights. The existing brain royalty contracts are an example of marketplace enforcement, not an already generalized LLM royalty engine.
 
-### 8.5 AIGG Bootstrap, Governance and Payment Assets
+### 8.5 Independent FLYBNB Bootstrap, Governance and Payment Assets
 
-AIGG is the proposed network incentive and governance asset. GCC refers to existing inference-credit mechanisms; an internal credit balance and an on-chain token are distinct instruments unless an explicit redemption path connects them. Neither should be silently treated as AIGG or as universally redeemable across subnets.
+AIGG provides technology and code support and does not issue a platform token under this design.
+**FLYBNB is FlyBnB's proposed independent project incentive and governance token.** It is not a claim
+on AIGG, other applications, or LLM credit issuers. GCC inference credits remain separate service
+obligations, with redemption limited to their named issuers and terms.
 
-The proposed bootstrap allocates an initial AIGG tranche to acquire FlyBnB Founder NFTs. Hosts that opt into AIGG payment earn it through accepted service, distributing the token through work. The treasury holds the acquired NFTs and may receive applicable fee distributions or realize sale proceeds. NFT appreciation is an unrealized valuation change until disposal; neither appreciation nor project-funded fee circulation establishes external demand or guarantees investment success.
+The proposed bootstrap uses an initial FLYBNB tranche to subscribe to the Founder NFT inventory
+and fund the associated research tasks. Hosts that explicitly accept FLYBNB earn it through
+accepted service, distributing tokens through work. The FlyBnB treasury holds the acquired NFTs
+and may receive applicable royalties or sell inventory. Supply, custody, allocations and distribution
+rules still need implementation and review; this paper does not announce a live token.
 
-**Host collateral starts in BNB.** A host need not first acquire an illiquid AIGG token to begin serving and earning AIGG. AIGG service bonds are a later option after distribution and a separate collateral-risk review. A CCA token auction is deferred and is not a launch dependency.
+Users adopt existing treasury NFTs for BNB. Those proceeds enter the FlyBnB treasury; liquidity
+management is a separate authorized operation, not an automatic consequence of each sale.
+Breeding pays the collection fee and locks a separate battery execution budget. Native BNB tasks
+remain available. An optional exact-output BNB-to-FLYBNB adapter can fund a token-denominated
+battery budget, subject to a maximum input and deadline. Fees, host rewards and refunds stay in
+the task's asset. A sale does not rerun a completed founder battery.
 
-Later governance may require staking AIGG to vote on issuance destinations among admitted projects, including NFT acquisition. Voting incentives and project returns may accrue to participating stakers under explicit distribution rules. Initially only FlyBnB is admitted for bootstrap funding; additional destinations require governance admission. Token prices, vote incentives and issuance received must be evaluated separately from delivered work and realized external revenue.
+**Host collateral starts in BNB.** Hosts need no FLYBNB balance to begin serving native tasks and
+can opt into token rewards. FLYBNB collateral is a later decision requiring distribution and a
+separate risk review. A CCA auction is deferred and is not a launch dependency.
 
-The intended marketplace can accept BNB, AIGG and potentially stablecoins such as USDC for subscriptions or purchases and host payments. Each offer must specify its asset and a host must opt into the payment terms. The optional local multi-asset market and battery contracts now implement allowlisted ERC-20 settlement, host opt-in, separate accounting and refunds; an optional exact-output BNB conversion funds token battery jobs. These contracts need reviewed deployment and configuration; existing native-only deployments do not acquire ERC-20 support automatically. See [Multi-asset battery](MULTI_ASSET_BATTERY.md). Wallet, Permit2 and x402 components are reusable integration candidates, not evidence that this multi-asset flow is live.
+Later project governance may require staking FLYBNB to direct project emissions toward eligible
+experiments, lineages, research collaborations or NFT acquisitions. Voting incentives and realized
+project proceeds can be distributed only under explicit rules. There is no AIGG-wide issuance
+pool. LLM and mammalian projects using the platform receive no automatic funding entitlement;
+any FlyBnB-funded collaboration requires a defined project mandate and budget.
+
+The local multi-asset market supports native BNB and allowlisted conventional ERC-20 assets,
+including a future configured FLYBNB or USDC. It implements host opt-in, separate accounting and
+refunds; it does not itself deploy or issue FLYBNB. Earlier AIGG-named UI/configuration examples
+refer to the prior token proposal, not a live FLYBNB deployment. See
+[Multi-asset battery](MULTI_ASSET_BATTERY.md). Wallet, Permit2 and x402 remain integration
+candidates rather than evidence that every payment route is live.
+
+### 8.6 What Participants Acquire
+
+Adopting or breeding buys **an opportunity to participate in research, a verifiable contribution
+record, and potential revenue rights under applicable terms**. Ownership and lineage can be
+checked on-chain; task receipts and published results provide evidence as work is completed.
+Participation and public research outputs retain value even when there are no paid experiments.
+
+Paper and dataset acknowledgment follows the [release snapshot policy](flybnb/CREDIT.md):
+the NFT must be included in the research and held at the specified snapshot block. This recognizes
+holders at that snapshot, not an automatic lifetime credit for every prior payer. Acknowledgment
+does not confer authorship. Future royalties follow the applicable contracts and actual paid usage.
+
+NFT rights and FLYBNB holder rights are separate. Holding FLYBNB does not automatically confer
+NFT acknowledgment, NFT royalties or ownership of treasury assets. Treasury NFT appreciation
+is unrealized until disposal; treasury receipts become token-holder distributions only under
+explicit distribution rules. Project-funded circulation, token prices and liquidity are not evidence
+of external demand or guaranteed returns.
 
 ## 9. The Model-Service Lifecycle
 
@@ -304,7 +349,7 @@ Several constituent modules exist today. A durable, end-to-end research orchestr
 
 Immutable contract parameters can limit arbitrary administrative changes, but can also freeze mistaken assumptions. The roadmap needs migration, exit, and version-identification mechanisms. Powers over collection recognition lists, treasury destinations, renderers, and service configuration should be described contract by contract. A claim of complete decentralization cannot replace an inventory of authority.
 
-AIGG issuance and staked voting remain proposals. Multi-asset task and battery settlement has an optional local implementation; this paper does not establish a live production deployment. BNB/tBNB currently serve native payment, bonding and transaction functions on their respective networks. Governance must disclose admissions, treasury custody, issuance limits, voting incentives and conflicts. A project can attract votes through token-price manipulation without delivering valuable service; restricted admission at launch reduces scope but does not eliminate this risk. Credit liabilities, slashable collateral and treasury assets require separate accounting.
+FLYBNB issuance and project-level staked voting remain proposals; AIGG platform-token issuance is outside the current design. Multi-asset task and battery settlement has an optional local implementation; this paper does not establish a live production deployment. BNB/tBNB currently serve native payment, bonding and transaction functions on their respective networks. Governance must disclose admissions, treasury custody, issuance limits, voting incentives and conflicts. A project can attract votes through token-price manipulation without delivering valuable service; restricted admission at launch reduces scope but does not eliminate this risk. Credit liabilities, slashable collateral and treasury assets require separate accounting.
 
 ## 11. Current Capability Matrix
 
@@ -322,8 +367,8 @@ AIGG issuance and staked voting remain proposals. Multi-asset task and battery s
 | Exact GPU execution and unified TEE integration | Planned | Respective guarantee boundaries, compatibility, and cost experiments |
 | General LLM MEP registry and conformance primitives | Implemented in the separately inspected `aigg-mep` source | Catalog compatibility, versioned brain binding and task-evidence integration |
 | Agent wallets, Permit2, x402 and GCC billing | Components exist in `aigg-src`; configuration and integration vary | Authorized spend, idempotent redemption, recovery and end-to-end reconciliation |
-| Two-subnet organization, LLM credit presales and shared revenue terms | Proposed integration | Explicit admission, capacity-backed obligations and workload-specific acceptance |
-| AIGG bootstrap and staking | Proposed | Implement and review issuance, custody and governance |
+| Brain/LLM service families, LLM credit presales and project-specific revenue terms | Proposed integration | Explicit admission, capacity-backed obligations and workload-specific acceptance |
+| FLYBNB project bootstrap and staking | Proposed | Implement and review issuance, custody and governance |
 | Multi-asset task and battery settlement | Optional local implementation | Review and deploy compatible contracts, enable assets and configure opt-in payment routes |
 | Mammalian model and research partnerships | Proposed near-term partner search; no partner announced here | Scoped research question, data permissions, reference results and a costed execution pilot |
 | Larger mammalian execution and scaled operations | Longer-term validation work | Model-specific runtime, verification, resource and scientific acceptance |
@@ -360,8 +405,8 @@ These gates refine R0, R4 and R5 without requiring every subsystem to launch tog
 1. **Identity binding:** demonstrate a read-only binding of a real brain artifact, reconstructed commitments, existing profile and terms to versioned metadata. Reject unsupported general MEP registrations and preserve old identifiers.
 2. **Profile and evidence specification:** define normative brain profile extensions, lineage validation and workload-specific task receipts. Reproduce identifiers across implementations and test mismatches, unsupported versions and false evidence.
 3. **LLM service pilot:** connect one supported LLM MEP to actual hosts, API discovery, explicit metering and an acceptance policy. Reconcile paid requests, retries and failed delivery before enabling credit presales.
-4. **Bounded finance pilot:** implement opted-in payment assets and separately account for collateral, AIGG rewards, credits and royalties. Demonstrate capacity limits, refunds and restart recovery with no lost or duplicate balances before expanding financing.
-5. **Governance expansion:** evaluate delivered work and realized external revenue before admitting additional funding destinations. AIGG collateral and auctions remain optional later decisions.
+4. **Bounded finance pilot:** implement opted-in payment assets and separately account for collateral, FLYBNB project rewards, credits and royalties. Demonstrate capacity limits, refunds and restart recovery with no lost or duplicate balances before expanding financing.
+5. **Governance expansion:** evaluate delivered work and realized external revenue before admitting additional funding destinations. FLYBNB collateral and auctions remain optional later decisions.
 
 ### Conditions for Changing Direction
 
@@ -396,7 +441,7 @@ Metric targets should be fixed before a pilot and published with its report. Whe
 6. The first mammalian research partner, bounded workload and reference dataset, alongside concrete acceptance datasets for GPU/TEE prototypes.
 7. The normative MEP extensions and binding authority for brain profiles, lineage and service terms.
 8. LLM credit issuers, reserve and capacity limits, redemption scope and model-retirement remedies.
-9. Admission and revenue-distribution rules for additional AIGG-funded projects within the two subnets.
+9. Eligible FlyBnB research allocations and FLYBNB distribution rules, independently of other AIGG-based applications.
 
 These decisions should become recorded decisions and versioned parameters, rather than remain implicit in frontend copy or operating habits.
 
@@ -427,26 +472,31 @@ Two allocation decisions must remain separate: **how rewards are divided within 
 
 The current official emissions documentation describes subnet TAO shares based on smoothed alpha prices, adjusted for withheld miner incentives and an emission gate; participant alpha rewards are distributed separately. Earlier materials describe net-TAO-flow allocation, so those descriptions should not be treated as the current rule without checking the deployed runtime. This white paper relies on the architectural distinction, not a fixed emission formula or reward percentage. [Current emissions documentation](https://www.bittensor.com/docs/concepts/emissions)
 
-Our economic interpretation is that token-market allocation, validator scores, customer payments, and scientific impact measure different things. Strong token demand need not establish useful experimental output; a scientifically valuable subnet need not yet have paying customers. Equally, aigg research funding is not evidence of commercial inference demand. Both systems should disclose the source of support and show what useful work it produces.
+Our economic interpretation is that token-market allocation, validator scores, customer payments, and scientific impact measure different things. Strong token demand need not establish useful experimental output; a scientifically valuable subnet need not yet have paying customers. Equally, FlyBnB research funding is not evidence of commercial inference demand. Both systems should disclose the source of support and show what useful work it produces.
 
 ### 15.3 Comparing Networks, Subnets and Model Profiles
 
-The comparison must use matching levels. AIGG is the proposed network; Biological Brain and LLM are its initial workload subnets; FlyBnB is an application; models, derivatives and MEPs sit within those subnets. An MEP identifies an execution profile, not a complete subnet economy.
+The comparison must use matching levels. AIGG is reusable technical infrastructure with no platform
+token in this design. FlyBnB is an independent research application and proposed FLYBNB economy.
+Brain and LLM subnets organize workloads; an MEP identifies an execution profile, not a token economy.
 
-| Question | Bittensor | Proposed AIGG architecture |
+| Question | Bittensor | AIGG technology / FlyBnB application |
 |---|---|---|
-| Coordination | Subnets define work and incentive policies | Two initial service families, containing multiple models, profiles and applications |
-| Result acceptance | Subnet-specific evaluations aggregated into rewards | Workload-specific service terms and evidence; exact brain execution and LLM assurance remain distinct |
-| Allocation | TAO and subnet economic mechanisms | Proposed AIGG staked voting directs issuance to admitted funding destinations on BNB Chain |
-| Service funding | Emissions and any separately accounted customer revenue | Research funding, customer payments, bounded credit presales and disclosed AIGG support |
-| Economic objects | Network and subnet tokens | AIGG governance asset, model/individual NFTs and service credits with different rights and obligations |
-| Model revenue | Depends on subnet design | Accepted marketplace terms can split eligible revenue among hosts and model beneficiaries |
+| Coordination | Subnets define work and incentive policies | Shared technical interfaces; independent application funding and governance |
+| Result acceptance | Subnet-specific evaluations aggregated into rewards | Workload-specific terms and evidence; exact brain execution and LLM assurance remain distinct |
+| Allocation | TAO and subnet economic mechanisms | Proposed FLYBNB staking directs FlyBnB project emissions; no platform-wide AIGG emissions |
+| Service funding | Emissions and separately accounted customer revenue | FlyBnB research funding, NFT sales and paid experiments; other projects finance their own services |
+| Economic objects | Network and subnet tokens | Independent FLYBNB project token, NFTs and service credits with distinct rights |
+| Model revenue | Depends on subnet design | Applicable contracts split eligible paid usage among hosts and model beneficiaries |
 
-Adding AIGG incentives makes the capital-allocation comparison closer. It does not establish that AIGG is more complete or universally more verifiable: exact execution applies only to supported workloads, while Bittensor subnets may also implement objective verification. AIGG's proposed distinction is an explicit connection among model identity, service obligations, task evidence and settlement, using existing BNB Chain infrastructure. Its value must be demonstrated through delivery and independent use.
+FlyBnB's incentives invite a project-level comparison with subnet economies, not a claim that AIGG
+is a replacement platform token or a more complete TAO network. The technical distinction remains
+the connection between model identity, obligations, execution evidence and settlement on existing
+BNB Chain infrastructure. Verification guarantees remain workload-specific.
 
 ### 15.4 Optional Integration with an External Bittensor Subnet
 
-This concerns an external Bittensor integration, separate from FlyBnB belonging to AIGG's Biological Brain subnet. It is an option to evaluate, not an implemented integration or a commitment to issue a separate subnet token. Three architectures deserve comparison:
+This concerns an external Bittensor integration, separate from FlyBnB belonging to AIGG's Biological Brain subnet. It is an option to evaluate, not an implemented integration. The independent FLYBNB proposal does not depend on joining Bittensor or issuing a Bittensor alpha token. Three architectures deserve comparison:
 
 1. **Standalone research application:** retain aigg task settlement and fund explicit deliverables. This keeps budget obligations direct, while leaving supply recruitment and watcher funding to the project.
 2. **External execution integration:** retain the research and evidence interfaces while sourcing some computation elsewhere. An adapter must preserve model identity, task parameters, evidence requirements, and failure handling.
@@ -468,9 +518,9 @@ The proposed differentiation is a traceable relationship between a research indi
 
 ## 16. Relationship to Other Documents
 
-This v0.2.1 paper updates the system organization and model-service lifecycle. Governance v0.4 remains a separate proposal with its original vocabulary and review baseline; it must be reconciled before implementation rather than assumed to incorporate every integration described here.
+This v0.3 paper separates the AIGG technical platform from the independent FlyBnB economy. Governance v0.4 is retained as a historical proposal, not current AIGG issuance policy. Any reusable bootstrap or voting mechanisms must be scoped to FLYBNB and separately reviewed before implementation.
 
-- [AIGG governance v0.4](https://github.com/jianmliu/aigg-bnb/blob/e00f2c0caf9a96d6e39c3aeb13e7571c8907cd4c/docs/superpowers/specs/2026-09-20-aigg-governance-design.md): proposed Founder bootstrap, staking and issuance allocation.
+- [AIGG governance v0.4](https://github.com/jianmliu/aigg-bnb/blob/e00f2c0caf9a96d6e39c3aeb13e7571c8907cd4c/docs/superpowers/specs/2026-09-20-aigg-governance-design.md): historical, superseded AIGG platform-token proposal. Its issuance scope is not current policy; the FLYBNB project design in §8.5 supersedes it.
 - [General MEP implementation](https://github.com/jianmliu/aigg-mep/tree/c6bdd28b5fe59010c8be7dc2500a22c8758cc4ff): typed profiles, authorized registration and conformance primitives; source availability is not unified deployment.
 - [API and billing infrastructure](https://github.com/jianmliu/aigg-src/tree/4100220388b8bb35ec3e50947713e6dabb57a6f6): API service, agent finance and integration components.
 

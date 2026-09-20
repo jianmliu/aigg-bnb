@@ -201,8 +201,10 @@ export default function App() {
       <div className="main stay" hidden={view !== "stay"}>
         <section className="hero">
           <p className="kicker">A bed &amp; breakfast for fruit-fly brains · on BNB Chain</p>
-          <h1>Give a brain <em>a place to stay</em>.</h1>
-          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. The experiments run on it are, for now, the ones the <a href="#/flybnb">FlyBnB atlas</a> needs — every cell type silenced and activated, in a hundred individuals — and the hosts who run them are paid in the task’s currency: BNB, or AIGG when they opt in. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
+          <h1>Take part in <em>open brain research</em>.</h1>
+          <p className="lede">Adopt a fly or breed a new individual to participate in the <a href="#/flybnb">FlyBnB research atlas</a>. What you buy is an opportunity to take part in research, a contribution others can verify, and potential revenue rights under the applicable terms.</p>
+          <p className="hint"><b>Independent research. Shared technology.</b> FlyBnB uses AIGG’s open model infrastructure and code support. Its proposed project token is <b>FLYBNB</b>, with a separate treasury and project governance. AIGG does not issue a platform token under this design.</p>
+          <p className="hint">Browser hosts provide the compute. Your NFT connects you to a specific brain, its lineage and the experiments run on it. Published results make the research useful to everyone; paid experiments may create royalties for eligible holders.</p>
         </section>
 
         {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the contracts --
@@ -226,16 +228,19 @@ export default function App() {
             {hasCollection
               ? <span className="badge" data-tone="live" id="collectionBadge">collection on-chain · adoption requires listed inventory</span>
               : <span className="badge" data-tone="soon" id="collectionBadge">royalty: in the contracts · no collection deployed yet</span>}
-            <h3>Own a fly, and its line</h3>
-            <p>Adopt a listed individual from treasury inventory or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours — and the atlas runs its battery on every listed individual.</p>
+            <h3>Adopt a fly. Be part of its research.</h3>
+            <p>Adopt an existing individual from treasury inventory, or breed a new one from a pair you hold and fund its standard battery of experiments. Your participation connects funding to a named research subject and the work needed to study it.</p>
             <dl className="terms">
-              <dt>You put in</dt><dd>the adoption price, or a breed fee</dd>
-              <dt>You are paid</dt><dd>a royalty on every experiment run against your fly, set aside at settlement</dd>
-              <dt>If you sell it</dt><dd>what it earned until then stays yours; from then on the buyer is paid, with nothing to update</dd>
+              <dt>Participate</dt><dd>Support open brain research through an individual you adopt or a new lineage you breed.</dd>
+              <dt>Verify your contribution</dt><dd>Trace ownership and lineage on-chain, and inspect task receipts and published results as experiments are completed.</dd>
+              <dt>Potential revenue rights</dt><dd>The applicable contracts define your share of paid experiments on your fly. Royalties depend on actual use and fees; no income is guaranteed.</dd>
+              <dt>You put in</dt><dd>the listed adoption price, or the breeding fee plus its battery budget</dd>
             </dl>
-            <a className="btn" href="#/flies">Your flies</a>
+            <p className="fineprint">Paper and dataset acknowledgment follows the release snapshot: your NFT must be included in that research, and you must hold it at the specified block. Acknowledgment is separate from authorship and royalties. <a href="https://github.com/jianmliu/aigg-bnb/blob/main/docs/flybnb/CREDIT.md" target="_blank" rel="noreferrer">Read the acknowledgment policy</a>.</p>
+            <p className="fineprint">The proposed FLYBNB bootstrap rewards hosts for accepted research work. Adoption proceeds enter the FlyBnB treasury in BNB; host bonds start in BNB. FLYBNB issuance is not presented as live, and holding the token alone does not grant NFT acknowledgment or royalties.</p>
+            <a className="btn" href="#/flies">Explore flies &amp; participate</a>
           </article>
-          <p className="fineprint">Both are ways of taking a stake in work the network does, and neither is a promise: earnings depend on experiments being run, a bond can be slashed, and a fly nobody studies earns nothing.</p>
+          <p className="fineprint">Research participation and a verifiable record have value even when no royalty is earned. Host rewards pay for completed work; holder royalties depend on applicable terms and paid usage. Hosting also carries a slashable bond.</p>
         </section>
 
         <section className="shelf">
