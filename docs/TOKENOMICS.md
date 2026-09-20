@@ -387,6 +387,8 @@ nominal amount in a volatile asset.
 | `MINT_PRICE` | `UNIT` + fee | the fee is the treasury's only income |
 | genesis size | to set against the §5 memory bound | the old ≤ 200 was a CPU figure and no longer applies; split between the two sexes, since a skewed ratio throttles breeding |
 | `BREED_FEE` | to decide | the second sink, and the rate limit on new MEPs |
+
+What these two are really buying is in §9: a mint is what pays for measuring the individual it creates.
 | `ROYALTY_BPS` | 1000 | of every fee settled for a task on a registered fly; inside the `mep_id`, so fixed for the collection's life |
 | `BASE_SHARE_BPS`, `BASE_VENDOR` | 1000, the treasury | the base's part **of the royalty**, not of the fee: of a fee of 1 the hosts share 0.90, the owner gets 0.09, the base 0.01. One level -- it does not compound down a pedigree -- and the vendor is the treasury until a base has one of its own (docs/GATEWAY.md §4.1) |
 | `TREASURY` | a `TreasuryRouter` | immutable in the collection, and a collection outlives any wallet, multisig or buyback scheme: so it is a fixed address whose *destination* can change. Not a proxy -- no delegatecall, no replaceable logic; everything it holds can leave only to the destination, which is why `sweep` / `collect` / `rescue` are anybody's to call. Its owner chooses the destination (two-step; renounceable) and reaches nothing else. `receive` does no work: the collection caps the gas it hands its treasury and credits what it will not take, and work belongs to the destination |
@@ -467,3 +469,55 @@ they want to run a node. Do not make "transferring a staked token" a state anyon
    dropped records in place as zero weights makes `child_tile[t] = G(parent tiles[t], seed)`, which admits a one-step
    fraud proof on a single record (the sampler's Q256 arithmetic is the EVM's word size). It fixes the payload layout,
    so it has to be decided before the first child is registered.
+
+---
+
+## 9. Who pays for the atlas, and what a measurement costs
+
+Measured, not assumed. One battery run of the real brain (`flywire-783-min2`, 139,255 neurons, 7,595,967 synapses;
+5,000 steps, commit stride 500) in the wasm node on one core of an M-series Mac:
+
+| | |
+|---|---|
+| one run | **32.3 s** (30.6 s of it the simulation, 1.6 s the segment commitments), 196 MB resident, 377 MB while loading |
+| one individual's standard battery (13 stimuli × 3 seeds = 39 runs) | **21 minutes of CPU** per host — 42 at redundancy 2 |
+| its fee at 0.1 gwei per step per provider | 195,000 steps × 2 × 10⁻¹⁰ = **0.039 BNB** |
+| its gas | one `postBatch` + one `settle` for all 39 runs: ~0.00004 BNB, three orders of magnitude below the fee |
+| what a mint puts in the treasury | `MINT_PRICE − MINT_BOND` = **0.05 BNB** (the bond is the minter's own stake, and stays theirs) |
+| what a breed puts in | `BREED_FEE − HATCH_BOUNTY` = **0.049 BNB** |
+
+**So a mint buys, almost exactly, one measurement of the individual it creates.** At the breeding study's scale — 301
+individuals, 11,739 runs — the compute costs about 11.7 BNB, and 100 adoptions plus 201 breedings bring in about 14.8.
+The atlas is funded by the people who adopt and breed the flies, not by the project: **the treasury is a conduit**, and
+the project is the task client only in the sense that it spends what adopters put in.
+
+### Where the price comes from, and where it does not
+
+The 0.1 gwei per step per provider is **derived from the budget, not from the cost**: it is what the atlas can pay per
+row if a mint is to cover an individual's battery. Against the cost of the compute it is very high — 0.0195 BNB per
+host per battery is **0.056 BNB per CPU-hour**, some three orders of magnitude above what an ordinary cloud core costs.
+
+That is a choice, not an error: a host must be paid enough to bother keeping a brain resident, and early on the price
+has to be generous. But it should be said plainly, because two things follow. First, hosting is profitable long before
+it is efficient, so the margin is where competition will show up. Second, the headroom is large enough to spend on
+**redundancy** instead of profit: three or five independent providers per row, at the same total price, buys more
+agreement than a fatter margin does.
+
+**The invariant to keep.** `MINT_PRICE − MINT_BOND ≥ steps × runs × redundancy × p(model)` for the standard battery:
+a mint must cover the measurement of the individual it creates. It holds today (0.05 against 0.039) with about 20%
+spare. Change the price, the battery's size or the redundancy and the other side has to move with it, or the collection
+sells individuals it cannot afford to measure.
+
+### The circle, and what opens it
+
+While the project is the only task client, the money goes: minters → treasury → task fees → hosts (and a royalty back
+to the individuals' owners). A holder's royalty is therefore, today, a rebate of other minters' money. **This is
+disclosed, not hidden** — the paper says it, and so does the page. The circle opens when fees arrive from outside:
+that, and not the token, is what the gateway (docs/GATEWAY.md) is for. Until then the atlas has a budget, not a
+revenue: 100 founders sell once, and breeding is what continues it.
+
+### What it means for a call's latency
+
+A real battery task is 5,000 steps: half a minute of CPU per provider on one core, less with a worker pool, and about
+three times less on the ≥ 5-synapse export. A host's page sizes its slot for 100 steps by default; an individual's
+battery needs 5,000, which is why `GATEWAY_MAX_STEPS` and what the hosts load have to be raised together.

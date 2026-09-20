@@ -136,7 +136,22 @@ Everything the pilot needs is public. The pilot's code, its results (every run w
 
 ## Appendix A. Acknowledgments
 
-FlyBnB acknowledges everyone who holds an individual of the collection. The list below is read from the chain at the block shown and is regenerated with this file; the live list is on the project page. It lists addresses, because an address is what the chain knows; a holder who wants a name printed instead can say so, and nobody else can say it for them.
+FlyBnB acknowledges by role, under the policy in [CREDIT.md](../../docs/flybnb/CREDIT.md), which was written before
+this paper: those who **computed** the runs (hosts, whose claims and settled results are on-chain), those who **paid**
+for them, those whose **breeding** made an individual the atlas measures exist, and those who **hold** one at the block
+shown. Each list is read from the chain at that block and regenerated with this file; the live version is on the
+project page. Neither hosting nor holding confers authorship, and no place in this appendix is for sale.
+
+Two things a reader should have. First, the atlas is paid for by the people who adopt and breed the individuals, not by
+the project: a mint covers, almost exactly, one measurement of the individual it creates, and the treasury is a conduit
+(TOKENOMICS §9). Second, an individual's owner receives a royalty on every fee settled against its brain, so everyone
+named as a funder or a holder has an interest in this dataset being used; while the project is the main task client
+that royalty is a rebate of other adopters' money. What stands against that interest is not this disclosure but the
+data itself: every row was produced by independent providers who agreed on it, and anyone can recompute it from the
+published recipe.
+
+The lists give addresses, because an address is what the chain knows; a contributor who wants a name or an ORCID
+printed instead says so with their own key, and nobody else can say it for them.
 
 <!-- BEGIN GENERATED: acknowledgments -->
 _No holders source has been read yet. Run `node docs/flybnb/build.mjs --relayer <url>` or `--rpc <url> --collection <address>` against a deployment._
