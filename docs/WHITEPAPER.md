@@ -2,7 +2,7 @@
 
 ## System White Paper and Roadmap
 
-**Version:** v0.2 · Discussion draft
+**Version:** v0.2.1 · Discussion draft
 
 **Date:** 2026-09-20
 
@@ -22,7 +22,7 @@ The project began by extending unified model APIs, such as sub2api, toward P2P i
 
 Integer simulation of the fruit-fly connectome became the first application to exercise the full computation path. Browser tabs lower the barrier to participation; PoRW evidence of model possession supports provider eligibility; task-level redundant execution and dispute mechanisms support result verification. FlyBnB applies these capabilities to research on simulation robustness under connectome variation and produces an open dataset.
 
-The proposed network organizes this work into a Biological Brain subnet and an LLM subnet. Models and derivatives use versioned MEPs within those subnets, connecting publication, financing, host service, execution evidence and settlement through a common model-service lifecycle. FlyBnB is the first application; broader LLM integration remains staged work.
+The proposed network organizes this work into a Biological Brain subnet and an LLM subnet. Models and derivatives use versioned MEPs within those subnets, connecting publication, financing, host service, execution evidence and settlement through a common model-service lifecycle. FlyBnB is the first application. Two partnership tracks follow in parallel: mammalian brain models and research collaborations within the Biological Brain subnet, and an open-source model partnership with a bounded inference-credit presale pilot within the LLM subnet. Both require scoped delivery and independent validation.
 
 The system's near-term value does not depend on commercial inference demand. Members of the public can fund particular individuals and experiments, maintain an ongoing relationship with the research, and receive acknowledgment tied to their contributions. Results are public, and identity, funding, and computation records can be checked. Paid experiments and other model workloads are subsequent expansion paths.
 
@@ -177,6 +177,18 @@ Synthetic individuals are not samples of real animals, and connection-level reco
 
 The public value of the data lies in reusable questions, recipes, outputs, and interpretations. On-chain records provide additional provenance and settlement evidence. They are not prerequisites for reading, citing, or recomputing public results.
 
+### 6.1 Next Brain Partnership: Mammalian Models and Research Teams
+
+The next partnership direction for the Biological Brain subnet is to work with mammalian brain-model authors, neuroscience laboratories or data institutions on a defined research workload. FlyBnB remains the initial application; the partnership can extend the subnet to a new model, dataset and scientific question without creating a new subnet for each project.
+
+The first collaboration need not attempt a complete mammalian brain. A bounded circuit, regional model or other executable research model can be a candidate if the partner can supply the necessary artifacts, permissions, inputs and reference results. This is a proposal to seek collaborators, not a claim that a partner, dataset or production-ready mammalian runtime has been secured.
+
+A pilot should identify a scientific lead, the model and its license, the research question, a reproducible task battery, publication terms and an explicit computation budget. The partner contributes domain expertise and validation; AIGG aims to contribute model-profile integration, distributed hosting, task evidence, funding records and delivery tooling. Any data that cannot be published needs a compatible access and verification policy agreed before execution.
+
+Acceptance requires faithful artifact reconstruction, a supported execution profile, reference comparisons, measured memory and CPU/GPU costs, and an assurance policy appropriate to the model. Existing fly integer semantics and dispute contracts do not automatically cover an arbitrary mammalian simulator. GPU use alone does not require a TEE; compatibility with the promised evidence and verification method determines the execution path.
+
+Research success is measured through delivered experiments, reproducibility, useful scientific outputs and renewed collaboration. Commercial inference revenue is not a prerequisite for this track. Research funding, paid experiments and eligible AIGG support must each retain explicit budgets and obligations.
+
 ## 7. Public Funding, NFTs, and Contribution Acknowledgments
 
 ### 7.1 A Participation Cycle Without Commercial Inference Revenue
@@ -316,7 +328,8 @@ AIGG issuance, staked voting and multi-asset settlement are proposals, not deplo
 | Agent wallets, Permit2, x402 and GCC billing | Components exist in `aigg-src`; configuration and integration vary | Authorized spend, idempotent redemption, recovery and end-to-end reconciliation |
 | Two-subnet organization, LLM credit presales and shared revenue terms | Proposed integration | Explicit admission, capacity-backed obligations and workload-specific acceptance |
 | AIGG bootstrap, staking and multi-asset settlement | Proposed | Implement and review token, custody, accounting and opt-in payment flows |
-| Mammalian workloads | Long-term direction | Data availability, model validity, and executable benchmarks |
+| Mammalian model and research partnerships | Proposed near-term partner search; no partner announced here | Scoped research question, data permissions, reference results and a costed execution pilot |
+| Larger mammalian execution and scaled operations | Longer-term validation work | Model-specific runtime, verification, resource and scientific acceptance |
 
 ## 12. Roadmap: Progress Through Evidence
 
@@ -331,6 +344,17 @@ The R stages below describe this white paper's system roadmap; they do not repla
 | **R4: External services and a second application** | Research-service entry points, batch delivery, explainable quotes, and a second real workload class | If pursuing a commercial path, demonstrate repeated use by customers not subsidized by the project; the second application reuses model/task/receipt/settlement interfaces instead of rebuilding the system |
 | **R5: CPU/GPU and TEE execution paths** | An exact GPU execution prototype, explicit guarantee configurations, TEE adaptation, and end-to-end evidence | Supported CPU/GPU configurations pass differential verification and dispute tests; proof overhead is acceptable; TEE evidence explicitly binds the program, model, inputs, and outputs |
 | **R6: Larger brain models and scaled operations** | Larger-connectome benchmarks, resource and audit-cost reports, and migration/governance plans | Data and permissions are available; experiments are reproducible; expand deployment only when resource requirements, costs, and scientific objectives are jointly supported |
+
+### Two Parallel Partnership Tracks
+
+Partner discovery can begin before large-scale runtime expansion. R4 and R6 should not be read as requiring all Brain research to wait for an LLM commercial launch, or all LLM work to wait for a complete mammalian model.
+
+| Track | Immediate partner objective | Pilot scope | Evidence for expansion |
+|---|---|---|---|
+| Biological Brain | Find a mammalian model author, neuroscience team or data institution | One licensed, executable model and a bounded research battery with reference results and a delivery budget | Reproducibility, completed research obligations, useful outputs and partner reuse |
+| LLM | Find an open-source model team and a concrete inference use case | One supported service; establish capacity, metering, redemption and refunds before a limited credit presale | Delivered inference, repeat external purchases, service margin and fulfilled credit obligations |
+
+The LLM track targets an established paid API service category. That is the rationale for testing commercial demand, not evidence that this particular AIGG service already has customers or product–market fit. The Brain track tests research utility and collaboration. Shared MEP and service infrastructure should support both while keeping their evidence, budgets and success measures distinct. Neither partnership is announced as secured in this paper.
 
 ### MEP and Subnet Integration Milestones
 
@@ -372,7 +396,7 @@ Metric targets should be fixed before a pilot and published with its report. Whe
 3. Which budgets sustain watchers and resident supply, and which costs research funds bear.
 4. When to enable stricter lineage validation, task-value limits, and beacon upgrades.
 5. How immutable parameters in current collections coexist with new versions, migration, and exit.
-6. The first concrete workloads and acceptance datasets for GPU/TEE prototypes.
+6. The first mammalian research partner, bounded workload and reference dataset, alongside concrete acceptance datasets for GPU/TEE prototypes.
 7. The normative MEP extensions and binding authority for brain profiles, lineage and service terms.
 8. LLM credit issuers, reserve and capacity limits, redemption scope and model-retirement remedies.
 9. Admission and revenue-distribution rules for additional AIGG-funded projects within the two subnets.
@@ -447,7 +471,7 @@ The proposed differentiation is a traceable relationship between a research indi
 
 ## 16. Relationship to Other Documents
 
-This v0.2 paper updates the system organization and model-service lifecycle. Governance v0.4 remains a separate proposal with its original vocabulary and review baseline; it must be reconciled before implementation rather than assumed to incorporate every integration described here.
+This v0.2.1 paper updates the system organization and model-service lifecycle. Governance v0.4 remains a separate proposal with its original vocabulary and review baseline; it must be reconciled before implementation rather than assumed to incorporate every integration described here.
 
 - [AIGG governance v0.4](https://github.com/jianmliu/aigg-bnb/blob/e00f2c0caf9a96d6e39c3aeb13e7571c8907cd4c/docs/superpowers/specs/2026-09-20-aigg-governance-design.md): proposed Founder bootstrap, staking and issuance allocation.
 - [General MEP implementation](https://github.com/jianmliu/aigg-mep/tree/c6bdd28b5fe59010c8be7dc2500a22c8758cc4ff): typed profiles, authorized registration and conformance primitives; source availability is not unified deployment.
