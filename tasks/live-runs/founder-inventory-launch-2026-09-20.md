@@ -50,3 +50,9 @@ Initial Render cutover: service `srv-damav3p42hec738utj1g` deployed commit `6d99
 On `https://fly.ai.gg/#/flies`, the colony shows 200 individuals (100 female, 100 male). Refreshing treasury inventory shows 200 `Adopt · 0.01 BNB` buttons and the vault as seller. No "Treasury adoption is not configured" warning remains. Buttons are disabled for an unconnected visitor, as intended. The on-chain smoke purchase above verifies actual delivery/payment; browser acceptance did not sign a wallet transaction.
 
 The 200-profile launch exposed unbounded parallel RPC reads in `/meps` (`Request exceeds defined limit`, HTTP 500). The accompanying relayer fix caps concurrent provider reads at four and shares successful 10-second catalog snapshots between visitors. Failed scans drain outstanding work and do not cache partial/zero provider counts. Membership changes invalidate the cache. Ten provider/capacity unit tests and `test/e2e_gateway_wake.mjs` pass; independent review found no remaining correctness issues. The catalog fix must be deployed with this cutover commit.
+
+### Full-catalog follow-up
+
+The four-request concurrency cap alone still hit the public RPC limit at the complete catalog size. On BSC/BSC testnet, provider vote reads now use the canonical Multicall3 address from viem's chain definitions, in sequential batches of 32. This reduces 200 Founder reads to seven RPC calls. Every inner call must succeed; there is no fallback that silently converts failed reads to zero providers. Other chains retain the bounded individual-read path.
+
+A read-only check against the actual BSC testnet contracts verified all 200 Founders in 451 ms, with the cached second read completing in under 1 ms. Eleven provider/capacity unit tests pass, including the seven-batch assertion. No chain transactions or environment changes are needed for this follow-up.

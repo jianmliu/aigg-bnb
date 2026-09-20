@@ -1,4 +1,6 @@
 import { parseAbi, parseAbiItem } from 'viem';
+import { bsc, bscTestnet } from 'viem/chains';
+import { InstanceRegistryAbi } from './abi.mjs';
 const taskAsset = parseAbiItem('event TaskAsset(bytes32 indexed taskId, address indexed token, uint256 fee)');
 const settled = parseAbiItem('event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)');
 const taskAbi = parseAbi([
@@ -10,6 +12,21 @@ export async function providerModels(ch, meps) {
   const epoch = await ch.claims.read.currentEpoch();
   const beacon = BigInt(await ch.claims.read.beacon([epoch])) !== 0n;
   const entries = [...meps.values()], rows = new Array(entries.length);
+  // Use the canonical deployment shipped in viem's BSC chain definitions. Keep local/other chains compatible.
+  const multicall = ({ [bsc.id]: bsc, [bscTestnet.id]: bscTestnet })[ch.chain?.id]?.contracts.multicall3.address;
+  if (multicall && ch.pub?.multicall) {
+    for (let start = 0; start < entries.length; start += 32) {
+      const batch = entries.slice(start, start + 32);
+      const results = await ch.pub.multicall({ multicallAddress: multicall, allowFailure: false, batchSize: 0,
+        contracts: batch.map(({ info }) => ({ address: ch.instances.address, abi: InstanceRegistryAbi,
+          functionName: 'eligibleVotes', args: [info.mepId, epoch] })) });
+      results.forEach((votes, i) => {
+        rows[start + i] = { ...batch[i].info, epoch: Number(epoch), beacon,
+          providers: new Set(votes.map(a => a.toLowerCase())).size, votes: votes.length };
+      });
+    }
+    return rows;
+  }
   let next = 0, failure;
   // Hundreds of Founders must not turn one catalog request into hundreds of simultaneous RPC calls.
   await Promise.all(Array.from({ length: Math.min(4, entries.length) }, async () => {
