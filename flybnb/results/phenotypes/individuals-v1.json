@@ -1,0 +1,8936 @@
+{
+ "version": 1,
+ "note": "An individual's standing among the collection's hundred founders, phenotype by phenotype. Rarity here is measured, not assigned: a fly with no runs has no entry, which is the true answer until its battery is run.",
+ "reference": "the genesis founders, as measured in the pilot (flybnb/results/pilot/runs.jsonl)",
+ "battery": "flybnb-battery v1",
+ "standout_percentile": 5,
+ "individuals": 300,
+ "founders": 100,
+ "bred": 200,
+ "byDeltaHash": {
+  "0xe7b3909dc043eab536a5bdba6c4b1f0b4388ee810b5e58576aa1edc12736d90a": {
+   "id": "genesis #0",
+   "source": "pilot",
+   "genesisIndex": 0,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xdf07bcdbf5af121561124779c4f6bfe84782e57c9891a6914c5d0c6c95803b50": {
+   "id": "genesis #1",
+   "source": "pilot",
+   "genesisIndex": 1,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #2 | sound",
+     "value": 20.9,
+     "percentile": 100
+    },
+    {
+     "name": "locked #2 | sound_gate",
+     "value": 21.1,
+     "percentile": 100
+    }
+   ]
+  },
+  "0x956eb63bcae4f4026754cd9aef11ba6774aef1c78a9df42772ab2ba674fd4e2d": {
+   "id": "genesis #2",
+   "source": "pilot",
+   "genesisIndex": 2,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x82eda5abe7881ed0c74ff9103c4791712a0a93e46470cf76abd56d94570c8594": {
+   "id": "genesis #3",
+   "source": "pilot",
+   "genesisIndex": 3,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #25 | sound_gate",
+     "value": 30.1,
+     "percentile": 100
+    }
+   ]
+  },
+  "0x535a9e3b5b26fef9aea042149f629fdb7d62fffd456ac407ac70465be7790248": {
+   "id": "genesis #4",
+   "source": "pilot",
+   "genesisIndex": 4,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #7 | sound",
+     "value": 13.2,
+     "percentile": 100
+    }
+   ]
+  },
+  "0x1dcf85f1d432b4736a3a557fe9f15952d7db110d4007ffe6e20e7f6c3cdcaf83": {
+   "id": "genesis #5",
+   "source": "pilot",
+   "genesisIndex": 5,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x5ffaba1ab5e56e3b64f8b9110b22a40d781959a646cdf08ee8ca813dc3e14e2c": {
+   "id": "genesis #6",
+   "source": "pilot",
+   "genesisIndex": 6,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x5d24ebbb65d7bd489f6aeefed596caeed63ea672c16daf9eddd0586b7466f042": {
+   "id": "genesis #7",
+   "source": "pilot",
+   "genesisIndex": 7,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #13 | sound_gate",
+     "value": 0.2,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x20dff22691fa905f4b9a7b2c04791546d25f77de7419f61ec0a1ac6b028968ba": {
+   "id": "genesis #8",
+   "source": "pilot",
+   "genesisIndex": 8,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x87ca8b3f798e863e1cd18381c6010c5a1e8a52ea689dfe5dc50755979d89a95a": {
+   "id": "genesis #9",
+   "source": "pilot",
+   "genesisIndex": 9,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #6 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #6 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8b61b2577a97d7213849f9a3d813ae505461db60e0278b54f920d24aa4a8138b": {
+   "id": "genesis #10",
+   "source": "pilot",
+   "genesisIndex": 10,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #12 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x7897fc7ad70536e3a3b569828ed4893471d4a9247f0c8a7bed366bfc48a6d14b": {
+   "id": "genesis #11",
+   "source": "pilot",
+   "genesisIndex": 11,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #12 | sound_gate",
+     "value": 16,
+     "percentile": 100
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound",
+     "value": 24.3,
+     "percentile": 100
+    },
+    {
+     "name": "locked #20 | sound",
+     "value": 24.8,
+     "percentile": 100
+    },
+    {
+     "name": "locked #20 | sound_gate",
+     "value": 24.8,
+     "percentile": 100
+    }
+   ]
+  },
+  "0x1824cca22d81b161b2e07a4a001c9d808f3a70f230c8ed6988b8090c0d931daa": {
+   "id": "genesis #12",
+   "source": "pilot",
+   "genesisIndex": 12,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xd80ab4f19e1a974ec5bdad432a6ea01343b6781a3ecdf4705f3c367e8a3fef40": {
+   "id": "genesis #13",
+   "source": "pilot",
+   "genesisIndex": 13,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x152bd23b218e94158af838a0728028f1cca72e9a8d555adc497170c332375da3": {
+   "id": "genesis #14",
+   "source": "pilot",
+   "genesisIndex": 14,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xe2d5f93951c0a88064a830526d1dfef86ce0f44ba1c8fb7a537ef097424d632b": {
+   "id": "genesis #15",
+   "source": "pilot",
+   "genesisIndex": 15,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 19.3,
+     "percentile": 100
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #20 | sound",
+     "value": 0.9,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xb516cc993c41b704bbdcf27099d9da6e35223ff1c7b261be8154b039fcf1aafe": {
+   "id": "genesis #16",
+   "source": "pilot",
+   "genesisIndex": 16,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 12.6,
+     "percentile": 100
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #6 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x4c9ae9bdc6292bfd944a7abb4edfa7f64c86960e2a705cb897e40d2f874eee27": {
+   "id": "genesis #17",
+   "source": "pilot",
+   "genesisIndex": 17,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 5.4,
+     "percentile": 96.3464
+    }
+   ]
+  },
+  "0xa168dd7f7e370a1db62ddb22a81d091ec4dd0f774c83a086b1e4b4feffeb5827": {
+   "id": "genesis #18",
+   "source": "pilot",
+   "genesisIndex": 18,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x75e29c08a2d39dc7f1fca4754b7e892e35897042f0fe1cb6b36abaf090862a65": {
+   "id": "genesis #19",
+   "source": "pilot",
+   "genesisIndex": 19,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x102e38dc7065aced42c9431434836919832355850d3c60019b79b88af4df7535": {
+   "id": "genesis #20",
+   "source": "pilot",
+   "genesisIndex": 20,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #12 | sound",
+     "value": 17.5,
+     "percentile": 100
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x765f2ad2a7a41c2b3a8b6042f61dd2e2a0f228fb1164b3f5b9cce1c586ac202d": {
+   "id": "genesis #21",
+   "source": "pilot",
+   "genesisIndex": 21,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8b340137e1653a78c4a195882b611465c20334cf056d4e7efd00d5ba9a0404d4": {
+   "id": "genesis #22",
+   "source": "pilot",
+   "genesisIndex": 22,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x43795e7775d814ae58ac0d75675701b5094c238344890320031c90eda0ad1a0d": {
+   "id": "genesis #23",
+   "source": "pilot",
+   "genesisIndex": 23,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x71cdb9903d8e135e027b858420c5ef8264be902978f430f8e8aa01a5f5ecae41": {
+   "id": "genesis #24",
+   "source": "pilot",
+   "genesisIndex": 24,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound",
+     "value": 15,
+     "percentile": 100
+    },
+    {
+     "name": "locked #23 | sound_gate",
+     "value": 15.3,
+     "percentile": 100
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xb25f9aa5fe5b376317d7c2ad29627dda603320119748b8aa4735dcb11226069e": {
+   "id": "genesis #25",
+   "source": "pilot",
+   "genesisIndex": 25,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x742318978d22901e5173b392383a451798621b25ed9d7c71f7ca651e951548aa": {
+   "id": "genesis #26",
+   "source": "pilot",
+   "genesisIndex": 26,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xd0c73df70ec1f7b551b26070f27e0957cb455502d08a7478b77a14fed5c497e8": {
+   "id": "genesis #27",
+   "source": "pilot",
+   "genesisIndex": 27,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x125a5c91c45c04b9e6551049f372b521b3f09a83664e7ca672716d154b517741": {
+   "id": "genesis #28",
+   "source": "pilot",
+   "genesisIndex": 28,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 25.6,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 13.7,
+     "percentile": 100
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xafb5df3ec35640af27645e0a4d1132e7ad50385b1bde2d6d12a8c93b805fd65d": {
+   "id": "genesis #29",
+   "source": "pilot",
+   "genesisIndex": 29,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x4f46196d6ef7b4da551a269174ff56e1cfb8a165dbbc72a677e92a50f3a1d4fc": {
+   "id": "genesis #30",
+   "source": "pilot",
+   "genesisIndex": 30,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #27 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #27 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x734799f7543ba4c01262141be60c7ce146da0acd53a187830e29210044ee4f76": {
+   "id": "genesis #31",
+   "source": "pilot",
+   "genesisIndex": 31,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x9b6d1b2d7cd73166675bf3ac9f85beda915f8086cae5cbb89664ef36bec08ceb": {
+   "id": "genesis #32",
+   "source": "pilot",
+   "genesisIndex": 32,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 8.8,
+     "percentile": 100
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 11.3,
+     "percentile": 100
+    }
+   ]
+  },
+  "0x9e756a58c526190d18ec0eaf2cc20a8f8d9f152ce5f5557ba5217f6a923c2430": {
+   "id": "genesis #33",
+   "source": "pilot",
+   "genesisIndex": 33,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #2 | sound",
+     "value": 0.2,
+     "percentile": 0
+    },
+    {
+     "name": "locked #2 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8c61030e4c2856c6d2e8e3d174157b5089b22cee0b23daa273b9d40c4669b011": {
+   "id": "genesis #34",
+   "source": "pilot",
+   "genesisIndex": 34,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound",
+     "value": 1.6,
+     "percentile": 0
+    },
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound",
+     "value": 19.1,
+     "percentile": 100
+    },
+    {
+     "name": "locked #1 | sound_gate",
+     "value": 19.2,
+     "percentile": 100
+    },
+    {
+     "name": "locked #13 | sound",
+     "value": 1.6,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x11379747c020803d50824e0b2763446048845bba13b90967e3b5408cb936945e": {
+   "id": "genesis #35",
+   "source": "pilot",
+   "genesisIndex": 35,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound_gate",
+     "value": 27.7,
+     "percentile": 100
+    },
+    {
+     "name": "locked #28 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x5b44b46c821a9c740b8204aa194a54c56e75742a72d257fab08a350baf54e47a": {
+   "id": "genesis #36",
+   "source": "pilot",
+   "genesisIndex": 36,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound",
+     "value": 16,
+     "percentile": 100
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 8.2,
+     "percentile": 100
+    }
+   ]
+  },
+  "0x298c714f983f6be62b67dd5b39da1c29eddee1caecdb0183173132194ef951bc": {
+   "id": "genesis #37",
+   "source": "pilot",
+   "genesisIndex": 37,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 14.9,
+     "percentile": 100
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x1c30c96663cbc8e5f0cc5d0c66f5cf7fe021c446e35d9125ff9b92eca1e91d0e": {
+   "id": "genesis #38",
+   "source": "pilot",
+   "genesisIndex": 38,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x181bbfd53be8e9ffa37c40afcc3f3c731d7079b698c96998ba8a4dce3318ca35": {
+   "id": "genesis #39",
+   "source": "pilot",
+   "genesisIndex": 39,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xdc4a4e2253dfc3352ca1f8123e70d7c2abea2fb471055a3ee4ef2543f33375d9": {
+   "id": "genesis #40",
+   "source": "pilot",
+   "genesisIndex": 40,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #1 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #10 | sound",
+     "value": 20.5,
+     "percentile": 100
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 18.6,
+     "percentile": 99.0679
+    }
+   ]
+  },
+  "0xc7e735596df6ac77cd17078c336939b0948f221b91a2b0daeec73dc3e5ebf1f5": {
+   "id": "genesis #41",
+   "source": "pilot",
+   "genesisIndex": 41,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x5e368ba0818aa950f9b654e47736bcfe70f8989475cc6cf988b663569d744768": {
+   "id": "genesis #42",
+   "source": "pilot",
+   "genesisIndex": 42,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xc1437cf7e481e6b67b8f642ca70a2d3236f2644b7676f16671bb98b036e6cb1f": {
+   "id": "genesis #43",
+   "source": "pilot",
+   "genesisIndex": 43,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xd061b355e79130f7775a10e75bff17840190ca1fbe487cd3f51f98195327ca21": {
+   "id": "genesis #44",
+   "source": "pilot",
+   "genesisIndex": 44,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #6 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xa1694a7c9889d49fc2a79791c70a14bafec6f23a8642364fe587979ef96c9813": {
+   "id": "genesis #45",
+   "source": "pilot",
+   "genesisIndex": 45,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x4afdda5f90cc581052a7f86782f2fc65b18d9390685ecd51a6adbaed0741df03": {
+   "id": "genesis #46",
+   "source": "pilot",
+   "genesisIndex": 46,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x9807da6f2764519a3d43e2dffe28eaa67b453201845b310641e1c1dc100b0405": {
+   "id": "genesis #47",
+   "source": "pilot",
+   "genesisIndex": 47,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xd81e3882350759e35dded15d37068ad581d9e811fa4744e42cdd41e0b87a23c9": {
+   "id": "genesis #48",
+   "source": "pilot",
+   "genesisIndex": 48,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound_gate",
+     "value": 3.2,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x785dc4b8fa53e4ac368d22588c69ee2babaaa86c46ba3dbed951a5b0a29e7f6c": {
+   "id": "genesis #49",
+   "source": "pilot",
+   "genesisIndex": 49,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x4791855a3f0748c6921d6bcf88a14236128d1a74674dc08701ae566d9d955305": {
+   "id": "genesis #50",
+   "source": "pilot",
+   "genesisIndex": 50,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xcba194054f4636939c7878e295555fc30af6ef0a0e87075353cc4b50ae53c695": {
+   "id": "genesis #51",
+   "source": "pilot",
+   "genesisIndex": 51,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x81cb13b0c9441c88a5f5a41275a24799bd62fa81b035d0ff9d1fd1c699ca4d2a": {
+   "id": "genesis #52",
+   "source": "pilot",
+   "genesisIndex": 52,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #7 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xa637117fb4b02c72159d4a3d676c97c5555c3049680a700e4821ce6e283d0e82": {
+   "id": "genesis #53",
+   "source": "pilot",
+   "genesisIndex": 53,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 12.9,
+     "percentile": 99.8141
+    },
+    {
+     "name": "locked #24 | sound",
+     "value": 12.2,
+     "percentile": 98.7076
+    }
+   ]
+  },
+  "0x2f7db511c6741c08ca1ea84b12ff5d6340e3838b98fa83ac9f89d99ccf671364": {
+   "id": "genesis #54",
+   "source": "pilot",
+   "genesisIndex": 54,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x817d20f97a1e22e369e241ca560e01247ff3e3b9494124ca51aa6ad6709abd53": {
+   "id": "genesis #55",
+   "source": "pilot",
+   "genesisIndex": 55,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #27 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x3185e5636f1015d45d780dbd81f624725faaa37e0a199bddaecf130ace674b02": {
+   "id": "genesis #56",
+   "source": "pilot",
+   "genesisIndex": 56,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #31 | sound",
+     "value": 28.8,
+     "percentile": 100
+    },
+    {
+     "name": "locked #31 | sound_gate",
+     "value": 27.4,
+     "percentile": 100
+    }
+   ]
+  },
+  "0xbbc02e7cc8108a6d9a6cdc8348458aa65be6da3b6a1a7e265f3280603eefade3": {
+   "id": "genesis #57",
+   "source": "pilot",
+   "genesisIndex": 57,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xd1c94ff672771f657d74571c9b0e88508d79c893273156aeca80ca231456e5a1": {
+   "id": "genesis #58",
+   "source": "pilot",
+   "genesisIndex": 58,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xc3d03c1401640d216a81f547e31acfa4aafeb63c7d2e9a18647fc9882ab56acd": {
+   "id": "genesis #59",
+   "source": "pilot",
+   "genesisIndex": 59,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xe57d0e1912c689a109b0a1487be80a5bb3be2e4abea75f2a415c37bf4a50b14b": {
+   "id": "genesis #60",
+   "source": "pilot",
+   "genesisIndex": 60,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 16.3,
+     "percentile": 100
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 16.3,
+     "percentile": 100
+    },
+    {
+     "name": "locked #23 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xd753576effb97d5e3ab030970b19eef451fddc391121975e05f35d88aaeb9dd7": {
+   "id": "genesis #61",
+   "source": "pilot",
+   "genesisIndex": 61,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 49.2,
+     "percentile": 100
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 28.6,
+     "percentile": 100
+    },
+    {
+     "name": "locked #12 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #13 | sound",
+     "value": 36.7,
+     "percentile": 100
+    },
+    {
+     "name": "locked #13 | sound_gate",
+     "value": 28.3,
+     "percentile": 100
+    },
+    {
+     "name": "locked #15 | sound_gate",
+     "value": 23.7,
+     "percentile": 100
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xfc2f7f14bd1e02c42c349bb00cb90754b8ca75da710ab7768a45ed250f3fd7c2": {
+   "id": "genesis #62",
+   "source": "pilot",
+   "genesisIndex": 62,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x78f5117efe92d6d935bedca2e808c58a895baf3af5debfadbac6fef4456479a9": {
+   "id": "genesis #63",
+   "source": "pilot",
+   "genesisIndex": 63,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #27 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #27 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xc682ad15749b6428fd3ee4686f5cda11eb906520891000d9a111b706151400b4": {
+   "id": "genesis #64",
+   "source": "pilot",
+   "genesisIndex": 64,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #12 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #35 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #9 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x6f7d2f578eb6cb8824b547c03c787b3fdac1df24a9237348e8a911ddb97a7b5b": {
+   "id": "genesis #65",
+   "source": "pilot",
+   "genesisIndex": 65,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x43713014dbeba6db51137da91203b7865c50677ed7e37031ab9f496605bb27c8": {
+   "id": "genesis #66",
+   "source": "pilot",
+   "genesisIndex": 66,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xf741ba3c0fb07e5f169d9719613622c60480f09e1f8dfd830f2c9e68f96c33c6": {
+   "id": "genesis #67",
+   "source": "pilot",
+   "genesisIndex": 67,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x09d803483301c1e314c809a7476cd2b5166f8bbf695cf6e2f99df2e398b2e419": {
+   "id": "genesis #68",
+   "source": "pilot",
+   "genesisIndex": 68,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xdc42ecfacd37af836d4992ab28486482d42156c7e59f0de9f40fec7289d079d8": {
+   "id": "genesis #69",
+   "source": "pilot",
+   "genesisIndex": 69,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x72fd5681be4822cef4e31efa066ed408f92916ccfc249a46ce03a0eadd9dc4c9": {
+   "id": "genesis #70",
+   "source": "pilot",
+   "genesisIndex": 70,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #32 | sound",
+     "value": 12.6,
+     "percentile": 100
+    },
+    {
+     "name": "locked #32 | sound_gate",
+     "value": 13.1,
+     "percentile": 100
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xdaf7771e71ea98f3f982c09f83057440e868a0b9a429ca5d3ca6c1aa6ed5d007": {
+   "id": "genesis #71",
+   "source": "pilot",
+   "genesisIndex": 71,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #0 | sound_gate",
+     "value": 2.3,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x48da04316bd30d50cc61674716a58d7902a9059f271cc6dc2b9d34131bbe249f": {
+   "id": "genesis #72",
+   "source": "pilot",
+   "genesisIndex": 72,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #1 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x7a1175e47d3d3473c7bf0d2c2e3ae8d9bcf3cbcb16c6d6ebef9f63ef64cca092": {
+   "id": "genesis #73",
+   "source": "pilot",
+   "genesisIndex": 73,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #15 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #15 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xe51224efb546ecae20f9e92d5d1a76b4fffe9a41afbe5f3224bbc15242207255": {
+   "id": "genesis #74",
+   "source": "pilot",
+   "genesisIndex": 74,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xf597d7ec1b5b6c736219b4c304bd7aa26527c572b7a8c56b6ade94beb801f992": {
+   "id": "genesis #75",
+   "source": "pilot",
+   "genesisIndex": 75,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #1 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #1 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8ac27612114ad3ecdff05340bcad18ab4335ed2ebef53c66e4e002ff450f41a1": {
+   "id": "genesis #76",
+   "source": "pilot",
+   "genesisIndex": 76,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 9.6,
+     "percentile": 100
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 9.6,
+     "percentile": 100
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 13,
+     "percentile": 100
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x40d7c5dde70a83e177ebb5b3a37786450788199ca826ae1dfeb671c53c065f28": {
+   "id": "genesis #77",
+   "source": "pilot",
+   "genesisIndex": 77,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #15 | sound",
+     "value": 24.4,
+     "percentile": 100
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x3c6b6bc90c454ce766e73701469519928285f8ba41afdcbcfb84adb6ba044c76": {
+   "id": "genesis #78",
+   "source": "pilot",
+   "genesisIndex": 78,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 36.2,
+     "percentile": 100
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 37.1,
+     "percentile": 100
+    },
+    {
+     "name": "locked #0 | sound",
+     "value": 45.7,
+     "percentile": 100
+    },
+    {
+     "name": "locked #0 | sound_gate",
+     "value": 44,
+     "percentile": 100
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xeb34252332f89cb343b494279b0b06286f1b0824575828a62702c56d45aa012a": {
+   "id": "genesis #79",
+   "source": "pilot",
+   "genesisIndex": 79,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #10 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #29 | sound_gate",
+     "value": 12.5,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #7 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xaeb9a82537e5691998a891e2aabe176d4f463ee760f10495365cc6e60961d057": {
+   "id": "genesis #80",
+   "source": "pilot",
+   "genesisIndex": 80,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x4d82e0a6dce75e41c03d8239ef1bebbabc6c2d9d1c2cf8023e22a9348f281fe2": {
+   "id": "genesis #81",
+   "source": "pilot",
+   "genesisIndex": 81,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x5268f4f45c9bc015040d309e11d27c46f47be696234922ca9949438e9a0c9586": {
+   "id": "genesis #82",
+   "source": "pilot",
+   "genesisIndex": 82,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 16.4,
+     "percentile": 100
+    },
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #11 | sound",
+     "value": 21.5,
+     "percentile": 100
+    },
+    {
+     "name": "locked #11 | sound_gate",
+     "value": 21.7,
+     "percentile": 100
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 6.6,
+     "percentile": 100
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x667f8b229a46ac9738bd67e112fa29c009d822e150486f2202807f52db754856": {
+   "id": "genesis #83",
+   "source": "pilot",
+   "genesisIndex": 83,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #28 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8c00143c92a9ebd0c568646282c655f4236b288e4c2de927f56ed85acf3f319b": {
+   "id": "genesis #84",
+   "source": "pilot",
+   "genesisIndex": 84,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xe72f63b0a258ac10e8e9c057158b603cbae011a11e47653f69728c277e6e6e5d": {
+   "id": "genesis #85",
+   "source": "pilot",
+   "genesisIndex": 85,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.6,
+     "percentile": 0
+    },
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x0bd27062fde8b1ad756f37df11d8e7d23727ebd4a263e3ede12046b03719f9f4": {
+   "id": "genesis #86",
+   "source": "pilot",
+   "genesisIndex": 86,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 5.8,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 8.3,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #24 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x81ae9b46ac09f4efd35703918d3cea813243f81196922d4b462c0f4911c8c8ba": {
+   "id": "genesis #87",
+   "source": "pilot",
+   "genesisIndex": 87,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 6.5,
+     "percentile": 100
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 17.7,
+     "percentile": 100
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 13.8,
+     "percentile": 100
+    },
+    {
+     "name": "locked #21 | sound",
+     "value": 31.3,
+     "percentile": 100
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #25 | sound",
+     "value": 30.5,
+     "percentile": 100
+    }
+   ]
+  },
+  "0xd2851d750c16940bb606423b6166e1963f3bb1661876555ef4cf8b16c10b1602": {
+   "id": "genesis #88",
+   "source": "pilot",
+   "genesisIndex": 88,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #21 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x6ce50dbdbdefc609c4fad22bb41bced259982a7a8f77260c8560a7248dfcf886": {
+   "id": "genesis #89",
+   "source": "pilot",
+   "genesisIndex": 89,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #12 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #18 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x17783fafa2b2512502c3028a3a2699a96bdec8b71152932fc665110b3363fd05": {
+   "id": "genesis #90",
+   "source": "pilot",
+   "genesisIndex": 90,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #0 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x4002b55f51f6d13494d8dd9a236d04554cee90d4056d68a3fcdde56657b1dc22": {
+   "id": "genesis #91",
+   "source": "pilot",
+   "genesisIndex": 91,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xecd787edba335e196ffe6d4906cc81666a679c87dcf0a983feb1159ba9c3ab58": {
+   "id": "genesis #92",
+   "source": "pilot",
+   "genesisIndex": 92,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x82614c77898154d774f6dbe7aa707edfed4778c97b0dd3ce6addfaec404f8a1d": {
+   "id": "genesis #93",
+   "source": "pilot",
+   "genesisIndex": 93,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #33 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x069cde96e83c285152bfc213c07d0ac27f9d48214855b8a2c461aa90aa3360ac": {
+   "id": "genesis #94",
+   "source": "pilot",
+   "genesisIndex": 94,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8ed850e94501e175aa209a91e6b96e391b2d6f211b86c9e927983d13d12be0b3": {
+   "id": "genesis #95",
+   "source": "pilot",
+   "genesisIndex": 95,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #11 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #11 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #23 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #26 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xd19776145c490b882b3a6dedc751deb9dd7451d9944e865440da05e5f60ef24d": {
+   "id": "genesis #96",
+   "source": "pilot",
+   "genesisIndex": 96,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #14 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #14 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x719d96242b74ff7a0bb2c42f36a4eb1eff8633da49893fac3bb56821e0816906": {
+   "id": "genesis #97",
+   "source": "pilot",
+   "genesisIndex": 97,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #10 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #17 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #19 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x83a9b852e2822e582e7c40b786d5c78787f3d5bec87799dcacdf3f58c0399501": {
+   "id": "genesis #98",
+   "source": "pilot",
+   "genesisIndex": 98,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #16 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #16 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #27 | sound",
+     "value": 17.5,
+     "percentile": 100
+    },
+    {
+     "name": "locked #27 | sound_gate",
+     "value": 17.4,
+     "percentile": 100
+    },
+    {
+     "name": "locked #3 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #3 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x4bdfe6b853d04ea91a0a7ea853d09bb2801860b505c4333b190833fe66b1e885": {
+   "id": "genesis #99",
+   "source": "pilot",
+   "genesisIndex": 99,
+   "phenotypes": 89,
+   "standout": [
+    {
+     "name": "locked #17 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #22 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #30 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "locked #36 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 494.9,
+     "percentile": 2.5654
+    }
+   ]
+  },
+  "0x6b367d55d1fbe9bdf7b599cb9800719a52e5b4bf55a5ab8efdcbebd2363afa7c": {
+   "id": "X001",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F001",
+    "F067"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x31c8d7cb88ff2ec93e9458eb86e5addf27633acf185c7bc44e936f4856439385": {
+   "id": "X003",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F005",
+    "F078"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x3b9f73adf58e6afb3ca37ab4e8b02cbe116f7fdcaaee332b6188a277bc0a833d": {
+   "id": "X002",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F003",
+    "F013"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xa358b5d388c3fbf64189c988b054b8db44496db25cab33ed89670903430e38a4": {
+   "id": "X004",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F007",
+    "F059"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xeb25ee818d31754fc66548e270025956918cf4b84f0b85dc9cedd2b13118a6fb": {
+   "id": "X008",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F015",
+    "F079"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x06a39db124aaf553dace86d18a0ea70d406b4deb6ca36f30e21d47809594288f": {
+   "id": "X007",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F013",
+    "F010"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 575.3333,
+     "percentile": 95.0452
+    }
+   ]
+  },
+  "0x7e8a033266e0f021e5816e25780cb02c3b965dd80bbbc9631e59b2d3177f91b1": {
+   "id": "X005",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F009",
+    "F024"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x31822cc7c1faf392b2e19fcad479871d0c973f74f3bb8679a4cfd2aeb981e983": {
+   "id": "X006",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F011",
+    "F022"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.6667,
+     "percentile": 0.8439
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.6667,
+     "percentile": 4.2463
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.6667,
+     "percentile": 4.8309
+    }
+   ]
+  },
+  "0x7f45a94291c213981bc0fd62e60666c44cd4f680b4cafceada7b4f8fb3bd0254": {
+   "id": "X009",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F017",
+    "F043"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xf0a672d021683610957733996c50c21c7518f1d41f1e2d7a6d349dd02d78eb9a": {
+   "id": "X011",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F021",
+    "F068"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 521,
+     "percentile": 4.6714
+    }
+   ]
+  },
+  "0x1f62a5019c89c6ddd4b5a83f385e4f47a7803c220f9ab2a9d21e2455019375c3": {
+   "id": "X010",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F019",
+    "F005"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xdaadab97d64cc8fc918dd7b9c3a88b69dc9a09385bcc57dcf899b0e11e8d0fa3": {
+   "id": "X012",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F023",
+    "F071"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 8.3333,
+     "percentile": 95.4481
+    }
+   ]
+  },
+  "0x01b1bc6cf6921457aa55b837c12e1775f029bc19f973096a98514e72dbe649dc": {
+   "id": "X013",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F025",
+    "F056"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 22.6667,
+     "percentile": 95.9249
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 632.3333,
+     "percentile": 95.6332
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29848.6667,
+     "percentile": 95.604
+    }
+   ]
+  },
+  "0x92e854ae95664dfd1f1f3821763133959a3da3cd021b0c993075a8136d7ea24d": {
+   "id": "X016",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F031",
+    "F020"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 496.6667,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 487.3333,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28700.6667,
+     "percentile": 0.6454
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28766.3333,
+     "percentile": 2.2018
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 8.3333,
+     "percentile": 95.4481
+    }
+   ]
+  },
+  "0xd6c22d8968517a2449a510b069499e1c3ef47244a217806a28427bf9f3194bf7": {
+   "id": "X015",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F029",
+    "F065"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 27.3333,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 15.6667,
+     "percentile": 100
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 6.6667,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 6.3333,
+     "percentile": 0.7878
+    }
+   ]
+  },
+  "0x6195b2b329e60c78ac1b86f42c86216976c287ee0c00b3fe9cdfb6632727e93c": {
+   "id": "X014",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F027",
+    "F021"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xe6c16d565bdae862f971692f8e3065577b53cb31420a7a4353784fd508305eb3": {
+   "id": "X017",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F033",
+    "F016"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound",
+     "value": 28713,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 11,
+     "percentile": 97.7099
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 20,
+     "percentile": 96.2034
+    }
+   ]
+  },
+  "0x2794ecb86bf299e0d7cdc200680ee81510e90492dea7188359d2711a946b40ed": {
+   "id": "X018",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F035",
+    "F066"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x669d4ccd62d1ac0c768739656e953ef5dacee22d807a2a1d13224ed2fd6adfb6": {
+   "id": "X019",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F037",
+    "F030"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x1f443189c72e11ccccd86993507cc813e4d96ed07faa0a214fd0ae2899eb520d": {
+   "id": "X020",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F039",
+    "F002"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 1.3333,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.6667,
+     "percentile": 0.8439
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 595.6667,
+     "percentile": 97.6109
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 29676.6667,
+     "percentile": 96.0082
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 633.3333,
+     "percentile": 95.6701
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29814,
+     "percentile": 95.3594
+    }
+   ]
+  },
+  "0x1c16da8662cb4053eef8d50e7cce479c8012cca92c63c2a30b4fdc7a740e20ef": {
+   "id": "X024",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F047",
+    "F051"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 11,
+     "percentile": 97.7099
+    }
+   ]
+  },
+  "0xd0829df47fef50b26c63a867a28ff182086a5f51eb816f41c1de8f8fdb33d77e": {
+   "id": "X021",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F041",
+    "F028"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 711.6667,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 20.6667,
+     "percentile": 96.6554
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 8.3333,
+     "percentile": 95.4481
+    }
+   ]
+  },
+  "0x559a9fe7abc0b631301d0be9c9228aeb0f404a19e28882a4dd958679d93b580c": {
+   "id": "X022",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F043",
+    "F037"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x84f69bf66b8701e1fc58215d0e6a33bcb87a98705d5540c7a78f617bb0106c4d": {
+   "id": "X023",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F045",
+    "F086"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.3333,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 2,
+     "percentile": 0
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 14.6667,
+     "percentile": 97.5724
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 19.3333,
+     "percentile": 95.7514
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29866,
+     "percentile": 95.7263
+    }
+   ]
+  },
+  "0x65a99c9b17933069bfc55b8b43da037390f1deeb3a04c61bd13d2f9962db55a9": {
+   "id": "X025",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F049",
+    "F089"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound",
+     "value": 30011,
+     "percentile": 96.7494
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 29675,
+     "percentile": 95.9905
+    }
+   ]
+  },
+  "0x51bb77c3a04e15583329900147b56369f0385df78e9beb6c9a2a323e11fba396": {
+   "id": "X027",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F053",
+    "F045"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound",
+     "value": 28717,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28721,
+     "percentile": 1.9892
+    }
+   ]
+  },
+  "0xc75e8127a1757e334fdafe62d7d5ce3a9d950867db10489db9d052c6d74657f0": {
+   "id": "X026",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F051",
+    "F097"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x8a7ed5d459ed0333b9caa1bcea9ca41e073047ca6e93eb1e2264a3ba20d8b16b": {
+   "id": "X028",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F055",
+    "F072"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x0cbca76430c5557b38c8c84f8350cf5d4dd6e1afe9520d62a31b6426738d4e4c": {
+   "id": "X029",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F057",
+    "F090"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 640.6667,
+     "percentile": 95.9404
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 580.6667,
+     "percentile": 95.7182
+    }
+   ]
+  },
+  "0xbfc4667df987286ea1fd06947f1dfc6bbec1e4bdbc16988488886496180a976e": {
+   "id": "X032",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F063",
+    "F052"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 32.3333,
+     "percentile": 96.2905
+    }
+   ]
+  },
+  "0xf96fbdcd1cfdb8954a2eeaa81f92060dd54fc0e0394e21ebc3927dc650ecae4f": {
+   "id": "X030",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F059",
+    "F088"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.6667,
+     "percentile": 4.2463
+    },
+    {
+     "name": "DNp12 | sound",
+     "value": 39.3333,
+     "percentile": 95.5913
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.6667,
+     "percentile": 4.8309
+    }
+   ]
+  },
+  "0xfe6e9aa5bbf3197937597a148140c3ff4bb2c45574e6984175506d4507964683": {
+   "id": "X033",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F065",
+    "F048"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 17,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 23.6667,
+     "percentile": 98.6893
+    }
+   ]
+  },
+  "0xb16123a2e377b3820cfb66b40317f69c37fd0c945511b6b3547721f2a87bf4bf": {
+   "id": "X031",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F061",
+    "F014"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 11,
+     "percentile": 97.7099
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 21,
+     "percentile": 96.8814
+    }
+   ]
+  },
+  "0x7e796538f4dd96b3c2611240bdc7dd62b12af03c4abfcdf2eac8cff9de27b877": {
+   "id": "X034",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F067",
+    "F100"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 492.3333,
+     "percentile": 1.2991
+    }
+   ]
+  },
+  "0x07f58a5e165e33775b8ec069bb11de90ee85bb0ebf38cf258e437a0381909a94": {
+   "id": "X035",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F069",
+    "F080"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xf1e7ca257b322f6a7b7689d5bc71dcd7f8c332158565310c10995543bf824e34": {
+   "id": "X037",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F073",
+    "F026"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 16,
+     "percentile": 99.4398
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 20,
+     "percentile": 96.2034
+    }
+   ]
+  },
+  "0xcf191f858dbe90cfe7c73d5237bdb90a5a4958f84988a45cadaedeebaf2c1c1e": {
+   "id": "X036",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F071",
+    "F081"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x34734f00df6750a639a3b67508ba648ef25aff0a411c9a0021f9278a87dc7410": {
+   "id": "X040",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F079",
+    "F050"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 13.3333,
+     "percentile": 95.7049
+    }
+   ]
+  },
+  "0x57d9625d86a76ff368b13d273a8f88ab0966af6e7846f2dce6e3c8a2e35fe872": {
+   "id": "X038",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F075",
+    "F008"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.3333,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x854ea6d9aadedd9d09e900f0cff2efe9832cbc2ef17a62e47006d5dc380c5f70": {
+   "id": "X039",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F077",
+    "F001"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x0b335e0fc4988db68ad4ca45ab9eebc106aa4535c3972d19b43103cfadbb9177": {
+   "id": "X041",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F081",
+    "F094"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.3333,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28807,
+     "percentile": 4.7649
+    }
+   ]
+  },
+  "0x51b3b5dfe0c36f8b632d8bda6af70dd3febf76176a8b613ae9e81e18d7937c97": {
+   "id": "X042",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F083",
+    "F040"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x0df269e91227de158b32ef8abc46ffc7e534c94c829b99c82d7743ca1e067564": {
+   "id": "X043",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F085",
+    "F018"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x51715ad98689777e02e5f12cc59c55bef1388ce9f63ad42f396eb8a3f6a89549": {
+   "id": "X047",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F093",
+    "F038"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.3333,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.3333,
+     "percentile": 2.1231
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.3333,
+     "percentile": 2.4155
+    }
+   ]
+  },
+  "0xe1eecdede236c32812b35c7f612d3f28e61da310e7dd701e704e1b87915ba69b": {
+   "id": "X044",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F087",
+    "F069"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 577.3333,
+     "percentile": 95.2976
+    }
+   ]
+  },
+  "0x12a5a5a59922aceaff95c314804741a03366750be2ab1616b94661b518dd7d43": {
+   "id": "X046",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F091",
+    "F019"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 29,
+     "percentile": 100
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 32.6667,
+     "percentile": 97.4
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 33,
+     "percentile": 96.8093
+    }
+   ]
+  },
+  "0x3ef5f17ffa0f4bdb4cdb8a188dc7460cd6a8d26ffaa20da5a8072f61f2b902a4": {
+   "id": "X045",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F089",
+    "F091"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 31.6667,
+     "percentile": 95.7717
+    }
+   ]
+  },
+  "0xe411b305595ef8dc39d5d13d382e974f5be7a541872329ec995e59df27aead83": {
+   "id": "X050",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F099",
+    "F084"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 517.3333,
+     "percentile": 3.1556
+    }
+   ]
+  },
+  "0xcf52c9d59d1fc28a9fb747efce65614491a62ada4505fbc0e1c2de0d3eeab6da": {
+   "id": "X048",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F095",
+    "F099"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 16.3333,
+     "percentile": 99.9066
+    }
+   ]
+  },
+  "0x40c52713c3f79303143e36b417a14a895bf34a25cca86d88771a6090d8b163e5": {
+   "id": "X051",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F002",
+    "F076"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x8bc81ccec353bd85ef3e55a9579d995628e12eb10f8a3161cd1bb8c7888ce29f": {
+   "id": "X049",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F097",
+    "F054"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x7c84328de4dd99dac3ebecdbc543c245046efd86426272a6e7ae821a35fc4888": {
+   "id": "X052",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F004",
+    "F037"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 38.3333,
+     "percentile": 95.1445
+    }
+   ]
+  },
+  "0x33e1953c45a347f2651217339f35c06736faf8384d2f50f1af2967106e5f2d89": {
+   "id": "X053",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F006",
+    "F032"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 23.6667,
+     "percentile": 96.6117
+    }
+   ]
+  },
+  "0x4f88250e76d3ccc1ec6dd6c720e9fcfda794382244ba05f42774b572ea28a873": {
+   "id": "X055",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F010",
+    "F014"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xe8f313b9a9ff933bbec6c08c2896da39f9ce043e54ff32711fb4185d71686db7": {
+   "id": "X057",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F014",
+    "F084"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xed38ff0431bd9e25c05d095150f566f1b819100bb2f78bc3428e762644c17130": {
+   "id": "X056",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F012",
+    "F023"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 603.6667,
+     "percentile": 98.6204
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 29818.6667,
+     "percentile": 97.5168
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29851.3333,
+     "percentile": 95.6228
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 619,
+     "percentile": 95.1417
+    }
+   ]
+  },
+  "0x23286470b53e2a5078a4f15732a2cefd0a0aa344a0efa95d10450be569bfecdb": {
+   "id": "X054",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F008",
+    "F088"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x668272f1e222a13d224dd3b893a96fc51d1cfd2174d20c2db22279af01f59924": {
+   "id": "X058",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F016",
+    "F040"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xa5e99b84bd7ac8f6be3f2181ccce8d12186045d70720271947f662416b9eb73d": {
+   "id": "X059",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F018",
+    "F066"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 5.3333,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 8,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x485c4d3db0979fceb6818f2b2ce197647d5e9a44aa93f69be68e8c417b946353": {
+   "id": "X060",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F020",
+    "F041"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 43.6667,
+     "percentile": 97.5276
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 519,
+     "percentile": 3.8446
+    }
+   ]
+  },
+  "0x8529dbfa1d4d0663a24fe48c406736eb1c45ff9a52caff02b9b89719bfc309ba": {
+   "id": "X061",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F022",
+    "F057"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 39,
+     "percentile": 95.4424
+    }
+   ]
+  },
+  "0x578f22d72b7e9d12ad82869cbf1c72ddcc808710c8bf4770608b607673dfb051": {
+   "id": "X063",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F026",
+    "F020"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound",
+     "value": 28736.3333,
+     "percentile": 0.3109
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 515.6667,
+     "percentile": 2.4666
+    }
+   ]
+  },
+  "0x46e95bdf289da5dc87d31cf604d9466413e791b3d421fa757795ccf3d164599f": {
+   "id": "X062",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F024",
+    "F022"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x576180d349b9b762b2c7bab5708c51ff59bf5e69e979140786271a6d9361f3c4": {
+   "id": "X065",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F030",
+    "F093"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 34.3333,
+     "percentile": 98.6264
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 34.3333,
+     "percentile": 97.847
+    }
+   ]
+  },
+  "0xb8b7956f0b824428a6a1c5e4a34f49e345d4c672abfcc56249b3792f0bbdd61d": {
+   "id": "X064",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F028",
+    "F025"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 24.6667,
+     "percentile": 97.2985
+    }
+   ]
+  },
+  "0x6aa9e786360788eb1f6561d0ecd3a2fa583656c78480cdfb7125daea57e9ff69": {
+   "id": "X067",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F034",
+    "F052"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xaab428fbe3e98e4ea499bc103bc817993d7234cf8571a3f3367442309d1c105b": {
+   "id": "X066",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F032",
+    "F100"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 504.3333,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 487,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28622,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28662.6667,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x6d88eedeb954ea538d9ce283fbc9745454ca22a1f065255278794043af69c75a": {
+   "id": "X068",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F036",
+    "F043"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x2eaaaec83e75d04145eb55c414e25e15d93af2ed0b7d0d24833caedae6f21cc8": {
+   "id": "X070",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F040",
+    "F030"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 32,
+     "percentile": 96.0311
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 30.6667,
+     "percentile": 95.9284
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 575.3333,
+     "percentile": 95.0452
+    }
+   ]
+  },
+  "0x2cb0573b35569a97ef75cd0607235b5ddfe389e47955f642f742294b5569c0f1": {
+   "id": "X069",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F038",
+    "F054"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x1ae86dce146961c7b665b47ae67a3d7c5e11ef7611587a77a4f70a0d041b2e9a": {
+   "id": "X071",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F042",
+    "F063"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 0.6667,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 636.6667,
+     "percentile": 95.7929
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29802.6667,
+     "percentile": 95.2795
+    }
+   ]
+  },
+  "0x6e7427988a83588b1c1683b073d0aac305ce24a8c25d2444e9767c3aa1c6035a": {
+   "id": "X072",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F044",
+    "F081"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x377a1066e2ba29b5d17b3fdcaab205a44bc96689e64e33a22ab9346d021830f8": {
+   "id": "X073",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F046",
+    "F091"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 616.6667,
+     "percentile": 95.0557
+    }
+   ]
+  },
+  "0xa82c740b5bdcbdde83a69902a3792d4f98d1eb30995e2c49343ff88c01385178": {
+   "id": "X075",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F050",
+    "F027"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x84d09878bf41fa7b7632772e8e0f23d992ae7146ca59bde10b10675548f0f4f8": {
+   "id": "X074",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F048",
+    "F019"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x54a9e9599cb97c93d06e9379773ab95e92a45570e7bb291ce7df46d940f3fc56": {
+   "id": "X076",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F052",
+    "F099"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.3333,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 7.3333,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 1073.3333,
+     "percentile": 100
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 33631,
+     "percentile": 100
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28768.6667,
+     "percentile": 2.3488
+    }
+   ]
+  },
+  "0x16aa74fc3ab4f3921ff5375e86989a44667900bb1e89c5d054d77bf22a069c61": {
+   "id": "X077",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F054",
+    "F073"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28739.3333,
+     "percentile": 3.2007
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28788,
+     "percentile": 3.5674
+    }
+   ]
+  },
+  "0xa19dd23f24d58f0b220b04a7d0bbc866e0a72f3006aa631b2ea0c63b41142ae9": {
+   "id": "X078",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F056",
+    "F092"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x42a616a25554a8875fced53b8407bdf194bfddc048f4c08b2cdce44e60fd7d39": {
+   "id": "X079",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F058",
+    "F095"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x8d802b3bf77d936237e699fcaa92ccb81248869742654a7b205ef8d09803e192": {
+   "id": "X080",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F060",
+    "F080"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x516516977f79f1dbccde0afb5c0d6c56dc9d6ae19ba487886f13d6185298da1a": {
+   "id": "X083",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F066",
+    "F045"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xd3bc52bd7f7ca716d0c0390a12404f18b008db55c0281fb321c9959e314cdff4": {
+   "id": "X082",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F064",
+    "F067"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xfa9db8fcd5d1fc6e8dbe6151474eb15e09f58352c23b56f0507f9215ab1a0134": {
+   "id": "X081",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F062",
+    "F031"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x9016bf926698aecb4473d564b4189d13e85a2771cf2ff6433b35255b3a8d2aa6": {
+   "id": "X084",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F068",
+    "F050"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8e8dd03dc1bc7da7f6fc03540477ee39465048d8260c1e9044cd466638349756": {
+   "id": "X088",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F076",
+    "F060"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xde5f5bd09cc7202587f9a8a656d0653b4383cc83cd1e25e39b7a8574fc4cebe7": {
+   "id": "X085",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F070",
+    "F082"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x65f21e9a2d680617ed1a2216fa2fd06b49b5916a3630fc14564a3b77f08bfb86": {
+   "id": "X086",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F072",
+    "F068"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xfd0c141d1d8745ddd4c0bd2586b1236dd3eeabbbb44dc9af0c2dc1eb915d515a": {
+   "id": "X087",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F074",
+    "F090"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound",
+     "value": 28725.6667,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x342338dd3543d50277d1453728cfe8dd282f9668b85976f99fa870dd4641fa14": {
+   "id": "X089",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F078",
+    "F071"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 9.3333,
+     "percentile": 96.2963
+    }
+   ]
+  },
+  "0xae3488c3c89214c7faa864d1c8696db0ed31c14cfc0888d9f49ead3c1370ef8d": {
+   "id": "X090",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F080",
+    "F061"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 23.3333,
+     "percentile": 98.4633
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 11.3333,
+     "percentile": 97.9926
+    }
+   ]
+  },
+  "0x142822f50581368fd14b396a2cfe41b1069417918ca5ffd3188f8c0739f8ceae": {
+   "id": "X091",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F082",
+    "F001"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 602.3333,
+     "percentile": 98.4522
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 29832.6667,
+     "percentile": 97.6656
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 30073.3333,
+     "percentile": 97.1892
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 630,
+     "percentile": 95.5472
+    }
+   ]
+  },
+  "0xdd4bb74c5b3f72c5b3ac1d2f28fbaccf2f9e71a540ea7cb3373f6c68d33a64b5": {
+   "id": "X092",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F084",
+    "F013"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 40,
+     "percentile": 95.8892
+    }
+   ]
+  },
+  "0x5efc39428147b64b46be243c508d4a4ab975ebcf9b06c9e8b7a82e211fae9dde": {
+   "id": "X096",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F092",
+    "F042"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x0e77d787a5fdad8fc09dec29e930ebc7118b49620203952aad4a09373f95fa55": {
+   "id": "X095",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F090",
+    "F018"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 34.6667,
+     "percentile": 98.8717
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 35,
+     "percentile": 98.3658
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28720.3333,
+     "percentile": 1.9451
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 8.3333,
+     "percentile": 95.4481
+    }
+   ]
+  },
+  "0xc6e9701a2999c4bfbd78cdfea98822466d12c12ff13e6cdf51895c5873c31b44": {
+   "id": "X094",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F088",
+    "F079"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 30,
+     "percentile": 95.4378
+    }
+   ]
+  },
+  "0x6b38bfaa2bedf59b7e02f105756f4e5dd17654659bb54af65e68b062db5fe1d9": {
+   "id": "X093",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F086",
+    "F006"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x39e8936859a0393e770984019fa49b60c1b4509e764c542b4ffce30dd46b02f8": {
+   "id": "X098",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F096",
+    "F064"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xc41f27ecfe0210d9da9e4676cf37cf50e3dcb17781b3f0d5ed7dc691b64c6a9f": {
+   "id": "X097",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F094",
+    "F029"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 33.6667,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 18.3333,
+     "percentile": 100
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28702.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28700.3333,
+     "percentile": 0.6234
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 15.3333,
+     "percentile": 98.5061
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 518,
+     "percentile": 3.4312
+    }
+   ]
+  },
+  "0x8e7e8cd0b68ca12cb779d53f596ed428c67e65cdfaa2b547ae33e23e1816fe2a": {
+   "id": "X099",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F098",
+    "F021"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 575.6667,
+     "percentile": 95.0873
+    }
+   ]
+  },
+  "0xe120ae5e87922ae615035edbc899abf8ab9fe81a43e5f1912760693d1824ddce": {
+   "id": "X100",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "random",
+   "parents": [
+    "F100",
+    "F034"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 504,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 487.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28697.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28620,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound",
+     "value": 42.3333,
+     "percentile": 96.9318
+    }
+   ]
+  },
+  "0xf99438b352ba345e9c85790cc34b691307d5f368d5eb28cb97d26fa92ef44012": {
+   "id": "X101",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F045",
+    "F065"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 26,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 12.3333,
+     "percentile": 98.8408
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 13.6667,
+     "percentile": 96.1718
+    }
+   ]
+  },
+  "0x6c480a918d9cabf14795a2d5fe51c1a67cbc61213fe64e17e6dad152ceaa8fac": {
+   "id": "X103",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F027",
+    "F011"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 12.6667,
+     "percentile": 99.1236
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 495.6667,
+     "percentile": 2.9436
+    }
+   ]
+  },
+  "0x1b80c8fc52afb34762c5c3b0e1bf9f7358507faa29830c173e8b40ed0ce912ac": {
+   "id": "X102",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F015",
+    "F087"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 19.3333,
+     "percentile": 95.7514
+    }
+   ]
+  },
+  "0xbb0f453235e8559679c8a9a9cb5540c7089e5bae5ca85088810371a63dc5ac16": {
+   "id": "X104",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F084",
+    "F011"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x34c97de6178a2fe278656bc52030471e63851dca9e01f50751bdf6aeb09b8e66": {
+   "id": "X105",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F054",
+    "F031"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 15.3333,
+     "percentile": 98.5061
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 31.6667,
+     "percentile": 96.6642
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 19,
+     "percentile": 95.5254
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 31.3333,
+     "percentile": 95.5123
+    }
+   ]
+  },
+  "0x430df2be210a9b5edb3193985105315edfa5814062642961aa6b2d9706e1e573": {
+   "id": "X106",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F084",
+    "F024"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xe6ed81b6d54eb46793e2b90c9a76b471e954024da666b9179b36aea7c0942012": {
+   "id": "X107",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F011",
+    "F047"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 14.3333,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 20,
+     "percentile": 96.2034
+    }
+   ]
+  },
+  "0x14604d6e4bd25d8aad28ef365ff92ef76aed788df39daa48039f1213b97850bd": {
+   "id": "X108",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F065",
+    "F084"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 13.6667,
+     "percentile": 99.9717
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 21.6667,
+     "percentile": 97.3333
+    }
+   ]
+  },
+  "0x950943fff742aec84fdcdc5b83a6fa9475e11ba9d10ede3143ae3814ae09a822": {
+   "id": "X109",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F045",
+    "F090"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x0dc2e4e514ddb4724eed1afb615d30bc288078897c3c991f71592c7012d6b968": {
+   "id": "X110",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F024",
+    "F020"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 14,
+     "percentile": 96.6387
+    }
+   ]
+  },
+  "0xfccd2a213f41e2cd90c4bc87bc620a8b3db73480885c165d5214eaeff57c6a7f": {
+   "id": "X111",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F020",
+    "F094"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 511.3333,
+     "percentile": 0.6752
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 495.6667,
+     "percentile": 2.9436
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 14,
+     "percentile": 96.6387
+    }
+   ]
+  },
+  "0x02921e42ae55b1ea2c9bc15da29f5bc474b721549b97ddfe213d184e1b726afa": {
+   "id": "X112",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F065",
+    "F024"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 596.3333,
+     "percentile": 97.6951
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 18.6667,
+     "percentile": 95.2994
+    }
+   ]
+  },
+  "0x3733b490250340098f6aafc0beb1bb82ab0cbfc9781fc9ec4b03e58f75fd2b5e": {
+   "id": "X113",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F080",
+    "F047"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xd3c0f26e2ce6850e5835d6e5d74ef0a46b96b7dd46db80caf79ddad2edc085ee": {
+   "id": "X114",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F024",
+    "F048"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x33e8721b6fa097b64fd784481717e08d9a16cdc7e74a1c98ee17763b12fb55bc": {
+   "id": "X115",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F015",
+    "F087"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 8,
+     "percentile": 3.2496
+    }
+   ]
+  },
+  "0x3787a579817fd13647a88a18362203c2b39dc8e3b89bc4118502559e85c28542": {
+   "id": "X117",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F020",
+    "F054"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 508.3333,
+     "percentile": 0
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 15.6667,
+     "percentile": 98.9729
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28777.3333,
+     "percentile": 2.8951
+    }
+   ]
+  },
+  "0x370e6816a6af66281f1a91338345c0e14d220a03265e726ddecf54aec6de368b": {
+   "id": "X116",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F047",
+    "F031"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 25,
+     "percentile": 99.5932
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 11.3333,
+     "percentile": 97.9926
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 13.6667,
+     "percentile": 96.1718
+    }
+   ]
+  },
+  "0x262c715f2cdfc9c0b9ffdbd07e8607537661d607767619c31309ed0a6aac6951": {
+   "id": "X119",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F090",
+    "F029"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 14.3333,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 23.3333,
+     "percentile": 98.4633
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 520.6667,
+     "percentile": 4.5336
+    }
+   ]
+  },
+  "0x02ffe8c20aee7e55a789fc37966981e63aed19a4c6ad33bf53ea4d90f145ed75": {
+   "id": "X118",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F065",
+    "F094"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x90887c701d4b945e54240da9cf4194a46cef826ec58f9e9f5379a939e71c5f53": {
+   "id": "X120",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F029",
+    "F015"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 9,
+     "percentile": 96.0136
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 10.6667,
+     "percentile": 4.7333
+    }
+   ]
+  },
+  "0xe4082c615679cf392face8e9cf7a177b76435b9c832e9bc35f4070b3f5c81061": {
+   "id": "X123",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F048",
+    "F045"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 6.3333,
+     "percentile": 0.7878
+    }
+   ]
+  },
+  "0x6cc3f60c91de37b02adba153e1e68ec63bfcf846998b6dc9bf5c15c83e896e32": {
+   "id": "X121",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F076",
+    "F047"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xac46ce425095c230c0ef4584bc2fb28ad71263deb24be8c9e70b3cb8b048bd95": {
+   "id": "X122",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F090",
+    "F047"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 509,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28712.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28752.3333,
+     "percentile": 4.0598
+    }
+   ]
+  },
+  "0x94b61a77beed284d9fc89e3b8096654f8fd4234df0346f26ebba0b189c171eb7": {
+   "id": "X124",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F015",
+    "F076"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28757.3333,
+     "percentile": 4.3903
+    }
+   ]
+  },
+  "0x6c9762adfdf1cc7ab05ccd65e4a3bf01a4ba0cce392e7785b338e1b6b9b11508": {
+   "id": "X126",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F065",
+    "F084"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 20,
+     "percentile": 96.2034
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 9,
+     "percentile": 96.0136
+    }
+   ]
+  },
+  "0xc0a42c351a769ff09d5302ac7e9cfa822e5f687a864261357de163dee444c907": {
+   "id": "X125",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F024",
+    "F087"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 7.6667,
+     "percentile": 2.7573
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 10.3333,
+     "percentile": 4.0667
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 13,
+     "percentile": 95.2381
+    }
+   ]
+  },
+  "0x25b7b370b32c2054d1b9acc696efb5768cfe432157607e8b8dc34c618c1ec280": {
+   "id": "X127",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F080",
+    "F029"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x6108e861d6522950ef4d8779b24d08dc0e796800e5ccd7c602771a6fadb1ec4b": {
+   "id": "X128",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F084",
+    "F087"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 8.3333,
+     "percentile": 95.4481
+    }
+   ]
+  },
+  "0x0e272a7df62e546c98662cbf3c357ea705d3ac94a584e3076e1bfb1b40bb3b95": {
+   "id": "X129",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F047",
+    "F045"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 22.6667,
+     "percentile": 98.0113
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 11.3333,
+     "percentile": 97.9926
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 31.6667,
+     "percentile": 95.7717
+    }
+   ]
+  },
+  "0x9b60654cb43b9f10957ef32f39b99e42cbc0f5938dab6ac1ee37faa4feda4583": {
+   "id": "X131",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F029",
+    "F027"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xebd60f41c5cde65139a4ac84f090ccdf37a0f928e61a4a448e806684c513deea": {
+   "id": "X130",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F048",
+    "F027"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xd8880e8b077530e454f8a863b4d8623825cbd4199c1942634608be5142a4cd32": {
+   "id": "X132",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F029",
+    "F047"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 13,
+     "percentile": 95.2381
+    }
+   ]
+  },
+  "0x4521ed0a536cbff84bee28979a80375dc1420d67a69100e868bfb9cfab5c4aba": {
+   "id": "X133",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F071",
+    "F084"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 12.3333,
+     "percentile": 98.8408
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 588,
+     "percentile": 96.6435
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29884,
+     "percentile": 95.8533
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 19.3333,
+     "percentile": 95.7514
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 22.3333,
+     "percentile": 95.696
+    }
+   ]
+  },
+  "0x2dcafc07b3093be5fce16992f3ce42396ff46474fd62468799b125f907260ff4": {
+   "id": "X134",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F020",
+    "F083"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 8.3333,
+     "percentile": 95.4481
+    }
+   ]
+  },
+  "0x1af5b6df4744e7e7fcb5dbb914187ec76887d56379ee14ced17a43499ffa0b80": {
+   "id": "X135",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F015",
+    "F024"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 17.3333,
+     "percentile": 100
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 1.6667,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 4.6667,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.6667,
+     "percentile": 0.8439
+    },
+    {
+     "name": "DNp12 | sound",
+     "value": 2.6667,
+     "percentile": 2.807
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 20,
+     "percentile": 96.2034
+    }
+   ]
+  },
+  "0x9644ffdd1ff897c361ce5c7e6e92cdfe471239e47f5067f96d3ebbebc659cca2": {
+   "id": "X136",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F054",
+    "F011"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 507.3333,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28650.6667,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 491,
+     "percentile": 0.6413
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28707,
+     "percentile": 1.064
+    }
+   ]
+  },
+  "0x8e1d387232d721d412a7a89ae00d9d369c2a03cc478d213897b2b1ef8e95aade": {
+   "id": "X137",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F076",
+    "F094"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xf6195eb85cca9bb0ec6b34e0cf5d535f3ae26b2662ced30bc495e81d79f000f1": {
+   "id": "X138",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F090",
+    "F027"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 10.6667,
+     "percentile": 97.4272
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 19.6667,
+     "percentile": 95.9774
+    }
+   ]
+  },
+  "0xeb33b1b519fb5ac98d295045abfd2feffbcd9c802eabef1657311dcd6233908f": {
+   "id": "X139",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F083",
+    "F087"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 13,
+     "percentile": 95.2381
+    }
+   ]
+  },
+  "0x5ffc1f5039ffec0862429ced293ef2601c23becaff524f280e74237bf0281816": {
+   "id": "X141",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F083",
+    "F020"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 26.3333,
+     "percentile": 100
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 509.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28723,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 13.3333,
+     "percentile": 99.689
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28747,
+     "percentile": 3.7074
+    },
+    {
+     "name": "DNp12 | sound",
+     "value": 38.6667,
+     "percentile": 95.2934
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 13,
+     "percentile": 95.2381
+    }
+   ]
+  },
+  "0x2c4ea82082f6f0e4163b7757998946f3d6b3206a008f4d70048fdb2b0d0651e8": {
+   "id": "X140",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F024",
+    "F029"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound",
+     "value": 28782,
+     "percentile": 3.1892
+    }
+   ]
+  },
+  "0xd213a07593ef02b76a333da5f162eea7ce52a3d57a8e2563616c4964bfb5b946": {
+   "id": "X142",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F029",
+    "F080"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x5db46bf2f001ac2f73c2c61f4a48ee137454ec1bcf2f4186742a3f5671c4178c": {
+   "id": "X143",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F045",
+    "F090"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound",
+     "value": 28681.3333,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28608,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 511.6667,
+     "percentile": 0.813
+    }
+   ]
+  },
+  "0xf9f228330de5ec0a75eaed7ef96882c644f6977ebfbb922b4485307d757fd4f0": {
+   "id": "X144",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F045",
+    "F084"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 9.6667,
+     "percentile": 96.579
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 20.3333,
+     "percentile": 96.4294
+    }
+   ]
+  },
+  "0xaa6fcb47647dbc09ff4ca79c554ce5478ec9b6a7144d87370e96a05756219c1e": {
+   "id": "X146",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F065",
+    "F015"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.6667,
+     "percentile": 4.2463
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.6667,
+     "percentile": 4.8309
+    }
+   ]
+  },
+  "0x4c06ef1cdb0e9b9bcb8fba708408f6b5f90761e46264a6bd65597566dfca3adf": {
+   "id": "X145",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F015",
+    "F020"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xf4b8cbba246eaa89ba49733b2ee2e3d348205e547a444710671cd3a2e97d36f7": {
+   "id": "X147",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F083",
+    "F071"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 27.6667,
+     "percentile": 100
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 20,
+     "percentile": 100
+    }
+   ]
+  },
+  "0xb86349b6e5fcc7ae5bb20fb63c71fc12472f538936347e78ca20ab521b783120": {
+   "id": "X148",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F020",
+    "F011"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 8,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 7.6667,
+     "percentile": 2.7573
+    }
+   ]
+  },
+  "0xb29dac360aebc6c64965d3820679ad5af753d5e9a8ee148612b309e770fcad56": {
+   "id": "X149",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F029",
+    "F065"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 31.6667,
+     "percentile": 100
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 16.3333,
+     "percentile": 100
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 15.3333,
+     "percentile": 98.5061
+    }
+   ]
+  },
+  "0xb63bae363c2c23ff7c7396880d0bae692bd9c766e2979d58a5eb4ffe995f18c0": {
+   "id": "X152",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F098",
+    "F069"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x9ccbaf55128cc3b95dacea267f00d4344afce615d46b75ac7f69c4a2e382cf7a": {
+   "id": "X151",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F069",
+    "F012"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x18934ce1fd033e1b56b724cbe1558712b8c9b7e6f68f5f97b475a31b4932f431": {
+   "id": "X150",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "high",
+   "parents": [
+    "F011",
+    "F020"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 505.6667,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 11.3333,
+     "percentile": 97.9926
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28800,
+     "percentile": 4.3237
+    }
+   ]
+  },
+  "0xbdf9426484b1d74f9c0c96c32382bb1546f08a3ed11d722b7d893a056ec8788f": {
+   "id": "X155",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F022",
+    "F003"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 9,
+     "percentile": 96.0136
+    }
+   ]
+  },
+  "0xbd740b653181a4e199547617751c5acbc63e77e9b5cab62da1bdbc36b629bc26": {
+   "id": "X153",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F037",
+    "F022"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.3333,
+     "percentile": 2.1231
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.3333,
+     "percentile": 2.4155
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29815.3333,
+     "percentile": 95.3688
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 622.3333,
+     "percentile": 95.2646
+    }
+   ]
+  },
+  "0x247936b173ade955f8b5c6b1e2813b96ea235fc33224b69c9773cfb2b5c752af": {
+   "id": "X154",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F068",
+    "F038"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.3333,
+     "percentile": 0
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 622.3333,
+     "percentile": 95.2646
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 29780.3333,
+     "percentile": 95.1219
+    }
+   ]
+  },
+  "0x35937d66937d4f6de39defc467a1b5bf775225acd60670f0c41283aac1e0ffd2": {
+   "id": "X157",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F023",
+    "F004"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 7.6667,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 7.3333,
+     "percentile": 2.2649
+    }
+   ]
+  },
+  "0x87e63fe5ca0e7b2c8ca10500cd3f9d35bc0b4fe3728e8803248725392a45946b": {
+   "id": "X159",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F035",
+    "F022"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x0cc86c12d5c117cb0bee54183651fcf02443c46886f86c2f3ff597c8a4a2707d": {
+   "id": "X156",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F064",
+    "F009"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound",
+     "value": 2705.6667,
+     "percentile": 100
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 49713.3333,
+     "percentile": 100
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28571,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 494,
+     "percentile": 2.1214
+    }
+   ]
+  },
+  "0xcf4b7d06680566f8c3543df1571e88676f966bebfd0e7107bda2980be8ae66c5": {
+   "id": "X158",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F081",
+    "F038"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x2ae4d463dce72ea2f08d234265f2c4823caedfe1071337b66814bbdcc7d2795a": {
+   "id": "X160",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F064",
+    "F081"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.3333,
+     "percentile": 2.1231
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.3333,
+     "percentile": 2.4155
+    }
+   ]
+  },
+  "0xf825d918219e56e9e4adcd13345fb0f1ff020f369ca85bb5989098bd74f52300": {
+   "id": "X163",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F023",
+    "F032"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 24,
+     "percentile": 96.8407
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.6667,
+     "percentile": 4.2463
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.6667,
+     "percentile": 4.8309
+    }
+   ]
+  },
+  "0xf5c17a141d62add7bf9b3664b1f77e9a2c11dbbee4a36be287eeb92561083e4a": {
+   "id": "X161",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F059",
+    "F069"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 580.3333,
+     "percentile": 95.6761
+    }
+   ]
+  },
+  "0xf98023a138e0f5ca57a3363384465b5f97a107847162322cb4696c38bd8f49b9": {
+   "id": "X162",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F038",
+    "F002"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x1eaac8a57e07639e1c5137011aac384b70faee1f3c9e2302f8673d21147c0302": {
+   "id": "X164",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F058",
+    "F091"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x48a4697070ddaaba12087e2c0e67774f41c28ffa4df0f8b424f8423183a842a2": {
+   "id": "X165",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F032",
+    "F004"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xd27502663d4fa21448855cc37fa5d5c06ab1a0c3694a349a810d9f82ef235a49": {
+   "id": "X168",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F004",
+    "F006"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x608b28b1af05310cdb5a828b5523c737e01b22f3e3743a551f2ac9309c6f802d": {
+   "id": "X166",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F081",
+    "F012"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 38.3333,
+     "percentile": 95.1445
+    }
+   ]
+  },
+  "0xdce57e6b81adeaecaf4c278df91fe050f6e21218244b086c498cc489d24fe755": {
+   "id": "X169",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F064",
+    "F022"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 582.3333,
+     "percentile": 95.9285
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 628,
+     "percentile": 95.4735
+    }
+   ]
+  },
+  "0x85dde68d6d2d0c0c8cdcdc7df1abca3b2e76faa34174a204c4ed680338e90563": {
+   "id": "X170",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F068",
+    "F023"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x419cba75bbb00f503b47d9c461730539eaf319c29d99b5944aa2d13a9a2f6e44": {
+   "id": "X167",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F004",
+    "F058"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 601.6667,
+     "percentile": 98.368
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 631.3333,
+     "percentile": 95.5963
+    }
+   ]
+  },
+  "0xa3bdeb389e718c830334181e0a107ccdd0e5c7eafec78b26067db3dacf547c31": {
+   "id": "X171",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F064",
+    "F004"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x15659c6563df1ef50729d60855f064c47b9e6a2c2c4efe743d0180c64b51744b": {
+   "id": "X172",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F091",
+    "F064"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28622.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28737.6667,
+     "percentile": 0.395
+    }
+   ]
+  },
+  "0x6225e541e96b7347f52ffb82385d5497a5aca83d1843ae5c2ff2f4840a9701a9": {
+   "id": "X174",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F037",
+    "F058"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xbe2cca64ba11d7f6d0f258bd5b24b58df90897e77999a5a229a886e873582861": {
+   "id": "X177",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F023",
+    "F003"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xc6be2f330199f86240bbbc74d0bd3b17bb334357e161c6644e2d504734b34c3e": {
+   "id": "X173",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F064",
+    "F058"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 487.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound",
+     "value": 28709.6667,
+     "percentile": 0
+    },
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28698.6667,
+     "percentile": 0.5133
+    }
+   ]
+  },
+  "0x13147e8d81da6850add22b69db9157e68e4c932d08ef48dde128770dcb48c353": {
+   "id": "X178",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F069",
+    "F035"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x5e4da3aeac382bc734fd8279f82210626b34f4afe0fbf28ab7e35e5c4bc0efaf": {
+   "id": "X175",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F069",
+    "F006"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 7.3333,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 587.3333,
+     "percentile": 96.5594
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 618.3333,
+     "percentile": 95.1172
+    }
+   ]
+  },
+  "0xfd804d21a1a199f54799eecc9d1cc8137d97257feeffa67de0e5686a614b32d8": {
+   "id": "X176",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F098",
+    "F069"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 1.3333,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xfd74e13e849eb6bc66679a94fd1dc2cb96ded5fc531e8eccd9dbcda7f20a3504": {
+   "id": "X179",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F091",
+    "F037"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xcdbeadc55693fa858a6a969081129986404d5f458e0f9863a6c192b17b45fdc4": {
+   "id": "X180",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F012",
+    "F009"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 488.3333,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 36,
+     "percentile": 99.144
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 34.6667,
+     "percentile": 98.8717
+    }
+   ]
+  },
+  "0xb5b3f1f72a510bbac9980198e8d0b4d8f13743a1e9db60365b7b8d488a0d048e": {
+   "id": "X184",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F038",
+    "F091"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x2900cf95e5d9052e79ab44bf0293080d37dda0e9310e5c8fd848fa02a5d69861": {
+   "id": "X181",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F012",
+    "F009"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 31.6667,
+     "percentile": 95.7717
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 30.3333,
+     "percentile": 95.6831
+    }
+   ]
+  },
+  "0xbc69a25877c33dff4611e3bda54d408e5089ae7b6dadc92562675dc55a5c64fa": {
+   "id": "X182",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F004",
+    "F098"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xb9e773048f1361e4071461a33ccd5222a607cbced600517fb875538eeeccb82e": {
+   "id": "X186",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F098",
+    "F064"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xea3d6861f12cdae2d3f717fceaaa4a42b8d993dd077dba346ae3ca8a7266a10c": {
+   "id": "X183",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F059",
+    "F058"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.3333,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x8e958f6a79503927ac6304b39f2fbc5f0f8d68a6174e69172b97946188783f11": {
+   "id": "X185",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F081",
+    "F035"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound",
+     "value": 2.3333,
+     "percentile": 1.9298
+    }
+   ]
+  },
+  "0x958839a6e8c0d1a18952da2e24d60b35388e06d6c2032452e1dbf0dbbacb5742": {
+   "id": "X187",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F098",
+    "F003"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 575.3333,
+     "percentile": 95.0452
+    }
+   ]
+  },
+  "0x376a894965647599f94e8f0b7968a7cc63b59ff1e2a4c874c81e9bd087a4a16b": {
+   "id": "X188",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F012",
+    "F064"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x54c9f7ab2ca3adf1c09c8b762841a3ef1f15c41f1e84809714b947066749c92e": {
+   "id": "X190",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F098",
+    "F038"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0xa4275d47e1200c106761a29d2c95547b2c0c6e0e4244c9b8cf20fa1cbc13151e": {
+   "id": "X192",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F058",
+    "F098"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "spikes, all | sound_gate",
+     "value": 28701,
+     "percentile": 0.6675
+    }
+   ]
+  },
+  "0x99b0b4e0af2dbb02d4f83dc5acee755729f9fa319711129e60e815f4db6eefd1": {
+   "id": "X191",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F038",
+    "F068"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0x70f922a633cc341df3256ef80ff34c840a8d29294cb88a968cb0a718d0f922c7": {
+   "id": "X193",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F058",
+    "F059"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.3333,
+     "percentile": 2.1231
+    },
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 22.3333,
+     "percentile": 95.696
+    }
+   ]
+  },
+  "0xbfc99578d3f04c60c1d380e9ea0d936df02628f558a08f6e4883bd064dd87543": {
+   "id": "X189",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F098",
+    "F081"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xf7393abd8bd2ea9b633e5364027c389f0d096b5e3164593aba551034e9f626b4": {
+   "id": "X195",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F003",
+    "F091"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "giant fibre | sound",
+     "value": 3.3333,
+     "percentile": 0
+    }
+   ]
+  },
+  "0xb280eba64dcef085d869797758be6b8cffc3fd294c4c5f5324c0aa8273b5482c": {
+   "id": "X194",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F032",
+    "F081"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.3333,
+     "percentile": 2.1231
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.3333,
+     "percentile": 2.4155
+    },
+    {
+     "name": "giant fibre | sound_gate",
+     "value": 31.6667,
+     "percentile": 95.7717
+    },
+    {
+     "name": "giant fibre | sound",
+     "value": 30.3333,
+     "percentile": 95.6831
+    }
+   ]
+  },
+  "0x9697451239ede15c02c0787c3ed05c2b69ca00ab0e4b2fbe8049d524a8806d37": {
+   "id": "X196",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F068",
+    "F037"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNp12 | sound_gate",
+     "value": 0.6667,
+     "percentile": 0.8439
+    },
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 10.3333,
+     "percentile": 97.1445
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 21.3333,
+     "percentile": 97.1073
+    }
+   ]
+  },
+  "0xfef309406964cffbbf9df530324ab64e30369d1f485888b962ebe91f8a4e1458": {
+   "id": "X197",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F091",
+    "F002"
+   ],
+   "phenotypes": 11,
+   "standout": []
+  },
+  "0x87e19a863b343e64825e3c3134454219f8a20886cd30ebc89f42b4ec04ebafb6": {
+   "id": "X199",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F009",
+    "F035"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNp12 | sound",
+     "value": 2.3333,
+     "percentile": 1.9298
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.3333,
+     "percentile": 2.1231
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.3333,
+     "percentile": 2.4155
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 634,
+     "percentile": 95.6946
+    }
+   ]
+  },
+  "0x3265525bc70371f4136c249f65034a8d5da58a8963580de9bb201434b82bd193": {
+   "id": "X198",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F098",
+    "F022"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "DNge145 | sound",
+     "value": 0.6667,
+     "percentile": 4.2463
+    },
+    {
+     "name": "gate suppression of DNge145 (sound - sound_gate)",
+     "value": 0.6667,
+     "percentile": 4.8309
+    }
+   ]
+  },
+  "0xd2cd43947d2b0be37382900c65e31abde405586979d45db34c55c651feb22415": {
+   "id": "X200",
+   "source": "breeding",
+   "kind": "cross",
+   "line": "low",
+   "parents": [
+    "F091",
+    "F098"
+   ],
+   "phenotypes": 11,
+   "standout": [
+    {
+     "name": "DNge145 | sound_gate",
+     "value": 0,
+     "percentile": 0
+    },
+    {
+     "name": "neurons reached | sound_gate",
+     "value": 581,
+     "percentile": 95.7603
+    },
+    {
+     "name": "neurons reached | sound",
+     "value": 621.3333,
+     "percentile": 95.2277
+    }
+   ]
+  }
+ }
+}

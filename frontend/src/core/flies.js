@@ -10,6 +10,7 @@
 // makes that window irrelevant; the Hatch button is for when nobody is.
 import { keccakWords, decodeUint, decodeAddress } from "./abi.js";
 import { state, call, send, read, log, notify } from "./controller.js";
+import { loadPhenotypes } from "./phenotypes.js";
 
 export const FEMALE = 0, MALE = 1, UNHATCHED = 2;
 export const WINDOW = 256; // block hashes the EVM keeps
@@ -42,6 +43,7 @@ export function lineage(f, byId) {
 
 /** read the whole collection: the fees, and every individual with whether this wallet holds it */
 export async function loadFlies() {
+  await loadPhenotypes(); // what the published runs measured about these individuals; absent, the page says so per fly
   const address = state.deployment?.addresses?.collection;
   if (!address) { state.flies = { missing: true, all: [] }; notify(); return; }
   const n = Number(decodeUint(await call(address, "totalSupply()")));
