@@ -59,6 +59,9 @@ jobs:
       # the fee rate is stated in three documents and charged in one place: they must be the same number
       - run: node test/fee_rate_units.mjs
 
+      # DESIGN §4b says multi-currency settlement is not built: it must stay true of the code, or say otherwise
+      - run: node test/settlement_assets.mjs
+
       # the genesis set is committed to once, at deployment: the published file is what the generator writes and every proof opens
       - run: node test/genesis_set.mjs
       # where each measured individual stands among the founders, and that the published files still match the runs

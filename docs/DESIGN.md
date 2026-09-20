@@ -70,6 +70,59 @@ producer. The claim manager here takes an `IBeacon`:
 | `RelayRegistry` bond | 1 BNB | operator identity; ≥ 2 relays per instance |
 | beacon `COMMIT/REVEAL_BLOCKS` | ≈ 2 / 2 minutes; committer deposit 0.1 BNB | RANDAO-style, deposit-bounded bias |
 
+## 4b. Settlement assets: one mechanism, several currencies
+
+**Proposed. Nothing below is built** — today every path in this system is native BNB and only native
+BNB, in both repositories (`FlyCollection.mint`: `require(msg.value == MINT_PRICE)`; `TaskMarket._post`:
+`require(msg.value == t.fee)`; refunds, executor payouts, royalties and `withdraw` are all
+`call{value:}` against a single balance).
+
+The design is that **BNB, AIGG and USDC are alternative settlement assets under one mechanism**.
+There is no AIGG-specific code path, no dedicated funding channel, and no automatic conversion
+anywhere: a currency is carried, not swapped.
+
+| | what it means | where it lands |
+|---|---|---|
+| **Adoption** | a collection declares which currencies it accepts and the price in each | `FlyCollection`: `MINT_PRICE` becomes a price per accepted asset; `mint` takes the asset it is paid in |
+| **Experiment budget** | accounted per currency, never converted | the treasury holds balances per asset; a budget in one currency cannot fund a task in another |
+| **Task offer** | states its currency, its amount and what it accepts as a result, and locks the budget before it is posted | `Task` gains the asset; the escrow holds that asset |
+| **Provider** | chooses which currencies and prices it will work for | already a free choice — sortition draws from those enrolled, and an executor that will not take the offer does not enrol for it |
+| **Settlement and shares** | paid in the currency the task named; a refund returns that same currency | `TaskMarket` payout and `royalties` / `withdrawRoyalty`, and `FlyCollection.owed`, become per-asset |
+
+### What it costs to build, stated honestly
+
+The currency belongs **in the `Task`**, and `taskId = keccak256(abi.encode(Task, nonce))`. So adding
+it changes the task id's derivation: a **breaking protocol change in `aigg-porw`**, not something this
+deployment can decide by itself, and one that moves every id, signature and fixture that depends on
+it. It is not a wrapper this repository can put in front of the market.
+
+It buys one thing worth having, though, and for free: because the asset is inside the id, it is
+inside what sortition drew and inside what an executor signed. **Nobody can be paid in a currency
+they did not agree to**, and no separate negotiation is needed to establish that — the same signature
+that binds the result binds the asset.
+
+The rest is ordinary ERC-20 work with one real asymmetry: native value arrives *with* the call and a
+token has to be pulled (`approve` + `transferFrom`), so a posting becomes two transactions or one
+permit; and a payout that reverts cannot be left to `call{value:}`'s failure path, so the per-asset
+`withdrawable` credit that already exists for the native case becomes the normal path rather than
+the fallback.
+
+### Why this is separate from what the AIGG treasury does
+
+The two are deliberately different kinds of decision:
+
+- **Multi-currency settlement is a protocol capability.** It is permissionless and says nothing about
+  who should pay for what. A collection that accepts USDC accepts it from anybody.
+- **Which NFTs the AIGG treasury subscribes to, and which research it funds, is governance.** It is a
+  policy exercised *through* that capability, with the treasury's own money, and it can change
+  without the protocol changing.
+
+The example that makes the separation concrete. The AIGG treasury subscribes to FlyBnB NFTs in AIGG;
+the experiments those individuals attract can then recruit compute in AIGG, because that is the
+currency the budget is held in. Meanwhile an outside user buys a task in USDC: that task pays its
+providers in USDC and pays the individual's owner a royalty in USDC. Neither transaction knows about
+the other, and neither needed a conversion.
+
 ## 5. Cost model (measured gas × assumed prices)
 
 Measured in aigg-porw (anvil, keccak scheme): tile fraud proof ≈ 1.11M gas; `submitClaim`
