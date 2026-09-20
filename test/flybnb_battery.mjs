@@ -33,4 +33,14 @@ check("a perturbed battery is the same batch with a silence set on every run", p
     f.execKind.toLowerCase() === hex(L.lifExecKind(f.wUnitQ16)).toLowerCase() && f.execKind.toLowerCase() !== hex(L.lifExecKind()).toLowerCase());
   check("and it is the brain the male battery's population names, at the battery's unit",
     f.modelId.toLowerCase() === M.population.base_model_id.toLowerCase() && f.wUnitQ16 === M.population.w_unit_q16 && f.neurons === M.neurons); }
+// the live run on BSC testnet: the network's digests against numpy's, for the payload that is registered
+{ const att = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/attestation.json", import.meta.url))), ref = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/registered-base.json", import.meta.url)));
+  const a = att.attestation, M = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-male-v1.json", import.meta.url)));
+  const V = await import("../contracts/lib/aigg-porw/web/porw-browser/verify.js"), Bt = await import("../contracts/lib/aigg-porw/web/porw-browser/batch.js");
+  const unhex = (x) => Uint8Array.from(x.slice(2).match(/../g).map((h) => parseInt(h, 16)));
+  const root = "0x" + Array.from(V.merkleRoot(a.rows.map((r, k) => Bt.runResultLeaf(k, unhex(r.execRoot)))), (x) => x.toString(16).padStart(2, "0")).join("");
+  check(`the live male battery settled ${a.rows.length} runs as one task on chain ${a.chainId}, and its rows hash to the root the chain paid for`,
+    a.rows.length === M.stimuli.length * M.seeds.length && a.complete === true && a.rows.every((r) => r.agree) && att.settled.matches === true && root === a.batchRoot && att.settled.onChain.every((r) => r === a.batchRoot));
+  check(`and all ${att.offline.expected} counts digests equal what numpy computes for the registered payload (unit ${ref.w_unit_q16})`, att.offline.ok === true && att.offline.matched === att.offline.expected && ref.model_id.toLowerCase() === M.population.base_model_id.toLowerCase());
+  check("the reference is the payload as registered, not the dataset's thresholded base", ref.records > M.population.min_syn * 0 && ref.records === 15283237 && /no min_syn threshold/.test(ref.kind)); }
 console.log(fails ? `${fails} FAILURES` : "flybnb battery: all checks passed"); process.exit(fails ? 1 : 0);
