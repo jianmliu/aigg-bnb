@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "aigg-porw/interfaces/PorwMesh.sol";
 import "./LineageRegistry.sol";
+import "./TokenTransfer.sol";
 
 /// @title FlyCollection — a fixed collection of fly-brain individuals
 /// @notice An individual is a FLYDELTAv1 edit of one of two released brains (a female and a male base). The token
@@ -338,6 +339,26 @@ contract FlyCollection {
     ///         serve or count a brain, and it is answered on-chain so that they cannot disagree.
     function listed(bytes32 mepId) external view returns (bool) {
         return mepId != bytes32(0) && (mepId == BASE_MEP_FEMALE || mepId == BASE_MEP_MALE || tokenOfMep[mepId] != 0);
+    }
+
+    // Token royalties are credited at task settlement, before NFT ownership can change.
+    mapping(address=>mapping(address=>uint256)) public tokenOwed;
+    mapping(address=>uint256) public tokenLiability;
+    event TokenRoyaltyCredited(bytes32 indexed mepId,address indexed token,address indexed holder,uint256 amount);
+    function supportsTokenRoyalties() external pure returns(bool){return true;}
+    function onTokenRoyalty(bytes32 mepId,address token,uint256 amount) external {
+        require(msg.sender==address(MARKET)&&token!=address(0),"market/token");
+        uint256 id=tokenOfMep[mepId];address holder=ownerOf(id);
+        require(amount>0&&IERC20Budget(token).balanceOf(address(this))>=tokenLiability[token]+amount,"unfunded royalty");
+        tokenLiability[token]+=amount;uint256 base=amount*BASE_SHARE_BPS/10000;
+        if(base>0)tokenOwed[token][BASE_VENDOR]+=base;
+        tokenOwed[token][holder]+=amount-base;
+        emit TokenRoyaltyCredited(mepId,token,holder,amount-base);
+    }
+    function withdrawToken(address token) external returns(uint256 amount){
+        amount=tokenOwed[token][msg.sender];require(amount>0,"nothing owed");
+        tokenOwed[token][msg.sender]=0;tokenLiability[token]-=amount;
+        TokenTransfer.send(token,msg.sender,amount);
     }
 
     // ---- the royalty: set aside by TaskMarket under the MEP's terms, forwarded here to whoever owns the fly ----

@@ -13,7 +13,11 @@
     "frontend": "vite --config frontend/vite.config.mjs",
     "build:frontend": "vite build --config frontend/vite.config.mjs",
     "preview:frontend": "node frontend/serve.mjs",
-    "deploy:frontend": "npm run build:frontend && wrangler pages deploy frontend/dist --project-name=aigg-fly --branch=main"
+    "deploy:frontend": "npm run build:frontend && wrangler pages deploy frontend/dist --project-name=aigg-fly --branch=main",
+    "battery:policy": "node battery/policy.mjs",
+    "battery:worker": "node battery/worker.mjs",
+    "test:battery": "forge test --root contracts --match-contract 'BatteryBudgetTest|BatteryJobTest' && node --test test/battery_queue.mjs && node test/e2e_battery_queue.mjs",
+    "test:battery:assets": "forge test --root contracts --match-contract 'MultiAsset.*Test|TokenBatteryTest|FlyTokenRoyaltyTest|TokenRoyaltyIntegrationTest' && node --test test/provider_stats.mjs test/wallet_chain.mjs && TEST_TOKEN_BATTERY=1 node test/e2e_battery_queue.mjs"
   },
   "dependencies": {
     "@bnb-chain/greenfield-js-sdk": "^2.2.2",

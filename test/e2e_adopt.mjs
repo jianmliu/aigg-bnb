@@ -1,41 +1,34 @@
-// Adoption through the page, against the REAL genesis set (flybnb/genesis/genesis-v1.json: the pilot's hundred
-// founders). The page ships the set, offers it only because its root is the collection's GENESIS_ROOT, and adopts with
-// the published proof. One transaction at one price: the adopter comes out owning the individual AND bonded for the
-// base brain (InstanceRegistry.bondFor), and the rest goes to the treasury. The royalty line says what the collection's
-// terms are. (Royalties accruing and being settled is FlyCollectionRoyalty.t.sol's; it needs settled tasks.)
+// Treasury inventory adoption through the real page and contracts on Anvil.
 import fs from "node:fs"; import path from "node:path";
 import { chromium } from "playwright"; import { parseEther } from "viem";
 import * as H from "./harness.mjs"; import { startFrontend } from "../frontend/serve.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
-const waitFor = async (pred, ms = 30000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await pred()) return true; await H.sleep(200); } return false; };
 const G = JSON.parse(fs.readFileSync(path.join(H.root, "flybnb/genesis/genesis-v1.json"), "utf8"));
-
 H.forgeBuild();
 const anvil = await H.startAnvil(8567); let browser; const stop = [];
 try {
-  const dep = await H.deployMesh(anvil.rpc); const base = await H.registerSyntheticMep(dep, H.KEYS[0], { name: "base-female" });
-  const W = H.clientsFor(dep, H.KEYS[1]); const PRICE = parseEther("0.1"), BOND = parseEther("0.05"); // harness UNIT is 0.05: one vote
-  const C = await H.deployCollection(dep, 0n, H.KEYS[0], { genesis: G, baseMepFemale: base.mepId, royaltyBps: 1000, mintPrice: PRICE, mintBond: BOND, baseVendor: H.FLY_TREASURY, baseShareBps: 1000, saleRoyaltyBps: 500 }); // the mainnet revision's numbers
-  const R = await H.startRelayer(dep, H.KEYS[3], [base.mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
+  const dep = await H.deployMesh(anvil.rpc);
+  const base = await H.registerSyntheticMep(dep, H.KEYS[0], { name: "inventory-base" });
+  const T = H.clientsFor(dep, H.KEYS[0]), W = H.clientsFor(dep, H.KEYS[1]);
+  const PRICE = parseEther("0.123456789");
+  const C = await H.deployCollection(dep, 0n, H.KEYS[0], { genesis: G });
+  for (const g of G.individuals.slice(0, 2)) await H.sendTo(T, C, "FlyCollection", "mint", [g.index, g.sex, g.deltaHash, g.proof], H.FLY_PRICE);
+  const S = await H.create(T, "TreasuryInventorySale", [C, T.account.address]);
+  await H.sendTo(T, C, "FlyCollection", "approve", [S, 1n]);
+  const expiry = (await T.pub.getBlock()).timestamp + 3600n;
+  await H.sendTo(T, S, "TreasuryInventorySale", "list", [1n, PRICE, expiry]);
+  const R = await H.startRelayer(dep, H.KEYS[3], [base.mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_INVENTORY_SALE: S, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
   const fe = await startFrontend(0); stop.push(() => fe.server.close()); const prompts = [];
   const launch = { headless: true }; if (process.env.PW_CHROMIUM) launch.executablePath = process.env.PW_CHROMIUM;
   browser = await chromium.launch(launch);
-
-  // ---- a visitor with NO wallet at all: looking needs none. Reads go to the RPC the deployment names ----
-  { const v = await browser.newPage({ viewport: { width: 1280, height: 900 } }); v.on("console", (m) => { if (m.type() === "error") console.error("visitor:", m.text()); });
-    await v.goto(fe.url + "/"); await v.waitForFunction(() => window.__ready === true);
-    check("the visitor's browser has no window.ethereum", await v.evaluate(() => window.ethereum === undefined));
-    await v.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase); await v.click("#btnDep");
-    check("the bond per vote is this deployment's UNIT, read from the chain (0.05 here), not a number in the page", await waitFor(async () => /a bond of 0\.05 BNB per vote/.test(await v.locator("#unitLine").innerText())));
-    check("and the owner's card says a collection is deployed here", /adoption open/.test(await v.locator("#collectionBadge").innerText()));
-    await v.click("#navFlies"); await v.click("#btnFlies");
-    check("the colony loads without a wallet", await waitFor(() => v.evaluate(() => !!window.app.state.flies && !window.app.state.flies.missing && window.app.state.flies.all.length === 0)));
-    check("with the price", /adoption\s*0\.1 BNB/.test(await v.locator("#adoptFee").innerText()));
-    await v.click("#btnGenesis");
-    check("and the hundred founders, to look at", await waitFor(() => v.evaluate(() => window.app.state.flies.genesis?.matches === true && window.app.state.flies.genesis.open.length === 100)));
-    check("adopting is the step that needs a wallet, and the page says so rather than throwing", await v.isDisabled("#btnAdopt-0") || /wallet/i.test(await v.locator("#adoptable").innerText()));
-    await v.close(); }
-
+  const visitor = await browser.newPage();
+  await visitor.goto(fe.url); await visitor.waitForFunction(() => window.__ready === true);
+  await visitor.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
+  await visitor.click("#btnDep"); await visitor.waitForFunction(() => window.app.state.deployment !== null);
+  await visitor.click("#navFlies"); await visitor.click("#btnFlies"); await visitor.waitForFunction(() => window.app.state.flies?.all.length === 2);
+  await visitor.click("#btnGenesis"); await visitor.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1);
+  check("visitors can inspect listed inventory without a wallet but cannot buy", await visitor.isDisabled("#btnAdopt-1"));
+  await visitor.close();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }); page.on("console", (m) => { if (m.type() === "error") console.error("page:", m.text()); });
   await page.exposeFunction("__walletRequest", async (method, params) => {
     switch (method) {
@@ -43,6 +36,7 @@ try {
       case "eth_chainId": return "0x" + dep.chainId.toString(16);
       case "eth_call": return W.pub.call({ to: params[0].to, data: params[0].data }).then((r) => r.data || "0x");
       case "eth_getBalance": return "0x" + (await W.pub.getBalance({ address: params[0] })).toString(16);
+      case "eth_getBlockByNumber": return W.pub.request({method, params});
       case "eth_blockNumber": return "0x" + (await W.pub.getBlockNumber()).toString(16);
       case "eth_getTransactionReceipt": { try { const r = await W.pub.getTransactionReceipt({ hash: params[0] }); return { status: r.status === "success" ? "0x1" : "0x0" }; } catch { return null; } }
       case "eth_sendTransaction": { const t = params[0]; prompts.push("tx"); return W.wallet.sendTransaction({ to: t.to, data: t.data, value: t.value ? BigInt(t.value) : 0n }); }
@@ -56,23 +50,26 @@ try {
   await page.click("#btnConnect"); await page.waitForFunction(() => window.app.state.wallet !== null);
   await page.click("#navFlies"); await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies && !window.app.state.flies.missing);
 
-  const fee = await page.locator("#adoptFee").innerText();
-  check("the price is shown as what it buys: 0.1 = 0.05 your bond + 0.05 treasury", /adoption\s*0\.1 BNB/.test(fee) && /your bond\s*0\.05 BNB/.test(fee) && /treasury\s*0\.05 BNB/.test(fee));
-  { const owed = await page.locator("#owed").innerText();
-    check(`and the royalty as what reaches the owner: 9% of every fee -- a 10% royalty less the base brain's tenth of it`, /^9% of every fee/.test(owed.trim()) && /a 10% royalty, of which 10% is the base brain/.test(owed) && await page.isDisabled("#btnWithdraw")); }
-  await page.click("#btnGenesis");
-  check("the page's genesis set is this collection's, and all hundred founders are open", await waitFor(() => page.evaluate(() => window.app.state.flies.genesis?.matches === true && window.app.state.flies.genesis.open.length === 100)));
-  check("twelve are shown, each adoptable", (await page.locator("#adoptable .brain.listing").count()) === 12 && await page.isEnabled("#btnAdopt-0"));
-  if (process.env.FLYBNB_SHOTS) await page.screenshot({ path: process.env.FLYBNB_SHOTS + "/adopt.png", fullPage: true });
 
-  const treasury = await W.pub.getBalance({ address: H.FLY_TREASURY });
-  await page.click("#btnAdopt-0"); await page.waitForFunction(() => window.app.state.flies.all.length === 1, null, { timeout: 60000 });
-  const ind = await H.readFrom(W, C, "FlyCollection", "individuals", [1n]);
-  check("adopted with the published proof: the token is the wallet's and carries founder #0's delta", (await H.readFrom(W, C, "FlyCollection", "ownerOf", [1n])).toLowerCase() === W.account.address.toLowerCase() && ind[1] === G.individuals[0].deltaHash && ind[0] === G.baseModelId);
-  check("one transaction, and the adopter is now a bonded host of the base brain", prompts.length === 1 && (await W.instances.read.bonded([W.account.address])) === BOND && (await W.instances.read.isBondedFor([W.account.address, base.mepId])));
-  check("the rest went to the treasury", (await W.pub.getBalance({ address: H.FLY_TREASURY })) - treasury === PRICE - BOND);
-  check("the colony shows it as yours, and 99 founders are left", await page.evaluate(() => window.app.state.flies.all[0].mine === true) && await waitFor(() => page.evaluate(() => window.app.state.flies.genesis.open.length === 99)) && (await page.locator("#btnAdopt-0").count()) === 0);
-  const again = await page.evaluate(async () => { try { await window.appActions.adopt(0); return null; } catch (e) { return e.message; } });
-  check(`a founder is adopted once (${again})`, /not open for adoption/.test(again || ""));
+  await page.click("#btnGenesis"); await page.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1);
+  check("only listed treasury inventory is displayed", await page.locator("#adoptable .brain.listing").count() === 1);
+  check("the exact quoted price is displayed", (await page.locator("#btnAdopt-1").innerText()).includes("0.123456789 BNB"));
+  check("purchase excludes host collateral and liquidity", (await page.locator("#adoptFee").innerText()).includes("No Host bond"));
+  // Bind the displayed revision: cancelling and relisting at the same price invalidates the old quote.
+  await H.sendTo(T, S, "TreasuryInventorySale", "cancel", [1n]);
+  await H.sendTo(T, S, "TreasuryInventorySale", "list", [1n, PRICE, expiry]);
+  const stale = await page.evaluate(async () => { try { await window.appActions.adopt(1); return false; } catch { return true; } });
+  check("old quote cannot execute after relisting", stale && (await H.readFrom(T, C, "FlyCollection", "ownerOf", [1n])).toLowerCase() === T.account.address.toLowerCase());
+  await page.click("#btnGenesis"); await page.waitForFunction(() => window.app.state.flies?.sale?.open[0]?.revision === 3n);
+  const before = await T.pub.getBalance({address:T.account.address});
+  await page.click("#btnAdopt-1"); await page.waitForFunction(() => window.app.state.flies?.all[0]?.mine === true, null, {timeout:60000});
+  await page.waitForFunction(() => window.app.state.flies?.sale?.open.length === 0);
+  check("buyer owns the NFT and supply is unchanged", (await H.readFrom(W,C,"FlyCollection","ownerOf",[1n])).toLowerCase() === W.account.address.toLowerCase() && await H.readFrom(W,C,"FlyCollection","totalSupply") === 2n);
+  check("all BNB reaches seller treasury", (await T.pub.getBalance({address:T.account.address})) - before === PRICE);
+  check("adoption does not create a host bond", await W.instances.read.bonded([W.account.address]) === 0n);
+  const again = await page.evaluate(async () => { try { await window.appActions.adopt(1); return false; } catch { return true; } });
+  check("sold NFT cannot be adopted again", again && await page.locator("#btnAdopt-1").count() === 0);
+  await page.evaluate(async () => { delete window.app.state.deployment.addresses.inventorySale; await window.appActions.loadGenesis(); });
+  check("missing sale configuration fails closed", (await page.locator("body").innerText()).includes("Treasury adoption is not configured"));
 } catch (e) { console.error(e); fails++; } finally { if (browser) await browser.close(); for (const f of stop) try { f(); } catch {} anvil.stop(); }
-console.log(fails ? `${fails} FAILURES` : "adopt: all checks passed"); process.exit(fails ? 1 : 0);
+console.log(fails ? `${fails} FAILURES` : "inventory adoption: all checks passed"); process.exit(fails ? 1 : 0);

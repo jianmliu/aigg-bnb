@@ -16,12 +16,17 @@ const ZERO32 = "0x" + "0".repeat(64);
 H.forgeBuild();
 const anvil = await H.startAnvil(8562); let browser; const stop = [];
 try {
-  const dep = await H.deployMesh(anvil.rpc); const { mepId } = await H.registerSyntheticMep(dep, H.KEYS[0]);
+  const dep = await H.deployMesh(anvil.rpc,H.KEYS[0],"MultiAssetTaskMarket"); const { mepId } = await H.registerSyntheticMep(dep, H.KEYS[0]);
   const W = H.clientsFor(dep, H.KEYS[1]); // the wallet behind the page
   const C = await H.deployCollection(dep, parseEther("0.002")); await H.adoptBoth(W, C);
+  const factory=await H.create(H.clientsFor(dep,H.KEYS[0]),"BatteryBudget",[C,dep.addresses.market,H.clientsFor(dep,H.KEYS[4]).account.address,{versionHash:"0x"+"11".repeat(32),runsRoot:"0x"+"22".repeat(32),runs:39,steps:5000,stride:500,redundancy:2,attempts:2,fee:parseEther("0.01"),lifetime:86400}]);
+  const admin=H.clientsFor(dep,H.KEYS[0]);const token=await H.create(admin,"TestToken");const router=await H.create(admin,"TestSwapRouter",[token]);
+  await H.sendTo(admin,dep.addresses.market,"MultiAssetTaskMarket","setTokenAllowed",[token,true]);
+  await H.sendTo(admin,token,"TestToken","mint",[router,parseEther("1")]);
+  const tokenFactory=await H.create(admin,"TokenBatteryBudget",[C,dep.addresses.market,H.clientsFor(dep,H.KEYS[4]).account.address,{versionHash:"0x"+"11".repeat(32),runsRoot:"0x"+"22".repeat(32),runs:39,steps:5000,stride:500,redundancy:2,attempts:2,fee:parseEther("0.01"),lifetime:86400},token,router]);
   const onChain = async (id) => { const x = await H.readFrom(W, C, "FlyCollection", "individuals", [BigInt(id)]); return { sex: Number(x[4]), seed: x[8], seedBlock: Number(x[9]) }; };
   // names the collection to the page, hatches nothing: the first egg is the page's to hatch
-  const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
+  const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_BATTERY_BUDGET: factory, PORW_TOKEN_BATTERY_BUDGET: tokenFactory, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
   const fe = await startFrontend(0); stop.push(() => fe.server.close());
 
   const prompts = [];
@@ -34,7 +39,7 @@ try {
       case "eth_call": return W.pub.call({ to: params[0].to, data: params[0].data }).then((r) => r.data || "0x");
       case "eth_getBalance": return "0x" + (await W.pub.getBalance({ address: params[0] })).toString(16);
       case "eth_blockNumber": return "0x" + (await W.pub.getBlockNumber()).toString(16);
-      case "eth_getBlockByNumber": { try { const b = await W.pub.getBlock({ blockNumber: BigInt(params[0]) }); return { number: params[0], hash: b.hash }; } catch { return null; } }
+      case "eth_getBlockByNumber": return W.pub.request({method,params});
       case "eth_getTransactionReceipt": { try { const r = await W.pub.getTransactionReceipt({ hash: params[0] }); return { status: r.status === "success" ? "0x1" : "0x0" }; } catch { return null; } }
       case "eth_sendTransaction": { const t = params[0]; prompts.push("tx"); return W.wallet.sendTransaction({ to: t.to, data: t.data, value: t.value ? BigInt(t.value) : 0n }); }
       default: throw new Error("unsupported " + method);
@@ -53,7 +58,7 @@ try {
   check("the colony shows both adopted flies as this wallet's, one of each sex", await page.evaluate(() => { const a = window.app.state.flies.all; return a.every((f) => f.mine) && a[0].sex === 0 && a[1].sex === 1; }));
   check("the pairing starts empty and says what it needs", (await page.textContent("#breedProblem")) === "choose one female and one male" && await page.isDisabled("#btnBreed"));
   await page.click("#btnGenesis");
-  check("this collection's genesis set is not the one the page ships, so nothing is offered for adoption from it", await waitFor(() => page.locator("#genesisMismatch").isVisible()) && (await page.locator("#adoptable").count()) === 0);
+  check("without a configured treasury sale no adoption is offered", await waitFor(() => page.evaluate(() => !!window.app.state.flies?.sale?.unavailable)) && (await page.locator("#adoptable .listing").count()) === 0);
   const pair = async () => { await page.click("#fly-1"); await page.click("#fly-2"); };
   await pair();
   check("clicking a fly puts it in the slot for its sex", /#1 ♀/.test(await page.textContent("#slotDam")) && /#2 ♂/.test(await page.textContent("#slotSire")) && (await page.textContent("#breedProblem")) === "ready");
@@ -64,8 +69,11 @@ try {
   // ---- an egg the page hatches itself ----
   const eggOf = (id) => page.evaluate((i) => { const f = window.app.state.flies.all.find((x) => x.id === i); return f ? { seed: f.seed, sex: f.sex, seedBlock: f.seedBlock, preview: f.preview } : null; }, id);
   await page.click("#btnBreed"); await page.waitForFunction(() => window.app.state.flies.all.length === 3, null, { timeout: 60000 });
+  const escrow=await H.readFrom(W,factory,"BatteryBudget","jobOf",[3n]);
+  check("breed locks its separate battery budget",await W.pub.getBalance({address:escrow})===parseEther("0.02"));
   let egg = await eggOf(3);
   check("breeding produced an egg: no seed, no sex, a seed block", egg.seed === ZERO32 && egg.sex === 2 && egg.seedBlock === (await onChain(3)).seedBlock && egg.preview === null);
+  await page.waitForFunction(()=>document.getElementById("slotDam").textContent.includes("—"));
   check("the slots empty again, and an egg cannot be picked for the pairing", /—/.test(await page.textContent("#slotDam")) && await page.evaluate(() => document.getElementById("fly-3").getAttribute("role") === null));
   check("the Hatch button waits for the seed block", await page.isDisabled("#btnHatch-3"));
   await anvil.mine(2);
@@ -76,7 +84,7 @@ try {
   await page.click("#btnHatch-3"); await page.waitForFunction(() => window.app.state.flies.all.find((x) => x.id === 3).seed !== "0x" + "0".repeat(64), null, { timeout: 60000 });
   const c3 = await onChain(3);
   check("hatched from the page: the chain agrees with the preview, seed and sex", c3.seed === egg.preview.seed && c3.sex === egg.preview.sex);
-  check("the hatched child is unborn, and still cannot breed", /unborn/.test(await page.textContent("#fly-3")) && await page.evaluate(() => document.getElementById("fly-3").getAttribute("role") === null));
+  check("the hatched child is unborn, and still cannot breed", await waitFor(async () => /unborn/.test(await page.textContent("#fly-3")) && await page.evaluate(() => document.getElementById("fly-3").getAttribute("role") === null)));
 
   // ---- an egg the keeper hatches: the page sends nothing and notices ----
   const K = await H.startRelayer(dep, H.KEYS[2], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C } }); stop.push(() => K.stop());
@@ -99,7 +107,20 @@ try {
   check("which is again the contract's arithmetic", egg.preview.seed === H.flySeed(5, h5));
   await page.click("#btnHatch-5"); await page.waitForFunction(() => window.app.state.flies.all.find((x) => x.id === 5).seed !== "0x" + "0".repeat(64), null, { timeout: 60000 });
   check("and hatches to it", (await onChain(5)).seed === egg.preview.seed);
-  check(`the wallet was prompted for exactly: 3 breeds, 2 hatches, 1 re-arm (${prompts.length})`, prompts.length === 6);
+  check(`the wallet was prompted for exactly: 3 breeds, 2 hatches, 1 re-arm (${prompts.length})`, prompts.length === 8);
+  await page.selectOption('#batteryRoute','token');await page.waitForFunction(()=>window.app.state.flies.battery?.tokenMode===true);
+  await pair();check('token route requires a reviewed BNB quote',await page.isDisabled('#btnBreed'));
+  await page.click('#btnBatteryQuote');await page.waitForFunction(()=>!!window.app.state.flies.battery?.quote);
+  await page.click('#btnBreed');await page.waitForFunction(()=>window.app.state.flies.all.length===6,null,{timeout:60000});
+  const tokenJob=await H.readFrom(W,tokenFactory,'TokenBatteryBudget','jobOf',[6n]);
+  check('BNB checkout creates token-funded child',await H.readFrom(W,token,'TestToken','balanceOf',[tokenJob])===parseEther('0.02'));
+  check('token refund denomination is visible',/AIGG/.test(await page.textContent('#batteryQuote')));
+  await page.selectOption('#batteryRoute','native');await page.waitForFunction(()=>window.app.state.flies.battery?.tokenMode===false);
+  check('native route and its existing jobs remain available',await page.evaluate(()=>!!window.app.state.flies.battery.jobs[3]));
+  await page.click('#navHost');await page.getByRole('button',{name:'Accept AIGG tasks',exact:true}).click();
+  check('host explicitly opts in to AIGG',await waitFor(async()=>await H.readFrom(W,dep.addresses.market,'MultiAssetTaskMarket','acceptedToken',[W.account.address,token])));
+  await page.getByRole('button',{name:'Stop accepting new AIGG tasks',exact:true}).click();
+  check('host can stop new AIGG assignments',await waitFor(async()=>!await H.readFrom(W,dep.addresses.market,'MultiAssetTaskMarket','acceptedToken',[W.account.address,token])));
   console.log("page log tail:\n" + (await page.evaluate(() => document.getElementById("log").textContent)).split("\n").slice(-6).join("\n"));
 } catch (e) { console.error(e); fails++; } finally { if (browser) await browser.close(); for (const f of stop) try { f(); } catch {} anvil.stop(); }
 console.log(fails ? `${fails} FAILURES` : "flies: all checks passed"); process.exit(fails ? 1 : 0);

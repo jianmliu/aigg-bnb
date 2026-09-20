@@ -5,6 +5,7 @@
 //
 // No trait badges anywhere: what a fly is gets measured by experiments against it, not declared at birth.
 import { useState } from "react";
+import { formatEther, formatUnits } from "viem";
 import * as C from "../core/controller.js";
 import * as F from "../core/flies.js";
 import { Panel, Button } from "./primitives.jsx";
@@ -13,7 +14,7 @@ import { SOLO } from "./mode.js";
 
 // what reaches the owner, in basis points of the FEE: the royalty, less the base's part of it. Shown as it is, never rounded up
 const ownerBps = (f) => f.royaltyBps * (10000 - (f.baseShareBps || 0)) / 10000; const pct = (bps) => String(Math.round(bps) / 100);
-const bnb = (wei) => { const s = (Number(wei) / 1e18).toFixed(5).replace(/0+$/, "").replace(/\.$/, ""); return s === "" ? "0" : s; };
+const bnb = (wei) => formatEther(wei);
 const STAGE = {
   egg: { tone: "idle", text: "egg" },
   unborn: { tone: "wait", text: "unborn · needs gestation" },
@@ -64,7 +65,7 @@ function FlyCard({ fly, byId, slot, onPick }) {
 
 export default function FliesView() {
   const s = C.state; const flies = s.flies;
-  const [dam, setDam] = useState(null); const [sire, setSire] = useState(null);
+  const [breeding, setBreeding] = useState(false); const [dam, setDam] = useState(null); const [sire, setSire] = useState(null);
 
   if (!s.deployment) return <div className="main single"><Panel title="Flies"><p className="hint">{SOLO ? "Connecting to the network…" : <>Put a relayer’s address in the <b>Mesh</b> capsule above first: it names the collection this page reads.</>}</p></Panel></div>;
   if (!flies) return <div className="main single"><Panel title="Flies"><div className="row tight"><Button id="btnFlies" tone="chain" onClick={C.wrap(F.loadFlies)}>Load the colony</Button></div></Panel></div>;
@@ -73,7 +74,7 @@ export default function FliesView() {
   const byId = new Map(flies.all.map((f) => [f.id, f]));
   const mine = flies.all.filter((f) => f.mine); const others = flies.all.length - mine.length;
   const pick = (f) => { if (f.sex === F.FEMALE) setDam(dam === f.id ? null : f.id); else setSire(sire === f.id ? null : f.id); };
-  const D = byId.get(dam), S = byId.get(sire); const problem = F.checkPair(D, S);
+  const D = byId.get(dam), S = byId.get(sire); const problem = F.checkPair(D, S) || flies.battery?.error || (flies.battery?.tokenMode&&!flies.battery.quote?"get a BNB quote first":null);
 
   return (
     <div className="main single">
@@ -101,30 +102,26 @@ export default function FliesView() {
         <p className="hint">Click a fly of yours to put it in the pairing below. An egg or an unborn child cannot breed: its delta is not pinned yet.</p>
       </Panel>
 
-      <Panel title="Adopt" note={flies.genesis?.matches ? `${flies.genesis.open.length} of ${flies.genesis.size} founders open` : "the genesis set"}>
-        <p className="lede">The collection is a hundred founders, fixed before anyone adopted one: each is a real variant of the FlyWire brain, and each has already been run through the atlas’s battery. Adopting one makes it yours — its lineage, and {flies.royaltyBps > 0 ? `${pct(ownerBps(flies))}% of every fee paid for an experiment on it once you register its brain` : "whatever is measured about it"}.</p>
-        <dl className="fees" id="adoptFee">
-          <dt>adoption</dt><dd className="amt">{bnb(flies.mintPrice)} BNB</dd><dd className="why">one price, one transaction</dd>
-          <dt className="part">your bond</dt><dd className="amt">{bnb(flies.mintBond)} BNB</dd><dd className="why">{flies.mintBond > 0n ? "stays yours: it makes you a host of the base brain, slashable only if a result of yours loses a dispute" : "this collection does not bond its adopters"}</dd>
-          <dt className="part">treasury</dt><dd className="amt">{bnb(flies.mintPrice - flies.mintBond)} BNB</dd><dd className="why">the relayer’s sponsorship budget</dd>
-        </dl>
-        {!flies.genesis && <div className="row tight"><Button id="btnGenesis" tone="chain" onClick={C.wrap(F.loadGenesis)}>See who can be adopted</Button></div>}
-        {flies.genesis && !flies.genesis.matches && <p className="hint" id="genesisMismatch">The genesis set this page ships is not this collection’s (its root is not the collection’s <code>GENESIS_ROOT</code>), so nothing is offered from it.</p>}
-        {flies.genesis?.matches && (
-          <div className="listings adoptable" id="adoptable">
-            {flies.genesis.open.slice(0, 12).map((g, i) => (
-              <div className="brain listing" key={g.index} style={{ "--i": i }}>
-                <div className="photo"><Portrait seed={g.deltaHash} label={`portrait of founder #${g.index}`} /></div>
-                <div className="about">
-                  <div className="name"><span>founder #{g.index} ♀</span><span className="exec">gen 0</span></div>
-                  <div className="counts">delta {g.deltaHash.slice(0, 12)}…</div>
-                  <Button id={`btnAdopt-${g.index}`} tone="money" disabled={!s.wallet} onClick={C.wrap(() => F.adopt(g.index))}>Adopt · {bnb(flies.mintPrice)} BNB</Button>
-                </div>
+      <Panel title="Adopt" note="treasury inventory · existing NFTs">
+        <p className="lede">Adopt a fly already held by the AIGG treasury. Your BNB payment and the NFT transfer complete together. You receive the individual and its future holder rights; earnings accrued before transfer remain with the seller.</p>
+        <p className="hint" id="adoptFee">The full listed price goes to the selling treasury. No Host bond, additional marketplace royalty, or liquidity deposit is included. Host participation requires a separate bond. Treasury liquidity management happens separately.</p>
+        <Button id="btnGenesis" tone="chain" onClick={C.wrap(F.loadGenesis)}>Refresh treasury inventory</Button>
+        {flies.sale?.unavailable && <p className="hint" role="status">{flies.sale.unavailable}</p>}
+        {flies.sale?.treasury && <p className="hint">Seller / BNB recipient: <code>{flies.sale.treasury}</code></p>}
+        {flies.sale && !flies.sale.unavailable && !flies.sale.open.length && <p className="hint">No treasury NFTs are currently available for adoption.</p>}
+        <div className="listings adoptable" id="adoptable">
+          {flies.sale?.open.map((g, i) => (
+            <div className="brain listing" key={g.id} style={{ "--i": i }}>
+              <div className="photo"><Portrait seed={g.deltaHash} label={`portrait of fly #${g.id}`} /></div>
+              <div className="about">
+                <div className="name"><span>fly #{g.id} {F.sexMark(g.sex)}</span><span className="exec">gen {g.generation}</span></div>
+                <div className="counts">Listing expires {new Date(Number(g.expiresAt) * 1000).toLocaleString()}</div>
+                <Button id={`btnAdopt-${g.id}`} tone="money" disabled={!s.wallet || !s.chainOk || g.pending || s.wallet?.toLowerCase() === flies.sale.treasury.toLowerCase()} onClick={C.wrap(() => F.adopt(g.id))}>{g.pending ? "Adoption pending…" : `Adopt · ${bnb(g.price)} BNB`}</Button>
               </div>
-            ))}
-          </div>
-        )}
-        {flies.genesis?.matches && flies.genesis.open.length > 12 && <p className="hint">Showing 12 of the {flies.genesis.open.length} still open. Every founder is female, as the brains are: breeding needs one of each sex and waits for the male base.</p>}
+            </div>
+          ))}
+        </div>
+        {flies.truncated && <p className="hint">Inventory checks cover the first 500 collection tokens. Additional inventory requires an indexer.</p>}
       </Panel>
 
       <Panel title="Breed" note="a recipe, not yet a brain">
@@ -138,16 +135,33 @@ export default function FliesView() {
              : "the child will vary the dam's base — one base, never a blend of two"}
         </div>
         <dl className="fees" id="breedFee">
-          <dt>breed fee</dt><dd className="amt">{bnb(flies.breedFee)} BNB</dd><dd className="why">what the button sends</dd>
+          <dt>breed fee</dt><dd className="amt">{bnb(flies.breedFee)} BNB</dd><dd className="why">collection fee, separate from the locked battery budget</dd>
           <dt className="part">hatch bounty</dt><dd className="amt">{bnb(flies.bounty)} BNB</dd><dd className="why">held by the collection, paid to whoever hatches the child</dd>
           <dt className="part">treasury</dt><dd className="amt">{bnb(flies.breedFee - flies.bounty)} BNB</dd><dd className="why">the relayer’s sponsorship budget</dd>
         </dl>
+        {s.deployment.addresses.tokenBatteryBudget && <label>Host settlement <select id="batteryRoute" value={s.batteryRoute||'native'} disabled={breeding} onChange={e=>C.wrap(()=>F.selectBatteryRoute(e.target.value))()}><option value="native">BNB tasks</option><option value="token">AIGG tasks · pay BNB</option></select></label>}
+        {flies.battery?.address && (flies.battery.tokenMode ? <div className="hint" id="batteryQuote">
+          Battery budget: {formatUnits(flies.battery.budget,flies.battery.decimals)} AIGG ({flies.battery.paymentToken}). Unused execution reserves are refunded in AIGG.
+          <Button id="btnBatteryQuote" disabled={breeding} onClick={C.wrap(F.quoteBattery)}>Get BNB quote</Button>
+          {flies.battery.quote && <p>Maximum total: {bnb(flies.breedFee+flies.battery.quote.maxInput)} BNB plus gas · 1% swap slippage limit · quote valid for 10 minutes. Excess BNB is returned.</p>}
+        </div> : <p className="hint" id="batteryQuote">Battery budget: {bnb(flies.battery.budget)} BNB locked in a dedicated job. Total: {bnb(flies.breedFee + flies.battery.budget)} BNB plus wallet transaction gas. Parent approvals may require separate transactions.</p>)}
         <div className="row tight center">
-          <Button id="btnBreed" tone="money" disabled={!s.wallet || !!problem}
-                  onClick={C.wrap(async () => { await F.breed(dam, sire); setDam(null); setSire(null); })}>Breed</Button>
+          <Button id="btnBreed" tone="money" disabled={!s.wallet || !!problem || breeding}
+                  onClick={C.wrap(async () => { setBreeding(true); try { await F.breed(dam, sire); setDam(null); setSire(null); } finally { setBreeding(false); } })}>Breed + fund battery</Button>
           <span className="kv empty" id="breedProblem">{!s.wallet ? "connect your wallet (top right)" : problem || "ready"}</span>
         </div>
         <p className="hint">This creates the child’s lineage entry; it does not yet create its brain. The child’s seed — and its sex — is the hash of the block after this transaction, so nobody, including you, knows it when you press the button. The page shows it a block later; the chain records it when someone calls <code>hatch</code> (the relayer’s keeper does, for the bounty). After that the brain still has to be computed from the parents and the seed, and registered.</p>
+      </Panel>
+      <Panel title="Battery queue" note="funded experiments · rarity waits for measured results">
+        <Button onClick={C.wrap(F.loadBattery)}>Refresh battery status</Button>
+        {flies.battery?.error && <p className="hint">{flies.battery.error}</p>}
+        {flies.all.map(f => {const j=flies.battery?.jobs?.[f.id];return <div key={f.id} className="row tight">
+          <span>Fly #{f.id}: {j?.status || "not funded"}</span>
+          {!j && f.mine && flies.battery?.address && !flies.battery.tokenMode && <Button onClick={C.wrap(()=>F.fundBattery(f.id))}>Fund battery · {bnb(flies.battery.budget)} BNB</Button>}
+          {j?.artifactUrl && <a href={j.artifactUrl} target="_blank" rel="noreferrer">Experiment results</a>}
+          {j?.refund && j.payer.toLowerCase()===s.wallet?.toLowerCase() && <Button onClick={C.wrap(()=>F.refundBattery(f.id))}>Recover unused budget</Button>}
+        </div>;})}
+        <p className="hint">Model generation and owner registration must finish before execution. Completion requires verified battery outputs; a rarity percentile additionally needs a versioned reference cohort. Expired, inactive jobs and completed jobs can return unused funds to the original payer.</p>
       </Panel>
     </div>
   );

@@ -5,8 +5,11 @@ export function loadEnv(file) { if (file) { try { process.loadEnvFile(file); } c
 const need = (k) => { const v = process.env[k]; if (!v) throw new Error(`missing ${k} (source the .env.<network> written by deploy.sh)`); return v; };
 export function deploymentFromEnv() {
   const e = process.env; if (!e.PORW_CLAIMS) return null;
-  return { chainId: Number(need("PORW_CHAIN_ID")), rpc: need("PORW_RPC"), epochBlocks: Number(e.PORW_EPOCH_BLOCKS || 0), network: e.PORW_NETWORK || String(e.PORW_CHAIN_ID),
+  return { batteryApi: e.PORW_BATTERY_API || null, tokenBatteryApi: e.PORW_TOKEN_BATTERY_API || null, chainId: Number(need("PORW_CHAIN_ID")), rpc: need("PORW_RPC"), epochBlocks: Number(e.PORW_EPOCH_BLOCKS || 0), network: e.PORW_NETWORK || String(e.PORW_CHAIN_ID),
     addresses: { verifier: e.PORW_VERIFIER || null, meps: need("PORW_MEP_REGISTRY"), instances: need("PORW_INSTANCES"), beacon: e.PORW_BEACON || null, claims: need("PORW_CLAIMS"), market: need("PORW_MARKET"), disputes: e.PORW_DISPUTES || null, relays: e.PORW_RELAYS || null,
+      batteryBudget: e.PORW_BATTERY_BUDGET || null,
+      tokenBatteryBudget: e.PORW_TOKEN_BATTERY_BUDGET || null,
+      inventorySale: e.PORW_INVENTORY_SALE || null,
       collection: e.PORW_COLLECTION || null, // FlyCollection: set it and the relayer hatches its eggs (the keeper)
       whitelist: e.PORW_WHITELIST || null } }; // CollectionWhitelist: which collections' brains are the system's; served to the page over /deployment
 }

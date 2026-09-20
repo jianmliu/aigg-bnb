@@ -21,6 +21,7 @@ import { useNodeState } from "../core/store.js";
 import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
 import { BrainCard } from "./BrainCard.jsx";
+import HostDashboard from "./HostDashboard.jsx";
 import FliesView from "./FliesView.jsx";
 import { BAKED_RELAYER, SOLO } from "./mode.js";
 import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
@@ -193,7 +194,7 @@ export default function App() {
         <section className="hero">
           <p className="kicker">A bed &amp; breakfast for fruit-fly brains · on BNB Chain</p>
           <h1>Give a brain <em>a place to stay</em>.</h1>
-          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. The experiments run on it are, for now, the ones the <a href="#/flybnb">FlyBnB atlas</a> needs — every cell type silenced and activated, in a hundred individuals — and the hosts who run them are paid in BNB. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
+          <p className="lede">A whole <i>Drosophila</i> connectome moves into a browser tab. The tab’s owner is its host, and proves every epoch that the brain is really there. The experiments run on it are, for now, the ones the <a href="#/flybnb">FlyBnB atlas</a> needs — every cell type silenced and activated, in a hundred individuals — and the hosts who run them are paid in the task’s currency: BNB, or AIGG when they opt in. Nobody has to trust anybody: every result can be re-run, and a wrong one costs its host their deposit.</p>
         </section>
 
         {/* Two ways to take part, and what each one really pays today. The owner's royalty is in the contracts --
@@ -215,10 +216,10 @@ export default function App() {
           </article>
           <article className="way">
             {hasCollection
-              ? <span className="badge" data-tone="live" id="collectionBadge">live on-chain · adoption open</span>
+              ? <span className="badge" data-tone="live" id="collectionBadge">collection on-chain · adoption requires listed inventory</span>
               : <span className="badge" data-tone="soon" id="collectionBadge">royalty: in the contracts · no collection deployed yet</span>}
             <h3>Own a fly, and its line</h3>
-            <p>Adopt a genesis individual or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours — and the atlas runs its battery on every listed individual.</p>
+            <p>Adopt a listed individual from treasury inventory or breed one from a pair you hold. A fly is a research subject with a pedigree; its worth is what experiments have measured about it. Nobody is owed anything for a brain nobody has adopted; once you adopt one and register its brain, a share of every fee paid for an experiment on it is yours — and the atlas runs its battery on every listed individual.</p>
             <dl className="terms">
               <dt>You put in</dt><dd>the adoption price, or a breed fee</dd>
               <dt>You are paid</dt><dd>a royalty on every experiment run against your fly, set aside at settlement</dd>
@@ -317,6 +318,8 @@ export default function App() {
             <h2>Your tab, their brain.</h2>
             <p className="lede">Four steps, two wallet prompts. After that the tab does the work: a residency claim per brain per epoch, audits answered, experiments run.</p>
           </section>
+
+          <HostDashboard active={view === "host"} />
 
           <Panel step={1} title="Your deposit" note="bond · BNB">
             <div id="wallet" className={`kv ${s.wallet ? "strong" : "empty"}`}>

@@ -10,6 +10,7 @@
 // HTTP API (JSON): GET /deployment  GET /epoch?mep=0x..  GET /proof?mep&epoch&instance  GET /status
 //                  POST /tx/delegate {instance,session,expiry,sig}  POST /tx/materialize {mep,epoch,instance}
 //                  POST /tx/result {taskId,execDigest,execRoot,signature}  POST /tx/settle {taskId,instance}
+import { providerModels, hostStats } from "./providers.mjs";
 import fs from "node:fs"; import http from "node:http"; import path from "node:path"; import { fileURLToPath } from "node:url";
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
@@ -328,12 +329,22 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
   };
   const p = sponsorChain.then(run, run); sponsorChain = p.catch(() => {}); return p;
 }
+const readHostStats = hostStats(ch, dep.addresses.market);
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
     if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, meps: [...meps.keys()] });
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
-    if (u.pathname === "/meps") return json(res, 200, [...meps.values()].map((M) => M.info));
+    if (u.pathname === "/meps") return json(res, 200, await providerModels(ch, meps));
+    if (u.pathname === "/hosts") {
+      const instance = u.searchParams.get("instance") || "";
+      if (!/^0x[0-9a-fA-F]{40}$/.test(instance)) return json(res, 400, { error: "instance must be an address" });
+      const epoch = await ch.claims.read.currentEpoch();
+      const ids = [...meps.keys()];
+      const eligible = await Promise.all(ids.map((id) => ch.instances.read.isEligible([instance, id, epoch])));
+      return json(res, 200, { ...await readHostStats(instance), epoch: Number(epoch),
+        beacon: (await ch.claims.read.beacon([epoch])) !== ZERO32, eligibleModels: ids.filter((_, i) => eligible[i]) });
+    }
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);
       return json(res, 200, { epoch: e, block: await ch.pub.getBlockNumber(), beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? await ch.claims.read.epochChallenge([BigInt(e), id]) : null }); }
