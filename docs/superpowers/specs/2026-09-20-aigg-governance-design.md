@@ -1,7 +1,7 @@
 # AIGG Governance: Founder Bootstrap, Staked Voting, and NFT Returns
 
 **Date:** 2026-09-20
-**Revision:** v0.3 — Service-earned bootstrap followed by ongoing vote incentives
+**Revision:** v0.4 — BNB-only service bonds at bootstrap; AIGG bonds after initial distribution
 
 **Status:** Proposed design; no token issuance, governance deployment, or contract changes are authorized by this document.
 **Scope:** AIGG allocation governance and its interfaces with NFT collections, task payments, and revenue distribution.
@@ -13,7 +13,7 @@ AIGG begins with a one-time bootstrap: the first AIGG issuance purchases all NFT
 
 After bootstrap, AIGG introduces a supplementary funding and incentive layer for aigg applications. Participants stake AIGG to vote on where a bounded issuance budget goes. Allocations purchase project NFTs. The receiving project uses the proceeds to fund tasks; providers choose whether to accept the offered payment asset and price. Stakers who vote for a project receive the associated incentives and returns under disclosed rules.
 
-This adapts the emission-direction and vote-incentive pattern associated with Proof of Liquidity to **NFT subscription**. It does not copy Berachain's validator or BGT architecture. NFTs carry the acquired project rights; the underlying task protocol determines whether computation meets its execution specification.
+This adapts the emission-direction and vote-incentive pattern associated with Proof of Liquidity to **NFT subscription**. It does not copy Berachain's validator architecture or historical BGT design. NFTs carry the acquired project rights; the underlying task protocol determines whether computation meets its execution specification.
 
 The lifecycle has two distinct economic phases using the **same AIGG token**:
 
@@ -37,6 +37,7 @@ The following requirements are established by the product discussion:
 - NFT subscriptions and task payments support explicitly accepted assets such as AIGG, native BNB, and approved USDC deployments.
 - AIGG-funded tasks may pay AIGG directly. No forced conversion to BNB is required.
 - Providers independently accept or reject an asset and quote.
+- Service bonds initially accept **BNB only**. AIGG becomes an additional service-bond option only after the initial AIGG distribution is complete and that feature is explicitly activated; BNB remains supported.
 - Governance cannot vote an incorrect execution result into correctness.
 
 Rules marked **proposed default** below make the draft internally concrete without implying that economic parameters have been approved. Launch-blocking choices are listed in Section 14.
@@ -231,6 +232,22 @@ Launch support should use reviewed assets with ordinary transfer behavior; fee-o
 
 Native-currency bonds and gas need explicit reserves or sponsorship. Existing issuance-funded NFTs that automatically create provider bonds cannot silently debit AIGG as if it were BNB. The acquisition adapter must identify and satisfy each separate requirement or reject the offer.
 
+### 8.1 Service-Bond Rollout
+
+| Phase | Service guarantee | Task payment | Governance stake |
+|---|---|---|---|
+| Founder bootstrap and initial AIGG distribution | BNB only | Hosts can earn AIGG from verified work; supported task payment assets remain independent of collateral | Governed by the separate staking activation schedule |
+| After initial distribution, before collateral activation | BNB only | Multi-asset task payments continue | AIGG may be staked under the governance rules |
+| After explicit AIGG-bond activation | BNB or approved AIGG service bonds | Quote-specific payment assets | AIGG governance stake remains separately accounted for |
+
+This ordering avoids requiring participants to possess AIGG before earning the initial distribution. AIGG payment support and AIGG governance staking do not implicitly enable AIGG service collateral. No AIGG-to-BNB conversion is needed to pay hosts in AIGG while their service bonds remain in BNB.
+
+“Distribution complete” refers to the published initial service-distribution program, not the lifetime issuance schedule and not merely minting the first supply or acquiring all Founders. The launch manifest must define that completion criterion and report escrow balances, host distributions, other disclosed payouts, and returned or retired allocations. Governance activation may follow its own schedule; AIGG service collateral must wait for the initial distribution completion condition.
+
+Adding AIGG collateral is a later versioned capability, not an automatic consequence of completion. Before activation, specify service eligibility weights, task-exposure limits, slash amounts, withdrawal delays, challenge-window coverage, and any cross-asset valuation policy. Do not add raw BNB and AIGG amounts as equivalent security or reuse one balance to collateralize unlimited concurrent obligations. An existing BNB-bonded task retains its agreed collateral through settlement and outstanding challenge obligations; migration cannot release that bond early.
+
+The initial AIGG-bond extension concerns provider service guarantees. It does not automatically change beacon deposits, challenger deposits, or native BNB gas requirements. Whether a service-bond balance can also count toward governance voting is a separate future decision; the default remains separate accounting and no implicit reuse.
+
 ## 9. Failure, Refund, and Exit Rules
 
 | Event | Required outcome |
@@ -283,6 +300,7 @@ The design reuses NFT acquisition as the funding route. It does not require an a
 | G2a: Founder bootstrap | Complete-set subscription, treasury custody, funded service schedule, public host participation | Every Founder accounted for; verified hosts earn AIGG; no privileged undisclosed payouts or repeated minting |
 | G2b: Treasury asset management | Holder-income collection and bounded Founder auctions | Correct income cutover, bid/refund accounting, and net proceeds paid to treasury; research obligations survive sales |
 | G2c: Single-subnet governance | After distribution, stake checkpoints, epochs, FlyBnB-only additional acquisition, and cohort claims | Host-earned AIGG can stake and vote; later asset returns pay the correct historical cohort without taking Founder assets |
+| G2d: Optional AIGG service bonds | After initial AIGG distribution completes, add AIGG collateral while retaining BNB | Explicit activation; collateral-aware admission, exposure limits, slashing, and withdrawal tests; existing BNB obligations preserved |
 | G3: Operational validation | Repeated cohorts, monitoring, recovery, and independent provider participation | Published delivery rates, source-separated income, outstanding obligations, failures, and concentration |
 | G4: Admitted competition | Additional approved subnets and funded vote incentives | Admission and cap policies validated; reward offers and revenue attribution withstand adversarial review |
 | G5: Optional open participation | Consider broader registration and competition | Separate governance approval based on evidence; not automatic progression |
@@ -310,6 +328,8 @@ Before implementation release, verify both bootstrap and later governance paths:
 15. Hosts receive escrow transfers for verified, authorized work; payout retries and replayed tasks cannot create extra rewards. Protocol-controlled budgets cannot vote as earned host stake.
 16. Auctions enforce the committed lot, asset, reserve, and deadline; losing bids are recoverable, proceeds reach treasury, and NFT delivery cannot repeat.
 17. Founder income never enters a later cohort by default; a sale preserves accrued-income attribution and outstanding research budgets.
+18. Before initial distribution completion and explicit collateral activation, provider admission rejects AIGG service bonds even if AIGG payments and governance staking are enabled.
+19. After activation, collateral is accounted for by asset; migration and withdrawal cannot release security backing unsettled tasks or open challenge windows.
 
 Documentation validation is not evidence these contract properties already hold.
 
@@ -326,6 +346,7 @@ The product direction is established; the following are intentionally unresolved
 | Historical reward rights | Approve the later cohort model in Section 7, including post-withdrawal rights; any Founder treasury distribution is a separate decision |
 | Acquisition terms | Choose FlyBnB collection version, funding split, price, quantities, experiment scope, refund enforcement, and task deadlines |
 | Capital recovery | Select burn or restricted recovery implementation, including treatment of already incurred costs |
+| Service-bond transition | Define initial distribution completion, activation authority, AIGG collateral parameters, and migration rules; launch service bonds remain BNB-only |
 | Supported assets | Publish chain, native sentinel, AIGG address, approved USDC address if included, and transfer-behavior policy |
 | Bootstrap authority | Name administrator, threshold, timelock, pause scope, upgrade limits, and transition process |
 | Operating costs | Identify who funds gas, relayers, auditors, native bonds, and storage; do not assume AIGG receipts pay native liabilities |
@@ -338,4 +359,4 @@ These decisions block a deployment-ready contract specification, not publication
 - [System white paper](../../WHITEPAPER.md): overall architecture and comparison with Bittensor; its no-token premise predates this proposal.
 - [Tokenomics discussion](../../TOKENOMICS.md): existing collection, bonding, and payment context; proposed governance is additional.
 - [FlyBnB contribution policy](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/flybnb/CREDIT.md): research contributions and attribution are distinct from financial entitlements.
-- [Berachain: add incentives to a reward vault](https://docs.berachain.com/learn/guides/add-incentives-for-reward-vault) and [validator incentive commission](https://docs.berachain.com/validators/guides/manage-incentives-commission): reference for the incentive-direction pattern, reviewed 2026-09-20. AIGG does not claim protocol compatibility or reproduce Berachain's exact mechanism.
+- [Berachain: current Proof-of-Liquidity overview](https://docs.berachain.com/general/proof-of-liquidity/overview): reference for the incentive-direction pattern, reviewed 2026-09-20. The current overview describes BERA staking and WBERA emissions and marks BGT as deprecated; earlier BGT incentive pages are historical context. AIGG does not claim protocol compatibility or reproduce Berachain's exact mechanism.
