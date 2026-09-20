@@ -47,6 +47,10 @@ That rebuild was carried out end to end on 2026-09-20, from files downloaded fre
 
 This is what the content addresses are for. Greenfield, the Cloudflare mirror and every host's cache are conveniences: a brain that no one is serving is still recoverable by anyone holding the papers, and a brain served by someone hostile is still checked against the same address. What is *not* covered is the individuals — each founder is a 228-byte delta on min2, and a delta is only as recoverable as wherever it was published.
 
+That rebuild was carried out end to end on 2026-09-20, from files downloaded fresh from Zenodo and GitHub with nothing of this project's in the path. Both payloads came back byte-for-byte: the sizes and sha256s in the table above, `model_id` recomputed over the tiles, and both `mep_id`s already registered on BSC testnet against those same `model_id`s (`MEPRegistry.claimBinding` at `0xC779151b…`). The export took 16.8 s for min5 and 14.0 s for min2; the one real cost is the 812.6 MB connections table. The record, with the inputs' own hashes, is `tasks/live-runs/live-gateway-2026-09-20T07-55-00Z.rebuild.json`.
+
+This is what the content addresses are for. Greenfield, the Cloudflare mirror and every host's cache are conveniences: a brain that no one is serving is still recoverable by anyone holding the papers, and a brain served by someone hostile is still checked against the same address. What is *not* covered is the individuals — each founder is a 228-byte delta on min2, and a delta is only as recoverable as wherever it was published.
+
 ```bash
 python flybnb/analysis/phenotype_variance.py --verify --min5 flywire-783-min5.bin
 ```

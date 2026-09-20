@@ -15,7 +15,11 @@
     "build:frontend": "vite build --config frontend/vite.config.mjs",
     "preview:frontend": "node frontend/serve.mjs",
     "deploy:frontend": "VITE_RELAYER_URL=\"${VITE_RELAYER_URL:-https://aigg-bnb-relayer-testnet.onrender.com}\" npm run build:frontend && node test/deployed_build.mjs && npx --yes wrangler@4 pages deploy frontend/dist --project-name=aigg-fly --branch=main",
-    "test:gateway:m3": "node --test test/gateway_capacity.mjs test/provider_stats.mjs && node test/e2e_gateway_wake.mjs && node test/e2e_gateway.mjs"
+    "test:gateway:m3": "node --test test/gateway_capacity.mjs test/provider_stats.mjs && node test/e2e_gateway_wake.mjs && node test/e2e_gateway.mjs",
+    "battery:policy": "node battery/policy.mjs",
+    "battery:worker": "node battery/worker.mjs",
+    "test:battery": "forge test --root contracts --match-contract 'BatteryBudgetTest|BatteryJobTest' && node --test test/battery_queue.mjs && node test/e2e_battery_queue.mjs",
+    "test:battery:assets": "forge test --root contracts --match-contract 'MultiAsset.*Test|TokenBatteryTest|FlyTokenRoyaltyTest|TokenRoyaltyIntegrationTest' && node --test test/provider_stats.mjs test/wallet_chain.mjs && TEST_TOKEN_BATTERY=1 node test/e2e_battery_queue.mjs"
   },
   "dependencies": {
     "@bnb-chain/greenfield-js-sdk": "^2.2.2",

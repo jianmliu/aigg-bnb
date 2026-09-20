@@ -3,8 +3,7 @@
 // A documentation page is the easiest place in a project for a number to go stale: somebody changes MINT_PRICE in a
 // deploy script and the page still says what it said a year ago, politely and wrongly. So the checks that matter here
 // are not that the prose renders -- they are that the page's numbers are THIS deployment's, read from the collection
-// and the relayer while the page is open. The test deploys a collection with deliberately odd terms (a price no
-// document would have hard-coded, a royalty split 9/1) and requires the page to show those and not the repository's.
+// and the relayer while the page is open. The test deploys a collection with deliberately odd terms (a royalty split 9/1) and requires the page to show those and not the repository's.
 //
 // The other thing proved is the split the page exists for: the two audiences are one at a time, each reachable by its
 // own link, so a player is never made to read a Merkle tree and an engineer is never made to read what a royalty is.
@@ -19,7 +18,7 @@ H.forgeBuild();
 const anvil = await H.startAnvil(8566); let browser; const stop = [];
 try {
   const dep = await H.deployMesh(anvil.rpc); const { mepId } = await H.registerSyntheticMep(dep, H.KEYS[0]);
-  // terms nothing in the repository carries: 0.06 to adopt of which 0.025 is the adopter's own bond, a 10% royalty
+  // Original issuance terms must not become inventory resale prices. A 10% royalty
   // of which a tenth is the base vendor's -- so the page must say 9% to the owner and 1% to the base, computed.
   const C = await H.deployCollection(dep, parseEther("0.002"), H.KEYS[0], { mintBond: parseEther("0.025"), baseMepFemale: mepId, royaltyBps: 1000, baseShareBps: 1000, baseVendor: "0x00000000000000000000000000000000000ba5ed" });
   const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C, PORW_KEEPER: "0" } }); stop.push(() => R.stop());
@@ -42,17 +41,17 @@ try {
 
   // ---- the numbers are this deployment's ----
   const costs = async () => page.locator("#docsCosts").innerText();
-  check("the adoption price is the collection's, to the digit", await waitFor(async () => /0\.06 BNB/.test(await costs())), await costs().catch(() => ""));
-  check("and the part of it that stays the adopter's own bond", /0\.025 BNB/.test(await costs()));
+  check("adoption uses inventory listing prices rather than original mint terms", /Price shown on each listing/.test(await costs()) && !/0\.06 BNB/.test(await costs()));
+  check("adoption creates no host bond", /Host bond created by adoption\s+None/.test(await costs()));
   check("the breeding fee is the collection's", /0\.01 BNB/.test(await costs()));
   check("the owner's share is the royalty less the base vendor's, computed and not asserted: 9%", /\b9%/.test(await costs()) && /\b1%/.test(await costs()));
   check("nothing is shown as a bare wei figure", !/\d{10}/.test(await costs()));
   // the page must follow the chain, not a build: change the terms the only way they can change (a new collection) and
   // the page reads the new ones. A hard-coded number would survive this; a read cannot.
-  const C2 = await H.deployCollection(dep, parseEther("0.002"), H.KEYS[0], { mintPrice: parseEther("0.09"), mintBond: parseEther("0.025"), baseMepFemale: mepId, royaltyBps: 1000, baseShareBps: 1000, baseVendor: "0x00000000000000000000000000000000000ba5ed" });
+  const C2 = await H.deployCollection(dep, parseEther("0.002"), H.KEYS[0], { mintPrice: parseEther("0.09"), mintBond: parseEther("0.025"), baseMepFemale: mepId, royaltyBps: 2000, baseShareBps: 1000, baseVendor: "0x00000000000000000000000000000000000ba5ed" });
   await page.evaluate((addr) => { window.app.state.deployment.addresses.collection = addr; }, C2);
   await page.evaluate(() => { window.app.state.flyTerms = null; return window.appActions.loadTerms(); });
-  check("a different collection gives different prices on the same page", await waitFor(async () => /0\.09 BNB/.test(await costs())), await costs().catch(() => ""));
+  check("a different collection updates the royalty split on the same page", await waitFor(async () => /\b18%/.test(await costs()) && /\b2%/.test(await costs())), await costs().catch(() => ""));
 
   // ---- rarity: the one claim the page is not allowed to invent ----
   const play = await page.locator("#docsPlay").innerText();

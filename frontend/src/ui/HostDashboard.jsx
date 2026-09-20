@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Panel } from './primitives.jsx';
+import { Panel, Button } from './primitives.jsx';
 import * as C from '../core/controller.js';
+import {decodeAddress,decodeUint} from '../core/abi.js';
 
 // Keep money as integers through formatting: a small payout must not round down to a misleading zero.
 const bnb = (wei) => {
@@ -14,6 +15,19 @@ export default function HostDashboard({ active }) {
   const key = `${base}:${deployment?.chainId}:${deployment?.addresses?.market}:${instance}`;
   const [snapshot, setSnapshot] = useState(null);
   const [failure, setFailure] = useState(null);
+  const [asset,setAsset]=useState(null),[assetError,setAssetError]=useState(null),[saving,setSaving]=useState(false);
+  useEffect(()=>{let live=true;setAsset(null);setAssetError(null);
+   if(active&&instance&&s.chainOk&&deployment?.addresses?.tokenBatteryBudget){(async()=>{try{
+    const token=decodeAddress(await C.call(deployment.addresses.tokenBatteryBudget,'paymentToken()'));
+    const accepted=decodeUint(await C.call(deployment.addresses.market,'acceptedToken(address,address)',[instance,token]))!==0n;
+    if(live)setAsset({token,accepted,key});
+   }catch(e){if(live)setAssetError(e.message);}})();}return()=>{live=false;};
+  },[active,key,s.chainOk,deployment?.addresses?.tokenBatteryBudget]);
+  const toggleAsset=async()=>{if(!asset||asset.key!==key||!s.chainOk)throw Error('Connect on the deployment chain');
+   setSaving(true);try{const chain=await C.eth().request({method:'eth_chainId'});if(Number(chain)!==Number(deployment.chainId))throw Error('Wrong wallet chain');
+    const r=await C.send(deployment.addresses.market,'setAcceptedToken(address,bool)',[asset.token,asset.accepted?0:1]);if(r.status!=='0x1')throw Error('Preference transaction reverted');
+    setAsset({...asset,accepted:!asset.accepted});
+   }finally{setSaving(false);}};
   useEffect(() => {
     if (!active || !instance || !deployment || !s.chainOk) return;
     let live = true, timer; const controller = new AbortController();
@@ -40,6 +54,9 @@ export default function HostDashboard({ active }) {
         <div><span className="metric-label">Requests served · settled</span><strong id="host-served">{stats ? stats.requestsServed : '—'}</strong></div>
         <div><span className="metric-label">Earned · paid to your wallet</span><strong id="host-earned">{stats ? bnb(stats.earnedWei) : '—'}</strong></div>
       </div>
+      {stats?.tokenEarnings && <ul>{Object.entries(stats.tokenEarnings).map(([token,units])=><li key={token}>{units} base units earned · token {token}</li>)}</ul>}
+      {asset?.key===key && <p className="hint">BNB tasks remain enabled. AIGG token: {asset.token}. <Button disabled={saving} onClick={C.wrap(toggleAsset)}>{asset.accepted?'Stop accepting new AIGG tasks':'Accept AIGG tasks'}</Button> Changing this applies to new assignments only.</p>}
+      {assetError && <p className="hint">Token preference unavailable: {assetError}</p>}
       {!instance ? <p className="hint">Connect your wallet to see settled requests and earnings.</p>
         : !s.chainOk ? <p className="hint">Switch to this mesh’s chain to see your hosting activity.</p>
         : error ? <p className="hint" role="status">Hosting activity is unavailable. Retrying…</p>

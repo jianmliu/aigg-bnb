@@ -1,0 +1,19 @@
+{
+  "chain": "local Anvil only",
+  "genesisRoot": "0x8cffc3ced1135f698f9e6477fac20cb05e8c4dfe65cf8e986e252c3dbd3f0c5e",
+  "parentIndices": [
+    0,
+    100
+  ],
+  "childBase": "0x53a7b48e9265bea68fbd3f3640eda751f8dd7742ac76ae6f9c69f1cddc528135",
+  "childSex": 0,
+  "childSeed": "0xe9a306800879d19bc221b71bf9272826cb33b1d54e4b3d21045e218f16683190",
+  "childDeltaHash": "0x6466e7bb99faae568d71da0d68372b620e3fe46749480000daaeef20dc6040b8",
+  "childProfileId": "0x6821a5c7d4b32aaec39bfc62edafeb0f8a7b47a9c73d3add73f4c7dba0f4e007",
+  "childMepId": "0xd0c78e6cada08326e3e720d13f6246f3095745c6289a262959e638194e32b548",
+  "wUnitQ16": 18022,
+  "steps": 4,
+  "taskId": "0x7e4296bb45acd7f1c0bbd05b2f1d6d8f4f95ed28a482b5b66a1a37b7d89b927a",
+  "fullScientificBatteryExecuted": false,
+  "result": "PASS"
+}

@@ -11,6 +11,7 @@ import "aigg-porw/mesh/ExecutionDisputes.sol";
 import "aigg-porw/mesh/RelayRegistry.sol";
 import "../src/CommitRevealBeacon.sol";
 import "../src/CollectionWhitelist.sol";
+import "../src/MultiAssetTaskMarket.sol";
 
 /// Deploys the mesh with BNB-chain parameters (env-overridable; defaults = docs/DESIGN.md §4 at ~1 s blocks).
 ///   forge script script/DeployBNB.s.sol --rpc-url $RPC --broadcast --private-key $PK
@@ -50,7 +51,9 @@ contract DeployBNB is Script {
         InstanceRegistry inst = new InstanceRegistry(unit, exitDelay);
         CommitRevealBeacon beacon = new CommitRevealBeacon(epochBlocks, commitBlocks, revealBlocks, beaconDeposit);
         PoRWClaimManager claims = new PoRWClaimManager(meps, inst, verifier, epochBlocks, openingWindow, openingDeposit, slashAmount, IBeacon(address(beacon)));
-        TaskMarket market = new TaskMarket(meps, inst, claims, taskTimeout);
+        TaskMarket market = vm.envOr("MULTI_ASSET_MARKET", false)
+            ? TaskMarket(address(new MultiAssetTaskMarket(meps, inst, claims, taskTimeout)))
+            : new TaskMarket(meps, inst, claims, taskTimeout);
         ExecutionDisputes disputes = new ExecutionDisputes(meps, inst, market, roundBlocks, slashAmount);
         RelayRegistry relays = new RelayRegistry(relayBond, exitDelay);
         inst.setClaimManager(address(claims), claimValidity); inst.setSlasher(address(disputes), true); market.setDisputes(address(disputes));

@@ -386,7 +386,8 @@ out whose digest the test recomputes; then the failure rows of §3, one by one.
 Eligibility comes from the chain and is not a WebSocket-presence measurement; an eligible tab may have gone away.
 
 `GET /hosts?instance=0x…` returns `requestsServed`, decimal-string `earnedWei`, inclusive `fromBlock` / `toBlock`,
-plus the current `epoch`, `beacon` and `eligibleModels`. Earnings cover the latest **5,000 blocks**, not lifetime.
+plus `tokenEarnings` keyed by token address, and the current `epoch`, `beacon` and `eligibleModels`.
+`earnedWei` includes native BNB only; token amounts are separate raw units and are never summed with BNB. Earnings cover the latest **5,000 blocks**, not lifetime.
 The relayer pages settlement logs in 1,000-block ranges, sharing a ten-second cached scan across wallets. Each
 paid executor receives `(fee - royalty) / paidExecutorCount`, with Solidity integer rounding. Refunds contribute
 zero; batches count as one settled request. Gas costs are not subtracted, and later challenges do not reclaim

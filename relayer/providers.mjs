@@ -1,4 +1,5 @@
 import { parseAbi, parseAbiItem } from 'viem';
+const taskAsset = parseAbiItem('event TaskAsset(bytes32 indexed taskId, address indexed token, uint256 fee)');
 const settled = parseAbiItem('event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)');
 const taskAbi = parseAbi([
   'struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStride; bytes32 initStateRoot; uint256 fee; uint64 deadline; uint8 redundancy; }',
@@ -27,13 +28,15 @@ export function hostStats(ch, market, { windowBlocks = 5000n, cacheMs = 10000 } 
       const logs = await ch.pub.getLogs({ address: market, event: settled, fromBlock: from, toBlock: end, strict: true });
       for (const { args } of logs) {
         if (!args.executors.length) continue; // refunded, no host earned anything
-        const [task] = await ch.pub.readContract({ address: market, abi: taskAbi, functionName: 'tasks', args: [args.taskId], blockNumber: toBlock });
+        const [task,,,postedAt] = await ch.pub.readContract({ address: market, abi: taskAbi, functionName: 'tasks', args: [args.taskId], blockNumber: toBlock });
+        const assetLogs=await ch.pub.getLogs({address:market,event:taskAsset,args:{taskId:args.taskId},fromBlock:postedAt,toBlock:postedAt,strict:true});
+        const token=assetLogs[0]?.args.token?.toLowerCase();
         const [beneficiary, bps] = await ch.meps.read.termsOf([task.mepId], { blockNumber: toBlock });
         const cut = BigInt(beneficiary) === 0n ? 0n : task.fee * BigInt(bps) / 10000n;
         const share = (task.fee - cut) / BigInt(args.executors.length);
         for (const address of args.executors) {
-          const key = address.toLowerCase(); const total = earned.get(key) || { requestsServed: 0, earnedWei: 0n };
-          total.requestsServed++; total.earnedWei += share; earned.set(key, total);
+          const key = address.toLowerCase(); const total = earned.get(key) || { requestsServed: 0, earnedWei: 0n, tokenEarnings:{} };
+          total.requestsServed++; if(token)total.tokenEarnings[token]=(total.tokenEarnings[token]||0n)+share;else total.earnedWei += share; earned.set(key, total);
         }
       }
     }
@@ -42,7 +45,7 @@ export function hostStats(ch, market, { windowBlocks = 5000n, cacheMs = 10000 } 
   }
   return async (instance) => {
     const snapshot = cache && Date.now() - cache.at < cacheMs ? cache : await (pending ||= scan().finally(() => { pending = null; }));
-    const total = snapshot.earned.get(instance.toLowerCase()) || { requestsServed: 0, earnedWei: 0n };
-    return { instance: instance.toLowerCase(), fromBlock: snapshot.fromBlock, toBlock: snapshot.toBlock, requestsServed: total.requestsServed, earnedWei: String(total.earnedWei) };
+    const total = snapshot.earned.get(instance.toLowerCase()) || { requestsServed: 0, earnedWei: 0n, tokenEarnings:{} };
+    return { instance: instance.toLowerCase(), fromBlock: snapshot.fromBlock, toBlock: snapshot.toBlock, requestsServed: total.requestsServed, earnedWei: String(total.earnedWei), ...(Object.keys(total.tokenEarnings).length?{tokenEarnings:Object.fromEntries(Object.entries(total.tokenEarnings).map(([k,v])=>[k,String(v)]))}:{}) };
   };
 }

@@ -159,7 +159,7 @@ An approved offer binds: chain and collection, adapter version, accepted payment
 
 Founder NFTs belong to the AIGG treasury. Later vote-funded NFTs belong to their project/epoch vault on behalf of its beneficiary cohort. Neither class is an operator's personal property. Later governance cannot reclassify existing cohort property as Founder treasury property. Founder auctions are an explicit part of the proposed asset-management path; sales of cohort assets additionally require their original beneficiary terms to permit them.
 
-Historical funding attribution identifies the Founder bootstrap or the later AIGG allocation and cohort. It remains distinct from current NFT ownership, scientific authorship, and actual computation contributions.
+Historical funding attribution identifies the Founder bootstrap or the later AIGG allocation and cohort for financial accounting. It is not a prerequisite for the default paper or dataset acknowledgment list: that list uses the holders of included NFTs at the release snapshot block, as defined in the [FlyBnB CREDIT policy](../../flybnb/CREDIT.md). Scientific authorship and any optional recognition of actual computation contributions remain separate.
 
 ### 6.1 Founder Treasury Returns and Auctions
 
@@ -358,5 +358,5 @@ These decisions block a deployment-ready contract specification, not publication
 
 - [System white paper](../../WHITEPAPER.md): overall architecture and comparison with Bittensor; its no-token premise predates this proposal.
 - [Tokenomics discussion](../../TOKENOMICS.md): existing collection, bonding, and payment context; proposed governance is additional.
-- [FlyBnB contribution policy](https://github.com/jianmliu/aigg-bnb/blob/09c9de9/docs/flybnb/CREDIT.md): research contributions and attribution are distinct from financial entitlements.
+- [FlyBnB holder acknowledgment policy](../../flybnb/CREDIT.md): release snapshots are distinct from financial accounting, royalty entitlements and authorship.
 - [Berachain: current Proof-of-Liquidity overview](https://docs.berachain.com/general/proof-of-liquidity/overview): reference for the incentive-direction pattern, reviewed 2026-09-20. The current overview describes BERA staking and WBERA emissions and marks BGT as deprecated; earlier BGT incentive pages are historical context. AIGG does not claim protocol compatibility or reproduce Berachain's exact mechanism.

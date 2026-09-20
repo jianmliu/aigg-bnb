@@ -132,6 +132,12 @@ code { font: 500 0.92em/1 var(--mono); color: var(--muted); }
 /* on dark the stroke becomes a block and the words on it go to ink: light type on gold is unreadable */
 @media (prefers-color-scheme: dark) { .hero h1 em { color: #1b1a17; background: linear-gradient(transparent 10%, var(--gold) 10%, var(--gold) 94%, transparent 94%); border-radius: 4px; } }
 .lede { margin: 0; max-width: 64ch; font: 400 17px/1.6 var(--sans); color: var(--muted); }
+/* Let the landing headline use the full content width instead of the document hero column. */
+.main.stay > .hero { max-width: none; min-width: 0; }
+.main.stay > .hero .lede { max-width: none; }
+@media (min-width: 768px) {
+  .main.stay > .hero h1 { font-size: clamp(34px, 4.8vw, 66px); white-space: nowrap; }
+}
 /* the facets of a compound eye, fading out of the top right corner of the view */
 .main.stay::before {
   content: ""; position: absolute; z-index: -1; top: 120px; right: 0; width: min(46vw, 620px); height: 420px; pointer-events: none;

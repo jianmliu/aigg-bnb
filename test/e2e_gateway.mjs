@@ -15,7 +15,7 @@
 import fs from "node:fs"; import os from "node:os"; import path from "node:path"; import http from "node:http";
 import { parseEther } from "viem";
 import * as H from "./harness.mjs";
-let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
+let fails = 0; const check = (n, ok, note = "") => { console.log((ok ? "  ok   " : "  FAIL ") + n + (!ok && note ? " — " + note : "")); if (!ok) fails++; };
 const waitFor = async (p, ms = 30000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await p()) return true; await H.sleep(200); } return false; };
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "gw-")); const anvil = await H.startAnvil(8569); const stop = [];
 try {
@@ -186,7 +186,9 @@ try {
     // A is this provider from here on: the sections after this one drive it, and the service they reach has to be
     // the one that is actually listening -- a test that leaves the world half-swapped fails the NEXT test, not this one.
     A.svc = svc2; A.up = () => svc2.serve(warm.mep.mepId); A.down = () => svc2.stop();
-    const mining = setInterval(() => anvil.mine(8).catch(() => {}), 300);
+    // Leave time for both hosts to submit before the 30-block task timeout. Eight blocks
+    // per tick settled after ~1 s and raced the second host on an otherwise healthy RPC.
+    const mining = setInterval(() => anvil.mine(1).catch(() => {}), 300);
     const r = await call("/v1/responses", { model: "warm", seed: 31, max_output_tokens: STEPS }); const j = await r.json();
     clearInterval(mining);
     check("a provider that re-delegated is announced to on its NEW session key, not the one last seen",
@@ -214,7 +216,9 @@ try {
     stop.push(() => strict.stop());
     // keep blocks coming, so a gateway that cannot reach the providers reaches the market's timeout and answers 504
     // instead of hanging: the point is to see the difference stated, not to wait for a socket to give up
-    const mining = setInterval(() => anvil.mine(8).catch(() => {}), 300);
+    // Leave time for both hosts to submit before the 30-block task timeout. Eight blocks
+    // per tick settled after ~1 s and raced the second host on an otherwise healthy RPC.
+    const mining = setInterval(() => anvil.mine(1).catch(() => {}), 300);
     let r = { status: 0 }, j = {};
     try { r = await fetch(strict.url + "/v1/responses", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer test-bearer" }, body: JSON.stringify({ model: "warm", seed: 21, max_output_tokens: STEPS }), signal: AbortSignal.timeout(120000) }); j = await r.json(); }
     catch (err) { j = { error: { type: "no answer", message: String(err?.message || err) } }; }

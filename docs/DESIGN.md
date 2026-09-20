@@ -72,56 +72,33 @@ producer. The claim manager here takes an `IBeacon`:
 
 ## 4b. Settlement assets: one mechanism, several currencies
 
-**Proposed. Nothing below is built** — today every path in this system is native BNB and only native
-BNB, in both repositories (`FlyCollection.mint`: `require(msg.value == MINT_PRICE)`; `TaskMarket._post`:
-`require(msg.value == t.fee)`; refunds, executor payouts, royalties and `withdraw` are all
-`call{value:}` against a single balance).
+**Implemented as an optional local deployment; not a claim that production is configured.**
+The upstream native market remains unchanged. This repository adds `MultiAssetTaskMarket`,
+`TokenBatteryBudget` and `TokenBatteryJob`; see [the implementation and deployment limits](MULTI_ASSET_BATTERY.md).
 
-The design is that **BNB, AIGG and USDC are alternative settlement assets under one mechanism**.
-There is no AIGG-specific code path, no dedicated funding channel, and no automatic conversion
-anywhere: a currency is carried, not swapped.
+BNB, AIGG and conventional ERC-20 assets such as USDC can denominate task settlement.
+ERC-20 assets must be allowlisted, and hosts must explicitly opt in. Fees, executor earnings,
+refunds and royalties remain denominated in the task's asset; amounts from different assets are never added.
 
-| | what it means | where it lands |
-|---|---|---|
-| **Adoption** | a collection declares which currencies it accepts and the price in each | `FlyCollection`: `MINT_PRICE` becomes a price per accepted asset; `mint` takes the asset it is paid in |
-| **Experiment budget** | accounted per currency, never converted | the treasury holds balances per asset; a budget in one currency cannot fund a task in another |
-| **Task offer** | states its currency, its amount and what it accepts as a result, and locks the budget before it is posted | `Task` gains the asset; the escrow holds that asset |
-| **Provider** | chooses which currencies and prices it will work for | already a free choice — sortition draws from those enrolled, and an executor that will not take the offer does not enrol for it |
-| **Settlement and shares** | paid in the currency the task named; a refund returns that same currency | `TaskMarket` payout and `royalties` / `withdrawRoyalty`, and `FlyCollection.owed`, become per-asset |
+| Path | Current behavior |
+|---|---|
+| Treasury adoption | An existing NFT is sold for its BNB listing price; proceeds enter treasury, without creating a host bond. |
+| Collection mint and breed | Collection fees remain native BNB. Breeding separately locks a battery execution budget. |
+| Native battery | Native budget and jobs continue posting and settling BNB tasks. |
+| Token battery | Token budgets escrow the configured asset. An optional reviewed router can convert BNB into the exact AIGG budget for breeding, subject to a maximum input and deadline. Job refunds return the task asset. |
+| Host | Bonds and transaction gas remain BNB. Hosts choose whether to accept each enabled token; the panel shows native and token earnings separately. |
+| Royalties | The updated collection supports per-token credits and withdrawal, alongside native credits. Existing deployments need compatible contracts and configuration. |
 
-### What it costs to build, stated honestly
+Native task ABI and IDs are preserved. Token task IDs wrap the legacy task hash with the
+asset, client, chain and market, so signatures and sortition bind the settlement asset without
+changing upstream native task IDs. This is a local market implementation, not a change to
+the upstream `Task` struct.
 
-The currency belongs **in the `Task`**, and `taskId = keccak256(abi.encode(Task, nonce))`. So adding
-it changes the task id's derivation: a **breaking protocol change in `aigg-porw`**, not something this
-deployment can decide by itself, and one that moves every id, signature and fixture that depends on
-it. It is not a wrapper this repository can put in front of the market.
-
-It buys one thing worth having, though, and for free: because the asset is inside the id, it is
-inside what sortition drew and inside what an executor signed. **Nobody can be paid in a currency
-they did not agree to**, and no separate negotiation is needed to establish that — the same signature
-that binds the result binds the asset.
-
-The rest is ordinary ERC-20 work with one real asymmetry: native value arrives *with* the call and a
-token has to be pulled (`approve` + `transferFrom`), so a posting becomes two transactions or one
-permit; and a payout that reverts cannot be left to `call{value:}`'s failure path, so the per-asset
-`withdrawable` credit that already exists for the native case becomes the normal path rather than
-the fallback.
-
-### Why this is separate from what the AIGG treasury does
-
-The two are deliberately different kinds of decision:
-
-- **Multi-currency settlement is a protocol capability.** It is permissionless and says nothing about
-  who should pay for what. A collection that accepts USDC accepts it from anybody.
-- **Which NFTs the AIGG treasury subscribes to, and which research it funds, is governance.** It is a
-  policy exercised *through* that capability, with the treasury's own money, and it can change
-  without the protocol changing.
-
-The example that makes the separation concrete. The AIGG treasury subscribes to FlyBnB NFTs in AIGG;
-the experiments those individuals attract can then recruit compute in AIGG, because that is the
-currency the budget is held in. Meanwhile an outside user buys a task in USDC: that task pays its
-providers in USDC and pays the individual's owner a royalty in USDC. Neither transaction knows about
-the other, and neither needed a conversion.
+Multi-currency settlement is a **protocol capability**; treasury allocations and liquidity management
+are **governance** policy. Buying an NFT does not automatically swap proceeds or add liquidity.
+The optional breed conversion is an explicit funded route, not a universal conversion rule.
+AIGG issuance, token addresses, asset enablement and a production router/liquidity pool require
+separate configuration. Supporting USDC in this mechanism does not mean a USDC route is live.
 
 ## 5. Cost model (measured gas × assumed prices)
 

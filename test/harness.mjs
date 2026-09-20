@@ -81,12 +81,12 @@ export const artifact = (name) => JSON.parse(fs.readFileSync(path.join(root, `co
 export async function create(c, name, args = []) { const a = artifact(name); const hash = await c.wallet.deployContract({ abi: a.abi, bytecode: a.bytecode.object, args }); return (await c.pub.waitForTransactionReceipt({ hash })).contractAddress; }
 export async function sendTo(c, address, name, functionName, args = [], value = 0n) { const hash = await c.wallet.writeContract({ address, abi: artifact(name).abi, functionName, args, value }); return c.pub.waitForTransactionReceipt({ hash }); }
 export const readFrom = (c, address, name, functionName, args = []) => c.pub.readContract({ address, abi: artifact(name).abi, functionName, args });
-export async function deployMesh(rpc, key = KEYS[0]) {
+export async function deployMesh(rpc, key = KEYS[0], marketContract = "TaskMarket") {
   const c = clientsFor({ chainId: 31337, rpc, addresses: {} }, key); const a = { disputes: ZERO_ADDR, relays: ZERO_ADDR };
   a.verifier = await create(c, "PorwVerifierKeccak"); a.meps = await create(c, "MEPRegistry"); a.instances = await create(c, "InstanceRegistry", [parseEther("0.05"), 5n]);
   a.beacon = await create(c, "CommitRevealBeacon", [40n, 10n, 10n, parseEther("0.1")]);
   a.claims = await create(c, "PoRWClaimManager", [a.meps, a.instances, a.verifier, 40n, 10n, parseEther("0.01"), parseEther("0.5"), a.beacon]);
-  a.market = await create(c, "TaskMarket", [a.meps, a.instances, a.claims, 30n]);
+  a.market = await create(c, marketContract, [a.meps, a.instances, a.claims, 30n]);
   await sendTo(c, a.instances, "InstanceRegistry", "setClaimManager", [a.claims, 1n]); // claim validity: DeployBNB's default of one epoch
   return { chainId: 31337, rpc, epochBlocks: 40, addresses: a };
 }

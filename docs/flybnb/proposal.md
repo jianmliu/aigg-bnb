@@ -23,7 +23,7 @@ FlyBnB started as three questions, and they turn out to be three readings of one
 | **the association analysis** | no perturbation, many individuals, with their wiring | which connections decide a phenotype? The pilot already has a first answer: the four direct gate connections do not (r = −0.27) |
 | **the selection experiment** | individuals that are crosses, with their parents | is a circuit phenotype transmitted, and does selecting one behaviour break another? |
 
-What makes it one dataset in practice is **the standard battery** ([`flybnb/battery/`](../../flybnb/battery/)): 13 stimuli × 3 seeds, the output of every descending neuron. Every individual gets it. The atlas perturbs it, the association analysis regresses its readouts on wiring, the selection experiment measures it in parents and offspring. Operationally there is one action: when an individual exists, minted or bred, its battery is posted as one batched task, the nodes that host that brain execute it, and its 39 rows land in the table. So an individual that somebody breeds because they like it is, without anybody deciding so, a data point in all three analyses, and the people who host it are in the acknowledgments.
+What makes it one dataset in practice is **the standard battery** ([`flybnb/battery/`](../../flybnb/battery/)): 13 stimuli × 3 seeds, the output of every descending neuron. Every individual gets it. The atlas perturbs it, the association analysis regresses its readouts on wiring, the selection experiment measures it in parents and offspring. Operationally there is one action: when an individual exists, minted or bred, its battery is posted as one batched task, the nodes that host that brain execute it, and its 39 rows land in the table. So an individual that somebody breeds because they like it is, without anybody deciding so, a data point in all three analyses, and holders of the included individuals are acknowledged using the release snapshot rule in Section 12.
 
 **Where the three stand** (generated from the committed results; the paper has the sections):
 
@@ -194,7 +194,7 @@ What it is not: a computation only a mesh can do. Eight million runs at 3.4 s ar
 The reasons are three.
 
 - **Every row can be checked.** The execution rule is bit-exact, a result is settled by its digest, runs are executed redundantly and a wrong one can be proven wrong by bisection. Each row carries who computed it, who agreed, and how anybody recomputes it. For a resource that will be cited for years, that matters more than speed.
-- **Individuals have holders.** Every individual is a brain hosted and executed by the people who hold and adopt it. The dataset's acknowledgments are that list (Section 12).
+- **Individuals have holders.** Hosts execute the brains; holders are recorded independently. The dataset acknowledges the holders of included individuals at its release snapshot block (Section 12).
 - **It is open-ended.** Anybody can post new stimuli and new perturbations against the same individuals, and the results land under the same identifiers. This is also where real task demand on the network comes from.
 
 ## 8. What the system needed, and where that stands
@@ -233,7 +233,9 @@ Until the node and the relayer speak batches, rows are generated offline with th
 
 ## 12. Authorship and acknowledgments
 
-The dataset paper acknowledges every holder of an individual. There is a precedent: FlyWire lists its citizen scientists in the consortium authorship and acknowledgments. Two things are settled in advance. What is printed is the holder's choice (an address, a name), and needs their consent; the default is the address, because that is what the chain knows. And the list in the paper is a snapshot at a block, because tokens change hands; the list on the project page is live.
+The dataset paper uses the [CREDIT policy](CREDIT.md): acknowledge the holders of NFTs actually included in each release's research at one specified block. Record the release identifier, chain, collection, block number and hash, included token IDs and holder addresses. The default list requires no reconstruction of adoption, breeding, payment or transfer histories.
+
+Freeze the list when the release is published. Transfers before the snapshot change eligibility; later transfers do not change an already published list. Each new release takes its own snapshot. Addresses are the default display; a name or ORCID requires the holder's authorization. Authorship follows intellectual contribution. Royalty rights follow the contracts independently. Optional recognition of funders, breeders or compute providers uses separate evidence and is not a condition for publishing the holder list.
 
 ## 13. The name
 

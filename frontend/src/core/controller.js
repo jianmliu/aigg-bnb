@@ -89,7 +89,15 @@ export const read = async (method, params = []) => {
   if (r.error) throw new Error(r.error.message || "RPC error"); return r.result;
 };
 export const call = async (to, sig, args = []) => read("eth_call", [{ to, data: encode(sig, args) }, "latest"]);
-export const send = async (to, sig, args = [], value = 0n) => { const hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: state.wallet, to, data: encode(sig, args), value: "0x" + value.toString(16) }] }); log(`tx ${hash.slice(0, 12)}… sent`); for (let i = 0; i < 120; i++) { const r = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] }); if (r) { log(`tx ${hash.slice(0, 12)}… ${r.status === "0x1" ? "confirmed" : "REVERTED"}`); return r; } await new Promise((x) => setTimeout(x, 500)); } throw new Error("receipt timeout"); };
+export const send = async (to, sig, args = [], value = 0n) => {
+  const expectedChain=state.deployment?.chainId, from=state.wallet;
+  if(!expectedChain||!from)throw new Error("Connect your wallet on the deployment chain first.");
+  const actualChain=await eth().request({method:"eth_chainId"});
+  if(Number(actualChain)!==Number(expectedChain))throw new Error("Wallet chain changed; reconnect on the deployment chain.");
+  const accounts=await eth().request({method:"eth_accounts"});
+  if(accounts[0]?.toLowerCase()!==from.toLowerCase()||state.wallet!==from)throw new Error("Wallet account changed; reconnect before sending.");
+  if(state.deployment?.chainId!==expectedChain)throw new Error("Deployment chain changed.");
+  const hash = await eth().request({ method: "eth_sendTransaction", params: [{ from, chainId:"0x"+Number(expectedChain).toString(16), to, data: encode(sig, args), value: "0x" + value.toString(16) }] }); log(`tx ${hash.slice(0, 12)}… sent`); for (let i = 0; i < 120; i++) { const r = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] }); if (r) { log(`tx ${hash.slice(0, 12)}… ${r.status === "0x1" ? "confirmed" : "REVERTED"}`); return r; } await new Promise((x) => setTimeout(x, 500)); } throw new Error("receipt timeout"); };
 
 // The relayer URL is read from the DOM rather than from React state on purpose: the field is uncontrolled, so a
 // test (or a paste) that sets `#relayer.value` directly is what the next request uses.

@@ -19,7 +19,7 @@
 
 ## Abstract
 
-Whole-brain simulations built on the fly connectome make predictions of the form "silence this cell type and that behaviour disappears". Every such prediction rests on one brain: one female (FlyWire) and one male (MaleCNS). Synapse counts between the same pair of cell types differ between brains and between the two hemispheres of one brain, so a prediction carried by a handful of connections may or may not survive in another animal, and no published simulation says which. FlyBnB is a dataset built to say which. It silences and activates every annotated cell type under a battery of sensory stimuli, records the output of all descending neurons, and repeats every result in one hundred synthetic individuals whose wiring varies as much as the two hemispheres of a real brain do. The execution semantics are integer and bit-exact, so each row of the dataset carries a digest that anybody can recompute; rows are executed redundantly on a peer-to-peer network of browser nodes and settled on BNB Chain, with a fraud proof for a wrong result. The individuals are hosted by the people who hold them, and the dataset acknowledges them (Appendix A). This draft reports the two pilots that the programme depends on: whether calibrated wiring variability moves a circuit phenotype by more than the assay's own noise, and whether a phenotype is transmitted by the collection's cross so that selection can move it.
+Whole-brain simulations built on the fly connectome make predictions of the form "silence this cell type and that behaviour disappears". Every such prediction rests on one brain: one female (FlyWire) and one male (MaleCNS). Synapse counts between the same pair of cell types differ between brains and between the two hemispheres of one brain, so a prediction carried by a handful of connections may or may not survive in another animal, and no published simulation says which. FlyBnB is a dataset built to say which. It silences and activates every annotated cell type under a battery of sensory stimuli, records the output of all descending neurons, and repeats every result in one hundred synthetic individuals whose wiring varies as much as the two hemispheres of a real brain do. The execution semantics are integer and bit-exact, so each row of the dataset carries a digest that anybody can recompute; rows are executed redundantly on a peer-to-peer network of browser nodes and settled on BNB Chain, with a fraud proof for a wrong result. Independent hosts execute the individuals, and the dataset acknowledges the holders of included individuals at a specified snapshot block (Appendix A). This draft reports the two pilots that the programme depends on: whether calibrated wiring variability moves a circuit phenotype by more than the assay's own noise, and whether a phenotype is transmitted by the collection's cross so that selection can move it.
 
 ## 1. Introduction
 
@@ -235,22 +235,9 @@ Everything the pilot needs is public. The pilot's code, its results (every run w
 
 ## Appendix A. Acknowledgments
 
-FlyBnB acknowledges by role, under the policy in [CREDIT.md](../../docs/flybnb/CREDIT.md), which was written before
-this paper: those who **computed** the runs (hosts, whose claims and settled results are on-chain), those who **paid**
-for them, those whose **breeding** made an individual the atlas measures exist, and those who **hold** one at the block
-shown. Each list is read from the chain at that block and regenerated with this file; the live version is on the
-project page. Neither hosting nor holding confers authorship, and no place in this appendix is for sale.
+Under the [CREDIT policy](CREDIT.md), each published version acknowledges the holders, at one specified snapshot block, of the NFTs actually included in that research. Its release record contains the chain, collection, block number and hash, included token IDs and holder list. The list is frozen at publication; subsequent transfers affect only later snapshots. No full adoption, breeding or funding history is required. Addresses are the default, and names or ORCIDs are opt-in. Holder acknowledgment does not confer authorship or change royalty rights.
 
-Two things a reader should have. First, the atlas is paid for by the people who adopt and breed the individuals, not by
-the project: a mint covers, almost exactly, one measurement of the individual it creates, and the treasury is a conduit
-(TOKENOMICS §9). Second, an individual's owner receives a royalty on every fee settled against its brain, so everyone
-named as a funder or a holder has an interest in this dataset being used; while the project is the main task client
-that royalty is a rebate of other adopters' money. What stands against that interest is not this disclosure but the
-data itself: every row was produced by independent providers who agreed on it, and anyone can recompute it from the
-published recipe.
-
-The lists give addresses, because an address is what the chain knows; a contributor who wants a name or an ORCID
-printed instead says so with their own key, and nobody else can say it for them.
+The generated draft block below is holder-list plumbing, not yet a validated release-specific snapshot. Before publication, verify its included NFT set and snapshot metadata and freeze the list; the website’s live holder list remains separate.
 
 <!-- BEGIN GENERATED: acknowledgments -->
 _No holders source has been read yet. Run `node docs/flybnb/build.mjs --relayer <url>` or `--rpc <url> --collection <address>` against a deployment._

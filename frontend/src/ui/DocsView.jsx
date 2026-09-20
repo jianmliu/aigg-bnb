@@ -64,18 +64,19 @@ function Playing({ s, f }) {
       <Panel title="What it costs, and what comes back" note={f ? "read from the collection, now" : "connect to see this deployment's numbers"}>
         {f ? (
           <div className="terms-grid" id="docsCosts">
-            <div className="kv"><span className="why">Adopt a founder</span><span className="amt">{bnb(f.mintPrice)} BNB</span></div>
-            <div className="kv"><span className="why">…of which your own bond, and still yours</span><span className="amt">{bnb(f.mintBond)} BNB</span></div>
-            <div className="kv"><span className="why">Breed two you hold</span><span className="amt">{bnb(f.breedFee)} BNB</span></div>
+            <div className="kv"><span className="why">Adopt a founder</span><span className="amt">Price shown on each listing</span></div>
+            <div className="kv"><span className="why">Host bond created by adoption</span><span className="amt">None</span></div>
+            <div className="kv"><span className="why">Collection breeding fee (plus battery budget)</span><span className="amt">{bnb(f.breedFee)} BNB</span></div>
             <div className="kv"><span className="why">Your share of every fee paid for an experiment on your fly</span><span className="amt">{pct(ownerBps)}%</span></div>
             {f.baseShareBps > 0 && <div className="kv"><span className="why">…the rest of the {pct(f.royaltyBps)}% royalty goes to the base brain everybody varies</span><span className="amt">{pct(f.royaltyBps - ownerBps)}%</span></div>}
             {f.saleRoyaltyBps > 0 && <div className="kv"><span className="why">If you sell it on a marketplace that honours ERC-2981, to the treasury</span><span className="amt">{pct(f.saleRoyaltyBps)}%</span></div>}
           </div>
         ) : <p className="hint">The page reads these from the collection itself, so they are this deployment's and not a brochure's.</p>}
         <p className="fineprint">
-          The adoption fee is not a donation and not a subscription: it is, almost exactly, what it costs the network to
-          measure the individual it creates — thirteen stimuli, three seeds apiece, on two independent hosts. That is
-          the deal. What you own afterwards is the individual and a claim on experiments other people run on it.
+          Adoption transfers an existing treasury NFT; the listing price goes to the treasury and creates no host bond.
+          Breeding locks a separate battery execution budget, shown before payment. Tasks can pay hosts in BNB or,
+          when configured, AIGG through an optional BNB conversion route. Inventory proceeds do not automatically
+          become liquidity. Research acknowledgments use a release snapshot of holders of the NFTs included in that release.
         </p>
       </Panel>
 
