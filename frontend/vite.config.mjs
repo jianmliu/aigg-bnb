@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import { copyRuntime, readRuntimeFile } from "./build/runtime.mjs";
+import { copyRuntime, readRuntimeFile, runtimeId, withRuntimeId, workerName } from "./build/runtime.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, "..");
@@ -17,10 +17,27 @@ const GENESIS = path.join(repoRoot, "flybnb/genesis/genesis-v1.json");
 const PHENOTYPES = path.join(repoRoot, "flybnb/results/phenotypes/individuals-v1.json");
 const MIME = { ".js": "text/javascript", ".mjs": "text/javascript", ".wasm": "application/wasm", ".json": "application/json" };
 
-/** serve /porw/ and /vendor/ in dev, and copy them into the output on build */
-const porwRuntime = () => ({
+/** serve /porw/ and /vendor/ in dev, and copy them into the output on build -- there, under a name made of their
+ *  own contents, so that a browser holding an old copy cannot be holding it at the URL a new build asks for. */
+const porwRuntime = () => {
+  // Rolldown hands every hook its own context object, so this cannot live on `this`: the id is computed once per
+  // build and closed over by the hooks that have to agree with it.
+  let id = null, worker = null;
+  return {
   name: "aigg-porw-runtime",
   enforce: "pre",
+  // computed before anything is emitted: the chunks and the worker are rewritten to agree with it
+  buildStart() {
+    id = runtimeId(repoRoot);
+    worker = workerName(fs.readFileSync(path.join(here, "public/node_worker.js"), "utf8"), id);
+  },
+  // `/porw/claim.js` in the page's own source and `/node_worker.js` in the controller are plain strings Vite leaves
+  // alone (they are external, and a Worker URL is not a module specifier). This is where they learn the id.
+  renderChunk(code) {
+    if (!id) return null;
+    const out = withRuntimeId(code, id).split("/node_worker.js").join(`/${worker.name}`);
+    return out === code ? null : { code: out, map: null };
+  },
   // Vite's own resolver would try to find these on disk and fail before Rollup ever consults `external`, so say
   // it here as well: these ids are URLs the browser resolves, not modules this build owns.
   resolveId(id) { return EXTERNAL.test(id) ? { id, external: true } : null; },
@@ -43,10 +60,16 @@ const porwRuntime = () => ({
     // where each measured individual stands among the founders (flybnb/analysis/phenotype_rank.mjs): what the page
     // shows instead of a made-up rarity, and what it cannot show for a fly whose battery has not been run
     fs.mkdirSync(path.join(here, "dist/phenotypes"), { recursive: true }); fs.copyFileSync(PHENOTYPES, path.join(here, "dist/phenotypes/individuals-v1.json"));
-    const n = copyRuntime(repoRoot, path.join(here, "dist"));
-    this.info?.(`copied ${n} runtime files into dist/porw and dist/vendor`);
+    const dist = path.join(here, "dist");
+    const n = copyRuntime(repoRoot, dist, id);
+    // Vite copies public/ verbatim, so the unhashed worker is sitting in dist right now. Publishing both would put
+    // a fixed URL back on the CDN for the file whose staleness caused this; the hashed one is the only one.
+    fs.rmSync(path.join(dist, "node_worker.js"), { force: true });
+    fs.writeFileSync(path.join(dist, worker.name), worker.code);
+    this.info?.(`copied ${n} runtime files into dist/porw.${id} and dist/vendor.${id}, worker ${worker.name}`);
   },
-});
+  };
+};
 
 export default {
   root: here,
