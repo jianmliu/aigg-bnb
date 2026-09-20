@@ -172,6 +172,23 @@ export async function delegate() {
 /** load the ACTIVE MEP's brain (file or URL). The bytes go straight to the worker, which recomputes the keccak
  *  weights root over every 4 KiB tile and reports it back: a brain is accepted only if that reproduces the
  *  model_id the MEP pins on-chain, so a wrong or hostile source can only waste the download. */
+/** Fetch a brain's bytes, and SAY what went wrong when they do not arrive.
+ *
+ *  A storage provider answers a refusal with a body, not a hang, and the page used to drop both on the floor: the
+ *  error went to the log, `loaded` was never set, and every view kept showing "loading" for ever. That is how a
+ *  spent read quota looks from a tab -- the commonest failure a host will meet, because a hundred individuals of a
+ *  collection all pull the same tens of megabytes of base, and the bucket's allowance is finite. Greenfield answers
+ *  it as 406 with `<Message>bucket quota overflow</Message>`, which is a sentence worth passing on rather than
+ *  swallowing: nothing about it is the host's fault, and nothing about it gets better by waiting. */
+async function fetchBrain(url, what) {
+  let r; try { r = await fetch(url); } catch (e) { throw new Error(`${what}: could not reach ${new URL(url, location.href).host} — ${e.message}`); }
+  if (!r.ok) {
+    const body = await r.text().catch(() => ""); const said = /<Message>([^<]+)<\/Message>/.exec(body)?.[1] || body.trim().slice(0, 120);
+    const hint = r.status === 406 ? " — the bucket's read quota is spent; it has to be topped up, or the brain fetched from another provider" : "";
+    throw new Error(`${what}: the storage provider answered ${r.status}${said ? ` (${said})` : ""}${hint}`);
+  }
+  return new Uint8Array(await r.arrayBuffer());
+}
 /** The URL a MEP's `weightsDA` points at, given a storage provider. */
 const daUrl = (da, sp) => (da || "").startsWith("gnfd://") && sp ? sp.replace(/\/$/, "") + "/view/" + da.slice(7) : da;
 /** A base this deployment already serves, by model id: an individual is published as a delta over one of them, and
@@ -181,7 +198,7 @@ const servedBaseFor = (modelId) => state.meps.find((x) => x.modelId?.toLowerCase
 export async function loadModel() {
   const m = mepById(state.active); let bytes; const f = $("file").files[0];
   if (f) bytes = new Uint8Array(await f.arrayBuffer());
-  else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = new Uint8Array(await (await fetch(url)).arrayBuffer()); }
+  else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = await fetchBrain(url, mepName(m)); }
   // An individual of a collection is published as a DELTA -- a few hundred bytes of edits over a base the network
   // already holds -- so what arrives may not be a brain at all. The bytes say which, and the delta says which base
   // it edits; the base is then whichever served MEP has that model id, fetched the same way as any other brain.
@@ -199,7 +216,7 @@ export async function loadModel() {
       const url = daUrl(base.weightsDA, $("sp")?.value);
       if (!url) throw new Error(`this is a delta over ${mepName(base)}; give that brain's storage provider above so its base can be fetched`);
       log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)} — fetching the base…`);
-      bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+      bytes = await fetchBrain(url, `${mepName(m)}: its base (${mepName(base)})`);
     }
   }
   if (bytes) log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB ${delta ? "base " : ""}downloaded, checking its model_id…`);

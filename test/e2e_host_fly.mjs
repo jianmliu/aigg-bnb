@@ -60,6 +60,8 @@ try {
   // the base's storage provider, so the test can count what the page asks of it -- and refuse it
   let baseFetches = 0, blockBase = false;
   const sp = http.createServer((q, r) => {
+    if (blockBase === "quota") { r.writeHead(406, { "content-type": "application/xml", "access-control-allow-origin": "*" });
+      return r.end("<Error><Code>30004</Code><Message>bucket quota overflow</Message></Error>"); } // what Greenfield actually answers
     if (blockBase) { r.writeHead(503, { "access-control-allow-origin": "*" }); return r.end("the base is not available any more"); }
     baseFetches++; r.writeHead(200, { "content-type": "application/octet-stream", "access-control-allow-origin": "*" }); r.end(Buffer.from(basePayload));
   });
@@ -124,7 +126,23 @@ try {
     /released the .* base/.test(await page.locator("#log").innerText()));
   check("and under the TERMS id: the page's own id check passes, where it used to go quietly false",
     !/local MEP id/.test(await page.locator("#log").innerText()), (await page.locator("#log").innerText()).split("\n").filter((l) => /WARNING/.test(l)).join(" | "));
-  check("no page errors while all this happened", errors.length === 0, errors.slice(0, 2).join(" | "));
+  // ---- the base cannot be fetched: the commonest thing that will go wrong for a real host ----
+  // A hundred individuals of a collection pull the same tens of megabytes, so the bucket's read allowance is the
+  // first thing to run out -- and it did, on the testnet, mid-verification. The page used to sit on "loading" for
+  // ever: the failure went to the log as nothing anybody could act on, and no view said a word.
+  { blockBase = "quota"; // the base was released when the node started, so this load has to go and fetch it
+    await page.evaluate((id) => window.appActions.setActive(id), flyMepId);
+    await page.fill("#url", fe.url + "/view/aigg-brains/fly-1.delta");
+    await page.click("#btnModel");
+    const said = await waitFor(async () => /quota/i.test(await page.locator("#log").innerText()), 30000);
+    const line = (await page.locator("#log").innerText()).split("\n").filter((l) => /406|quota/i.test(l)).join(" ");
+    check("a refused base is reported in the storage provider's own words, not swallowed", said, line || "(the log says nothing about it)");
+    check("and it says what to do about it, since waiting will not help", /topped up|another provider/i.test(line), line);
+    blockBase = false; }
+
+  // the 406 above is deliberate, and the browser logs every refused request: it is the one expected noise
+  { const unexpected = errors.filter((e) => !/406/.test(e));
+    check("no page errors while all this happened, beyond the refusal this test asked for", unexpected.length === 0, unexpected.slice(0, 2).join(" | ")); }
 } catch (e) { console.error(e); fails++; }
 finally { if (browser) await browser.close(); for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); }
 async function browserOf(launch) { const { chromium } = await import("playwright"); return chromium.launch(launch); }
