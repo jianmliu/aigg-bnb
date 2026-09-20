@@ -21,9 +21,10 @@ const SECRET = ["PORW_RELAYER_KEY", "PORW_DEPLOYER_KEY", "PORW_RPC", "GATEWAY_KE
 for (const [name, sv] of services) for (const k of SECRET) if (sv.vars.has(k)) check(`${name}: ${k} carries no value (sync: false)`, sv.vars.get(k).raw === "sync: false", JSON.stringify(sv.vars.get(k)));
 check("the relayer key is declared, so a fresh Blueprint asks for it", vars.has("PORW_RELAYER_KEY"));
 check("no key named *_KEY or *_BEARER has a value, in any service", all.every(([k, v]) => !/_(KEY|BEARER)$/.test(k) || v.value === undefined));
-// the brains this repository knows: the gate task's profiles, and the base the genesis collection's founders are variants of
+// the brains this repository knows: the gate task's profiles, the base the genesis collection's founders are variants of,
+// and the male base (another connectome, and the first brain here whose exec kind is not FlyWire's weight unit)
 const known = new Map(); const fieldsIn = (dir, pick = () => true) => { for (const f of fs.readdirSync(dir).filter(pick)) { const j = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); known.set(j.mepId.toLowerCase(), j); } };
-fieldsIn(path.join(root, "tasks/flywire-gate/fields")); fieldsIn(path.join(root, "flybnb/genesis"), (f) => /^flywire-.*\.v\d+\.json$/.test(f));
+fieldsIn(path.join(root, "tasks/flywire-gate/fields")); fieldsIn(path.join(root, "flybnb/genesis"), (f) => /^flywire-.*\.v\d+\.json$/.test(f)); fieldsIn(path.join(root, "flybnb/male"), (f) => /^malecns-.*\.v\d+\.json$/.test(f));
 // a 32-byte hex value is a private key unless it is one of the ids this file is allowed to carry
 const ids = new Set((vars.get("PORW_MEP_IDS")?.value || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
 const stray = lines.join("\n").match(/0x[0-9a-fA-F]{64}\b/g)?.filter((h) => !known.has(h.toLowerCase())) || [];

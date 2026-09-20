@@ -23,4 +23,14 @@ check("a perturbed battery is the same batch with a silence set on every run", p
   const snd = M.stimuli.find((s) => s.name === "sound").outgoing_synapses_by_side;
   check("which is how it shows that the right ear of this reconstruction is nearly disconnected, and why there is no sound_left", snd.R * 20 < snd.L && !M.stimuli.some((s) => s.name === "sound_left"));
   const mb = batteryBatch(M); check(`as a batch: ${mb.runs.length} runs naming ${Object.keys(mb.sets).length} sets`, mb.runs.length === M.stimuli.length * M.seeds.length && Object.keys(mb.sets).length === M.stimuli.length); }
+// the male base's registered profile: the battery, the profile file and the pinned int-lif implementation must agree,
+// because the chain computes the kind digest itself and a brain registered under the wrong one is a different brain
+{ const L = await import("../contracts/lib/aigg-porw/web/porw-browser/lif.js");
+  const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  const M = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-male-v1.json", import.meta.url)));
+  const f = JSON.parse(fs.readFileSync(new URL("../flybnb/male/malecns-v1.0-min2.v3.json", import.meta.url)));
+  check(`the male profile's exec kind is what this aigg-porw computes for unit ${f.wUnitQ16}, and it is not the default kind`,
+    f.execKind.toLowerCase() === hex(L.lifExecKind(f.wUnitQ16)).toLowerCase() && f.execKind.toLowerCase() !== hex(L.lifExecKind()).toLowerCase());
+  check("and it is the brain the male battery's population names, at the battery's unit",
+    f.modelId.toLowerCase() === M.population.base_model_id.toLowerCase() && f.wUnitQ16 === M.population.w_unit_q16 && f.neurons === M.neurons); }
 console.log(fails ? `${fails} FAILURES` : "flybnb battery: all checks passed"); process.exit(fails ? 1 : 0);
