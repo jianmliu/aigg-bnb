@@ -4,6 +4,7 @@ FlyBnB is a whole-brain perturbation atlas of the fly, re-tested across individu
 
 | here | what |
 |---|---|
+| `analysis/phenotype_rank.mjs`, `results/phenotypes/` | **where an individual stands among the founders**, phenotype by phenotype: the reference distribution (89 phenotypes over the hundred founders) and, per individual, what stands out. Keyed by the delta hash its token carries, so the page can show measured standing instead of an invented rarity; a fly with no runs has no entry, which is the answer until its battery is run |
 | [`docs/flybnb/CREDIT.md`](../docs/flybnb/CREDIT.md) | **who is named in the dataset, for what, and how it is checked**: the roles, the thresholds, what credit is not (it is neither authorship nor for sale), and the conflict of interest, stated. Written before the paper on purpose |
 | `battery/` | **the standard battery every individual gets**: 13 stimuli × 3 seeds, the output of all 1,303 descending neurons; how it is built from the annotations; its form as one batched task. It is what makes the atlas, the association analysis and the selection experiment one dataset |
 | `analysis/intlif.py` | the int-lif runner the battery uses: exact, 0.6 s per run (the reference takes 75 s), silence sets included. `--verify` holds it to the published digests and to the rule as written |

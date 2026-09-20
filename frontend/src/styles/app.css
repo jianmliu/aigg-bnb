@@ -394,3 +394,12 @@ span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
 .listings.adoptable { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 22px 16px; }
 .listings.adoptable .brain.listing { cursor: default; }
 .listings.adoptable .btn { margin-top: 6px; padding: 9px 12px; font-size: 13px; }
+
+/* What the battery measured about an individual: where it stands among the founders, or the fact that nothing has
+   measured it yet. Quiet by design -- this is evidence, not a rarity badge. */
+.pheno { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); display: grid; gap: 4px; }
+.pheno .kv { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.pheno .why { color: var(--muted); font-size: 12px; }
+.pheno .amt { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+.pheno .amt[data-tone="high"] { color: var(--eye); }
+.pheno .amt[data-tone="low"] { color: var(--cyan); }

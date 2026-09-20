@@ -67,6 +67,13 @@ try {
 
   const treasury = await W.pub.getBalance({ address: H.FLY_TREASURY });
   await page.click("#btnAdopt-0"); await page.waitForFunction(() => window.app.state.flies.all.length === 1, null, { timeout: 60000 });
+  { // what the battery measured about the fly just adopted, and where that puts it among the hundred founders. The
+    // page invents no rarity: this is read from the published runs, by the delta hash the token carries.
+    const P = JSON.parse(fs.readFileSync(path.join(H.root, "flybnb/results/phenotypes/individuals-v1.json"), "utf8"));
+    const mine = P.byDeltaHash[G.individuals[0].deltaHash.toLowerCase()]; const text = await page.locator("#pheno-1").innerText();
+    check(`the adopted fly shows what was measured about it (${mine.phenotypes} phenotypes, ${mine.standout.length} standing out)`,
+      new RegExp(`${mine.phenotypes} phenotypes`).test(text) && (mine.standout.length === 0 || text.includes(mine.standout[0].name)));
+    check("and a percentile is shown as where it stands among the founders", mine.standout.length === 0 || /top \d|bottom \d/.test(text)); }
   const ind = await H.readFrom(W, C, "FlyCollection", "individuals", [1n]);
   check("adopted with the published proof: the token is the wallet's and carries founder #0's delta", (await H.readFrom(W, C, "FlyCollection", "ownerOf", [1n])).toLowerCase() === W.account.address.toLowerCase() && ind[1] === G.individuals[0].deltaHash && ind[0] === G.baseModelId);
   check("one transaction, and the adopter is now a bonded host of the base brain", prompts.length === 1 && (await W.instances.read.bonded([W.account.address])) === BOND && (await W.instances.read.isBondedFor([W.account.address, base.mepId])));
