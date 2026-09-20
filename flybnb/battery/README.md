@@ -62,6 +62,19 @@ The same assay for the male brain (Janelia MaleCNS v1.0, brain **and** ventral n
 
 Male results are **provisional** until the male kind is declared and the base registered on a public network: nothing here has been executed by anyone else yet.
 
+## Posting a battery to the network (`post_battery.mjs`)
+
+```bash
+FLYBNB_REQUESTER_KEY=0x… node flybnb/battery/post_battery.mjs --relayer https://<relayer> --payload individual.bin --name <payload name> \
+    --battery flybnb/battery/battery-male-v1.json --offline rows.jsonl --id M000 --out attestation.json
+```
+
+A requester needs a funded key (it pays the task's fee and the gas of one `postBatch`, nothing else; the key is read from the environment and never written), the relayer's URL and the brain's payload. The script checks that the brain is registered under the weight unit the battery's population names **before paying**, posts the battery as one batched task, finds the drawn executors' session keys on chain (`SessionKeySet`), announces, and collects.
+
+What comes back is an **attestation**, not numbers: the task, its executors, the batch root they signed, and per run the `execRoot` and the counts digest. The readout of a row is recomputed by whoever wants it (`run_battery.py`); what the network adds is that bonded executors drawn by the chain ran the same runs of the same registered brain and signed the same result, with any single run open to dispute. `--offline` joins the two: the network's digests are `run_battery.py`'s digests for that individual, or the mismatching runs are named.
+
+`test/e2e_post_battery.mjs` does all of it on a local chain under the male kind (unit 7209): two independent implementations, the wasm kernel in the nodes and numpy offline, agree on every digest; the same payload run offline under 18022 does **not** join. (That last check is what showed the first version of the test to be hollow: over 40 steps nothing leaves the stimulated set and a run does not depend on the unit at all.)
+
 ## Rebuilding it
 
 ```bash
