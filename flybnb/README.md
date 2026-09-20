@@ -27,16 +27,17 @@ The brains are not in the repository. They are identified by content address, an
 |---|---|---|---|---|
 | `flywire-783-min5.bin` | FlyWire v783, connections of ≥ 5 synapses. The published wiring; on Greenfield as `gnfd://aigg-brains/flywire-fafb-v783-min5.bin` | 28,123,136 | `fd246cc2c0ac74e8928cf5b0012c5d4c48a0a03475595213b301f85f5fe4e1da` | `0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a` |
 | `flywire-783-min2.bin` | the same export at ≥ 2 synapses: the base individuals are laid out on, so that connections can cross the threshold of five in both directions; on Greenfield as `gnfd://aigg-brains/flywire-fafb-v783-min2.bin` | 77,074,432 | `10a9e16f08174e4c2421f64d10ee17466d39ff88847ba7ab0c1ef57c1a9022a5` | `0x53a7b48e9265bea68fbd3f3640eda751f8dd7742ac76ae6f9c69f1cddc528135` |
+| `malecns-v1.0-min2.bin` | MaleCNS v1.0 (brain and ventral nerve cord), connections of ≥ 2 synapses: the base male individuals are laid out on, and what the male battery's `population` names; on Greenfield as `gnfd://aigg-brains/malecns-v1.0-min2.bin` | 154,169,344 | `38227caa7f35af4913a85d0f59c473c4b870e5f9373bb4e07e143163e7a571ba` | `0x7a22e8b8a1eae502ea7528be8ed0699b5c31ce5bf6fd2d4e56aedb46bf17394e` |
 
-Both are served, public-read, by the Greenfield testnet storage provider `https://gnfd-testnet-sp2.bnbchain.org` (`/view/aigg-brains/<object>`); fetch either and check it before use, as the scripts do:
+All three are served, public-read, by the Greenfield testnet storage provider `https://gnfd-testnet-sp2.bnbchain.org` (`/view/aigg-brains/<object>`); fetch either and check it before use, as the scripts do:
 
 ```bash
 curl -O https://gnfd-testnet-sp2.bnbchain.org/view/aigg-brains/flywire-fafb-v783-min2.bin && shasum -a 256 flywire-fafb-v783-min2.bin
 ```
 
-The min2 object was fetched back on 2026-09-18 and verified: 77,074,432 bytes, the sha256 above, and `model_id` `0x53a7b48e…` recomputed over its tiles (`js/greenfield.js: fetchVerified`). A testnet is not an archive; the content addresses are what identify the brains, wherever the bytes come from.
+The female min2 object was fetched back on 2026-09-18 and verified: 77,074,432 bytes, the sha256 above, and `model_id` `0x53a7b48e…` recomputed over its tiles (`js/greenfield.js: fetchVerified`). The male min2 was uploaded on 2026-09-20 and verified without downloading it, because the bucket's read quota would not cover 154 MB: the object is sealed at 154,169,344 bytes and the seven Reed-Solomon checksums the chain holds are recomputed from the local file segment for segment. A testnet is not an archive; the content addresses are what identify the brains, wherever the bytes come from.
 
-Both can also be rebuilt from the public FlyWire v783 release through `contracts/lib/aigg-porw/gpu/triton/demo/fly_brain/flywire_export.py`; its README describes the inputs. The payload's name is part of its bytes, so the content address is reproduced only with the same name: `--min-syn 5 --name flywire-fafb-v783-min5` and `--min-syn 2 --name flywire-fafb-v783-min2`.
+The female ones can also be rebuilt from the public FlyWire v783 release through `contracts/lib/aigg-porw/gpu/triton/demo/fly_brain/flywire_export.py`, the male one from the MaleCNS v1.0 flat-connectome release through `malecns_export.py` (`--min-syn 2 --name malecns-v1.0-min2`); their READMEs describe the inputs. The payload's name is part of its bytes, so the content address is reproduced only with the same name: `--min-syn 5 --name flywire-fafb-v783-min5` and `--min-syn 2 --name flywire-fafb-v783-min2`.
 
 ```bash
 python flybnb/analysis/phenotype_variance.py --verify --min5 flywire-783-min5.bin
