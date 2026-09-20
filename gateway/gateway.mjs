@@ -174,16 +174,31 @@ const SESSION = parseAbiItem("event SessionKeySet(address indexed instance, addr
  *  for both executors, nothing was announced, and the market refunded the fee at the timeout. An anvil node answers
  *  it happily, which is why every test passed. So the scan is bounded and runs NEWEST FIRST, which is also the
  *  right order: the newest live delegation is the one we want, so the first hit ends the search. */
-const sessions = new Map(); // instance -> { session, expiry } -- a delegation stays good until it expires
+// instance -> { session, expiry, scannedTo }: the newest live delegation seen, and the block we had read up to when we
+// saw it. A host DELEGATES A FRESH KEY whenever it reconnects -- every page reload, every restart -- and the old one
+// stays live for as long as its expiry says, days of it. So a cache that answers from an unexpired entry keeps
+// announcing into a key nobody is listening on, and the host is drawn, silent, and unpaid until the old delegation
+// finally lapses. The entry is therefore never trusted on its own: every call re-reads the few blocks since it was
+// taken, which is one small query, and a newer delegation wins.
+const sessions = new Map();
 async function sessionOf(wallet) {
   const inst = wallet.toLowerCase(); const block = await blockNumber();
-  const had = sessions.get(inst); if (had && had.expiry > block) return had.session;
+  const newest = async (from, to) => (await ch.pub.getLogs({ address: dep.addresses.instances, event: SESSION, args: { instance: wallet }, fromBlock: from, toBlock: to }))
+    .filter((l) => BigInt(l.args.expiry) > block).at(-1);
+  const keep = (l, scannedTo) => { const s = { session: l.args.session.toLowerCase(), expiry: BigInt(l.args.expiry), scannedTo }; sessions.set(inst, s); return s.session; };
+
+  const had = sessions.get(inst);
+  if (had && had.expiry > block) { // still good -- unless a newer one has been delegated since we looked
+    for (let from = had.scannedTo + 1n; from <= block; from += cfg.logWindow) {
+      const to = from + cfg.logWindow - 1n > block ? block : from + cfg.logWindow - 1n;
+      const l = await newest(from, to); if (l) return keep(l, to);
+    }
+    had.scannedTo = block; return had.session;
+  }
   const floor = block > cfg.sessionLookback ? block - cfg.sessionLookback : 0n;
   for (let to = block; ; to -= cfg.logWindow) {
     const from = to - cfg.logWindow + 1n > floor ? to - cfg.logWindow + 1n : floor;
-    const logs = await ch.pub.getLogs({ address: dep.addresses.instances, event: SESSION, args: { instance: wallet }, fromBlock: from, toBlock: to });
-    const live = logs.filter((l) => BigInt(l.args.expiry) > block).at(-1);
-    if (live) { const s = { session: live.args.session.toLowerCase(), expiry: BigInt(live.args.expiry) }; sessions.set(inst, s); return s.session; }
+    const l = await newest(from, to); if (l) return keep(l, block);
     if (from <= floor) break;
   }
   throw new Error(`no live session key in the last ${cfg.sessionLookback} blocks`);

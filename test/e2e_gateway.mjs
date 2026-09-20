@@ -163,6 +163,25 @@ try {
     const r = await call("/v1/responses", { model: "warm", seed: 13, max_output_tokens: STEPS }); const j = await r.json(); A.nd.execLie = null;
     check("a provider lies: a dispute opens at settlement, 502 disputed, nobody is paid", r.status === 502 && j.error.type === "disputed" && j.receipt.disputed.length === 2 && (await bal(A.addr)) === a);
     const v = await (await call("/v1/responses/" + j.id)).json(); check("and the call stays readable, with both roots in its receipt", v.status === "failed" && v.receipt.results[A.addr].execRoot !== v.receipt.results[B.addr].execRoot); }
+  // ---- a provider reconnects, and delegates a FRESH session key ----
+  // Every page reload does this, and the old delegation stays live for as long as its expiry says -- days. A gateway
+  // that remembers the session it last found therefore keeps announcing into a key nobody is listening on: the host
+  // is drawn, silent and unpaid, and the caller is told nobody answered. Seen on the live testnet before it was fixed.
+  { const session2 = keypair("0x" + "aa".repeat(32));
+    const del2 = await E.makeDelegation(E.localWallet(H.KEYS[1]), domains.registry, H.hex(session2.address), 100000);
+    const dr = await R.api("/tx/delegate", { instance: del2.instance, session: del2.session, expiry: del2.expiry, sig: del2.sig });
+    check("the provider's new delegation is on-chain, and the old one has not expired", dr.ok === true);
+    A.down(); // the key the gateway has been using stops listening, exactly as a closed tab does
+    A.nd.key = session2; A.nd.delegation = del2;
+    const rc2 = new RelayClient([d0.relay], session2); await rc2.connect(); stop.push(() => rc2.close());
+    const svc2 = new NodeService(A.nd, rc2, { onResult: async (res) => { res.relayer = await R.api("/tx/result", res); } });
+    svc2.serve(warm.mep.mepId); stop.push(() => svc2.stop());
+    const mining = setInterval(() => anvil.mine(8).catch(() => {}), 300);
+    const r = await call("/v1/responses", { model: "warm", seed: 31, max_output_tokens: STEPS }); const j = await r.json();
+    clearInterval(mining);
+    check("a provider that re-delegated is announced to on its NEW session key, not the one last seen",
+      r.status === 200 && j.status === "completed" && j.receipt?.executors?.length === 2); }
+
   // ---- an RPC that will not answer an unbounded eth_getLogs, which is every public one ----
   // The gateway has to find each executor's SESSION key to announce to it, and the registry maps session -> instance,
   // so the reverse is a log scan. It used to ask from block 0. Anvil answers that instantly; BSC testnet's public RPC
