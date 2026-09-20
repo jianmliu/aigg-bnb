@@ -172,12 +172,33 @@ export async function delegate() {
 /** load the ACTIVE MEP's brain (file or URL). The bytes go straight to the worker, which recomputes the keccak
  *  weights root over every 4 KiB tile and reports it back: a brain is accepted only if that reproduces the
  *  model_id the MEP pins on-chain, so a wrong or hostile source can only waste the download. */
+/** The URL a MEP's `weightsDA` points at, given a storage provider. */
+const daUrl = (da, sp) => (da || "").startsWith("gnfd://") && sp ? sp.replace(/\/$/, "") + "/view/" + da.slice(7) : da;
+/** A base this deployment already serves, by model id: an individual is published as a delta over one of them, and
+ *  the collection's bases are served for exactly this reason, so the page never has to be told where to find one. */
+const servedBaseFor = (modelId) => state.meps.find((x) => x.modelId?.toLowerCase() === modelId.toLowerCase());
+
 export async function loadModel() {
   const m = mepById(state.active); let bytes; const f = $("file").files[0];
   if (f) bytes = new Uint8Array(await f.arrayBuffer());
   else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = new Uint8Array(await (await fetch(url)).arrayBuffer()); }
-  log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB downloaded, checking its model_id…`);
-  const r = await ask("prepare", { mepId: m.mepId, bytes: bytes.buffer }, [bytes.buffer]); // transferred, not copied
+  // An individual of a collection is published as a DELTA -- a few hundred bytes of edits over a base the network
+  // already holds -- so what arrives may not be a brain at all. The bytes say which, and the delta says which base
+  // it edits; the base is then whichever served MEP has that model id, fetched the same way as any other brain.
+  let delta = null, baseModelId = null;
+  const info = await ask("deltaInfo", { bytes: bytes.buffer });
+  if (info.isDelta) {
+    delta = bytes; baseModelId = info.baseModelId;
+    const base = servedBaseFor(baseModelId);
+    if (!base) throw new Error(`this is a delta over model ${baseModelId.slice(0, 12)}…, which this mesh does not serve: nothing to apply it to`);
+    const url = daUrl(base.weightsDA, $("sp")?.value);
+    if (!url) throw new Error(`this is a delta over ${mepName(base)}; give that brain's storage provider above so its base can be fetched`);
+    log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)} — fetching the base…`);
+    bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+  }
+  log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB ${delta ? "base " : ""}downloaded, checking its model_id…`);
+  const r = await ask("prepare", { mepId: m.mepId, bytes: bytes.buffer, ...(delta ? { delta: delta.buffer, baseModelId } : {}) },
+    delta ? [bytes.buffer, delta.buffer] : [bytes.buffer]); // transferred, not copied
   const ok = r.modelId.toLowerCase() === m.modelId.toLowerCase();
   state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, bytes: r.bytes, modelId: r.modelId, ok };
   if (state.node) await hostOnNode(m); // hot-add to a running node
@@ -218,7 +239,10 @@ export async function hostOnNode(m) {
   requireMemory(state.node.memoryBytes + bytes);
   // Reserve before awaiting: concurrent hot-adds, mismatched MEPs and failed loads still consume heap.
   state.node.memoryBytes += bytes;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0 }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
+  // The TERMS, when the brain is an individual of a collection: its mep id is keccak(profile, beneficiary, bps) and
+  // the terms are nowhere in the bytes, so a host that is not told them serves an id the chain never draws.
+  const terms = m.royaltyBps > 0 && m.beneficiary ? { beneficiary: m.beneficiary, royaltyBps: m.royaltyBps } : null;
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, terms }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
   if (!r.matches) { log(`WARNING ${mepName(m)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
   log(`${mepName(m)}: resident on the node, serving audits and tasks`);
@@ -273,7 +297,7 @@ export function host(id, on) { on ? state.hosted.add(id) : state.hosted.delete(i
 /** the MEP's gnfd:// pointer plus an SP endpoint is a fetchable URL; filling the box beats making anyone paste it */
 export function autofillUrl() {
   const m = mepById(state.active); const url = $("url"), sp = $("sp"); if (!m || !url || !sp) return;
-  if (!url.value && m.weightsDA.startsWith("gnfd://") && sp.value) url.value = sp.value.replace(/\/$/, "") + "/view/" + m.weightsDA.slice(7);
+  if (!url.value) { const u = daUrl(m.weightsDA, sp.value); if (u && u !== m.weightsDA) url.value = u; }
 }
 /** every action the UI can fire, wrapped so a rejection lands in the log instead of an unhandled rejection */
 export const wrap = (fn) => async (...args) => { try { return await fn(...args); } catch (e) { state.errors.push(String(e.message || e)); log("ERROR " + (e.message || e)); onChange(); } };
