@@ -400,14 +400,21 @@ async function respond(req, res, body) {
 const server = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); const p = u.pathname.replace(/\/$/, "");
-    // A gateway with no relay connection cannot announce a task to anybody. It can still take the request, spend a
-    // fee posting it on-chain, and hand back a refund three minutes later -- which is what it did today, twice, while
-    // this endpoint answered `ok: true` because that was a constant. Health is not "the process is up": it is
-    // whether the thing can do its job, and the one connection it cannot work without is this one.
-    if (req.method === "GET" && p === "/healthz") {
+    // Two questions that are not the same question, and answering them on one endpoint was a mistake.
+    //
+    //   /healthz  is the ORCHESTRATOR's: is this process alive and worth keeping? Always 200 while it is running.
+    //   /readyz   is everybody else's: can it actually do its job right now? 503 when it cannot.
+    //
+    // A gateway with no relay reaches no executor: it takes the call, spends a fee posting the task, and refunds at
+    // the market's timeout. That is worth saying loudly -- but NOT on the path the platform restarts the process by.
+    // Render health-checks /healthz, so a 503 there during a relayer outage would have it kill a gateway that is
+    // working perfectly well and waiting, and killing it does not bring the relayer back. Both endpoints carry the
+    // same relay facts; only the status code differs, and only /readyz is allowed to refuse.
+    if (req.method === "GET" && (p === "/healthz" || p === "/readyz")) {
       const connected = relay.socks.filter((x) => x.open).length;
-      return json(res, connected ? 200 : 503, { ok: connected > 0, wallet: ME, chain: Number(dep.chainId), market, calls: calls.size,
-        relay: { url: published.relay, connected, reconnects: relay.reconnects, ...(connected ? {} : { note: "no relay: a call would post its fee, reach no executor, and be refunded at the market's timeout" }) } });
+      const body = { ok: connected > 0, wallet: ME, chain: Number(dep.chainId), market, calls: calls.size,
+        relay: { url: published.relay, connected, reconnects: relay.reconnects, ...(connected ? {} : { note: "no relay: a call would post its fee, reach no executor, and be refunded at the market's timeout" }) } };
+      return json(res, p === "/readyz" && !connected ? 503 : 200, body);
     }
     if (!authed(req)) return json(res, 401, { error: { type: "authentication_error", message: "Authorization: Bearer <the gateway's key>" } });
     if (req.method === "GET" && p === "/v1/models") {

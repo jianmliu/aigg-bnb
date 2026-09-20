@@ -244,9 +244,14 @@ try {
   { const h = await (await fetch(GWY.url + "/healthz")).json();
     check("healthz reports the relay it cannot work without", h.ok === true && h.relay?.connected >= 1, JSON.stringify(h));
     await R.stop(); await H.sleep(2000); // the relayer goes away, as a redeploy does
-    const r = await fetch(GWY.url + "/healthz"); const h2 = await r.json();
-    check("with no relay it says so, and stops answering 200", h2.ok === false && r.status === 503, `${r.status} ${JSON.stringify(h2)}`);
-    check("and it names the consequence, which is what an operator needs", /refunded/.test(h2.relay?.note || ""), JSON.stringify(h2.relay)); }
+    const live = await fetch(GWY.url + "/healthz"); const lb = await live.json();
+    const ready = await fetch(GWY.url + "/readyz"); const rb = await ready.json();
+    check("with no relay, readyz refuses: it cannot do the job", ready.status === 503 && rb.ok === false, `${ready.status} ${JSON.stringify(rb)}`);
+    check("and it names the consequence, which is what an operator needs", /refunded/.test(rb.relay?.note || ""), JSON.stringify(rb.relay));
+    // the platform restarts the process by this path, and restarting does not bring a relayer back
+    check("but healthz still answers 200: a waiting gateway must not be killed for its relayer's outage",
+      live.status === 200, `${live.status} ${JSON.stringify(lb)}`);
+    check("while telling the same truth about the relay", lb.ok === false && lb.relay?.connected === 0 && /refunded/.test(lb.relay?.note || ""), JSON.stringify(lb.relay)); }
 
 } catch (e) { console.error(e); fails++; }
 finally { for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); fs.rmSync(tmp, { recursive: true, force: true }); }
