@@ -2,6 +2,12 @@
 pragma solidity ^0.8.20;
 import "./FlyCollectionRevision.t.sol";
 import "../src/FounderInventoryVault.sol";
+import "../src/TreasuryFounderCollection.sol";
+
+interface IStockVault {
+    struct Entry { uint32 index; uint8 sex; bytes32 deltaHash; bytes32[] proof; IMEPRegistry.MEP mep; }
+    function stock(Entry[] calldata entries, uint256 price, uint256 expiresAt) external;
+}
 
 contract FounderInventoryVaultTest is Test {
     FlyCollection c; MEPRegistry meps; AccruingMarket market; FlyRenderer art;
@@ -87,6 +93,65 @@ contract FounderInventoryVaultTest is Test {
         assertEq(c.ownerOf(tokenId), address(vault));
         assertEq(bob.balance, beforeBalance);
         assertTrue(venue.available(tokenId));
+    }
+    function protectedCollection() internal returns (TreasuryFounderCollection) {
+        return new TreasuryFounderCollection(TreasuryFounderCollection.Config(
+            BASE_F, BASE_M, root(), 2, FEE, 0, treasury, IMEPRegistry(address(meps)),
+            IInstanceBonding(address(0)), LineageRegistry(address(0)), bytes32(0), bytes32(0),
+            IRoyaltyMarket(address(market)), 1000, FlyCollection.Shares(vendor, 1000, 500, admin)));
+    }
+    function test_bindingIsRestrictedPermanentAndChecksConfiguration() public {
+        TreasuryFounderCollection nft = protectedCollection();
+        FounderInventoryVault v = new FounderInventoryVault(nft, payable(treasury), admin);
+        vm.prank(bob); vm.expectRevert("bootstrapper only"); nft.setInventoryVault(v);
+        vm.expectRevert("vault configuration"); nft.setInventoryVault(vault);
+        FounderInventoryVault wrongRecipient = new FounderInventoryVault(nft, payable(bob), admin);
+        vm.expectRevert("vault configuration"); nft.setInventoryVault(wrongRecipient);
+        FounderInventoryVault wrongOwner = new FounderInventoryVault(nft, payable(treasury), bob);
+        vm.expectRevert("vault configuration"); nft.setInventoryVault(wrongOwner);
+        nft.setInventoryVault(v);
+        vm.expectRevert("already bound"); nft.setInventoryVault(v);
+        vm.prank(admin); vm.expectRevert("inventory vault only"); nft.mint(0, 0, DF, proofFor(0));
+        vm.prank(admin); v.mint(0, 0, DF, proofFor(0));
+        assertEq(nft.ownerOf(1), address(v));
+    }
+    function stockEntries() internal pure returns (IStockVault.Entry[] memory entries) {
+        entries = new IStockVault.Entry[](2);
+        entries[0] = IStockVault.Entry(0, 0, DF, proofFor(0), mep(keccak256("stock-female")));
+        entries[1] = IStockVault.Entry(1, 1, DM, proofFor(1), mep(keccak256("stock-male")));
+    }
+    function setupProtectedVault() internal {
+        TreasuryFounderCollection nft = protectedCollection(); c = nft;
+        vault = new FounderInventoryVault(nft, payable(treasury), admin); nft.setInventoryVault(vault);
+    }
+    function test_batchStockRegistersListsAndPaysTreasuryOnPurchase() public {
+        setupProtectedVault();
+        vm.prank(bob); vm.expectRevert("owner only"); vault.setSalePaused(true);
+        vm.prank(admin); vault.setSalePaused(true);
+        vm.prank(admin); IStockVault(address(vault)).stock(stockEntries(), 0.01 ether, block.timestamp + 100);
+        assertEq(c.totalSupply(), 2);
+        assertFalse(vault.sale().available(1));
+        TreasuryInventorySale pausedVenue = vault.sale();
+        vm.prank(bob); vm.expectRevert("unavailable"); pausedVenue.buy{value: 0.01 ether}(1, 0.01 ether, 1, block.timestamp + 10);
+        vm.prank(admin); vault.setSalePaused(false);
+        assertTrue(vault.sale().available(1)); assertTrue(vault.sale().available(2));
+        (,,,bytes32 mid,,,,,,) = c.individuals(1); assertTrue(mid != bytes32(0));
+        uint256 beforeBalance = treasury.balance;
+        TreasuryInventorySale venue = vault.sale();
+        vm.prank(bob); venue.buy{value: 0.01 ether}(1, 0.01 ether, 1, block.timestamp + 10);
+        assertEq(c.ownerOf(1), bob); assertEq(treasury.balance - beforeBalance, 0.01 ether);
+    }
+    function test_batchStockUnauthorizedAndBadProofRollBack() public {
+        setupProtectedVault();
+        IStockVault.Entry[] memory entries = stockEntries();
+        vm.prank(bob); vm.expectRevert("owner only"); IStockVault(address(vault)).stock(entries, 0.01 ether, block.timestamp + 100);
+        entries[1].deltaHash = DF;
+        vm.prank(admin); vm.expectRevert("not in the genesis set"); IStockVault(address(vault)).stock(entries, 0.01 ether, block.timestamp + 100);
+        assertEq(c.totalSupply(), 0); assertFalse(c.genesisMinted(0)); assertFalse(vault.sale().available(1));
+    }
+    function test_zeroPricePublicMintMustBeProtected() public {
+        c = protectedCollection();
+        vm.prank(bob); vm.expectRevert("inventory vault only"); c.mint(0, 0, DF, proofFor(0));
     }
     function test_ownerHandoverRequiresAcceptance() public {
         vm.prank(bob); vm.expectRevert("owner only"); vault.proposeOwner(bob);

@@ -28,6 +28,20 @@ contract FounderInventoryVault {
     function mint(uint32 index, uint8 sex, bytes32 deltaHash, bytes32[] calldata proof) external payable onlyOwner returns (uint256) {
         return collection.mint{value: msg.value}(index, sex, deltaHash, proof);
     }
+    struct StockEntry {
+        uint32 index; uint8 sex; bytes32 deltaHash; bytes32[] proof; IMEPRegistry.MEP mep;
+    }
+    /// @notice Atomically pre-mint, register and list a batch from a zero-cost genesis collection.
+    function stock(StockEntry[] calldata entries, uint256 price, uint256 expiresAt) external onlyOwner {
+        require(collection.MINT_PRICE() == 0, "zero-cost genesis only");
+        require(entries.length > 0 && entries.length <= 10, "batch size");
+        for (uint256 i; i < entries.length; ++i) {
+            StockEntry calldata e = entries[i];
+            uint256 id = collection.mint(e.index, e.sex, e.deltaHash, e.proof);
+            collection.register(id, e.deltaHash, e.mep);
+            sale.list(id, price, expiresAt);
+        }
+    }
     function register(uint256 id, bytes32 deltaHash, IMEPRegistry.MEP calldata m) external onlyOwner returns (bytes32) {
         return collection.register(id, deltaHash, m);
     }
@@ -35,6 +49,7 @@ contract FounderInventoryVault {
         return collection.registerDerived(id, delta, m);
     }
     function list(uint256 id, uint256 price, uint256 expiresAt) external onlyOwner { sale.list(id, price, expiresAt); }
+    function setSalePaused(bool value) external onlyOwner { sale.setPaused(value); }
     function cancel(uint256 id) external onlyOwner { sale.cancel(id); }
     function collect() external { collection.withdraw(); }
     function collectToken(address token) external {
