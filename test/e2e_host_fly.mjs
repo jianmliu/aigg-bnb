@@ -11,7 +11,7 @@
 //
 // So this runs the whole of it through the page: load, apply, host, and prove it is resident under the id the
 // registry knows, by announcing a residency claim the relayer accepts for THAT id.
-import fs from "node:fs";
+import fs from "node:fs"; import http from "node:http";
 import { parseAbi, parseEther } from "viem";
 import * as H from "./harness.mjs";
 import { startFrontend } from "../frontend/serve.mjs";
@@ -35,8 +35,11 @@ try {
   const delta = encodeDelta3({ baseModelId: baseProbe.mep.modelId, neurons: N, parentA: new Uint8Array(32), parentB: new Uint8Array(32),
     seed: 12345n, name: fitName("fly-1", baseNameLength(basePayload)), layout: LAYOUT.inplace });
   const flyPayload = applyDelta(basePayload, delta, { baseModelId: baseProbe.mep.modelId });
+  const delta2 = encodeDelta3({ baseModelId: baseProbe.mep.modelId, neurons: N, parentA: new Uint8Array(32), parentB: new Uint8Array(32),
+    seed: 67890n, name: fitName("fly-2", baseNameLength(basePayload)), layout: LAYOUT.inplace });
+  const fly2Payload = applyDelta(basePayload, delta2, { baseModelId: baseProbe.mep.modelId });
 
-  const bs = baseProbe, fs_ = await probe(flyPayload);
+  const bs = baseProbe, fs_ = await probe(flyPayload), fs2 = await probe(fly2Payload);
   const fields = (st, da) => ({ modelId: H.hex(st.mep.modelId), schemeDigest: H.hex(st.mep.schemeDigest), execKind: H.hex(st.mep.execKind), neurons: st.hdr.neurons, synapses: st.hdr.synapses, synapseRoot: H.hex(st.csr.synapseRoot), weightsDA: "0x" + Buffer.from(da).toString("hex") });
   const D = H.clientsFor(dep, H.KEYS[0]);
   const withTermsAbi = parseAbi(["struct MEP { bytes32 modelId; bytes32 schemeDigest; bytes32 execKind; uint32 neurons; uint32 synapses; bytes32 synapseRoot; bytes weightsDA; }",
@@ -44,15 +47,24 @@ try {
   await D.pub.waitForTransactionReceipt({ hash: await D.meps.write.registerMEP([fields(bs, "gnfd://aigg-brains/base-brain.bin")]) });
   // the fly: registered under terms, and its weightsDA points at the DELTA, not at a brain
   await D.pub.waitForTransactionReceipt({ hash: await D.wallet.writeContract({ address: dep.addresses.meps, abi: withTermsAbi, functionName: "registerMEPWithTerms", args: [fields(fs_, "gnfd://aigg-brains/fly-1.delta"), BENEFICIARY, BPS] }) });
-  const baseMepId = H.hex(bs.mep.mepId), flyMepId = H.hex(withTerms(fs_.mep, BENEFICIARY, BPS).mepId);
+  await D.pub.waitForTransactionReceipt({ hash: await D.wallet.writeContract({ address: dep.addresses.meps, abi: withTermsAbi, functionName: "registerMEPWithTerms", args: [fields(fs2, "gnfd://aigg-brains/fly-2.delta"), BENEFICIARY, BPS] }) });
+  const baseMepId = H.hex(bs.mep.mepId), flyMepId = H.hex(withTerms(fs_.mep, BENEFICIARY, BPS).mepId), fly2MepId = H.hex(withTerms(fs2.mep, BENEFICIARY, BPS).mepId);
   check("the fly's id is not the id its own bytes produce: the terms are inside it", flyMepId !== H.hex(fs_.mep.mepId));
 
-  const R = await H.startRelayer(dep, H.KEYS[3], [baseMepId, flyMepId]); stop.push(() => R.stop());
+  const R = await H.startRelayer(dep, H.KEYS[3], [baseMepId, flyMepId, fly2MepId]); stop.push(() => R.stop());
   const served = await R.api("/meps");
-  check("the relayer serves both, and reports the fly's terms", served.length === 2 && served.find((m) => m.mepId === flyMepId)?.royaltyBps === BPS);
+  check("the relayer serves the base and both individuals, with their terms", served.length === 3 && served.find((m) => m.mepId === flyMepId)?.royaltyBps === BPS);
 
   // the page is given the delta at the fly's `weightsDA` and the base at the base's: exactly what a storage provider would serve
-  const fe = await startFrontend(0, { payloads: { "/view/aigg-brains/fly-1.delta": delta, "/view/aigg-brains/base-brain.bin": basePayload } }); stop.push(() => fe.server.close());
+  const fe = await startFrontend(0, { payloads: { "/view/aigg-brains/fly-1.delta": delta, "/view/aigg-brains/fly-2.delta": delta2 } }); stop.push(() => fe.server.close());
+  // the base's storage provider, so the test can count what the page asks of it -- and refuse it
+  let baseFetches = 0, blockBase = false;
+  const sp = http.createServer((q, r) => {
+    if (blockBase) { r.writeHead(503, { "access-control-allow-origin": "*" }); return r.end("the base is not available any more"); }
+    baseFetches++; r.writeHead(200, { "content-type": "application/octet-stream", "access-control-allow-origin": "*" }); r.end(Buffer.from(basePayload));
+  });
+  await new Promise((r) => sp.listen(0, "127.0.0.1", r)); stop.push(() => new Promise((r) => sp.close(r)));
+  const spUrl = `http://127.0.0.1:${sp.address().port}`;
   const W = H.clientsFor(dep, H.KEYS[1]);
   const launch = { headless: true }; if (process.env.PW_CHROMIUM) launch.executablePath = process.env.PW_CHROMIUM;
   browser = await browserOf(launch);
@@ -73,19 +85,32 @@ try {
   await page.addInitScript(() => { window.ethereum = { isPorwTestWallet: true, request: ({ method, params }) => window.__walletRequest(method, params || []) }; });
   await page.goto(fe.url + "/"); await page.waitForFunction(() => window.__ready === true);
   await page.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
-  await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.meps.length === 2);
+  await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.meps.length === 3);
   await page.click("#navHost"); // the deposit, the key, the model and the node are the Host view
 
   // ---- loading: the page is handed a delta and has to work the rest out ----
   await page.evaluate((id) => window.appActions.setActive(id), flyMepId);
   await page.fill("#url", fe.url + "/view/aigg-brains/fly-1.delta");
-  await page.fill("#sp", fe.url); // where the base can be fetched from, as a storage provider would be
+  await page.fill("#sp", spUrl); // where the base can be fetched from, as a storage provider would be
   await page.click("#btnModel");
   const loaded = await waitFor(async () => !!(await page.evaluate((id) => window.app.state.loaded[id], flyMepId)));
   const L = await page.evaluate((id) => window.app.state.loaded[id], flyMepId);
-  check("the page noticed the bytes were a delta, fetched the base itself, and applied it", loaded && L?.bytes === flyPayload.length, JSON.stringify(L));
+  check("the page noticed the bytes were a delta, fetched the base itself, and applied it", loaded && L?.bytes === flyPayload.length && baseFetches === 1, `${baseFetches} base fetches, ${JSON.stringify(L)}`);
   check("what it produced is the individual, by model_id, and it says so", L?.ok === true && L?.modelId?.toLowerCase() === H.hex(fs_.mep.modelId).toLowerCase());
   check("the log tells the story rather than a 200 MB surprise", /delta over/.test(await page.locator("#log").innerText()));
+
+  // ---- a second individual of the same collection ----
+  // Every fly edits the SAME base, so the second one must not cost another download of it. Proved by making the
+  // base unfetchable first: if the page still needs it, this fails, and if it kept it, nothing notices.
+  baseFetches = 0; blockBase = true;
+  await page.evaluate((id) => window.appActions.setActive(id), fly2MepId);
+  await page.fill("#url", fe.url + "/view/aigg-brains/fly-2.delta");
+  await page.click("#btnModel");
+  const loaded2 = await waitFor(async () => !!(await page.evaluate((id) => window.app.state.loaded[id], fly2MepId)));
+  const L2 = await page.evaluate((id) => window.app.state.loaded[id], fly2MepId);
+  check("a second individual loads with the base already in hand, and no second download", loaded2 && L2?.ok === true && baseFetches === 0, `fetches ${baseFetches}, ${JSON.stringify(L2)}`);
+  check("it is a different individual, not the first one again", L2?.modelId?.toLowerCase() === H.hex(fs2.mep.modelId).toLowerCase() && L2.modelId !== L.modelId);
+  check("the page says so rather than going quiet", /already here/.test(await page.locator("#log").innerText()));
 
   // ---- hosting: under the id the registry knows, not the one the bytes make ----
   await page.evaluate((id) => window.appActions.host(id, true), flyMepId);
@@ -95,6 +120,8 @@ try {
   await page.click("#btnDelegate"); await page.waitForFunction(() => window.app.state.resolved !== null, null, { timeout: 60000 });
   await page.click("#btnStart");
   check("the node holds it resident", await waitFor(async () => await page.evaluate((id) => !!window.app.state.node && [...window.app.state.node.models.keys()].includes(id), flyMepId), 120000));
+  check("once the node is up the base is let go: it is only needed while individuals are being prepared",
+    /released the .* base/.test(await page.locator("#log").innerText()));
   check("and under the TERMS id: the page's own id check passes, where it used to go quietly false",
     !/local MEP id/.test(await page.locator("#log").innerText()), (await page.locator("#log").innerText()).split("\n").filter((l) => /WARNING/.test(l)).join(" | "));
   check("no page errors while all this happened", errors.length === 0, errors.slice(0, 2).join(" | "));
