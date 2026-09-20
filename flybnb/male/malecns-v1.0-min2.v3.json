@@ -1,0 +1,15 @@
+{
+ "name": "malecns-v1.0-min2",
+ "sha256": "38227caa7f35af4913a85d0f59c473c4b870e5f9373bb4e07e143163e7a571ba",
+ "schemeId": "aigg:porw:sketch-tile-keccak:v3",
+ "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+ "mepId": "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214",
+ "modelId": "0x7a22e8b8a1eae502ea7528be8ed0699b5c31ce5bf6fd2d4e56aedb46bf17394e",
+ "execKind": "0x716c4516187684f44e9110292af25ccb03bd4a98c030fc595a16838bb7173e3e",
+ "wUnitQ16": 7209,
+ "neurons": 166700,
+ "synapses": 15283237,
+ "synapseRoot": "0xa506f1271bc376b9bd917e2fa5d12c04765e92f2a216a30ed836f6c06147e5ed",
+ "weightsDA": "gnfd://aigg-brains/malecns-v1.0-min2.bin",
+ "note": "the base male individuals are drawn on (flybnb/battery/battery-male-v1.json names it as its population). Its exec kind pins weight unit 7209, not FlyWire's 18022: steps and commit stride belong to the Task under this scheme. Registered on BSC testnet 2026-09-20."
+}
