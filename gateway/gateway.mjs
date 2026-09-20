@@ -400,7 +400,15 @@ async function respond(req, res, body) {
 const server = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); const p = u.pathname.replace(/\/$/, "");
-    if (req.method === "GET" && p === "/healthz") return json(res, 200, { ok: true, wallet: ME, chain: Number(dep.chainId), market, calls: calls.size });
+    // A gateway with no relay connection cannot announce a task to anybody. It can still take the request, spend a
+    // fee posting it on-chain, and hand back a refund three minutes later -- which is what it did today, twice, while
+    // this endpoint answered `ok: true` because that was a constant. Health is not "the process is up": it is
+    // whether the thing can do its job, and the one connection it cannot work without is this one.
+    if (req.method === "GET" && p === "/healthz") {
+      const connected = relay.socks.filter((x) => x.open).length;
+      return json(res, connected ? 200 : 503, { ok: connected > 0, wallet: ME, chain: Number(dep.chainId), market, calls: calls.size,
+        relay: { url: published.relay, connected, reconnects: relay.reconnects, ...(connected ? {} : { note: "no relay: a call would post its fee, reach no executor, and be refunded at the market's timeout" }) } });
+    }
     if (!authed(req)) return json(res, 401, { error: { type: "authentication_error", message: "Authorization: Bearer <the gateway's key>" } });
     if (req.method === "GET" && p === "/v1/models") {
       const data = await Promise.all((await models()).map(async (m) => { const k = await capacity(m.mepId); const [id, ...aka] = namesOf(m);
