@@ -141,6 +141,11 @@ runs one after another.
 
 ## 5c. What this scales to, and where the line actually falls
 
+*(And a note on names, since this is the section that says why they matter: **`aigg` is the protocol**, **`aigg-bnb`
+this deployment of it**, and **FlyBnB a dataset** — the fly atlas being produced on it. The protocol's subject is any
+model whose arithmetic is exact, so a mouse atlas would be another dataset with another name and nothing here would
+change. README states the three layers.)*
+
 The line is not the size of the model. It is the **arithmetic**.
 
 | | deterministic, fixed point | floating point |
