@@ -47,6 +47,12 @@ check(`${MORE.join(" and ") || "no whitelist or collection"}: addresses, distinc
 if (vars.has("PORW_COLLECTION")) { const g = JSON.parse(fs.readFileSync(path.join(root, "flybnb/genesis/genesis-v1.json"), "utf8")); const base = [...known.values()].find((j) => j.modelId.toLowerCase() === g.baseModelId.toLowerCase() && j.schemeDigest.toLowerCase() === current);
   check("the genesis set's base brain has a profile here under the current scheme (what BASE_MEP_FEMALE has to be)", !!base, g.baseModelId); }
 
+// a brain is content addressed, so a mirror is trusted for nothing -- but a page on https cannot fetch from http,
+// and a mirror that silently never works is worse than none: the storage provider's quota drains behind it
+{ const mirrors = (vars.get("PORW_BRAIN_MIRRORS")?.value || "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (mirrors.length) check(`every brain mirror is https (${mirrors.length})`, mirrors.every((m) => m.startsWith("https://")), mirrors.join(" "));
+  else console.log("         no brain mirrors: every host pulls each base from the storage provider the MEP names"); }
+
 check("never the free plan: a sleeping relayer stalls the mesh", !lines.some((l) => /^\s*plan:\s*free\s*$/.test(l)));
 
 // ---- the gateway ----

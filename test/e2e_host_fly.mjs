@@ -51,7 +51,15 @@ try {
   const baseMepId = H.hex(bs.mep.mepId), flyMepId = H.hex(withTerms(fs_.mep, BENEFICIARY, BPS).mepId), fly2MepId = H.hex(withTerms(fs2.mep, BENEFICIARY, BPS).mepId);
   check("the fly's id is not the id its own bytes produce: the terms are inside it", flyMepId !== H.hex(fs_.mep.mepId));
 
-  const R = await H.startRelayer(dep, H.KEYS[3], [baseMepId, flyMepId, fly2MepId]); stop.push(() => R.stop());
+  // a mirror of the base, as a deployment would name: an ordinary static host, trusted for nothing
+  let mirrorHits = 0, mirrorUp = true;
+  const mirror = http.createServer((q, r) => {
+    if (!mirrorUp) { r.writeHead(502, { "access-control-allow-origin": "*" }); return r.end("the mirror is down"); }
+    mirrorHits++; r.writeHead(200, { "content-type": "application/octet-stream", "access-control-allow-origin": "*" }); r.end(Buffer.from(basePayload));
+  });
+  await new Promise((r) => mirror.listen(0, "127.0.0.1", r)); stop.push(() => new Promise((r) => mirror.close(r)));
+  const mirrorUrl = `http://127.0.0.1:${mirror.address().port}`;
+  const R = await H.startRelayer(dep, H.KEYS[3], [baseMepId, flyMepId, fly2MepId], { env: { PORW_BRAIN_MIRRORS: mirrorUrl } }); stop.push(() => R.stop());
   const served = await R.api("/meps");
   check("the relayer serves the base and both individuals, with their terms", served.length === 3 && served.find((m) => m.mepId === flyMepId)?.royaltyBps === BPS);
 
@@ -97,7 +105,8 @@ try {
   await page.click("#btnModel");
   const loaded = await waitFor(async () => !!(await page.evaluate((id) => window.app.state.loaded[id], flyMepId)));
   const L = await page.evaluate((id) => window.app.state.loaded[id], flyMepId);
-  check("the page noticed the bytes were a delta, fetched the base itself, and applied it", loaded && L?.bytes === flyPayload.length && baseFetches === 1, `${baseFetches} base fetches, ${JSON.stringify(L)}`);
+  check("the page noticed the bytes were a delta and fetched the base itself", loaded && L?.bytes === flyPayload.length, JSON.stringify(L));
+  check("it took the base from the MIRROR the deployment names, and left the storage provider alone", mirrorHits === 1 && baseFetches === 0, `mirror ${mirrorHits}, storage provider ${baseFetches}`);
   check("what it produced is the individual, by model_id, and it says so", L?.ok === true && L?.modelId?.toLowerCase() === H.hex(fs_.mep.modelId).toLowerCase());
   check("the log tells the story rather than a 200 MB surprise", /delta over/.test(await page.locator("#log").innerText()));
 
@@ -130,7 +139,7 @@ try {
   // A hundred individuals of a collection pull the same tens of megabytes, so the bucket's read allowance is the
   // first thing to run out -- and it did, on the testnet, mid-verification. The page used to sit on "loading" for
   // ever: the failure went to the log as nothing anybody could act on, and no view said a word.
-  { blockBase = "quota"; // the base was released when the node started, so this load has to go and fetch it
+  { blockBase = "quota"; mirrorUp = false; // the base was released when the node started, so this load has to go and fetch it
     await page.evaluate((id) => window.appActions.setActive(id), flyMepId);
     await page.fill("#url", fe.url + "/view/aigg-brains/fly-1.delta");
     await page.click("#btnModel");
@@ -138,10 +147,11 @@ try {
     const line = (await page.locator("#log").innerText()).split("\n").filter((l) => /406|quota/i.test(l)).join(" ");
     check("a refused base is reported in the storage provider's own words, not swallowed", said, line || "(the log says nothing about it)");
     check("and it says what to do about it, since waiting will not help", /topped up|another provider/i.test(line), line);
-    blockBase = false; }
+    check("and it says it tried the mirror first", /mirror|127\.0\.0\.1/.test(await page.locator("#log").innerText()));
+    blockBase = false; mirrorUp = true; }
 
   // the 406 above is deliberate, and the browser logs every refused request: it is the one expected noise
-  { const unexpected = errors.filter((e) => !/406/.test(e));
+  { const unexpected = errors.filter((e) => !/406|502/.test(e)); // both refusals are this test's doing
     check("no page errors while all this happened, beyond the refusal this test asked for", unexpected.length === 0, unexpected.slice(0, 2).join(" | ")); }
 } catch (e) { console.error(e); fails++; }
 finally { if (browser) await browser.close(); for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); }

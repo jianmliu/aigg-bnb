@@ -180,17 +180,43 @@ export async function delegate() {
  *  collection all pull the same tens of megabytes of base, and the bucket's allowance is finite. Greenfield answers
  *  it as 406 with `<Message>bucket quota overflow</Message>`, which is a sentence worth passing on rather than
  *  swallowing: nothing about it is the host's fault, and nothing about it gets better by waiting. */
-async function fetchBrain(url, what) {
-  let r; try { r = await fetch(url); } catch (e) { throw new Error(`${what}: could not reach ${new URL(url, location.href).host} — ${e.message}`); }
+async function fetchOne(url) {
+  let r; try { r = await fetch(url); } catch (e) { throw new Error(`could not reach ${new URL(url, location.href).host} — ${e.message}`); }
   if (!r.ok) {
     const body = await r.text().catch(() => ""); const said = /<Message>([^<]+)<\/Message>/.exec(body)?.[1] || body.trim().slice(0, 120);
-    const hint = r.status === 406 ? " — the bucket's read quota is spent; it has to be topped up, or the brain fetched from another provider" : "";
-    throw new Error(`${what}: the storage provider answered ${r.status}${said ? ` (${said})` : ""}${hint}`);
+    const hint = r.status === 406 ? " — a spent read quota: it has to be topped up, or the brain fetched from somewhere else" : "";
+    throw new Error(`answered ${r.status}${said ? ` (${said})` : ""}${hint}`);
   }
   return new Uint8Array(await r.arrayBuffer());
 }
+/** Try each source in turn. Every refusal is reported in the words it came in -- a source that is out of quota and
+ *  one that is unreachable are different problems and a host can act on the difference. */
+async function fetchBrain(sources, what) {
+  if (!sources.length) throw new Error(`${what}: nowhere to fetch it from`);
+  const failed = [];
+  for (const [i, s] of sources.entries()) {
+    try { const bytes = await fetchOne(s.url); if (i > 0 || sources.length > 1) log(`${what}: served by ${s.where}`); return bytes; }
+    catch (e) { failed.push(`${s.where}: ${e.message}`); if (i < sources.length - 1) log(`${what}: ${s.where} — ${e.message}; trying the next source`); }
+  }
+  throw new Error(`${what}: no source had it — ${failed.join(" | ")}`);
+}
 /** The URL a MEP's `weightsDA` points at, given a storage provider. */
 const daUrl = (da, sp) => (da || "").startsWith("gnfd://") && sp ? sp.replace(/\/$/, "") + "/view/" + da.slice(7) : da;
+/** Everywhere a brain's bytes might be, best first.
+ *
+ *  A brain is CONTENT ADDRESSED: the worker recomputes model_id over the bytes and the page refuses them unless it
+ *  matches what the MEP pins on-chain. So a mirror cannot lie, only fail -- which is what makes an ordinary static
+ *  host safe here, and worth having. Without one, every host of a collection pulls the same tens of megabytes from
+ *  the one storage provider the MEP names: a single point of failure, and a read quota that empties as the mesh
+ *  grows. The pointer on-chain stays what it was; these are only ways of carrying it.
+ *
+ *  Mirrors first, the storage provider last: the SP is the thing whose allowance runs out. */
+const sourcesFor = (da, sp) => {
+  const out = []; const object = (da || "").startsWith("gnfd://") ? da.slice(7) : null;
+  if (object) for (const m of state.deployment?.brainMirrors || []) out.push({ url: `${m.replace(/\/$/, "")}/${object}`, where: new URL(m, location.href).host });
+  const direct = daUrl(da, sp); if (direct) out.push({ url: direct, where: object ? `the storage provider${sp ? ` (${new URL(sp, location.href).host})` : ""}` : "the link given" });
+  return out;
+};
 /** A base this deployment already serves, by model id: an individual is published as a delta over one of them, and
  *  the collection's bases are served for exactly this reason, so the page never has to be told where to find one. */
 const servedBaseFor = (modelId) => state.meps.find((x) => x.modelId?.toLowerCase() === modelId.toLowerCase());
@@ -198,7 +224,7 @@ const servedBaseFor = (modelId) => state.meps.find((x) => x.modelId?.toLowerCase
 export async function loadModel() {
   const m = mepById(state.active); let bytes; const f = $("file").files[0];
   if (f) bytes = new Uint8Array(await f.arrayBuffer());
-  else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = await fetchBrain(url, mepName(m)); }
+  else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = await fetchBrain([{ url, where: "the link given" }], mepName(m)); }
   // An individual of a collection is published as a DELTA -- a few hundred bytes of edits over a base the network
   // already holds -- so what arrives may not be a brain at all. The bytes say which, and the delta says which base
   // it edits; the base is then whichever served MEP has that model id, fetched the same way as any other brain.
@@ -213,10 +239,10 @@ export async function loadModel() {
     const held = await ask("hasBase", { modelId: baseModelId });
     if (held.held) log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)}, whose base is already here — nothing to download`);
     else {
-      const url = daUrl(base.weightsDA, $("sp")?.value);
-      if (!url) throw new Error(`this is a delta over ${mepName(base)}; give that brain's storage provider above so its base can be fetched`);
-      log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)} — fetching the base…`);
-      bytes = await fetchBrain(url, `${mepName(m)}: its base (${mepName(base)})`);
+      const sources = sourcesFor(base.weightsDA, $("sp")?.value);
+      if (!sources.length) throw new Error(`this is a delta over ${mepName(base)}; give that brain's storage provider above, or name a mirror, so its base can be fetched`);
+      log(`${mepName(m)}: a ${delta.length}-byte delta over ${mepName(base)} — fetching the base from ${sources.length === 1 ? sources[0].where : `${sources.length} possible sources`}…`);
+      bytes = await fetchBrain(sources, `${mepName(m)}: its base (${mepName(base)})`);
     }
   }
   if (bytes) log(`${mepName(m)}: ${(bytes.length / 1e6).toFixed(1)} MB ${delta ? "base " : ""}downloaded, checking its model_id…`);

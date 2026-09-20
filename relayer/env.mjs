@@ -27,6 +27,12 @@ export function relayerFromEnv() {
     // PORW_KEEPER=0 still names PORW_COLLECTION to the page over /deployment, but leaves its eggs to somebody else
     // whose tasks this relayer sponsors. Unset: anybody's. Set: only tasks posted by these addresses -- third-party tasks are not open yet
     taskClients: e.PORW_TASK_CLIENTS ? e.PORW_TASK_CLIENTS.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean) : null,
+    // Where a brain's bytes can be fetched from BESIDES the storage provider its MEP pins. A brain is content
+    // addressed -- the loader recomputes model_id and compares it with the chain -- so a mirror cannot lie, only
+    // fail, and that is what makes an ordinary static host safe here. It is also what keeps one SP from being a
+    // single point of failure for every host of a collection, and keeps a hundred hosts pulling the same 77 MB
+    // base off a paid read quota. URL prefixes; `gnfd://bucket/object` is appended as `bucket/object`.
+    brainMirrors: e.PORW_BRAIN_MIRRORS ? e.PORW_BRAIN_MIRRORS.split(",").map((s) => s.trim().replace(/\/$/, "")).filter(Boolean) : null,
     // how often (in blocks) the collections on PORW_WHITELIST are walked for brains to serve
     whitelistEvery: e.PORW_WHITELIST_EVERY ? Number(e.PORW_WHITELIST_EVERY) : null,
     keeper: e.PORW_KEEPER == null ? null : !(e.PORW_KEEPER === "0" || e.PORW_KEEPER === "false") };
