@@ -403,3 +403,32 @@ span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
 .pheno .amt { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
 .pheno .amt[data-tone="high"] { color: var(--eye); }
 .pheno .amt[data-tone="low"] { color: var(--cyan); }
+
+/* ---- Docs: the same house, explained twice. The two tabs are a real switch, not decoration: a reader who wants to
+   know what an adoption costs should never have to scroll past a Merkle tree, and a reader who wants the arithmetic
+   should not have to scroll past an explanation of what a royalty is. ---- */
+#docs .tabs { display: inline-flex; gap: 4px; margin-top: 26px; padding: 4px; border: 1px solid var(--line-strong); border-radius: var(--r-pill); background: var(--wash); }
+#docs .tabs button {
+  padding: 9px 20px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted);
+  font: 700 13.5px/1 var(--sans); letter-spacing: 0.01em; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+#docs .tabs button:hover { color: var(--text); }
+#docs .tabs button[data-active="true"] { background: var(--gold); color: #1b1a17; box-shadow: var(--shadow); }
+#docs .tabs button:focus-visible { outline: none; box-shadow: var(--focus); }
+.docs-body { display: grid; gap: 18px; max-width: 900px; }
+.docs-body p { max-width: 82ch; }
+.docs-body .terms-grid { display: grid; gap: 7px; margin: 2px 0 10px; }
+/* the rows are prose against a figure, so they undo the page's global monospace `.kv`: here monospace means a number
+   or an address, read digit by digit, and a sentence set in it only looks like one */
+.docs-body .terms-grid .kv { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 6px; border-bottom: 1px dashed var(--line); font: 400 14px/1.5 var(--sans); }
+.docs-body .terms-grid .kv:last-child { border-bottom: 0; padding-bottom: 0; }
+.docs-body .why { color: var(--muted); font-size: 14px; min-width: 0; }
+.docs-body .amt { color: var(--text); font: 600 14px/1.5 var(--sans); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.docs-body .amt.mono { font: 500 12px/1.4 var(--mono); overflow-wrap: anywhere; white-space: normal; text-align: right; }
+.docs-body .amt.wide { white-space: normal; text-align: right; font-weight: 500; color: var(--muted); } /* a phrase, not a figure */
+.docs-body .steps { margin: 0; padding-left: 20px; display: grid; gap: 9px; max-width: 82ch; }
+.docs-body .steps li::marker { color: var(--amber); font-weight: 700; }
+.docs-body .links { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.docs-body .links li { padding-left: 14px; border-left: 2px solid var(--line-strong); font-size: 14px; color: var(--muted); }
+.docs-body .links a { color: var(--text); font-weight: 700; text-decoration-color: var(--gold); text-underline-offset: 3px; }
+@media (max-width: 560px) { .docs-body .terms-grid .kv { flex-direction: column; gap: 2px; } .docs-body .amt.mono, .docs-body .amt.wide { text-align: left; } }
