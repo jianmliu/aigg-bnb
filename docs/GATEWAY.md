@@ -198,7 +198,13 @@ gateway pays nobody and keeps no ledger of what it owes: it sells balance and sp
 difference. That is also why none of `aigg-src`'s payout machinery (`provider_owner_user_id`, the withdrawal queue) is
 needed here.
 
-**Price.** `fee = steps × runs × redundancy × p(model)` = `output_tokens × p`, with `p` wei per step per provider. The
+**Price.** `fee = steps × runs × redundancy × p(model, stimulus)` = `output_tokens × p`, with `p` wei per step per
+provider. **A step is not a step.** Measured on one core, the thirteen battery stimuli span **9.4×** — 0.23 s for
+`ocelli`, which barely wakes the brain, against 2.16 s for `pheromone`, which ignites it (~7,000 neurons spiking) — and
+the ≥ 2-synapse export costs **1.54×** the ≥ 5-synapse one for the same 5,000 steps. One price per step would pay a
+host the same for nine times the work, and charge a caller the same for a ninth of it. So `p` carries both factors,
+measured and written down in `gateway/pricing.json`, and `/v1/models` reports each brain's own price with what a named
+stimulus set does to it. The
 gas is a second, fixed cost — two transactions, ~0.33–0.48 M gas whatever the length — and for a short call it is the
 larger one (100 steps at redundancy 2 and 0.1 gwei/step is 0.00002 BNB of fee against ~0.00004 of gas). So it is billed
 too, as `input_tokens` worth the same `p` each: one price per token, input and output, and a call pays for what it

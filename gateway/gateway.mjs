@@ -25,6 +25,11 @@
 //   GATEWAY_MODELS         "alias=0xmepId,alias=0xmepId": the names callers use. `mep:0x…` always works
 //   GATEWAY_SETS           a JSON file of named id sets, { "joLR": [ids…] }, for `stimulate` / `silence`
 //   GATEWAY_MIN_REDUNDANCY (2) GATEWAY_WEI_PER_STEP (100000000000) GATEWAY_DEFAULT_STEPS (100) GATEWAY_MAX_STEPS (20000)
+//   GATEWAY_PRICING        (gateway/pricing.json) what a run costs a host, measured: multipliers on the wei per step,
+//                          per brain and per named stimulus set. A step is not a step: on one core the thirteen battery
+//                          stimuli span 9.4x (0.23 s to 2.16 s, as the sparse ones barely wake the brain and two ignite
+//                          it), and the >= 2-synapse export costs 1.54x the >= 5-synapse one. A single price per step
+//                          would pay a host the same for nine times the work.
 //   GATEWAY_STATE          the calls, on disk: a fee is spent at postTask, so a call has to survive a restart
 //   GATEWAY_KEEP           (5000) how many finished calls stay readable; unfinished ones are never dropped. Their counts
 //                          (~0.5 MB a call at FlyWire's size) live beside the state file and go with them
@@ -45,7 +50,8 @@ const cfg = { key: e.GATEWAY_KEY, bearer: e.GATEWAY_BEARER || null, open: e.GATE
   state: e.GATEWAY_STATE || path.join(process.cwd(), "gateway-state.json"), port: num("GATEWAY_PORT", num("PORT", 8790)), host: e.GATEWAY_HOST || "127.0.0.1",
   keep: num("GATEWAY_KEEP", 5000), countsWaitMs: num("GATEWAY_COUNTS_WAIT_MS", 15000), keepAliveMs: num("GATEWAY_KEEPALIVE_MS", 20000), resultTimeoutMs: num("GATEWAY_RESULT_TIMEOUT_MS", 600000), pollMs: num("GATEWAY_POLL_MS", 1000),
   aliases: Object.fromEntries((e.GATEWAY_MODELS || "").split(",").map((kv) => kv.split("=").map((s) => s.trim())).filter((kv) => kv.length === 2 && kv[0]).map(([k, v]) => [k, v.toLowerCase()])),
-  sets: e.GATEWAY_SETS ? JSON.parse(fs.readFileSync(e.GATEWAY_SETS, "utf8")) : {} };
+  sets: e.GATEWAY_SETS ? JSON.parse(fs.readFileSync(e.GATEWAY_SETS, "utf8")) : {},
+  pricing: JSON.parse(fs.readFileSync(e.GATEWAY_PRICING || path.join(here, "pricing.json"), "utf8")) };
 if (!cfg.key) throw new Error("GATEWAY_KEY: the wallet that pays the fees");
 if (!cfg.relayer) throw new Error("GATEWAY_RELAYER: the relayer's HTTP API");
 if (!cfg.bearer && !cfg.open) throw new Error("GATEWAY_BEARER is not set: anybody could spend the fee wallet. (GATEWAY_OPEN=1 says that is intended.)");
@@ -84,6 +90,14 @@ async function models() { if (Date.now() - served.at > 5000) served = { at: Date
 const namesOf = (m) => [...Object.entries(cfg.aliases).filter(([, id]) => id === m.mepId).map(([k]) => k), ...(m.token != null ? [`fly-${m.token}`] : []), `mep:${m.mepId}`];
 async function resolveModel(name) { const want = String(name || "").toLowerCase(); const id = cfg.aliases[name] || (want.startsWith("mep:") ? want.slice(4) : null);
   return (await models()).find((m) => (id ? m.mepId === id : namesOf(m).some((n) => n.toLowerCase() === want))) || null; }
+/** the wei per step this call is priced at, and why: the brain's cost and the stimulus set's, both measured (pricing.json) */
+function priceOf(m, setName) {
+  const P = cfg.pricing; // by any name the model answers to (`mep:0x…` counts as the bare id), then the id itself
+  const keys = [...namesOf(m).map((n) => n.replace(/^mep:/, "")), m.name, m.mepId].filter(Boolean);
+  const byModel = keys.map((k) => P.models?.[k]).find((v) => v !== undefined) ?? 1, bySet = (setName != null ? P.sets?.[setName] : null) ?? P.default_set ?? 1;
+  const wei = BigInt(Math.round(Number(cfg.weiPerStep) * byModel * bySet));
+  return { wei, model_factor: byModel, set_factor: bySet, set: setName ?? null };
+}
 async function capacity(mepId) { const epoch = await ch.claims.read.currentEpoch(); const votes = (await ch.instances.read.eligibleVotes([mepId, epoch])).map((a) => a.toLowerCase());
   return { epoch: Number(epoch), votes: votes.length, providers: new Set(votes).size, beacon: BigInt(await ch.claims.read.beacon([epoch])) !== 0n }; }
 
@@ -123,7 +137,8 @@ async function plan(body) {
   // int-lif commits a state root per segment: ten segments a run (what the gate task uses), inside the market's bounds (<= 512 of each)
   const commitStride = lif ? Math.min(512, Math.max(1, Math.ceil(steps / 10), Math.ceil(steps / 512))) : 1;
   let init = null; if (lif) try { init = state0Root(m.neurons, seed, stimulate, silence); } catch (err) { if (err instanceof RangeError) throw new Refusal(400, "invalid_request_error", err.message); throw err; }
-  const fee = BigInt(steps) * BigInt(redundancy) * cfg.weiPerStep; const block = await blockNumber();
+  const price = priceOf(m, x.stimulate?.set ?? null);
+  const fee = BigInt(steps) * BigInt(redundancy) * price.wei; const block = await blockNumber();
   // the float ran dry: say so before the chain does, and in a way the operator's alerting can tell from a cold model
   const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + await gasHeadroom(redundancy)) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
   const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: block + BigInt(TASK_TIMEOUT), redundancy };
@@ -131,7 +146,7 @@ async function plan(body) {
   let readout = null; if (x.readout != null) { if (!lif) throw new Refusal(400, "invalid_request_error", `${m.exec} has no spike counts to read out`);
     if (x.readout.top != null) { if (!Number.isInteger(x.readout.top) || x.readout.top < 1 || x.readout.top > 1000) throw new Refusal(400, "invalid_request_error", "readout.top is 1 … 1000"); readout = { top: x.readout.top }; }
     else { const ids = idsOf(x.readout, "readout"); const bad = ids.find((i) => i >= m.neurons); if (bad !== undefined) throw new Refusal(400, "invalid_request_error", `readout id ${bad} is not a neuron of this brain (0 … ${m.neurons - 1})`); readout = { ids }; } }
-  return { m, task, stimulate, silence, stimulated: init?.stimulated ?? null, readout };
+  return { m, task, stimulate, silence, stimulated: init?.stimulated ?? null, readout, price };
 }
 
 // ---- the life of a call (docs/GATEWAY.md §2) ----
@@ -154,7 +169,7 @@ const wire = (t) => ({ ...t, fee: String(t.fee), deadline: String(t.deadline) })
 function create(p, body) {
   const nonce = "0x" + crypto.randomBytes(32).toString("hex"); const id = taskIdOf(p.task, nonce);
   const c = { id, created_at: Math.floor(Date.now() / 1000), status: "queued", model: body.model, mepId: p.m.mepId, exec: p.m.exec, task: wire(p.task), nonce,
-    stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, executors: [], results: {}, events: [], error: null, receipt: null };
+    stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, price: p.price ? { ...p.price, wei: String(p.price.wei) } : null, executors: [], results: {}, events: [], error: null, receipt: null };
   calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order
   save(); return c; // the INTENT is on disk before a wei moves: the id is the task's, so a restart can tell whether it was posted
 }
@@ -192,7 +207,7 @@ async function drive(c) {
     const post = await ch.pub.getTransactionReceipt({ hash: c.post_tx }); const gasWei = post.gasUsed * post.effectiveGasPrice + rc.gasUsed * rc.effectiveGasPrice;
     const gas = { post_task: Number(post.gasUsed), settle: Number(rc.gasUsed), wei: String(gasWei), tokens: Number((gasWei + cfg.weiPerStep - 1n) / cfg.weiPerStep) };
     const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, gas, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
-      stimulate_ids: c.stimulate, silence_ids: c.silence, stimulated: c.stimulated, results: c.results };
+      stimulate_ids: c.stimulate, silence_ids: c.silence, stimulated: c.stimulated, price: c.price, results: c.results };
     if (dispute) { c.receipt = { ...base, executors: ex, disputed: [dispute.args.a, dispute.args.b].map((a) => a.toLowerCase()) }; return fail(c, 502, "disputed", "the executors disagreed and the task is in dispute: nothing is billed, and the fee is held until the dispute resolves"); }
     if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, "no_result", "no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
     const at = Number((await readMarket("tasks", [c.id]))[4]);
@@ -283,7 +298,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && p === "/v1/models") {
       const data = await Promise.all((await models()).map(async (m) => { const k = await capacity(m.mepId); const [id, ...aka] = namesOf(m);
         return { id, object: "model", owned_by: m.collection || "mesh", aliases: aka, mep_id: m.mepId, name: m.name, exec: m.exec, neurons: m.neurons, synapses: m.synapses, royalty_bps: m.royaltyBps, collection: m.collection, token: m.token,
-          providers: k.providers, votes: k.votes, available: k.providers >= cfg.minRedundancy && k.beacon, min_redundancy: cfg.minRedundancy, wei_per_step: String(cfg.weiPerStep) }; }));
+          providers: k.providers, votes: k.votes, available: k.providers >= cfg.minRedundancy && k.beacon, min_redundancy: cfg.minRedundancy,
+          // what a step of THIS brain costs, and what a named stimulus set does to it: a run that ignites the brain is
+          // nine times the work of one that barely wakes it, and the price follows the work (gateway/pricing.json)
+          wei_per_step: String(priceOf(m, null).wei), set_factors: cfg.pricing.sets || {} }; }));
       return json(res, 200, { object: "list", data });
     }
     if (req.method === "POST" && (p === "/v1/responses" || p === "/responses")) return await respond(req, res, await readBody(req)); // ai.gg relays to /v1/responses; its admin "test connection" posts to /responses

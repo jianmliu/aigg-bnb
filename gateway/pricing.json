@@ -1,0 +1,24 @@
+{
+ "note": "What a run costs a host, measured, so that what a caller pays follows it. `models` and `sets` are MULTIPLIERS on GATEWAY_WEI_PER_STEP; 1.00 is the mean of the thirteen battery stimuli on flywire-783-min5. Re-measure with the kernel: a faster kernel moves every number here together, so the ratios are what matter. (gateway/aigg_src.mjs prices ai.gg from the same numbers.)",
+ "measured": "aigg-porw de1f177 (event-driven step, incremental commit), 5,000 steps, commit stride 500, one core",
+ "models": {
+  "flywire-783-min5": 1.0,
+  "flywire-783-min2": 1.54
+ },
+ "sets": {
+  "ocelli": 0.28,
+  "sound_left": 0.35,
+  "bitter": 0.43,
+  "taste_peg": 0.47,
+  "sound_gate": 0.49,
+  "sound": 0.55,
+  "moist": 0.75,
+  "sugar": 0.81,
+  "wind": 0.83,
+  "head_bristle": 1.53,
+  "eye_bristle": 1.67,
+  "cold": 2.2,
+  "pheromone": 2.64
+ },
+ "default_set": 1.0
+}
