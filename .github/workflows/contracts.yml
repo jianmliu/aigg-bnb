@@ -50,6 +50,8 @@ jobs:
       - run: npm ci
 
       - run: node test/env_mapping.mjs
+      # the gateway's registration with ai.gg, against a stand-in for its admin API: no chain, no network
+      - run: node test/aigg_src_sync.mjs
 
       # render.yaml is edited next to a key file: no secret has a value, and the brains it names are known ones
       - run: node test/render_blueprint.mjs
