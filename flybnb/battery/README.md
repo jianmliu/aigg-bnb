@@ -75,6 +75,16 @@ What comes back is an **attestation**, not numbers: the task, its executors, the
 
 `test/e2e_post_battery.mjs` does all of it on a local chain under the male kind (unit 7209): two independent implementations, the wasm kernel in the nodes and numpy offline, agree on every digest; the same payload run offline under 18022 does **not** join. (That last check is what showed the first version of the test to be hollow: over 40 steps nothing leaves the stimulated set and a run does not depend on the unit at all.)
 
+## The male battery, run on the live network (2026-09-20)
+
+Task `0xc832cc87…0648` on BSC testnet: the 42-run battery as **one** batched task on the registered male base, executed by a bonded instance holding MaleCNS v1.0 at weight unit 7209, submitted through the relayer and settled on `0x5750bdc1…8df2`. The rows in `flybnb/results/male/live/attestation.json` hash to exactly that root, and `test/flybnb_battery.mjs` recomputes it rather than trusting the file.
+
+**All 42 counts digests equal what numpy computes offline**, at a weight unit that is not the default — so nothing is passing by accident on FlyWire's constant. `test/live_male_battery.mjs` is the run; `flybnb/male/recompute_live.py` builds the reference.
+
+Redundancy was 1, because one instance is enrolled for this brain. That settles and attests a result; it does not cross-check it. `agreed` stays false and the attestation says so.
+
+**The reference is not the dataset's `base` row, and the difference is the point.** `run_battery.py` calls the *published wiring* the base: the ≥ 2-synapse export thresholded at the population's `min_syn` (five). What `registerMEP` points at is the ≥ 2 export itself — the substrate individuals are drawn on — which keeps 15,283,237 records against 6,242,118 and is a denser network with different dynamics. A node holds the payload as it is. Joining the run against the dataset's base row makes all 42 digests differ, which is the right answer to the wrong question; it is how this was found. Individuals do not have the problem: a FLYDELTA genotype zeroes what falls under `min_syn`, so an individual's payload and its offline row are the same network. If a task should reproduce the dataset's base row, what belongs on chain is the ≥ 5 export as its own MEP — which is what the female brain already has, and the male does not yet.
+
 ## Rebuilding it
 
 ```bash
