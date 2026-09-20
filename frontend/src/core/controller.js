@@ -182,6 +182,10 @@ export async function delegate() {
  *  swallowing: nothing about it is the host's fault, and nothing about it gets better by waiting. */
 async function fetchOne(url) {
   let r; try { r = await fetch(url); } catch (e) { throw new Error(`could not reach ${new URL(url, location.href).host} — ${e.message}`); }
+  // A static host that does not have the file often says so with a PAGE rather than a status: Cloudflare Pages
+  // answers 200 and its index.html for anything missing. Taking that for a brain gets "bad payload magic" three
+  // steps later, so it is read here for what it is -- the file is not there, whatever the status line claims.
+  if (r.ok && /^text\/html/i.test(r.headers.get("content-type") || "")) throw new Error("answered 404 in spirit: a web page where a brain should be");
   if (!r.ok) {
     const body = await r.text().catch(() => ""); const said = /<Message>([^<]+)<\/Message>/.exec(body)?.[1] || body.trim().slice(0, 120);
     const hint = r.status === 406 ? " — a spent read quota: it has to be topped up, or the brain fetched from somewhere else" : "";
@@ -189,13 +193,38 @@ async function fetchOne(url) {
   }
   return new Uint8Array(await r.arrayBuffer());
 }
+/** A brain from a host that will not take it whole.
+ *
+ *  Cloudflare Pages refuses any file over 25 MiB and a brain is tens of megabytes, so a mirror there publishes
+ *  parts and a manifest beside them. Nothing about that is trusted: the parts are concatenated and the worker
+ *  recomputes model_id over the result, which the chain pins -- a missing part, a reordered part or a hostile part
+ *  fails exactly as a wrong whole file does. The manifest only says where to look next.
+ *  Tried only when the whole object is not there, so a mirror that can hold it just holds it. */
+async function fetchParts(url, what) {
+  const r = await fetch(url + ".parts.json"); if (!r.ok) throw new Error(`answered ${r.status}, and has no .parts.json either`);
+  const m = await r.json();
+  if (!Number.isInteger(m.parts) || m.parts < 1 || m.parts > 4096 || !Number.isInteger(m.size) || m.size < 1) throw new Error("its .parts.json makes no sense");
+  log(`${what}: not there whole — taking it in ${m.parts} parts`);
+  const chunks = []; let got = 0;
+  for (let i = 0; i < m.parts; i++) {
+    const p = await fetch(`${url}.part${i}`); if (!p.ok) throw new Error(`part ${i} of ${m.parts} answered ${p.status}`);
+    const b = new Uint8Array(await p.arrayBuffer()); chunks.push(b); got += b.length;
+  }
+  if (got !== m.size) throw new Error(`the parts came to ${got} bytes and the manifest said ${m.size}`);
+  const all = new Uint8Array(got); let at = 0; for (const c of chunks) { all.set(c, at); at += c.length; }
+  return all;
+}
 /** Try each source in turn. Every refusal is reported in the words it came in -- a source that is out of quota and
  *  one that is unreachable are different problems and a host can act on the difference. */
 async function fetchBrain(sources, what) {
   if (!sources.length) throw new Error(`${what}: nowhere to fetch it from`);
   const failed = [];
   for (const [i, s] of sources.entries()) {
-    try { const bytes = await fetchOne(s.url); if (i > 0 || sources.length > 1) log(`${what}: served by ${s.where}`); return bytes; }
+    try {
+      let bytes; try { bytes = await fetchOne(s.url); }
+      catch (whole) { if (!/answered 404/.test(whole.message)) throw whole; bytes = await fetchParts(s.url, `${what}: ${s.where}`); }
+      if (i > 0 || sources.length > 1) log(`${what}: served by ${s.where}`); return bytes;
+    }
     catch (e) { failed.push(`${s.where}: ${e.message}`); if (i < sources.length - 1) log(`${what}: ${s.where} — ${e.message}; trying the next source`); }
   }
   throw new Error(`${what}: no source had it — ${failed.join(" | ")}`);

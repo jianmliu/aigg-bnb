@@ -53,9 +53,18 @@ try {
 
   // a mirror of the base, as a deployment would name: an ordinary static host, trusted for nothing
   let mirrorHits = 0, mirrorUp = true;
+  // a mirror that will not take a file whole, as Cloudflare Pages will not: the object 404s and the parts are there
+  const PART = 64 * 1024; const nParts = Math.ceil(basePayload.length / PART); // small, so this synthetic base really does split
   const mirror = http.createServer((q, r) => {
     if (!mirrorUp) { r.writeHead(502, { "access-control-allow-origin": "*" }); return r.end("the mirror is down"); }
-    mirrorHits++; r.writeHead(200, { "content-type": "application/octet-stream", "access-control-allow-origin": "*" }); r.end(Buffer.from(basePayload));
+    const u = q.url.split("?")[0]; const cors = { "access-control-allow-origin": "*" };
+    if (u.endsWith(".parts.json")) { r.writeHead(200, { ...cors, "content-type": "application/json" });
+      return r.end(JSON.stringify({ parts: nParts, size: basePayload.length, part: PART })); }
+    const m = /\.part(\d+)$/.exec(u);
+    if (m) { const i = Number(m[1]); mirrorHits++; r.writeHead(200, { ...cors, "content-type": "application/octet-stream" });
+      return r.end(Buffer.from(basePayload.subarray(i * PART, Math.min((i + 1) * PART, basePayload.length)))); }
+    // what a static host really does with a missing path: 200 and its index page, not a 404
+    r.writeHead(200, { ...cors, "content-type": "text/html; charset=utf-8" }); r.end("<!doctype html><title>mirror</title>");
   });
   await new Promise((r) => mirror.listen(0, "127.0.0.1", r)); stop.push(() => new Promise((r) => mirror.close(r)));
   const mirrorUrl = `http://127.0.0.1:${mirror.address().port}`;
@@ -106,7 +115,8 @@ try {
   const loaded = await waitFor(async () => !!(await page.evaluate((id) => window.app.state.loaded[id], flyMepId)));
   const L = await page.evaluate((id) => window.app.state.loaded[id], flyMepId);
   check("the page noticed the bytes were a delta and fetched the base itself", loaded && L?.bytes === flyPayload.length, JSON.stringify(L));
-  check("it took the base from the MIRROR the deployment names, and left the storage provider alone", mirrorHits === 1 && baseFetches === 0, `mirror ${mirrorHits}, storage provider ${baseFetches}`);
+  check("it took the base from the MIRROR the deployment names, and left the storage provider alone", mirrorHits === nParts && baseFetches === 0, `mirror served ${mirrorHits} of ${nParts} part(s), storage provider ${baseFetches}`);
+  check("a host that answers 200-and-a-web-page for a missing file does not pass it off as a brain", nParts > 1 && L?.ok === true, `${nParts} parts`);
   check("what it produced is the individual, by model_id, and it says so", L?.ok === true && L?.modelId?.toLowerCase() === H.hex(fs_.mep.modelId).toLowerCase());
   check("the log tells the story rather than a 200 MB surprise", /delta over/.test(await page.locator("#log").innerText()));
 
@@ -151,7 +161,7 @@ try {
     blockBase = false; mirrorUp = true; }
 
   // the 406 above is deliberate, and the browser logs every refused request: it is the one expected noise
-  { const unexpected = errors.filter((e) => !/406|502/.test(e)); // both refusals are this test's doing
+  { const unexpected = errors.filter((e) => !/406|502|404/.test(e)); // the refusals and the whole-object probe are this test's doing
     check("no page errors while all this happened, beyond the refusal this test asked for", unexpected.length === 0, unexpected.slice(0, 2).join(" | ")); }
 } catch (e) { console.error(e); fails++; }
 finally { if (browser) await browser.close(); for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); }
