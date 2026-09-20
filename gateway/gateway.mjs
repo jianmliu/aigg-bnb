@@ -1,4 +1,4 @@
-// The gateway (docs/GATEWAY.md), milestones 0-1: a brain behind an OpenAI-compatible inference API.
+// The gateway (docs/GATEWAY.md), milestones 0-1 and 3: a brain behind an OpenAI-compatible inference API.
 //
 // A request names a model (a MEP), a seed, a number of steps and an experiment; the gateway is the on-chain client
 // that turns it into a task: capacity check -> postTask (its own BNB) -> announce to the sortitioned tabs over the
@@ -33,6 +33,7 @@
 //                          it), and the >= 2-synapse export costs 1.54x the >= 5-synapse one. A single price per step
 //                          would pay a host the same for nine times the work.
 //   GATEWAY_STATE          the calls, on disk: a fee is spent at postTask, so a call has to survive a restart
+//   GATEWAY_WAKE_TIMEOUT_MS (300000) maximum cold-capacity wait before a task is posted; SSE stays alive meanwhile
 //   GATEWAY_KEEP           (5000) how many finished calls stay readable; unfinished ones are never dropped. Their counts
 //                          (~0.5 MB a call at FlyWire's size) live beside the state file and go with them
 //   GATEWAY_COUNTS_WAIT_MS (15000) a provider replies AFTER it has submitted on-chain, so a task can settle before its
@@ -41,6 +42,8 @@
 import http from "node:http"; import fs from "node:fs"; import path from "node:path"; import crypto from "node:crypto"; import { EventEmitter } from "node:events"; import { fileURLToPath } from "node:url";
 import { parseAbi, parseAbiItem, decodeEventLog, keccak256, encodeAbiParameters } from "viem";
 import { loadEnv, deploymentFromEnv } from "../relayer/env.mjs"; import { clients } from "../relayer/chain.mjs";
+import { wakeMessage } from "../relayer/wake.mjs";
+import { readyCapacity, CapacityError, abortable } from "./capacity.mjs";
 import { state0Root } from "./state0.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser", f));
 const { keypair } = await porw("claim.js"); const { RelayClient } = await porw("relay_client.js"); const V = await porw("verify.js"); const L = await porw("lif.js");
@@ -50,7 +53,7 @@ const e = process.env; const num = (k, d) => (e[k] ? Number(e[k]) : d);
 const cfg = { key: e.GATEWAY_KEY, bearer: e.GATEWAY_BEARER || null, open: e.GATEWAY_OPEN === "1", relayer: (e.GATEWAY_RELAYER || "").replace(/\/$/, ""),
   minRedundancy: num("GATEWAY_MIN_REDUNDANCY", 2), weiPerStep: BigInt(e.GATEWAY_WEI_PER_STEP || "100000000000"), defaultSteps: num("GATEWAY_DEFAULT_STEPS", 100), maxSteps: num("GATEWAY_MAX_STEPS", 20000),
   state: e.GATEWAY_STATE || path.join(process.cwd(), "gateway-state.json"), port: num("GATEWAY_PORT", num("PORT", 8790)), host: e.GATEWAY_HOST || "127.0.0.1",
-  keep: num("GATEWAY_KEEP", 5000), countsWaitMs: num("GATEWAY_COUNTS_WAIT_MS", 15000), keepAliveMs: num("GATEWAY_KEEPALIVE_MS", 20000), resultTimeoutMs: num("GATEWAY_RESULT_TIMEOUT_MS", 600000), pollMs: num("GATEWAY_POLL_MS", 1000),
+  wakeTimeoutMs: num("GATEWAY_WAKE_TIMEOUT_MS", 300000), keep: num("GATEWAY_KEEP", 5000), countsWaitMs: num("GATEWAY_COUNTS_WAIT_MS", 15000), keepAliveMs: num("GATEWAY_KEEPALIVE_MS", 20000), resultTimeoutMs: num("GATEWAY_RESULT_TIMEOUT_MS", 600000), pollMs: num("GATEWAY_POLL_MS", 1000),
   aliases: Object.fromEntries((e.GATEWAY_MODELS || "").split(",").map((kv) => kv.split("=").map((s) => s.trim())).filter((kv) => kv.length === 2 && kv[0]).map(([k, v]) => [k, v.toLowerCase()])),
   sets: e.GATEWAY_SETS ? JSON.parse(fs.readFileSync(e.GATEWAY_SETS, "utf8")) : {},
   // an eth_getLogs window a public RPC will actually answer, and how far back a live delegation is looked for
@@ -59,10 +62,11 @@ const cfg = { key: e.GATEWAY_KEY, bearer: e.GATEWAY_BEARER || null, open: e.GATE
 if (!cfg.key) throw new Error("GATEWAY_KEY: the wallet that pays the fees");
 if (!cfg.relayer) throw new Error("GATEWAY_RELAYER: the relayer's HTTP API");
 if (!cfg.bearer && !cfg.open) throw new Error("GATEWAY_BEARER is not set: anybody could spend the fee wallet. (GATEWAY_OPEN=1 says that is intended.)");
+if (!Number.isSafeInteger(cfg.wakeTimeoutMs) || cfg.wakeTimeoutMs < 1 || cfg.wakeTimeoutMs > 3600000) throw new Error("GATEWAY_WAKE_TIMEOUT_MS must be 1 … 3600000");
 if (cfg.minRedundancy < 1) throw new Error("GATEWAY_MIN_REDUNDANCY >= 1");
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a); const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const relayerApi = async (p) => { const r = await fetch(cfg.relayer + p); if (!r.ok) throw new Error(`relayer ${p}: HTTP ${r.status}`); return r.json(); };
+const relayerApi = async (p, signal = AbortSignal.timeout(10000)) => { const r = await fetch(cfg.relayer + p, { signal }); if (!r.ok) throw new Error(`relayer ${p}: HTTP ${r.status}`); return r.json(); };
 const published = await relayerApi("/deployment"); const dep = deploymentFromEnv() || published;
 if (dep.addresses.market.toLowerCase() !== published.addresses.market.toLowerCase() || Number(dep.chainId) !== Number(published.chainId)) throw new Error(`the relayer at ${cfg.relayer} serves another deployment (market ${published.addresses.market} on chain ${published.chainId}) than PORW_* names`);
 const ch = clients(dep, cfg.key); const ME = ch.account.address.toLowerCase();
@@ -90,10 +94,10 @@ const DT_MS = 0.1; // one int-lif step (aigg-porw LifRowCheck: DT_TAU_M_Q16 = 0.
 
 // ---- models ----
 let served = { at: 0, list: [] };
-async function models() { if (Date.now() - served.at > 5000) served = { at: Date.now(), list: await relayerApi("/meps") }; return served.list; }
+async function models(signal) { if (Date.now() - served.at > 5000) served = { at: Date.now(), list: await relayerApi("/meps", signal) }; return served.list; }
 const namesOf = (m) => [...Object.entries(cfg.aliases).filter(([, id]) => id === m.mepId).map(([k]) => k), ...(m.token != null ? [`fly-${m.token}`] : []), `mep:${m.mepId}`];
-async function resolveModel(name) { const want = String(name || "").toLowerCase(); const id = cfg.aliases[name] || (want.startsWith("mep:") ? want.slice(4) : null);
-  return (await models()).find((m) => (id ? m.mepId === id : namesOf(m).some((n) => n.toLowerCase() === want))) || null; }
+async function resolveModel(name, signal) { const want = String(name || "").toLowerCase(); const id = cfg.aliases[name] || (want.startsWith("mep:") ? want.slice(4) : null);
+  return (await models(signal)).find((m) => (id ? m.mepId === id : namesOf(m).some((n) => n.toLowerCase() === want))) || null; }
 /** How many TOKENS a call is: one token is GATEWAY_WEI_PER_STEP of work, and a step of a brain under a stimulus set
  *  costs `model_factor x set_factor` of them (pricing.json, measured). Everything is counted in this one unit -- the
  *  fee below is `tokens x wei_per_token`, and the gas is divided by the same number -- because a caller's bill is
@@ -125,8 +129,34 @@ function idsOf(spec, what) {
   if (!Array.isArray(ids) || !ids.every((i) => Number.isInteger(i) && i >= 0)) throw new Refusal(400, "invalid_request_error", `${what} takes { ids: [neuron indices] } or { set: name }`);
   return [...new Set(ids)].sort((a, b) => a - b); // what is announced is what was hashed: sorted, once each
 }
-async function plan(body) {
-  const m = await resolveModel(body.model); if (!m) throw new Refusal(404, "model_not_found", `no served brain is called "${body.model}" (GET /v1/models)`);
+// Coalesce demand per epoch; signatures expire and a failed delivery can be retried.
+let wakeEpoch = -1, wakePending = null;
+async function wake(epoch) {
+  if (!published.taskClients?.includes(ME)) return; // unrestricted sponsorship is not permission to wake as a task client
+  if (wakeEpoch === epoch && wakePending) return wakePending;
+  wakeEpoch = epoch;
+  const pending = (async () => {
+    const signature = await ch.account.signMessage({ message: wakeMessage(dep, published.relayer, epoch) });
+    const r = await fetch(cfg.relayer + "/wake", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ client: ME, epoch, signature }), signal: AbortSignal.timeout(Math.min(cfg.wakeTimeoutMs, 10000)) });
+    if (!r.ok) throw new Refusal(503, "wake_unavailable", "the relayer refused the task client's wake", { retry_after: 30 });
+  })();
+  wakePending = pending;
+  try { await pending; } catch (e) { if (wakePending === pending) wakePending = null; throw e; }
+}
+async function prepare(body, options = {}) {
+  const deadline = AbortSignal.timeout(cfg.wakeTimeoutMs);
+  const signal = options.signal ? AbortSignal.any([options.signal, deadline]) : deadline;
+  let last = null;
+  try { return await abortable(() => plan(body, { ...options, signal, onCapacity: (k) => { last = k; } }), signal); }
+  catch (error) {
+    if (options.signal?.aborted) throw options.signal.reason;
+    if (deadline.aborted && !(error instanceof CapacityError)) throw new CapacityError(last?.beacon ? "model_cold" : "epoch_cold", last);
+    throw error;
+  }
+}
+async function plan(body, { signal, onCold, onCapacity } = {}) {
+  const m = await resolveModel(body.model, signal); if (!m) throw new Refusal(404, "model_not_found", `no served brain is called "${body.model}" (GET /v1/models)`);
   const lif = m.exec === "int-lif"; const x = experimentOf(body.input); const stimulate = idsOf(x.stimulate, "stimulate"), silence = idsOf(x.silence, "silence");
   if (!lif && (stimulate || silence)) throw new Refusal(400, "invalid_request_error", `${m.exec} takes a seed only: stimulate / silence are int-lif's`);
   if ((body.n ?? 1) !== 1) throw new Refusal(400, "invalid_request_error", "n > 1 is a batch, which is not in this milestone");
@@ -137,22 +167,24 @@ async function plan(body) {
   if (!Number.isInteger(steps) || steps < 1 || steps > cap) throw new Refusal(400, "invalid_request_error", `max_output_tokens is the number of steps: an integer in 1 … ${cap} for ${m.exec}`);
   const seed = x.seed ?? body.seed ?? 0; if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Refusal(400, "invalid_request_error", "seed is a uint32");
   const redundancy = x.redundancy ?? body.redundancy ?? cfg.minRedundancy; if (!Number.isInteger(redundancy) || redundancy < cfg.minRedundancy || redundancy > 16) throw new Refusal(400, "invalid_request_error", `redundancy is ${cfg.minRedundancy} … 16: fewer than ${cfg.minRedundancy} providers is not a result anybody agreed on`);
-  // nothing is spent before this: a brain with too few eligible hosts is COLD, and the caller is told so
-  const cap0 = await capacity(m.mepId);
-  if (cap0.providers < redundancy) throw new Refusal(503, "model_cold", `${cap0.providers} eligible provider(s) for this brain, ${redundancy} needed: nobody is hosting it right now`, { providers: cap0.providers, retry_after: 60 });
-  if (!cap0.beacon) throw new Refusal(503, "epoch_cold", `epoch ${cap0.epoch} has no beacon yet: the network is waking up`, { retry_after: 30 });
   // int-lif commits a state root per segment: ten segments a run (what the gate task uses), inside the market's bounds (<= 512 of each)
   const commitStride = lif ? Math.min(512, Math.max(1, Math.ceil(steps / 10), Math.ceil(steps / 512))) : 1;
   let init = null; if (lif) try { init = state0Root(m.neurons, seed, stimulate, silence); } catch (err) { if (err instanceof RangeError) throw new Refusal(400, "invalid_request_error", err.message); throw err; }
   const price = priceOf(m, x.stimulate?.set ?? null); price.output_tokens = tokensFor(steps, redundancy, price);
-  const fee = BigInt(price.output_tokens) * cfg.weiPerStep; const block = await blockNumber();
+  const fee = BigInt(price.output_tokens) * cfg.weiPerStep;
   // the float ran dry: say so before the chain does, and in a way the operator's alerting can tell from a cold model
   const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + await gasHeadroom(redundancy)) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
-  const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: block + BigInt(TASK_TIMEOUT), redundancy };
   // what to read out: named neurons, or (asked for nothing) the ten that fired most. Checked now, while refusing is free
   let readout = null; if (x.readout != null) { if (!lif) throw new Refusal(400, "invalid_request_error", `${m.exec} has no spike counts to read out`);
     if (x.readout.top != null) { if (!Number.isInteger(x.readout.top) || x.readout.top < 1 || x.readout.top > 1000) throw new Refusal(400, "invalid_request_error", "readout.top is 1 … 1000"); readout = { top: x.readout.top }; }
     else { const ids = idsOf(x.readout, "readout"); const bad = ids.find((i) => i >= m.neurons); if (bad !== undefined) throw new Refusal(400, "invalid_request_error", `readout id ${bad} is not a neuron of this brain (0 … ${m.neurons - 1})`); readout = { ids }; } }
+  // Nothing is spent before this. A brain with too few eligible hosts is COLD and the caller is told so at once;
+  // an epoch with no beacon is a network that is asleep, and this WAKES it and waits, because the caller asking is
+  // the reason to wake. It gives up at GATEWAY_WAKE_TIMEOUT_MS with the same 503 it would have refused with.
+  await readyCapacity({ read: () => capacity(m.mepId), wake, redundancy, timeoutMs: cfg.wakeTimeoutMs, pollMs: cfg.pollMs, signal, onCold, onCapacity });
+  signal?.throwIfAborted();
+  const block = await blockNumber();
+  const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: block + BigInt(TASK_TIMEOUT), redundancy };
   return { m, task, stimulate, silence, stimulated: init?.stimulated ?? null, readout, price };
 }
 
@@ -214,11 +246,17 @@ function create(p, body) {
   calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order
   save(); return c; // the INTENT is on disk before a wei moves: the id is the task's, so a restart can tell whether it was posted
 }
-async function drive(c) {
+async function drive(c, signal) {
   try {
     const task = unwire(c.task); let ex = await executorsOf(c.id);
     if (!ex.length) { // not on the chain yet: post it -- or, after a restart, wait for the transaction that was already sent
-      if (!c.post_tx) { c.post_tx = await send(() => ch.market.write.postTask([task, c.nonce], { value: task.fee })); save(); }
+      if (!c.post_tx) { c.post_tx = await send(async () => {
+        signal?.throwIfAborted();
+        const k = await capacity(task.mepId);
+        signal?.throwIfAborted();
+        if (!k.beacon || k.providers < task.redundancy) throw new CapacityError(k.beacon ? "model_cold" : "epoch_cold", k);
+        return ch.market.write.postTask([task, c.nonce], { value: task.fee });
+      }); save(); }
       const rc = await ch.pub.waitForTransactionReceipt({ hash: c.post_tx }); if (rc.status !== "success") throw new Error("postTask reverted");
       ex = await executorsOf(c.id);
     }
@@ -263,11 +301,11 @@ async function drive(c) {
       settled_at: at, finality: CHALLENGE_WINDOW ? "settled" : "final", final_after_block: at + CHALLENGE_WINDOW,
       counts: c.counts, ...(got ? { counts_url: `/v1/tasks/${c.id}/counts` } : {}) };
     c.status = "completed"; emit(c, "response.completed"); log(`task ${c.id.slice(0, 12)}… settled: ${c.receipt.executors.length} paid, digest ${c.receipt.exec_digest.slice(0, 12)}…`);
-  } catch (err) { fail(c, 500, "gateway_error", String(err?.shortMessage || err?.message || err).slice(0, 300)); }
+  } catch (err) { fail(c, err.status || 500, err.type || "gateway_error", String(err?.shortMessage || err?.message || err).slice(0, 300)); }
   finally { setTimeout(() => bus.delete(c.id), 1000); }
 }
 function fail(c, status, type, message) { c.status = "failed"; c.error = { status, type, message }; emit(c, "response.failed", { error: c.error }); log(`task ${c.id.slice(0, 12)}… failed: ${type}`); }
-function start(c) { bus.set(c.id, new EventEmitter()); drive(c); }
+function start(c, signal) { bus.set(c.id, new EventEmitter()); drive(c, signal); }
 
 /** a settled result can still be challenged for a window of blocks, and the window restarts after a failed challenge: re-read it */
 async function finality(c) {
@@ -311,30 +349,53 @@ const readBody = (req) => new Promise((res, rej) => { let s = ""; req.on("data",
 const authed = (req) => { if (!cfg.bearer) return true; const got = Buffer.from(String(req.headers.authorization || "")), want = Buffer.from("Bearer " + cfg.bearer); return got.length === want.length && crypto.timingSafeEqual(got, want); };
 
 async function respond(req, res, body) {
-  const c = create(await plan(body), body); start(c);
-  if (body.background) return json(res, 200, view(c));
-  if (!body.stream) { await done(c); return c.status === "completed" ? json(res, 200, view(c)) : json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id }); }
+  // The caller's connection is the lifetime of the attempt BEFORE a fee is spent: it can leave while the gateway is
+  // waking a cold epoch, and nothing should keep waiting for a caller that is gone. Once the task is posted the money
+  // is spent and the call runs on regardless -- GET /v1/responses/{id} is how it is collected.
+  const abort = new AbortController(); let alive = null, seq = 0, busRef = null, listener = null;
+  const write = (type, data) => { if (!res.destroyed) res.write(`event: ${type}\ndata: ${JSON.stringify({ type, sequence_number: seq++, ...data })}\n\n`); };
   // a stream: the Responses API's events, and a comment line often enough that nothing in front of us calls the connection dead
-  res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", "x-accel-buffering": "no" });
-  let seq = 0; const write = (type, data) => res.write(`event: ${type}\ndata: ${JSON.stringify({ type, sequence_number: seq++, ...data })}\n\n`);
-  // What ai.gg's relay does with a Responses stream decides three things here (aigg-src openai_gateway_service.go):
-  //  - it HOLDS `response.created`, `response.in_progress` and comment lines until the first event that is not a preamble, so
-  //    that it can still fail over silently. A caller behind it would see nothing for minutes and its proxy would hang up.
-  //    `response.output_item.added` right after `created` opens the output, and every keep-alive after it goes straight through.
-  //  - for a caller of /v1/chat/completions it builds the text from `response.output_text.delta` events ONLY -- it never
-  //    reads the final response's output when streaming. So the answer is sent as one delta before `completed`.
-  //  - usage is read from the terminal event's `response.usage`, and a stream with no terminal event is retried.
-  const item = "msg_" + c.id.slice(2, 26); const opened = () => write("response.output_item.added", { output_index: 0, item: { type: "message", id: item, status: "in_progress", role: "assistant", content: [] } });
-  const answer = () => { const v = view(c); const text = v.output[0].content[0].text; const part = { type: "output_text", text, annotations: [] };
-    write("response.content_part.added", { item_id: item, output_index: 0, content_index: 0, part: { type: "output_text", text: "", annotations: [] } });
-    write("response.output_text.delta", { item_id: item, output_index: 0, content_index: 0, delta: text }); write("response.output_text.done", { item_id: item, output_index: 0, content_index: 0, text });
-    write("response.content_part.done", { item_id: item, output_index: 0, content_index: 0, part }); write("response.output_item.done", { output_index: 0, item: v.output[0] }); };
-  const b = bus.get(c.id); const alive = setInterval(() => res.write(": waiting on the chain\n\n"), cfg.keepAliveMs);
-  const on = (ev) => { if (ev.type === "response.in_progress") write(ev.type, { response: view(c), executor: ev.executor, result: c.results[ev.executor] });
-    else { if (ev.type === "response.completed") answer(); write(ev.type, { response: view(c) }); if (ev.type === "response.created") opened(); }
-    if (ev.type === "response.completed" || ev.type === "response.failed") { clearInterval(alive); b.off("event", on); res.end(); } };
-  for (const ev of c.events) on(ev); if (!res.writableEnded) b.on("event", on); // nothing is missed between start() and here: events are on the call
-  req.on("close", () => { clearInterval(alive); b.off("event", on); }); // the caller left; the task is paid for and runs on -- GET /v1/responses/{id}
+  const open = () => {
+    if (res.headersSent || res.destroyed) return;
+    res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", "x-accel-buffering": "no" });
+    res.flushHeaders?.();
+    alive = setInterval(() => { if (!res.destroyed) res.write(": waiting on the chain\n\n"); }, cfg.keepAliveMs);
+  };
+  const cleanup = () => { clearInterval(alive); if (listener && busRef) busRef.off("event", listener); };
+  res.on("close", () => { abort.abort(new Refusal(499, "request_cancelled", "caller disconnected before posting")); cleanup(); });
+  try {
+    // waking a cold epoch can take minutes, so a STREAMING caller is given its headers first: ai.gg holds preamble
+    // events, but the keep-alive comments after the stream opens are what keep a proxy from hanging up on the wait.
+    const p = await prepare(body, { signal: abort.signal, onCold: body.stream && !body.background ? open : undefined });
+    abort.signal.throwIfAborted();
+    const c = create(p, body); start(c);
+    if (body.background) return json(res, 200, view(c));
+    if (!body.stream) { await done(c); if (res.destroyed) return; return c.status === "completed" ? json(res, 200, view(c)) : json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id }); }
+    open();
+    // What ai.gg's relay does with a Responses stream decides three things here (aigg-src openai_gateway_service.go):
+    //  - it HOLDS `response.created`, `response.in_progress` and comment lines until the first event that is not a preamble, so
+    //    that it can still fail over silently. A caller behind it would see nothing for minutes and its proxy would hang up.
+    //    `response.output_item.added` right after `created` opens the output, and every keep-alive after it goes straight through.
+    //  - for a caller of /v1/chat/completions it builds the text from `response.output_text.delta` events ONLY -- it never
+    //    reads the final response's output when streaming. So the answer is sent as one delta before `completed`.
+    //  - usage is read from the terminal event's `response.usage`, and a stream with no terminal event is retried.
+    const item = "msg_" + c.id.slice(2, 26); const opened = () => write("response.output_item.added", { output_index: 0, item: { type: "message", id: item, status: "in_progress", role: "assistant", content: [] } });
+    const answer = () => { const v = view(c); const text = v.output[0].content[0].text; const part = { type: "output_text", text, annotations: [] };
+      write("response.content_part.added", { item_id: item, output_index: 0, content_index: 0, part: { type: "output_text", text: "", annotations: [] } });
+      write("response.output_text.delta", { item_id: item, output_index: 0, content_index: 0, delta: text }); write("response.output_text.done", { item_id: item, output_index: 0, content_index: 0, text });
+      write("response.content_part.done", { item_id: item, output_index: 0, content_index: 0, part }); write("response.output_item.done", { output_index: 0, item: v.output[0] }); };
+    busRef = bus.get(c.id);
+    listener = (ev) => { if (ev.type === "response.in_progress") write(ev.type, { response: view(c), executor: ev.executor, result: c.results[ev.executor] });
+      else { if (ev.type === "response.completed") answer(); write(ev.type, { response: view(c) }); if (ev.type === "response.created") opened(); }
+      if (ev.type === "response.completed" || ev.type === "response.failed") { cleanup(); res.end(); } };
+    for (const ev of c.events) listener(ev); if (!res.writableEnded && !res.destroyed) busRef.on("event", listener); // nothing is missed between start() and here: events are on the call
+  } catch (error) {
+    cleanup(); if (res.destroyed) return;
+    if (!res.headersSent) throw error; // no stream was opened: the ordinary JSON refusal
+    // the stream was already open (the wake was being waited on), so the refusal has to arrive as an event
+    write("response.failed", { response: { id: null, object: "response", status: "failed", error: { status: error.status || 500, type: error.type || "gateway_error", message: error.message, ...error.extra }, usage: { input_tokens: 0, output_tokens: 0, total_tokens: 0 } } });
+    res.end();
+  }
 }
 const server = http.createServer(async (req, res) => {
   try {
@@ -361,12 +422,13 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { "content-type": "application/octet-stream", "x-exec-digest": c.receipt.exec_digest, "x-counts-encoding": "u32le", "x-neurons": String(c.counts.neurons) }); return res.end(fs.readFileSync(countsFile(c.id))); }
     if (req.method === "POST" && p === "/v1/chat/completions") { // a caller that reaches the adapter directly; ai.gg's gateway sends /v1/responses
       const b = await readBody(req); if (b.stream) throw new Refusal(400, "invalid_request_error", "stream /v1/responses instead: this alias is not streamed");
-      const c = create(await plan({ ...b, input: b.messages, background: false }), b); start(c); await done(c); if (c.status !== "completed") return json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id });
+      const abort = new AbortController(); res.on("close", () => abort.abort(new Refusal(499, "request_cancelled", "caller disconnected before posting")));
+      const c = create(await prepare({ ...b, input: b.messages, background: false }, { signal: abort.signal }), b); start(c, abort.signal); await done(c); if (c.status !== "completed") return json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id });
       const v = view(c); return json(res, 200, { id: c.id, object: "chat.completion", created: c.created_at, model: c.model, system_fingerprint: v.system_fingerprint, choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: v.output[0].content[0].text } }],
         usage: { prompt_tokens: 0, completion_tokens: v.usage.output_tokens, total_tokens: v.usage.output_tokens }, receipt: c.receipt });
     }
     json(res, 404, { error: { type: "not_found", message: "not found" } });
-  } catch (err) { if (res.headersSent) return res.end(); if (err instanceof Refusal) return refuse(res, err); log("error:", err); json(res, 500, { error: { type: "gateway_error", message: String(err?.message || err).slice(0, 300) } }); }
+  } catch (err) { if (res.headersSent) return res.end(); if (err instanceof Refusal || err instanceof CapacityError) return refuse(res, err); log("error:", err); json(res, 500, { error: { type: "gateway_error", message: String(err?.message || err).slice(0, 300) } }); }
 });
 server.listen(cfg.port, cfg.host, () => {
   const url = `http://${cfg.host}:${server.address().port}`; log(`gateway on ${url} · wallet ${ME} · chain ${dep.chainId} market ${market} · min redundancy ${cfg.minRedundancy} · ${cfg.weiPerStep} wei/step`);

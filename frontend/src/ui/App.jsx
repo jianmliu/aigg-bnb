@@ -21,6 +21,7 @@ import { useNodeState } from "../core/store.js";
 import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
 import { BrainCard } from "./BrainCard.jsx";
+import HostDashboard from "./HostDashboard.jsx";
 import FliesView from "./FliesView.jsx";
 import { BAKED_RELAYER, SOLO } from "./mode.js";
 import FlyBnbView, { FlyBnbBanner } from "./FlyBnbView.jsx";
@@ -325,6 +326,8 @@ export default function App() {
             <h2>Your tab, their brain.</h2>
             <p className="lede">Four steps, two wallet prompts. After that the tab does the work: a residency claim per brain per epoch, audits answered, experiments run.</p>
           </section>
+
+          <HostDashboard active={view === "host"} />
 
           <Panel step={1} title="Your deposit" note="bond · BNB">
             <div id="wallet" className={`kv ${s.wallet ? "strong" : "empty"}`}>

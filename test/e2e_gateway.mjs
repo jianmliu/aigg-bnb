@@ -31,7 +31,7 @@ try {
     return { name, payload, probe, mep, mepId: H.hex(mep.mepId) }; };
   const warm = await register("gw-warm"), cold = await register("gw-cold");
 
-  const R = await H.startRelayer(dep, H.KEYS[3], [warm.mepId, cold.mepId], { env: { PORW_TASK_CLIENTS: GW } }); stop.push(() => R.stop()); const d0 = await R.api("/deployment"); const domains = d0.domains;
+  const R = await H.startRelayer(dep, H.KEYS[3], [warm.mepId, cold.mepId], { env: { PORW_TASK_CLIENTS: GW, PORW_BEACON_LAZY: "1" } }); stop.push(() => R.stop()); const d0 = await R.api("/deployment"); const domains = d0.domains;
   const mk = async (walletKey, sessionByte) => {
     const c = H.clientsFor(dep, walletKey); const wallet = E.localWallet(walletKey); const session = keypair("0x" + sessionByte.repeat(32));
     await c.pub.waitForTransactionReceipt({ hash: await c.instances.write.bond([[warm.mepId]], { value: parseEther("0.5") }) });
@@ -44,6 +44,8 @@ try {
   const A = await mk(H.KEYS[1], "11"), B = await mk(H.KEYS[2], "22");
   const EPOCH = dep.epochBlocks; const toBlock = async (b) => { const cur = await anvil.block(); if (b > cur) await anvil.mine(b - cur); };
   const enterEpoch = async (e) => { await toBlock(e * EPOCH - 5); await waitFor(async () => (await R.api("/status")).commits.includes(e)); await toBlock(e * EPOCH + 2); await waitFor(async () => (await R.api("/status")).reveals.includes(e)); await toBlock(e * EPOCH + 12); return waitFor(async () => (await R.api("/status")).epochsRolled.includes(e)); };
+  { const { wakeMessage } = await import("../relayer/wake.mjs"); const epoch = (await R.api("/epoch")).epoch;
+    await R.api("/wake", { client: GW, epoch, signature: await G.account.signMessage({ message: wakeMessage(dep, d0.relayer, epoch) }) }); }
   check("epoch 1 rolled", await enterEpoch(1)); const ep = await R.api("/epoch?mep=" + warm.mepId); for (const X of [A, B]) await X.svc.announce(warm.mep.mepId, H.unhex(ep.challenge));
   check("epoch 2 rolled, the epoch-1 root posted", (await enterEpoch(2)) && await waitFor(async () => (await R.api("/status")).rootsPosted.some((r) => r.epoch === 1 && r.count === 2)));
   const mA = await R.api("/tx/materialize", { mep: warm.mepId, epoch: 1, instance: A.addr }), mB = await R.api("/tx/materialize", { mep: warm.mepId, epoch: 1, instance: B.addr }); check("two providers of the warm brain are eligible", mA.ok && mB.ok);
@@ -69,6 +71,9 @@ try {
     check(`one unit for everything (${w.wei_per_token} wei a token), and the brains differ in the COUNT: warm ${w.tokens_per_step} tokens a step against the cold one's ${c.tokens_per_step}, times a set's factor`,
       BigInt(w.wei_per_token) === WEI && BigInt(c.wei_per_token) === WEI && w.tokens_per_step === 2 && c.tokens_per_step === 1 && w.set_factors.ears === 1.5); }
 
+  { const m = await R.api("/meps"); const w = m.find((x) => x.mepId === warm.mepId), c = m.find((x) => x.mepId === cold.mepId);
+    check("relayer /meps counts distinct eligible providers, not votes", w.providers === 2 && w.votes === 20 && w.beacon === true && c.providers === 0); }
+
   // ---- a call ----
   const expected = await warm.probe.execute(warm.mep.mepId, { steps: STEPS, commitStride: 2, stimulusSeed: 7, stimulusIds: Uint32Array.from(sets.ears), silenceIds: Uint32Array.from(sets.quiet) });
   // read out the neuron that fires most, one that fires, and a silenced one (which cannot)
@@ -91,7 +96,9 @@ try {
     check(`the call's gas (${Number(r1.gasUsed) + Number(r2.gasUsed)} gas, ${wei} wei) is its input tokens, in the SAME unit as the output ones -- not the brain's rate, or the gas would be billed at the brain's factor`,
       rc.gas.wei === String(wei) && rc.gas.post_task === Number(r1.gasUsed) && rc.gas.settle === Number(r2.gasUsed)
       && j1.usage.input_tokens === Number((wei + WEI - 1n) / WEI) && j1.usage.input_tokens >= 1 && j1.usage.total_tokens === j1.usage.input_tokens + j1.usage.output_tokens); }
-
+  { const stats = await R.api("/hosts?instance=" + A.addr);
+    check("host dashboard counts settled requests and actual executor earnings", stats.requestsServed === 1 && stats.earnedWei === String(FEE / 2n) && stats.fromBlock === 0 && stats.toBlock > 0);
+    check("host stats reject malformed addresses", !!(await R.api("/hosts?instance=bad")).error); }
   // ---- the readout: counts from the providers, served because they hash to the digest the task settled on ----
   { const want = expected.result.counts; const out = JSON.parse(j1.output[0].content[0].text); const sum = want.reduce((a, b) => a + b, 0);
     check(`the readout is the neurons it asked for, with the counts anybody recomputes (${out.readout.map((r) => r.id + ":" + r.spikes).join(", ")}; ${sum} spikes in all)`, out.readout.length === 3 && out.readout.find((r) => r.id === 40).spikes === 0 && out.readout.some((r) => r.spikes > 1) && out.readout.every((r) => r.spikes === want[r.id] && r.hz === Math.round(want[r.id] / (STEPS * 0.0001) * 100) / 100) && out.summary.total_spikes === sum && sum > 0 && out.summary.dt_ms === 0.1 && /^verified/.test(out.readout_status));
@@ -176,6 +183,9 @@ try {
     const rc2 = new RelayClient([d0.relay], session2); await rc2.connect(); stop.push(() => rc2.close());
     const svc2 = new NodeService(A.nd, rc2, { onResult: async (res) => { res.relayer = await R.api("/tx/result", res); } });
     svc2.serve(warm.mep.mepId); stop.push(() => svc2.stop());
+    // A is this provider from here on: the sections after this one drive it, and the service they reach has to be
+    // the one that is actually listening -- a test that leaves the world half-swapped fails the NEXT test, not this one.
+    A.svc = svc2; A.up = () => svc2.serve(warm.mep.mepId); A.down = () => svc2.stop();
     const mining = setInterval(() => anvil.mine(8).catch(() => {}), 300);
     const r = await call("/v1/responses", { model: "warm", seed: 31, max_output_tokens: STEPS }); const j = await r.json();
     clearInterval(mining);
@@ -211,6 +221,22 @@ try {
     clearInterval(mining);
     check("a call still completes against an RPC that refuses a wide eth_getLogs: the session scan is bounded", r.status === 200 && j.status === "completed" && j.receipt?.executors?.length === 2, `${r.status} ${j.error?.type || ""} ${j.error?.message || ""}`.slice(0, 200));
     check("and it never asked for a span that RPC would refuse", seen.refused === 0 && seen.widest <= LIMIT, `widest ${seen.widest}, refused ${seen.refused}`); }
+  // After inactivity both the beacon and host eligibility are cold. A live request drives the two-epoch recovery.
+  await toBlock(8 * EPOCH + 12);
+  check("the idle mesh has a cold epoch", !(await R.api("/epoch")).rolled);
+  { const stream = await call("/v1/responses", { model: "warm", seed: 14, max_output_tokens: STEPS, stream: true });
+    const text = stream.text();
+    check("a cold request wakes through the task client's signature", await waitFor(async () => (await R.api("/status")).beacon.wakeUntil >= 10));
+    check("the first waking epoch rolled", await enterEpoch(9));
+    const e = await R.api("/epoch?mep=" + warm.mepId);
+    for (const x of [A, B]) await x.svc.announce(warm.mep.mepId, H.unhex(e.challenge));
+    check("both new residency claims arrived", await waitFor(async () => (await R.api("/status")).aggregators.find((x) => x.mep === warm.mepId).epochs.some((x) => x.epoch === 9 && x.claims === 2)));
+    check("the second waking epoch rolled", await enterEpoch(10));
+    check("the waking claims root was posted", await waitFor(async () => (await R.api("/status")).rootsPosted.some((x) => x.epoch === 9)));
+    for (const x of [A, B]) await R.api("/tx/materialize", { mep: warm.mepId, epoch: 9, instance: x.addr });
+    const frames = await text;
+    check("cold stream stays alive, then posts and settles once hosts are eligible", /: waiting on the chain/.test(frames) && /event: response.created/.test(frames) && /event: response.completed/.test(frames) && !/event: response.failed/.test(frames));
+  }
 } catch (e) { console.error(e); fails++; }
 finally { for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); fs.rmSync(tmp, { recursive: true, force: true }); }
 console.log(fails ? `${fails} FAILURES` : "gateway: all checks passed"); process.exit(fails ? 1 : 0);
