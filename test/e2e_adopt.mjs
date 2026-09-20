@@ -25,7 +25,25 @@ try {
   await visitor.goto(fe.url); await visitor.waitForFunction(() => window.__ready === true);
   await visitor.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
   await visitor.click("#btnDep"); await visitor.waitForFunction(() => window.app.state.deployment !== null);
-  await visitor.click("#navFlies"); await visitor.click("#btnFlies"); await visitor.waitForFunction(() => window.app.state.flies?.all.length === 2);
+  await visitor.click("#navFlies"); await visitor.waitForFunction(() => window.app.state.flies?.all.length === 2, null, { timeout: 5000 });
+  check("colony loads automatically for a visitor without a wallet", await visitor.locator("#fly-1").isVisible());
+  let failRead = true;
+  await visitor.route(dep.rpc, async route => {
+    const body = route.request().postDataJSON();
+    if (failRead && body?.method === "eth_call" && body.params[0].data.startsWith("0x18160ddd")) {
+      failRead = false;
+      return route.fulfill({ json: { jsonrpc: "2.0", id: body.id, error: { code: -32000, message: "Temporary colony RPC failure" } } });
+    }
+    return route.continue();
+  });
+  await visitor.click("#btnFlies");
+  await visitor.getByRole("alert").waitFor();
+  check("a failed refresh shows an actionable error and preserves the colony", (await visitor.getByRole("alert").innerText()).includes("Refresh to retry") && await visitor.locator("#fly-1").isVisible());
+  await visitor.click("#btnFlies");
+  await visitor.getByRole("alert").waitFor({ state: "detached" });
+  await visitor.waitForFunction(() => !document.getElementById("btnFlies").disabled);
+  await visitor.unroute(dep.rpc);
+
   await visitor.click("#btnGenesis"); await visitor.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1);
   check("visitors can inspect listed inventory without a wallet but cannot buy", await visitor.isDisabled("#btnAdopt-1"));
   await visitor.close();

@@ -4,7 +4,7 @@
 // hash of its seed block, and says so while the chain catches up.
 //
 // No trait badges anywhere: what a fly is gets measured by experiments against it, not declared at birth.
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { formatEther, formatUnits } from "viem";
 import * as C from "../core/controller.js";
 import * as F from "../core/flies.js";
@@ -87,10 +87,30 @@ function FlyCard({ fly, byId, slot, onPick }) {
 export default function FliesView() {
   const s = C.state; const flies = s.flies;
   const [breeding, setBreeding] = useState(false); const [dam, setDam] = useState(null); const [sire, setSire] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const request = useRef(0);
+  const refresh = useCallback(async () => {
+    if (!s.deployment) return;
+    const id = ++request.current;
+    setLoading(true); setLoadError(null);
+    try { await F.loadFlies(); }
+    catch (e) { if (request.current === id) setLoadError(e.message || String(e)); }
+    finally { if (request.current === id) setLoading(false); }
+  }, [s.deployment, s.wallet]);
+  useEffect(() => {
+    void refresh();
+    return () => { request.current++; };
+  }, [refresh]);
+  const refreshButton = <Button id="btnFlies" tone="chain" disabled={loading} onClick={refresh}>{loading ? "Loading colony…" : "Refresh"}</Button>;
+  const loadStatus = loadError
+    ? <p className="hint" role="alert">Could not load the colony: {loadError}. Select Refresh to retry.</p>
+    : loading ? <p className="hint" role="status">Reading the colony from the chain…</p> : null;
+
 
   if (!s.deployment) return <div className="main single"><Panel title="Flies"><p className="hint">{SOLO ? "Connecting to the network…" : <>Put a relayer’s address in the <b>Mesh</b> capsule above first: it names the collection this page reads.</>}</p></Panel></div>;
-  if (!flies) return <div className="main single"><Panel title="Flies"><div className="row tight"><Button id="btnFlies" tone="chain" onClick={C.wrap(F.loadFlies)}>Load the colony</Button></div></Panel></div>;
-  if (flies.missing) return <div className="main single"><Panel title="Flies"><p className="hint" id="noCollection">This deployment names no collection (the relayer has no <code>PORW_COLLECTION</code>), so there are no flies to read here.</p></Panel></div>;
+  if (!flies) return <div className="main single"><Panel title="Flies"><div className="row tight">{refreshButton}</div>{loadStatus}</Panel></div>;
+  if (flies.missing) return <div className="main single"><Panel title="Flies">{refreshButton}{loadStatus}<p className="hint" id="noCollection">This deployment names no collection (the relayer has no <code>PORW_COLLECTION</code>), so there are no flies to read here.</p></Panel></div>;
 
   const byId = new Map(flies.all.map((f) => [f.id, f]));
   const mine = flies.all.filter((f) => f.mine); const others = flies.all.length - mine.length;
@@ -105,8 +125,9 @@ export default function FliesView() {
         <p className="lede">Each individual is a real variant of a released brain. What one is worth is what has been measured about it — so there are no trait badges here, only lineage, and the experiments run against it.</p>
       </section>
       <Panel title="Colony" note={`${mine.length} yours · ${others} others`}>
+        {loadStatus}
         <div className="row tight center">
-          <Button id="btnFlies" tone="chain" onClick={C.wrap(F.loadFlies)}>Refresh</Button>
+          {refreshButton}
           <span className="kv" id="fliesInfo">collection {flies.address.slice(0, 10)}… · block {flies.block}{s.wallet ? "" : " · connect your wallet (top right) to see which are yours"}</span>
         </div>
         {flies.royaltyBps > 0 && (
