@@ -70,6 +70,11 @@ if (GW) {
   check("every model name it offers is a brain this repository knows under the current scheme", models.length > 0 && models.every(([n, id]) => n && known.get((id || "").toLowerCase())?.schemeDigest.toLowerCase() === current));
   check("its named stimulus sets are a file in the repository", !!val("GATEWAY_SETS") && fs.existsSync(path.join(root, val("GATEWAY_SETS"))));
   check("redundancy at least 2: one provider's word is not a result", Number(val("GATEWAY_MIN_REDUNDANCY")) >= 2);
+  // Render restarts a service whose health check fails, and a gateway waiting for its relayer is not a service worth
+  // restarting -- restarting it does not bring the relayer back. /healthz is liveness and always answers 200;
+  // /readyz is the one that refuses. Pointing the platform at /readyz would turn a relayer outage into a crash loop.
+  check("the platform health-checks the LIVENESS path, not the readiness one", GW.lines.some((l) => /healthCheckPath:\s*\/healthz\s*$/.test(l)) && !GW.lines.some((l) => /healthCheckPath:\s*\/readyz/.test(l)));
+
   check("a start command and a health check that exist", GW.lines.some((l) => /startCommand:\s*npm run gateway\s*$/.test(l)) && GW.lines.some((l) => /healthCheckPath:\s*\/healthz\s*$/.test(l)) && /"gateway":/.test(fs.readFileSync(path.join(root, "package.json"), "utf8")));
   check("the relayer sponsors more than the project: the gateway's wallet is a task client too", (vars.get("PORW_TASK_CLIENTS")?.value || "").split(",").length >= 2);
 }
