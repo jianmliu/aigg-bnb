@@ -26,8 +26,42 @@ check("it is https (a page on https cannot call a plaintext relayer)", urls.ever
 check("no localhost survived the build", !urls.some((u) => /localhost|127\.0\.0\.1/.test(u)), urls.join(" "));
 if (urls.length) console.log(`         relayer: ${urls.join(", ")}`);
 
-// the runtime the brains are executed by, and the files the page reads at runtime: present, or the page half-works
-for (const p of ["porw", "vendor"]) check(`the ${p} runtime was copied into the build`, fs.existsSync(path.join(dist, p)) && fs.readdirSync(path.join(dist, p)).length > 0);
+// The runtime the brains are executed by, and the worker that runs them: both ship at URLs named after their own
+// contents, because a fixed URL plus a CDN is a version-skew bug with a timer on it. One was fired on 2026-09-20:
+// the zone's four-hour Browser Cache TTL overrode this build's five-minute request on /porw/* and /node_worker.js,
+// and a tab ran a stale worker against a fresh bundle and hung silently. What that costs is checked here, because
+// a single unhashed reference surviving into the output brings the whole failure back.
+const entries = fs.existsSync(dist) ? fs.readdirSync(dist) : [];
+const porwDir = entries.find((d) => /^porw\.[0-9a-f]{10}$/.test(d));
+const vendorDir = entries.find((d) => /^vendor\.[0-9a-f]{10}$/.test(d));
+const workerFile = entries.find((f) => /^node_worker\.[0-9a-f]{10}\.js$/.test(f));
+for (const [what, d] of [["porw", porwDir], ["vendor", vendorDir]])
+  check(`the ${what} runtime was copied in under a content-addressed name`, !!d && fs.readdirSync(path.join(dist, d)).length > 0, d || `no ${what}.<id>/ in dist`);
+check("the worker is content-addressed too", !!workerFile, workerFile || "no node_worker.<id>.js in dist");
+check("and the fixed-URL worker is NOT also published", !entries.includes("node_worker.js"));
+check("nor a fixed-URL runtime directory", !entries.includes("porw") && !entries.includes("vendor"));
+
+// every JavaScript this build emits, and every reference in it to something this build also emits
+const emitted = [...assets.filter((f) => f.endsWith(".js")).map((f) => path.join(dist, "assets", f)), ...(workerFile ? [path.join(dist, workerFile)] : [])];
+const allJs = emitted.map((f) => fs.readFileSync(f, "utf8")).join("\n");
+check("no unhashed /porw/ or /vendor/ reference survived the build", !/["'(]\/(porw|vendor)\//.test(allJs),
+  (allJs.match(/["'(]\/(porw|vendor)\/[^"'`)]*/g) || []).slice(0, 3).join(" "));
+check("no unhashed /node_worker.js reference survived either", !allJs.includes("/node_worker.js"));
+check("the bundle asks for the worker this build actually emitted", !!workerFile && allJs.includes(`/${workerFile}`), workerFile || "-");
+{ // a hashed URL that names nothing is worse than an unhashed one: it 404s on every visitor, forever
+  const refs = [...new Set(allJs.match(/\/(?:porw|vendor)\.[0-9a-f]{10}\/[A-Za-z0-9@/._-]+/g) || [])];
+  const missing = refs.filter((u) => !fs.existsSync(path.join(dist, u.replace(/^\//, ""))));
+  check(`every runtime URL the build references exists in it (${refs.length} checked)`, refs.length > 0 && missing.length === 0, missing.slice(0, 3).join(" ")); }
+{ // the copied modules import each other relatively, but their @noble imports were rewritten: those must land too
+  const files = vendorDir ? [] : [];
+  const sample = porwDir ? fs.readFileSync(path.join(dist, porwDir, "verify.js"), "utf8") : "";
+  check("a copied module's @noble imports point at the hashed vendor directory",
+    !!vendorDir && sample.includes(`/${vendorDir}/@noble/`) && !sample.includes('"/vendor/@noble/'), files.length ? "" : (sample.match(/"[^"]*@noble[^"]*"/) || ["none"])[0]); }
+{ // _headers has to mark them immutable: that is the one lifetime the zone's TTL does not shorten
+  const h = fs.existsSync(path.join(dist, "_headers")) ? fs.readFileSync(path.join(dist, "_headers"), "utf8") : "";
+  for (const rule of ["/porw.*", "/vendor.*", "/node_worker.*.js", "/assets/*"]) {
+    const block = h.split("\n\n").find((b) => b.trim().startsWith(rule));
+    check(`_headers makes ${rule} immutable`, !!block && /immutable/.test(block), block ? block.trim().split("\n")[1] : "no rule"); } }
 check("the genesis set is served, so adoption can prove its Merkle openings", fs.existsSync(path.join(dist, "genesis")));
 check("the phenotype file is served, so a fly's standing among the founders can be shown", fs.existsSync(path.join(dist, "phenotypes/individuals-v1.json")));
 // the views a visitor can reach by link: each one's id has to exist in the bundle

@@ -62,11 +62,17 @@ jobs:
       # the read quota is what runs out first, and what nobody can see: the arithmetic of it is checked
       - run: node test/greenfield_quota.mjs
 
+      # Preserve upstream address and content-addressed runtime checks.
+      - run: node test/brain_addresses.mjs
+      - run: node test/runtime_id.mjs
+
       # DESIGN §4b distinguishes optional multi-asset contracts from the legacy native gateway
       - run: node test/settlement_assets.mjs
 
       # the genesis set is committed to once, at deployment: the published file is what the generator writes and every proof opens
       - run: node test/genesis_set.mjs
+      - run: node --test test/genesis_v2.mjs test/breed_recipe.mjs
+      - run: node flybnb/genesis/build_genesis_v2.mjs --check
       # where each measured individual stands among the founders, and that the published files still match the runs
       - run: node test/phenotypes.mjs
 
