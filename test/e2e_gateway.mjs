@@ -50,9 +50,12 @@ try {
 
   // ---- the gateway ----
   const sets = { ears: Array.from({ length: 250 }, (_, j) => j * 9), quiet: [40, 41, 42, 900, 1500, 2200] }; fs.writeFileSync(path.join(tmp, "sets.json"), JSON.stringify(sets));
-  const WEI = 10n ** 15n; const FEE = BigInt(STEPS) * 2n * WEI; // large next to gas, so "refunded" and "paid" are told apart by balances
+  // what a run costs a host is not one number: measured on the real brain the battery's stimuli span 9.4x and the
+  // heavier export costs 1.54x. The gateway prices by both; here the warm brain is dear and `ears` dearer still.
+  fs.writeFileSync(path.join(tmp, "pricing.json"), JSON.stringify({ models: { warm: 2, cold: 1 }, sets: { ears: 1.5, quiet: 1 }, default_set: 1 }));
+  const WEI = 10n ** 15n; const FEE = BigInt(STEPS) * 2n * WEI * 3n; // steps x redundancy x (wei x model 2 x set 1.5) // large next to gas, so "refunded" and "paid" are told apart by balances
   const genv = { GATEWAY_BEARER: "test-bearer", GATEWAY_MODELS: `warm=${warm.mepId},cold=${cold.mepId}`, GATEWAY_SETS: path.join(tmp, "sets.json"), GATEWAY_STATE: path.join(tmp, "state.json"),
-    GATEWAY_WEI_PER_STEP: String(WEI), GATEWAY_KEEPALIVE_MS: "50", GATEWAY_RESULT_TIMEOUT_MS: "4000", GATEWAY_POLL_MS: "150" };
+    GATEWAY_WEI_PER_STEP: String(WEI), GATEWAY_PRICING: path.join(tmp, "pricing.json"), GATEWAY_KEEPALIVE_MS: "50", GATEWAY_RESULT_TIMEOUT_MS: "4000", GATEWAY_POLL_MS: "150" };
   { let refused = ""; try { await H.startGateway(R, H.KEYS[4], { ...genv, GATEWAY_BEARER: "" }); } catch (e) { refused = String(e.message); } check("without a bearer it refuses to start: anybody could spend the wallet", /GATEWAY_BEARER is not set/.test(refused)); }
   { const a = dep.addresses; let refused = ""; try { await H.startGateway(R, H.KEYS[4], { ...genv, PORW_CHAIN_ID: String(dep.chainId), PORW_RPC: dep.rpc, PORW_MEP_REGISTRY: a.meps, PORW_INSTANCES: a.instances, PORW_CLAIMS: a.claims, PORW_MARKET: a.relays }); } catch (e) { refused = String(e.message); }
     check("told one market by its environment and another by the relayer, it refuses to start: money is not sent where an HTTP endpoint says", /serves another deployment/.test(refused)); }
@@ -62,7 +65,8 @@ try {
 
   check("no bearer, no service", (await call("/v1/models", null, {})).status === 401 && (await call("/v1/responses", { model: "warm" }, {})).status === 401);
   { const m = (await (await call("/v1/models")).json()).data; const w = m.find((x) => x.id === "warm"), c = m.find((x) => x.id === "cold");
-    check(`/v1/models: the warm brain has 2 providers and is available; the cold one has none and is not`, w.providers === 2 && w.votes === 20 && w.available === true && c.providers === 0 && c.available === false && w.exec === "int-lif" && w.aliases.includes("mep:" + warm.mepId)); }
+    check(`/v1/models: the warm brain has 2 providers and is available; the cold one has none and is not`, w.providers === 2 && w.votes === 20 && w.available === true && c.providers === 0 && c.available === false && w.exec === "int-lif" && w.aliases.includes("mep:" + warm.mepId));
+    check(`and each brain carries its own price per step (warm ${w.wei_per_step} = 2x the cold one's ${c.wei_per_step}), with what a named stimulus set does to it`, BigInt(w.wei_per_step) === 2n * WEI && BigInt(c.wei_per_step) === WEI && w.set_factors.ears === 1.5); }
 
   // ---- a call ----
   const expected = await warm.probe.execute(warm.mep.mepId, { steps: STEPS, commitStride: 2, stimulusSeed: 7, stimulusIds: Uint32Array.from(sets.ears), silenceIds: Uint32Array.from(sets.quiet) });
@@ -74,6 +78,7 @@ try {
   if (r1.status !== 200) console.log("   ", r1.status, JSON.stringify(j1).slice(0, 600), "\n", GWY.log().split("\n").slice(-8).join("\n"));
   check("a call: 200, completed, settled on-chain by both providers", r1.status === 200 && j1.status === "completed" && rc.executors?.length === 2 && rc.executors.includes(A.addr) && rc.executors.includes(B.addr) && rc.finality === "settled");
   check("they ran the experiment it named: the state_0 root the gateway computed without the brain is the one they built", rc.init_state_root === H.hex(expected.result.initStateRoot) && rc.stimulated === 250 && rc.silence_ids.length === 6);
+  check(`the fee follows the work, not the step count: the dear brain (x2) under the dear set (x1.5) costs ${FEE} wei`, BigInt(rc.fee_wei) === FEE && rc.price.model_factor === 2 && rc.price.set_factor === 1.5 && rc.price.set === "ears");
   check("the receipt's digest and root are the ones anybody recomputes", rc.exec_digest === H.hex(expected.result.execDigest) && rc.exec_root === H.hex(expected.result.execRoot) && (await D.market.read.settledDigest([j1.id])) === rc.exec_digest);
   check("the response id is the task id, an output token is one step by one provider (20 steps x 2), and ten segments are committed", j1.id === rc.task && j1.usage.output_tokens === STEPS * 2 && rc.commit_stride === 2 && (await D.market.read.taskInfo([j1.id]))[2].toLowerCase() === GW);
   const b1 = { g: await bal(GW), a: await bal(A.addr), b: await bal(B.addr) };
