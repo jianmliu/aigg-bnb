@@ -30,7 +30,9 @@ a host who has not started yet, and a breeder is usually both a funder and a sub
 
 **The reason funders are named first among the non-authors** is docs/TOKENOMICS.md §9: a mint buys, almost exactly,
 one measurement of the individual it creates. The atlas is paid for by the people who adopt and breed, not by the
-project — saying otherwise would be false.
+project — saying otherwise would be false. And what they pay for is **given away**: every row is published free
+(proposal §5.1a). That is what a funder's line in an acknowledgment has always meant, and it is worth being plain that
+their return is the credit and whatever new experiments their individual later attracts, not a share of the rows.
 
 ## 2. What is counted, at what threshold, in what order
 

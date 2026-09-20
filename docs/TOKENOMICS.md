@@ -480,14 +480,15 @@ export the founders vary (`flywire-783-min2`, 7,595,967 synapses):
 
 | | |
 |---|---|
-| one run, min5 / min2 | **2.6 s / 3.0 s** — of which 1.7 s is the segment commitments, which are now the larger half |
-| the same before the event-driven step (aigg-porw #31) | 14.1 s / 33.8 s: the simulation went 12.4 → 0.8 s and 32.1 → 1.4 s |
-| one individual's standard battery (13 stimuli × 3 seeds = 39 runs) | **1.7 minutes of CPU** per host — 3.4 at redundancy 2 |
+| one battery run, by stimulus | **0.23 s to 2.16 s**, mean **0.82 s** over the thirteen — the sparse ones cost least, the two that ignite the network (pheromone, cold: ~7,000 neurons spiking) most |
+| the same before aigg-porw #31 and #32 | **14.1 s** flat: the simulation went 12.4 → 0.4 s (event-driven), the commitments 1.5 → 0.4 s (incremental) |
+| one individual's standard battery (13 stimuli × 3 seeds = 39 runs) | **32 seconds of CPU** per host — a minute at redundancy 2 |
 | its fee at 0.1 gwei per step per provider | 195,000 steps × 2 × 10⁻¹⁰ = **0.039 BNB** |
 | its gas | one `postBatch` + one `settle` for all 39 runs: ~0.00004 BNB, three orders of magnitude below the fee |
 | what a mint puts in the treasury | `MINT_PRICE − MINT_BOND` = **0.05 BNB** (the bond is the minter's own stake, and stays theirs) |
 | what a breed puts in | `BREED_FEE − HATCH_BOUNTY` = **0.049 BNB** |
-| what the whole atlas costs in compute | 11,739 runs ≈ **5 CPU-hours** — the repository's own sparse analysis runner does it in about 100 minutes on eight cores |
+| what the **pilot** costs in compute | 11,739 runs ≈ **2.7 CPU-hours** |
+| what the **atlas** costs (proposal §5.4: ~4 M runs a sex, the silencing part already pruned) | **~950 CPU-hours a sex**, ~1,900 for both, **~3,800 at redundancy 2** — 20 days on eight cores, 8 hours on 500 |
 
 **So a mint buys, almost exactly, one measurement of the individual it creates.** At the breeding study's scale — 301
 individuals, 11,739 runs — the compute costs about 11.7 BNB, and 100 adoptions plus 201 breedings bring in about 14.8.
@@ -498,8 +499,8 @@ the project is the task client only in the sense that it spends what adopters pu
 
 The 0.1 gwei per step per provider is **derived from the budget, not from the cost**: it is what the atlas can pay per
 row if a mint is to cover an individual's battery. Against the cost of the compute it is very high — 0.0195 BNB per
-host per battery, now 1.7 minutes of CPU, is **0.7 BNB per CPU-hour**: four orders of magnitude above what an ordinary
-cloud core costs, and a further order of magnitude more than before the kernel was made event-driven.
+host per battery, now 32 seconds of CPU, is **2.2 BNB per CPU-hour**: five orders of magnitude above what an ordinary
+cloud core costs, and two more than before the kernel was made event-driven and its commitments incremental.
 
 That is a choice, not an error: a host must be paid enough to bother keeping a brain resident, and early on the price
 has to be generous. But it should be said plainly, because two things follow. First, hosting is profitable long before
@@ -533,11 +534,16 @@ individual's battery needs 5,000, which is why `GATEWAY_MAX_STEPS` and what the 
 
 ### And what it does not mean
 
-None of this says the atlas needs a network to be computed. Five CPU-hours is a desktop overnight, and the repository's
-own runner does the whole breeding study in about 100 minutes on eight cores. While a result is that cheap to
-reproduce, **re-running it is the cheapest possible audit**, and redundancy buys nothing a reader could not buy
-themselves. What the mesh buys is elsewhere: a market and a royalty for the individuals, a contribution record that is
-a query rather than a list (docs/flybnb/CREDIT.md), and — through the gateway — a result somebody who is *paying* can
-trust without re-running it, because independent providers agreed on it with bonds at risk. The compute argument only
-starts to hold at a scale where nobody can re-run the thing: a connectome two orders of magnitude larger, or tens of
-thousands of individuals.
+**The pilot never needed a network.** 2.7 CPU-hours is an afternoon on a laptop, and while a result is that cheap to
+reproduce, re-running it is the cheapest possible audit there is: redundancy buys a reader nothing they could not buy
+themselves. The gate experiment is starker still — six tasks, sixteen seconds of CPU, three and a half minutes on the
+chain. It was an integration test, and should be described as one.
+
+**The atlas is a different thing.** Four million runs a sex is 20 days of a desktop at redundancy 2, and nobody
+re-runs that to check a row. What makes it a network's work is not the weight of a run — a fly brain fits in a browser
+tab, and always will — but their number. That is the shape this mesh fits: a model small enough to keep resident,
+asked millions of times.
+
+**And the rows, once computed, are free.** They are published, they are a few kilobytes each, and anyone can download
+the lot; a deterministic result with a published recipe cannot be sold twice. So the atlas is not the revenue — it is
+the reference, and the reason anybody would bring a question to it (docs/GATEWAY.md §4.2).
