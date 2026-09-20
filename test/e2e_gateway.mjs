@@ -12,7 +12,7 @@
 //   - a restart between postTask and settle: the fee is already spent, the call is driven on
 //   - nobody answers: refunded by the market, 504, nothing billed
 //   - the providers disagree: a dispute opens, 502, nothing billed
-import fs from "node:fs"; import os from "node:os"; import path from "node:path";
+import fs from "node:fs"; import os from "node:os"; import path from "node:path"; import http from "node:http";
 import { parseEther } from "viem";
 import * as H from "./harness.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
@@ -163,6 +163,35 @@ try {
     const r = await call("/v1/responses", { model: "warm", seed: 13, max_output_tokens: STEPS }); const j = await r.json(); A.nd.execLie = null;
     check("a provider lies: a dispute opens at settlement, 502 disputed, nobody is paid", r.status === 502 && j.error.type === "disputed" && j.receipt.disputed.length === 2 && (await bal(A.addr)) === a);
     const v = await (await call("/v1/responses/" + j.id)).json(); check("and the call stays readable, with both roots in its receipt", v.status === "failed" && v.receipt.results[A.addr].execRoot !== v.receipt.results[B.addr].execRoot); }
+  // ---- an RPC that will not answer an unbounded eth_getLogs, which is every public one ----
+  // The gateway has to find each executor's SESSION key to announce to it, and the registry maps session -> instance,
+  // so the reverse is a log scan. It used to ask from block 0. Anvil answers that instantly; BSC testnet's public RPC
+  // refuses it, and the mesh's first live call died there -- both executors unreachable, nothing announced, the fee
+  // refunded at the timeout, and no test anywhere the wiser. So: the same call, through an RPC that refuses a span it
+  // considers too wide, with the gateway's window set under that limit.
+  { const LIMIT = 50; const seen = { widest: 0, refused: 0 };
+    const proxy = http.createServer((rq, rs) => { let b = ""; rq.on("data", (d) => (b += d)); rq.on("end", async () => {
+      const j = JSON.parse(b); const send = (o) => { rs.writeHead(200, { "content-type": "application/json" }); rs.end(JSON.stringify(o)); };
+      if (j.method === "eth_getLogs") { const p = j.params[0] || {};
+        const head = Number(await anvil.call("eth_blockNumber"));
+        const to = p.toBlock && p.toBlock !== "latest" ? Number(p.toBlock) : head, from = p.fromBlock && p.fromBlock !== "earliest" ? Number(p.fromBlock) : 0;
+        seen.widest = Math.max(seen.widest, to - from);
+        if (to - from > LIMIT) { seen.refused++; return send({ jsonrpc: "2.0", id: j.id, error: { code: -32062, message: `eth_getLogs is limited to ${LIMIT} blocks` } }); } }
+      const r = await fetch(anvil.rpc, { method: "POST", headers: { "content-type": "application/json" }, body: b }); send(await r.json()); }); });
+    await new Promise((r) => proxy.listen(0, "127.0.0.1", r)); stop.push(() => new Promise((r) => proxy.close(r)));
+    const a = dep.addresses, strictRpc = `http://127.0.0.1:${proxy.address().port}`;
+    const strict = await H.startGateway(R, H.KEYS[4], { ...genv, GATEWAY_STATE: path.join(tmp, "strict.json"), GATEWAY_LOG_WINDOW: String(LIMIT - 10),
+      PORW_CHAIN_ID: String(dep.chainId), PORW_RPC: strictRpc, PORW_MEP_REGISTRY: a.meps, PORW_INSTANCES: a.instances, PORW_CLAIMS: a.claims, PORW_MARKET: a.market, PORW_BEACON: a.beacon, PORW_DISPUTES: a.disputes, PORW_RELAYS: a.relays, PORW_VERIFIER: a.verifier });
+    stop.push(() => strict.stop());
+    // keep blocks coming, so a gateway that cannot reach the providers reaches the market's timeout and answers 504
+    // instead of hanging: the point is to see the difference stated, not to wait for a socket to give up
+    const mining = setInterval(() => anvil.mine(8).catch(() => {}), 300);
+    let r = { status: 0 }, j = {};
+    try { r = await fetch(strict.url + "/v1/responses", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer test-bearer" }, body: JSON.stringify({ model: "warm", seed: 21, max_output_tokens: STEPS }), signal: AbortSignal.timeout(120000) }); j = await r.json(); }
+    catch (err) { j = { error: { type: "no answer", message: String(err?.message || err) } }; }
+    clearInterval(mining);
+    check("a call still completes against an RPC that refuses a wide eth_getLogs: the session scan is bounded", r.status === 200 && j.status === "completed" && j.receipt?.executors?.length === 2, `${r.status} ${j.error?.type || ""} ${j.error?.message || ""}`.slice(0, 200));
+    check("and it never asked for a span that RPC would refuse", seen.refused === 0 && seen.widest <= LIMIT, `widest ${seen.widest}, refused ${seen.refused}`); }
 } catch (e) { console.error(e); fails++; }
 finally { for (const f of stop.reverse()) try { await f(); } catch {} anvil.stop(); fs.rmSync(tmp, { recursive: true, force: true }); }
 console.log(fails ? `${fails} FAILURES` : "gateway: all checks passed"); process.exit(fails ? 1 : 0);
