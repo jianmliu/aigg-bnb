@@ -4,6 +4,11 @@ Status: design, 2026-09-19; **milestones 0, 1 and 2 are built** (`gateway/`, `te
 statement is about code that exists it names the file;
 where it is a proposal it says so. §8 records what was decided on 2026-09-19, and what is still open.
 
+**On names.** `aigg` is the protocol, this repository is its BNB deployment, and **FlyBnB is a dataset** — the fly
+atlas the network is producing first. This document says "the mesh" and "the gateway" for the things that would be the
+same for any deterministic brain model, and "FlyBnB" only where it means that dataset. The gateway is not a fly thing:
+it serves whatever the mesh serves.
+
 ## 0. The analogy, and where it stops
 
 ai.gg is an API gateway (`jianmliu/aigg-src`, a fork of sub2api): a user holds a platform key and a balance, names a

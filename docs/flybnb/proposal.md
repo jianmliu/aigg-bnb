@@ -1,5 +1,10 @@
 # FlyBnB: a whole-brain perturbation atlas, re-tested across individuals
 
+*FlyBnB is the name of this dataset, not of the network that computes it. The network is a PoRW mesh (`aigg`, deployed
+on BNB Chain in `aigg-bnb`) whose subject happens to be a fly brain first; the same protocol, unchanged, verifies any
+model whose execution is exact and integer, which is what a connectome simulation is at any size (docs/DESIGN.md §5c).
+A mouse atlas would be a different dataset with a different name.*
+
 Research proposal, draft v1, 2026-09-18. The living paper draft is [`paper.md`](paper.md); the pilot's code and results are in [`flybnb/`](../../flybnb/).
 
 The name: Fly + BnB. The brains are hosted in many people's browsers (the bed-and-breakfast kind of bnb), tasks run on a peer-to-peer mesh, and settlement is on BNB Chain. The name needs a trademark check before it is used for anything but a dataset (Section 13).

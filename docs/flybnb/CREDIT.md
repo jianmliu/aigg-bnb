@@ -1,5 +1,8 @@
 # Credit: who is named in the FlyBnB dataset, for what, and how it is checked
 
+*Of the dataset. The mesh that computed it is `aigg` on BNB Chain, and a later dataset on the same mesh would
+have its own list under its own name.*
+
 Status: policy, 2026-09-20. It is written **before** the paper on purpose. A credit policy decided afterwards is a
 negotiation; decided beforehand it is a rule, and this one has to survive a reviewer asking the obvious question —
 whether people bought their way onto the list.
