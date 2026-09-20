@@ -14,7 +14,7 @@
     "frontend": "vite --config frontend/vite.config.mjs",
     "build:frontend": "vite build --config frontend/vite.config.mjs",
     "preview:frontend": "node frontend/serve.mjs",
-    "deploy:frontend": "VITE_RELAYER_URL=\"${VITE_RELAYER_URL:-https://aigg-bnb-relayer-testnet.onrender.com}\" npm run build:frontend && node test/deployed_build.mjs && wrangler pages deploy frontend/dist --project-name=aigg-fly --branch=main"
+    "deploy:frontend": "VITE_RELAYER_URL=\"${VITE_RELAYER_URL:-https://aigg-bnb-relayer-testnet.onrender.com}\" npm run build:frontend && node test/deployed_build.mjs && npx --yes wrangler@4 pages deploy frontend/dist --project-name=aigg-fly --branch=main"
   },
   "dependencies": {
     "@bnb-chain/greenfield-js-sdk": "^2.2.2",
