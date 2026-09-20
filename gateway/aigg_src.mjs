@@ -9,9 +9,11 @@
 //              of steps), injects instructions, and turns the gateway's 503 model_cold / 504 no_result into a generic 502
 //   a CHANNEL  one pricing row for those names, platform "openai" (it defaults to anthropic, and then never matches), in USD
 //              per token, with restrict_models on: a model that is served but not priced would otherwise be billed at $0
-//   the PRICE  one token = wei_per_step, of either kind: an output token is one step run by one provider (the fee), an input
-//              token the call's gas turned into steps (a fixed cost per call). So input_price = output_price =
-//              wei_per_step / 1e18 x AIGG_USD_PER_BNB x AIGG_MARGIN, and a short call pays for its transactions too.
+//   the PRICE  ONE number, because the gateway counts everything in one unit. A token is `wei_per_token` of work: an
+//              output token is a step of that brain under that stimulus set (a heavier brain and a stimulus that
+//              ignites it cost MORE TOKENS, not a higher rate), an input token is the call's gas in the same unit. So
+//              input_price = output_price = wei_per_token / 1e18 x AIGG_USD_PER_BNB x AIGG_MARGIN, for every model.
+//              Pricing a model higher here as well would charge its factor twice.
 // A newly registered fly is a new model: run this again (or on a timer) and it appears in ai.gg's /v1/models, priced.
 //
 //   node gateway/aigg_src.mjs plan     what would be sent, secrets redacted. Reads the gateway; reads ai.gg if it can
@@ -35,8 +37,12 @@ if (!/^https:\/\//.test(GATEWAY)) console.error(`note: ${GATEWAY} is not https -
 // ---- what the gateway serves ----
 const served = await (await fetch(LOCAL + "/v1/models", { headers: { authorization: "Bearer " + BEARER } })).json(); if (!Array.isArray(served.data)) { console.error("the gateway's /v1/models did not answer with a list:", JSON.stringify(served).slice(0, 200)); process.exit(1); }
 const names = [...new Set(served.data.flatMap((m) => [m.id, ...(m.aliases || [])]))].sort(); if (!names.length) { console.error("the gateway serves no model: nothing to register"); process.exit(1); }
-const weis = [...new Set(served.data.map((m) => m.wei_per_step))]; if (weis.length !== 1) { console.error("models with different wei_per_step need a pricing row each; this script writes one"); process.exit(1); }
-const outputPrice = Number((Number(BigInt(weis[0])) / 1e18 * usdPerBnb * margin).toPrecision(6)); // USD per token, of either kind
+// What a run costs a host differs -- a heavier export is 1.54x, a stimulus that ignites the brain 9x a sparse one --
+// and the gateway puts that difference in the TOKEN COUNT, not in the rate. So ai.gg gets one price for everything.
+const usd = (wei) => Number((Number(BigInt(wei)) / 1e18 * usdPerBnb * margin).toPrecision(6));
+const units = [...new Set(served.data.map((m) => String(m.wei_per_token)))];
+if (units.length !== 1) { console.error(`the gateway reports more than one wei_per_token (${units.join(", ")}): a single price cannot bill them`); process.exit(1); }
+const outputPrice = usd(units[0]);
 
 const group = { name: NAME, description: "fly brains on the PoRW mesh, through the flybnb gateway", platform: "openai", rate_multiplier: 1.0, subscription_type: "standard", is_exclusive: false, require_oauth_only: false };
 const account = (groupId) => ({ name: NAME + "-gateway", platform: "openai", type: "apikey", group_ids: [groupId], concurrency: Number(e.AIGG_CONCURRENCY || 8), priority: Number(e.AIGG_PRIORITY || 50), rate_multiplier: 1.0,
@@ -44,12 +50,15 @@ const account = (groupId) => ({ name: NAME + "-gateway", platform: "openai", typ
   // rules: the gateway's 503 (cold model) and 504 (refunded) are answers, and must never take the account out of rotation.
   credentials: { base_url: GATEWAY, api_key: BEARER, model_mapping: Object.fromEntries(names.map((n) => [n, n])), pool_mode: false, custom_error_codes_enabled: false, temp_unschedulable_enabled: false },
   extra: { openai_passthrough: true } });
-const channel = (groupId) => ({ name: NAME, description: "output token = one step run by one provider; input token = the call's gas, in steps", group_ids: [groupId], restrict_models: true, billing_model_source: "requested",
+const channel = (groupId) => ({ name: NAME, description: "one token is a fixed unit of work: an output token is a step of that brain under that stimulus set, an input token the call's gas in the same unit", group_ids: [groupId], restrict_models: true, billing_model_source: "requested",
   model_pricing: [{ platform: "openai", models: names, billing_mode: "token", input_price: outputPrice, output_price: outputPrice, cache_read_price: 0 }] });
 const redact = (o) => JSON.parse(JSON.stringify(o, (k, v) => (k === "api_key" ? "<GATEWAY_BEARER>" : v)));
 
-console.log(`the gateway serves ${served.data.length} brain(s) under ${names.length} name(s); ${weis[0]} wei per step x ${usdPerBnb} USD/BNB x ${margin} = ${outputPrice} USD per token`);
-for (const m of served.data) console.log(`  ${m.id}  ${m.exec}  ${m.neurons} neurons  providers ${m.providers}${m.available ? "" : "  (cold)"}  = ${(outputPrice * 5000 * m.min_redundancy).toPrecision(3)} USD per 5,000 steps at redundancy ${m.min_redundancy}`);
+console.log(`the gateway serves ${served.data.length} brain(s) under ${names.length} name(s); ${units[0]} wei a token x ${usdPerBnb} USD/BNB x ${margin} = ${outputPrice} USD per token, for every model:`);
+for (const m of served.data) { const t = (m.tokens_per_step ?? 1) * 5000 * m.min_redundancy;
+  console.log(`  ${m.id}  ${m.exec}  ${m.neurons} neurons  providers ${m.providers}${m.available ? "" : "  (cold)"}  ${m.tokens_per_step ?? 1} token(s) a step = ${Math.round(t)} tokens, ${(outputPrice * t).toPrecision(3)} USD for 5,000 steps at redundancy ${m.min_redundancy}`); }
+{ const f = Object.entries(served.data[0]?.set_factors || {}); if (f.length) { const lo = f.reduce((a, b) => (a[1] < b[1] ? a : b)), hi = f.reduce((a, b) => (a[1] > b[1] ? a : b));
+  console.log(`  and a named stimulus set multiplies the COUNT: ${lo[0]} x${lo[1]} … ${hi[0]} x${hi[1]}, so the same price bills a run that ignites the brain for what it costs`); } }
 
 // ---- ai.gg's admin API: { code: 0, data } ; lists are data.items or data ----
 const AIGG = e.AIGG_URL ? trim(e.AIGG_URL) : null; const KEY = e.AIGG_ADMIN_KEY || null;
@@ -67,11 +76,12 @@ const A = G ? items(await admin("GET", `/accounts?platform=openai&type=apikey&se
 const C = items(await admin("GET", "/channels?page_size=100")).find((c) => c.name === NAME);
 const wantA = account(G?.id ?? "<group id>"), wantC = channel(G?.id ?? "<group id>");
 // what would change: the names served, the price, base_url, the bearer (rotated?), passthrough
-const haveNames = A ? Object.keys(A.credentials?.model_mapping || {}).sort() : []; const havePrice = C?.model_pricing?.[0]?.output_price ?? null; const haveIn = C?.model_pricing?.[0]?.input_price ?? null; const haveModels = (C?.model_pricing?.[0]?.models || []).slice().sort();
-const todo = { group: !G, account: !A ? "create" : (!same(haveNames, names) || A.credentials?.base_url !== GATEWAY || A.credentials?.api_key !== BEARER || A.extra?.openai_passthrough !== true) ? "update" : null, channel: !C ? "create" : (havePrice !== outputPrice || haveIn !== outputPrice || !same(haveModels, names) || C.restrict_models !== true) ? "update" : null };
+const haveNames = A ? Object.keys(A.credentials?.model_mapping || {}).sort() : []; const wantRows = channel("").model_pricing.map((r) => [r.models.slice().sort().join("|"), r.output_price, r.input_price].join(" ")).sort().join(" ; ");
+const haveRows = (C?.model_pricing || []).map((r) => [(r.models || []).slice().sort().join("|"), r.output_price, r.input_price].join(" ")).sort().join(" ; "); const haveModels = (C?.model_pricing?.[0]?.models || []).slice().sort();
+const todo = { group: !G, account: !A ? "create" : (!same(haveNames, names) || A.credentials?.base_url !== GATEWAY || A.credentials?.api_key !== BEARER || A.extra?.openai_passthrough !== true) ? "update" : null, channel: !C ? "create" : (haveRows !== wantRows || C.restrict_models !== true) ? "update" : null };
 console.log(`\nai.gg at ${AIGG}: group ${G ? "#" + G.id : "MISSING"} · account ${A ? "#" + A.id + (todo.account ? " (differs)" : "") : "MISSING"} · channel ${C ? "#" + C.id + (todo.channel ? " (differs)" : "") : "MISSING"}`);
 if (A && !same(haveNames, names)) console.log(`  models: + ${names.filter((n) => !haveNames.includes(n)).join(", ") || "-"}   - ${haveNames.filter((n) => !names.includes(n)).join(", ") || "-"}`);
-if (C && havePrice !== outputPrice) console.log(`  price: ${havePrice} -> ${outputPrice} USD per token`);
+if (C && haveRows !== wantRows) console.log(`  prices: ${haveRows || "(none)"}\n       -> ${wantRows}`);
 if (A && A.status && A.status !== "active") console.log(`  WARNING: the account's status is "${A.status}". A 401 from the gateway (a wrong bearer) marks an apikey account as errored for good: fix the bearer, then clear the error in ai.gg.`);
 if (cmd === "plan") { if (!todo.group && !todo.account && !todo.channel) console.log("nothing to do."); else console.log("`apply` would: " + [todo.group && "create the group", todo.account && todo.account + " the account", todo.channel && todo.channel + " the channel"].filter(Boolean).join(", ") + "\n" + JSON.stringify({ ...(todo.group ? { group } : {}), ...(todo.account ? { account: redact(wantA) } : {}), ...(todo.channel ? { channel: wantC } : {}) }, null, 1)); process.exit(0); }
 

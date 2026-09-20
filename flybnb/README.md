@@ -4,6 +4,8 @@ FlyBnB is a whole-brain perturbation atlas of the fly, re-tested across individu
 
 | here | what |
 |---|---|
+| `analysis/phenotype_rank.mjs`, `results/phenotypes/` | **where an individual stands among the founders**, phenotype by phenotype: the reference distribution (89 phenotypes over the hundred founders) and, per individual, what stands out. Keyed by the delta hash its token carries, so the page can show measured standing instead of an invented rarity; a fly with no runs has no entry, which is the answer until its battery is run |
+| [`docs/flybnb/CREDIT.md`](../docs/flybnb/CREDIT.md) | **who is named in the dataset, for what, and how it is checked**: the roles, the thresholds, what credit is not (it is neither authorship nor for sale), and the conflict of interest, stated. Written before the paper on purpose |
 | `battery/` | **the standard battery every individual gets**: 13 stimuli × 3 seeds, the output of all 1,303 descending neurons; how it is built from the annotations; its form as one batched task. It is what makes the atlas, the association analysis and the selection experiment one dataset |
 | `male/` | **the male brain's line** (MaleCNS v1.0): how its counts compare with FlyWire's (`count_scale.py`), which weight unit puts it in the same regime (`unit_scan.py` → 7209), its own variability model (`lr_conditional.py`, `founder_density.py`), and its battery (`build_battery.py` → `battery/battery-male-v1.json`). Results in `results/male/` |
 | `analysis/battery_variance_report.py` | how much of a battery phenotype belongs to the individual: ignition rates and single-run ICCs from battery rows, the same script for either brain → `results/variance/` |

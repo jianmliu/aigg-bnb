@@ -58,6 +58,8 @@ jobs:
 
       # the genesis set is committed to once, at deployment: the published file is what the generator writes and every proof opens
       - run: node test/genesis_set.mjs
+      # where each measured individual stands among the founders, and that the published files still match the runs
+      - run: node test/phenotypes.mjs
 
       - run: node test/frontend_memory.mjs
 

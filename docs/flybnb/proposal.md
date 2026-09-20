@@ -1,5 +1,10 @@
 # FlyBnB: a whole-brain perturbation atlas, re-tested across individuals
 
+*FlyBnB is the name of this dataset, not of the network that computes it. The network is a PoRW mesh (`aigg`, deployed
+on BNB Chain in `aigg-bnb`) whose subject happens to be a fly brain first; the same protocol, unchanged, verifies any
+model whose execution is exact and integer, which is what a connectome simulation is at any size (docs/DESIGN.md §5c).
+A mouse atlas would be a different dataset with a different name.*
+
 Research proposal, draft v1, 2026-09-18. The living paper draft is [`paper.md`](paper.md); the pilot's code and results are in [`flybnb/`](../../flybnb/).
 
 The name: Fly + BnB. The brains are hosted in many people's browsers (the bed-and-breakfast kind of bnb), tasks run on a peer-to-peer mesh, and settlement is on BNB Chain. The name needs a trademark check before it is used for anything but a dataset (Section 13).
@@ -124,6 +129,23 @@ Design ([`flybnb/results/breeding/design.json`](../../flybnb/results/breeding/de
 | seed | 3 to 10 | another realisation of the stimulus train; gives the noise of the assay |
 
 The readout is not chosen in advance. Every run stores the spike count of every neuron that spiked (about 560 of 139,255 in the pilot), so a row is a sparse vector of a few kilobytes. The 1,303 descending neurons are the default behavioural readout, but the same data answer other questions.
+
+### 5.1a What is given away, and what is asked for
+
+Every row of this dataset is published, free, in the open layout (`flybnb/dataset/`): deterministic, a few kilobytes,
+recomputable from a published recipe. That is deliberate and not a concession — a dataset that people must ask
+permission for does not become the reference, and a reference is the only thing this is trying to be.
+
+The grid is also thin. It holds **one perturbation at a time**; the questions that follow are products of it, and
+products do not precompute. Pairs of the active types alone are about 45,000 per stimulus — 1.75 million runs for a
+single individual, against the 4 million that cover every *single* perturbation of every individual. Add a stimulus
+that is not in the battery, a longer run, another readout window, or an individual bred after the atlas was built, and
+the answer is not in the table either.
+
+So the economics are a reference genome's: the atlas is free and is what makes a question worth asking; the mesh is
+paid for computing what the atlas does not contain (docs/GATEWAY.md §4.2). An individual's owner earns from new
+experiments on it, never from rows already computed — which is why the atlas is best understood as the advertisement
+for its individuals rather than as their income.
 
 ### 5.2 Two exact prunings
 

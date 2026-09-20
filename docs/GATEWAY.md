@@ -4,6 +4,11 @@ Status: design, 2026-09-19; **milestones 0, 1 and 2 are built** (`gateway/`, `te
 statement is about code that exists it names the file;
 where it is a proposal it says so. §8 records what was decided on 2026-09-19, and what is still open.
 
+**On names.** `aigg` is the protocol, this repository is its BNB deployment, and **FlyBnB is a dataset** — the fly
+atlas the network is producing first. This document says "the mesh" and "the gateway" for the things that would be the
+same for any deterministic brain model, and "FlyBnB" only where it means that dataset. The gateway is not a fly thing:
+it serves whatever the mesh serves.
+
 ## 0. The analogy, and where it stops
 
 ai.gg is an API gateway (`jianmliu/aigg-src`, a fork of sub2api): a user holds a platform key and a balance, names a
@@ -59,8 +64,8 @@ struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStr
 | `stream: true` | progress events, and the keep-alive that carries a minutes-long call through a proxy |
 | the response `id` | `taskId` |
 | `system_fingerprint` | the scheme digest and the exec kind: what "the same model" means here |
-| `usage.output_tokens` | `steps × redundancy × runs`: the work |
-| `usage.input_tokens` | the call's gas, as spent posting and settling it, in steps: `⌈gas wei / wei per step⌉` — a fixed cost per call |
+| `usage.output_tokens` | the work: `steps × redundancy × runs × the brain's factor × the stimulus set's` |
+| `usage.input_tokens` | the call's gas, as spent posting and settling it, in the **same** unit: `⌈gas wei / wei per token⌉` |
 
 `seed`, `steps` and `redundancy` may also ride **inside the experiment**, and there they win — because behind ai.gg a caller
 of `/v1/chat/completions` has every top-level field it does not know dropped (`seed`), `max_tokens` floored at 128, and on
@@ -198,7 +203,17 @@ gateway pays nobody and keeps no ledger of what it owes: it sells balance and sp
 difference. That is also why none of `aigg-src`'s payout machinery (`provider_owner_user_id`, the withdrawal queue) is
 needed here.
 
-**Price.** `fee = steps × runs × redundancy × p(model)` = `output_tokens × p`, with `p` wei per step per provider. The
+**Price. One unit, one rate, and every difference in the count.** A token is `GATEWAY_WEI_PER_STEP` of work. A call
+is `output_tokens = steps × runs × redundancy × model factor × set factor` of them, and its fee is
+`output_tokens × wei_per_token`; its gas is `input_tokens` of the same unit. **A step is not a step**: measured on one
+core, the thirteen battery stimuli span **9.4×** — 0.23 s for `ocelli`, which barely wakes the brain, against 2.16 s
+for `pheromone`, which ignites it (~7,000 neurons spiking) — and the ≥ 2-synapse export costs **1.54×** the ≥ 5-synapse
+one for the same 5,000 steps (`gateway/pricing.json`, measured).
+
+Those factors go in the **count**, never in the rate, and the reason is arithmetic: a platform bills
+`price per token × tokens`, so a factor that reaches the fee but not the token count is a factor the gateway pays out
+of its own pocket — and a factor applied to *both* is charged twice. One rate for every model, and the gas divided by
+that same rate, is the only arrangement in which a caller's bill is exactly what the call cost. The
 gas is a second, fixed cost — two transactions, ~0.33–0.48 M gas whatever the length — and for a short call it is the
 larger one (100 steps at redundancy 2 and 0.1 gwei/step is 0.00002 BNB of fee against ~0.00004 of gas). So it is billed
 too, as `input_tokens` worth the same `p` each: one price per token, input and output, and a call pays for what it
@@ -218,6 +233,36 @@ the output price set to `p` converted at the gateway's BNB rate, plus its margin
    id, share covered in bps, a budget and a daily cap — debited in the same billing transaction as the user's share.
    The providers and the owner are paid in full either way; a subsidy changes who is charged, never what is earned.
 3. *the project*, for the FlyBnB atlas: the dataset's own tasks, which is every task today.
+
+### 4.2 What is sold, and what is given away
+
+The atlas's rows are **free**. They are deterministic, their recipes are published, each is a few kilobytes, and the
+whole set is a download; a result anybody can recompute cannot be sold twice, and trying would cost the one thing the
+dataset is for — being the reference everyone uses. So nothing here charges for a row that exists.
+
+What the gateway sells is **what the grid does not contain**. The atlas is one perturbation at a time: about 300
+active cell types a stimulus, crossed with individuals and seeds. The questions people actually bring are products of
+that grid, and products do not precompute:
+
+| a question | in the atlas? | what it would take |
+|---|---|---|
+| silence A | yes | a lookup |
+| **silence A and B together** | no | pairs of the active types alone are 45,000 × 13 stimuli × 3 seeds = **1.75 M runs per individual** |
+| three at once, or conditionally | no | beyond counting |
+| a new stimulus, a longer run, another readout window | no | a fresh battery |
+| **an individual bred yesterday** | no | 39 runs, and it did not exist when the atlas was built |
+| partial silencing, timing protocols | no | continuous parameters |
+
+This is the shape of a reference genome and a service beside it: nobody pays to download GRCh38, and aligning your own
+reads to it is worth paying for. The atlas is not the revenue — it is what makes the service worth asking, because it
+is where a questioner finds out which individuals and which cell types are worth a question at all.
+
+Two things follow. A holder's royalty comes from **new** experiments on their fly, never from rows already computed —
+so an individual earns because the atlas showed it to be interesting (the pilot's outliers, the ones where the gate
+leaks), which makes the dataset the advertisement rather than the income. And the market is **small and specialised**:
+the customers are the labs that work on this connectome, tens of them, not an API's worth of strangers. The price per
+call can be high, because the alternative is thousands of CPU-hours or a rebuild of this whole stack; the number of
+calls will not be.
 
 ### 4.1 Base models and their descendants
 

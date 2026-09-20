@@ -139,6 +139,54 @@ runs one after another.
   `localStorage` (per-viewer convenience: it is worth nothing without the on-chain delegation, and
   `revokeSessionKey` cuts it off).
 
+## 5c. What this scales to, and where the line actually falls
+
+*(And a note on names, since this is the section that says why they matter: **`aigg` is the protocol**, **`aigg-bnb`
+this deployment of it**, and **FlyBnB a dataset** — the fly atlas being produced on it. The protocol's subject is any
+model whose arithmetic is exact, so a mouse atlas would be another dataset with another name and nothing here would
+change. README states the three layers.)*
+
+The line is not the size of the model. It is the **arithmetic**.
+
+| | deterministic, fixed point | floating point |
+|---|---|---|
+| what it is | any connectome simulation — the fly, the larva, zebrafish, **the mouse** — under `aigg:exec:int-lif:v1` or a kind like it | an LLM layer: dense GEMM, MoE |
+| residency provable | yes | yes — the sketch fuses into the weight-tile load of the inference kernel itself (aigg-porw `gpu/triton/porw_sketch`) |
+| **result** provable | **yes, bit for bit** | **no**: two GPUs, two batch shapes or two kernel versions do not agree to the last bit, so there is nothing to compare |
+| what runs it | CPU or GPU, whichever the model's size and the memory bandwidth ask for | GPU |
+
+The reason the first column holds at any size is the same one that lets a host skip the work it does not need
+(aigg-porw #31, #32): **integer sums are exact and order-independent**. A parallel reduction on a GPU, in any order,
+over any number of lanes, gives the same integer as a single-threaded loop — so a redundant executor on other hardware
+reproduces the state root to the bit. Floating point has no such property, and that, not scale, is why an LLM cannot be
+checked by agreement.
+
+So a mammalian connectome is the same protocol with a different execution layer, not a different system: residency
+claims, sortition, redundancy and the bisection dispute are untouched, and only the kernel under `execKind` changes.
+What moves with size is *where* it runs, and that is a bandwidth question rather than a compute one. A connectome is a
+sparse graph and propagating activation through it is an SpMV of about 0.06 flop per byte — one to two orders of
+magnitude below any CPU's roofline knee, so it is **memory-bandwidth-bound and tensor cores do not help it**
+(aigg-porw `gpu/triton/demo/fly_brain/WHY-CPU.md`). That is why the fly runs on an ordinary computer: not because the
+system is small, but because DRAM is what the work wants, and every machine has DRAM. A brain two orders of magnitude
+larger wants HBM, and then the host is a GPU.
+
+**This is what the fly closes.** PoRW began against LLMs, and there it is half a mechanism: residency can be proved,
+and the result cannot — a network can show that a model was really in memory and still not show that what came out of
+it was that model's answer. Every route around it costs something. Redundancy needs bit-identity that floating point
+does not give. A tolerance turns "wrong" into a threshold somebody has to argue for, and an executor can sit just
+inside it. A TEE moves the question to a vendor's attestation. A zero-knowledge proof of the inference is orders of
+magnitude too expensive at this size.
+
+A connectome simulation has none of that difficulty, and not by luck: it is integer because it was written to be, and
+integer is what makes agreement mean something. So the loop closes — **residency proved, execution proved, disagreement
+adjudicable to a single synapse term, and the loser slashed** — and it closes the same way at mouse scale as at fly
+scale. The LLM case is not solved here; it is set aside, with what remains of it (a provable claim that the weights are
+resident) clearly separated from what does not follow (that the output is right).
+
+None of which says the mesh is *needed* for the fly. It is not: the pilot is a few CPU-hours and the atlas is
+about 4 million runs (docs/TOKENOMICS.md §9). The point of this section is narrower — that nothing in the design caps
+it there, and the thing that would change at mouse scale is the hardware under one interface, not the protocol.
+
 ## 6. Risks and limits specific to BNB
 
 - **Beacon bias** is deposit-bounded, not eliminated (§3). A VRF adapter removes it.

@@ -12,7 +12,7 @@ window.appActions = {
   loadDeployment: C.loadDeployment, connect: C.connect, bond: C.bond, delegate: C.delegate,
   loadModel: C.loadModel, startNode: C.startNode, refreshBond: C.refreshBond, loop: C.loop, postTask: C.postTask,
   setActive: C.setActive, host: C.host,
-  loadFlies: F.loadFlies, breed: F.breed, hatch: F.hatch, rearm: F.rearm, loadGenesis: F.loadGenesis, adopt: F.adopt, settle: F.settle, withdraw: F.withdraw,
+  loadFlies: F.loadFlies, loadTerms: F.loadTerms, breed: F.breed, hatch: F.hatch, rearm: F.rearm, loadGenesis: F.loadGenesis, adopt: F.adopt, settle: F.settle, withdraw: F.withdraw,
 };
 
 createRoot(document.getElementById("root")).render(<App />);
