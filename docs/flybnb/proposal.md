@@ -115,6 +115,23 @@ Design ([`flybnb/results/breeding/design.json`](../../flybnb/results/breeding/de
 
 The readout is not chosen in advance. Every run stores the spike count of every neuron that spiked (about 560 of 139,255 in the pilot), so a row is a sparse vector of a few kilobytes. The 1,303 descending neurons are the default behavioural readout, but the same data answer other questions.
 
+### 5.1a What is given away, and what is asked for
+
+Every row of this dataset is published, free, in the open layout (`flybnb/dataset/`): deterministic, a few kilobytes,
+recomputable from a published recipe. That is deliberate and not a concession — a dataset that people must ask
+permission for does not become the reference, and a reference is the only thing this is trying to be.
+
+The grid is also thin. It holds **one perturbation at a time**; the questions that follow are products of it, and
+products do not precompute. Pairs of the active types alone are about 45,000 per stimulus — 1.75 million runs for a
+single individual, against the 4 million that cover every *single* perturbation of every individual. Add a stimulus
+that is not in the battery, a longer run, another readout window, or an individual bred after the atlas was built, and
+the answer is not in the table either.
+
+So the economics are a reference genome's: the atlas is free and is what makes a question worth asking; the mesh is
+paid for computing what the atlas does not contain (docs/GATEWAY.md §4.2). An individual's owner earns from new
+experiments on it, never from rows already computed — which is why the atlas is best understood as the advertisement
+for its individuals rather than as their income.
+
 ### 5.2 Two exact prunings
 
 - **Silencing a neuron that never spikes changes nothing, bit for bit.** int-lif is deterministic and has no background activity, so this is a theorem and not an approximation. The silencing atlas needs only the cell types that are active in that individual under that stimulus: a few hundred per stimulus, not 8,840. Every other cell of the table is the digest of the unperturbed run, and verifiably so.

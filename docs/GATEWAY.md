@@ -219,6 +219,36 @@ the output price set to `p` converted at the gateway's BNB rate, plus its margin
    The providers and the owner are paid in full either way; a subsidy changes who is charged, never what is earned.
 3. *the project*, for the FlyBnB atlas: the dataset's own tasks, which is every task today.
 
+### 4.2 What is sold, and what is given away
+
+The atlas's rows are **free**. They are deterministic, their recipes are published, each is a few kilobytes, and the
+whole set is a download; a result anybody can recompute cannot be sold twice, and trying would cost the one thing the
+dataset is for — being the reference everyone uses. So nothing here charges for a row that exists.
+
+What the gateway sells is **what the grid does not contain**. The atlas is one perturbation at a time: about 300
+active cell types a stimulus, crossed with individuals and seeds. The questions people actually bring are products of
+that grid, and products do not precompute:
+
+| a question | in the atlas? | what it would take |
+|---|---|---|
+| silence A | yes | a lookup |
+| **silence A and B together** | no | pairs of the active types alone are 45,000 × 13 stimuli × 3 seeds = **1.75 M runs per individual** |
+| three at once, or conditionally | no | beyond counting |
+| a new stimulus, a longer run, another readout window | no | a fresh battery |
+| **an individual bred yesterday** | no | 39 runs, and it did not exist when the atlas was built |
+| partial silencing, timing protocols | no | continuous parameters |
+
+This is the shape of a reference genome and a service beside it: nobody pays to download GRCh38, and aligning your own
+reads to it is worth paying for. The atlas is not the revenue — it is what makes the service worth asking, because it
+is where a questioner finds out which individuals and which cell types are worth a question at all.
+
+Two things follow. A holder's royalty comes from **new** experiments on their fly, never from rows already computed —
+so an individual earns because the atlas showed it to be interesting (the pilot's outliers, the ones where the gate
+leaks), which makes the dataset the advertisement rather than the income. And the market is **small and specialised**:
+the customers are the labs that work on this connectome, tens of them, not an API's worth of strangers. The price per
+call can be high, because the alternative is thousands of CPU-hours or a rebuild of this whole stack; the number of
+calls will not be.
+
 ### 4.1 Base models and their descendants
 
 The shape generalises beyond flies, and it is the commercial argument. An open-weights vendor publishes a base; the
