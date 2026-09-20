@@ -6,7 +6,8 @@
 // on trust: an int-lif executor hands back every neuron's spike count when asked, the settled execDigest IS
 // keccak(n ‖ those counts), and only a vector that hashes to it is ever served (§1.2).
 //
-//   POST /v1/responses          { model, input, seed?, max_output_tokens?, redundancy?, stream?, background? }
+//   POST /v1/responses          { model, input, seed?, max_output_tokens?, redundancy?, stream?, background? }   (also /responses)
+//                               input: { stimulate?, silence?, readout?, seed?, steps?, redundancy? } -- see plan()
 //   GET  /v1/responses/{id}     the call, with its finality re-read from the chain
 //   GET  /v1/models             served MEPs with providers / votes / available / price
 //   GET  /v1/tasks/{id}/counts  the verified spike counts of a settled call: little-endian u32, one per neuron
@@ -108,10 +109,13 @@ async function plan(body) {
   const lif = m.exec === "int-lif"; const x = experimentOf(body.input); const stimulate = idsOf(x.stimulate, "stimulate"), silence = idsOf(x.silence, "silence");
   if (!lif && (stimulate || silence)) throw new Refusal(400, "invalid_request_error", `${m.exec} takes a seed only: stimulate / silence are int-lif's`);
   if ((body.n ?? 1) !== 1) throw new Refusal(400, "invalid_request_error", "n > 1 is a batch, which is not in this milestone");
-  const steps = body.max_output_tokens ?? body.max_tokens ?? body.max_completion_tokens ?? cfg.defaultSteps; const cap = lif ? cfg.maxSteps : Math.min(512, cfg.maxSteps);
+  // seed, steps and redundancy may also ride INSIDE the experiment, and there they win. Through ai.gg a caller of
+  // /v1/chat/completions has every top-level field it does not know dropped (`seed`), `max_tokens` floored at 128, and on
+  // the non-passthrough path `max_output_tokens` deleted outright; the message text is the one thing that arrives intact.
+  const steps = x.steps ?? body.max_output_tokens ?? body.max_tokens ?? body.max_completion_tokens ?? cfg.defaultSteps; const cap = lif ? cfg.maxSteps : Math.min(512, cfg.maxSteps);
   if (!Number.isInteger(steps) || steps < 1 || steps > cap) throw new Refusal(400, "invalid_request_error", `max_output_tokens is the number of steps: an integer in 1 … ${cap} for ${m.exec}`);
-  const seed = body.seed ?? 0; if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Refusal(400, "invalid_request_error", "seed is a uint32");
-  const redundancy = body.redundancy ?? cfg.minRedundancy; if (!Number.isInteger(redundancy) || redundancy < cfg.minRedundancy || redundancy > 16) throw new Refusal(400, "invalid_request_error", `redundancy is ${cfg.minRedundancy} … 16: fewer than ${cfg.minRedundancy} providers is not a result anybody agreed on`);
+  const seed = x.seed ?? body.seed ?? 0; if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Refusal(400, "invalid_request_error", "seed is a uint32");
+  const redundancy = x.redundancy ?? body.redundancy ?? cfg.minRedundancy; if (!Number.isInteger(redundancy) || redundancy < cfg.minRedundancy || redundancy > 16) throw new Refusal(400, "invalid_request_error", `redundancy is ${cfg.minRedundancy} … 16: fewer than ${cfg.minRedundancy} providers is not a result anybody agreed on`);
   // nothing is spent before this: a brain with too few eligible hosts is COLD, and the caller is told so
   const cap0 = await capacity(m.mepId);
   if (cap0.providers < redundancy) throw new Refusal(503, "model_cold", `${cap0.providers} eligible provider(s) for this brain, ${redundancy} needed: nobody is hosting it right now`, { providers: cap0.providers, retry_after: 60 });
@@ -121,7 +125,7 @@ async function plan(body) {
   let init = null; if (lif) try { init = state0Root(m.neurons, seed, stimulate, silence); } catch (err) { if (err instanceof RangeError) throw new Refusal(400, "invalid_request_error", err.message); throw err; }
   const fee = BigInt(steps) * BigInt(redundancy) * cfg.weiPerStep; const block = await blockNumber();
   // the float ran dry: say so before the chain does, and in a way the operator's alerting can tell from a cold model
-  const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + GAS_MARGIN) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
+  const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + await gasHeadroom(redundancy)) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
   const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: block + BigInt(TASK_TIMEOUT), redundancy };
   // what to read out: named neurons, or (asked for nothing) the ten that fired most. Checked now, while refusing is free
   let readout = null; if (x.readout != null) { if (!lif) throw new Refusal(400, "invalid_request_error", `${m.exec} has no spike counts to read out`);
@@ -131,7 +135,11 @@ async function plan(body) {
 }
 
 // ---- the life of a call (docs/GATEWAY.md §2) ----
-const GAS_MARGIN = 2_000_000n * 5_000_000_000n; // postTask + settle, generously, at 5 gwei: what has to be left after the fee
+// What has to be left after the fee: this call's two transactions at today's gas price, twice over. Measured on BSC testnet
+// and anvil: postTask ~197k gas at redundancy 1, settle ~126k at 1 and ~152k at 2 -- both grow with the executors drawn.
+// (It was a constant, 2M gas at 5 gwei = 0.01 BNB: some three hundred times what a call costs at 0.1 gwei.)
+const callGas = (redundancy) => 200_000n + 40_000n * BigInt(redundancy) + 100_000n + 30_000n * BigInt(redundancy);
+const gasHeadroom = async (redundancy) => 2n * callGas(redundancy) * await ch.pub.getGasPrice();
 let sending = Promise.resolve(); // one wallet, one nonce sequence: sends are serialised
 const send = (fn) => { const p = sending.then(fn); sending = p.catch(() => {}); return p; };
 const TASK_TUPLE = [{ type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" }, { name: "initStateRoot", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] }, { type: "bytes32" }];
@@ -178,7 +186,12 @@ async function drive(c) {
     const evs = rc.logs.filter((l) => l.address.toLowerCase() === market.toLowerCase()).map((l) => { try { return decodeEventLog({ abi: MarketExtra, data: l.data, topics: l.topics }); } catch { return null; } }).filter(Boolean);
     const settled = evs.find((x) => x.eventName === "TaskSettled"), dispute = evs.find((x) => x.eventName === "DisputeOpened");
     for (const a of ex) if (!c.results[a]?.execRoot && await ch.market.read.submitted([c.id, a])) { const [execDigest, execRoot] = await ch.market.read.resultOf([c.id, a]); c.results[a] = { execDigest, execRoot }; } // a reply that did not reach us; the chain has it
-    const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
+    // The gas of the call's two transactions, as spent -- from their receipts, not an estimate. It is billed as the call's
+    // INPUT tokens: gas wei / wei per step, rounded up, so a token of either kind is worth the same. A call that fails
+    // (refunded, disputed) is not billed at all; its gas is the gateway's.
+    const post = await ch.pub.getTransactionReceipt({ hash: c.post_tx }); const gasWei = post.gasUsed * post.effectiveGasPrice + rc.gasUsed * rc.effectiveGasPrice;
+    const gas = { post_task: Number(post.gasUsed), settle: Number(rc.gasUsed), wei: String(gasWei), tokens: Number((gasWei + cfg.weiPerStep - 1n) / cfg.weiPerStep) };
+    const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, gas, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
       stimulate_ids: c.stimulate, silence_ids: c.silence, stimulated: c.stimulated, results: c.results };
     if (dispute) { c.receipt = { ...base, executors: ex, disputed: [dispute.args.a, dispute.args.b].map((a) => a.toLowerCase()) }; return fail(c, 502, "disputed", "the executors disagreed and the task is in dispute: nothing is billed, and the fee is held until the dispute resolves"); }
     if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, "no_result", "no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
@@ -221,8 +234,13 @@ function view(c) {
   const done = c.status === "completed"; const text = done ? JSON.stringify({ exec_digest: c.receipt.exec_digest, ...readoutOf(c) }) : null;
   return { id: c.id, object: "response", created_at: c.created_at, status: c.status, model: c.model, system_fingerprint: `${c.exec}:${c.mepId.slice(0, 18)}`,
     output: done ? [{ type: "message", id: "msg_" + c.id.slice(2, 26), status: "completed", role: "assistant", content: [{ type: "output_text", text, annotations: [] }] }] : [],
-    usage: { input_tokens: 0, output_tokens: done ? c.task.steps : 0, total_tokens: done ? c.task.steps : 0 }, error: c.error, receipt: c.receipt, executors: c.executors };
+    // Two kinds of token, worth the same (wei_per_step each), so one price per token covers both:
+    //   output: one step run by one provider -- the work, what the fee is proportional to (steps x redundancy)
+    //   input:  the call's gas, spent posting and settling it -- a fixed cost per call, whatever its length
+    // Nothing is billed for a call that did not complete (ai.gg drops all-zero usage).
+    usage: { input_tokens: done ? gasTokensOf(c) : 0, output_tokens: done ? tokensOf(c) : 0, total_tokens: done ? gasTokensOf(c) + tokensOf(c) : 0, input_tokens_details: { cached_tokens: 0 } }, error: c.error, receipt: c.receipt, executors: c.executors };
 }
+const tokensOf = (c) => c.task.steps * c.task.redundancy; const gasTokensOf = (c) => c.receipt?.gas?.tokens ?? 0;
 const done = (c) => new Promise((res) => { if (TERMINAL.has(c.status)) return res(); const b = bus.get(c.id); if (!b) return res(); const on = (ev) => { if (ev.type === "response.completed" || ev.type === "response.failed") { b.off("event", on); res(); } }; b.on("event", on); });
 
 // ---- HTTP ----
@@ -238,8 +256,21 @@ async function respond(req, res, body) {
   // a stream: the Responses API's events, and a comment line often enough that nothing in front of us calls the connection dead
   res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", "x-accel-buffering": "no" });
   let seq = 0; const write = (type, data) => res.write(`event: ${type}\ndata: ${JSON.stringify({ type, sequence_number: seq++, ...data })}\n\n`);
+  // What ai.gg's relay does with a Responses stream decides three things here (aigg-src openai_gateway_service.go):
+  //  - it HOLDS `response.created`, `response.in_progress` and comment lines until the first event that is not a preamble, so
+  //    that it can still fail over silently. A caller behind it would see nothing for minutes and its proxy would hang up.
+  //    `response.output_item.added` right after `created` opens the output, and every keep-alive after it goes straight through.
+  //  - for a caller of /v1/chat/completions it builds the text from `response.output_text.delta` events ONLY -- it never
+  //    reads the final response's output when streaming. So the answer is sent as one delta before `completed`.
+  //  - usage is read from the terminal event's `response.usage`, and a stream with no terminal event is retried.
+  const item = "msg_" + c.id.slice(2, 26); const opened = () => write("response.output_item.added", { output_index: 0, item: { type: "message", id: item, status: "in_progress", role: "assistant", content: [] } });
+  const answer = () => { const v = view(c); const text = v.output[0].content[0].text; const part = { type: "output_text", text, annotations: [] };
+    write("response.content_part.added", { item_id: item, output_index: 0, content_index: 0, part: { type: "output_text", text: "", annotations: [] } });
+    write("response.output_text.delta", { item_id: item, output_index: 0, content_index: 0, delta: text }); write("response.output_text.done", { item_id: item, output_index: 0, content_index: 0, text });
+    write("response.content_part.done", { item_id: item, output_index: 0, content_index: 0, part }); write("response.output_item.done", { output_index: 0, item: v.output[0] }); };
   const b = bus.get(c.id); const alive = setInterval(() => res.write(": waiting on the chain\n\n"), cfg.keepAliveMs);
-  const on = (ev) => { if (ev.type === "response.in_progress") write(ev.type, { response: view(c), executor: ev.executor, result: c.results[ev.executor] }); else write(ev.type, { response: view(c) });
+  const on = (ev) => { if (ev.type === "response.in_progress") write(ev.type, { response: view(c), executor: ev.executor, result: c.results[ev.executor] });
+    else { if (ev.type === "response.completed") answer(); write(ev.type, { response: view(c) }); if (ev.type === "response.created") opened(); }
     if (ev.type === "response.completed" || ev.type === "response.failed") { clearInterval(alive); b.off("event", on); res.end(); } };
   for (const ev of c.events) on(ev); if (!res.writableEnded) b.on("event", on); // nothing is missed between start() and here: events are on the call
   req.on("close", () => { clearInterval(alive); b.off("event", on); }); // the caller left; the task is paid for and runs on -- GET /v1/responses/{id}
@@ -255,7 +286,7 @@ const server = http.createServer(async (req, res) => {
           providers: k.providers, votes: k.votes, available: k.providers >= cfg.minRedundancy && k.beacon, min_redundancy: cfg.minRedundancy, wei_per_step: String(cfg.weiPerStep) }; }));
       return json(res, 200, { object: "list", data });
     }
-    if (req.method === "POST" && p === "/v1/responses") return await respond(req, res, await readBody(req));
+    if (req.method === "POST" && (p === "/v1/responses" || p === "/responses")) return await respond(req, res, await readBody(req)); // ai.gg relays to /v1/responses; its admin "test connection" posts to /responses
     const one = /^\/v1\/responses\/(0x[0-9a-fA-F]{64})$/.exec(p);
     if (req.method === "GET" && one) { const c = calls.get(one[1].toLowerCase()); if (!c) return json(res, 404, { error: { type: "not_found", message: "no such call" } }); await finality(c); return json(res, 200, view(c)); }
     const cnt = /^\/v1\/tasks\/(0x[0-9a-fA-F]{64})\/counts$/.exec(p);
