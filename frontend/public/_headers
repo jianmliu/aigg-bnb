@@ -1,10 +1,16 @@
 # Cloudflare Pages headers for the node page. Copied verbatim into dist/ by Vite (it is a public/ file).
 #
-# The only thing that actually needs saying here is cache lifetime. Vite hashes everything under /assets/, so
-# those are immutable; the rest ships at fixed paths and changes contents whenever the aigg-porw submodule moves.
-# A browser holding a cached /porw/ module against a freshly deployed bundle computes a model_id that no longer
-# matches the registry -- a silently rejected claim, not an error anyone would see. Five minutes of freshness
-# costs a conditional request and removes that failure entirely.
+# Everything this build emits is named after its own contents -- /assets/ by Vite, and /porw.<id>/, /vendor.<id>/
+# and node_worker.<id>.js by build/runtime.mjs -- so every one of them is immutable and none of them can go stale:
+# a new build asks for a different URL.
+#
+# This file used to ask for five minutes of freshness on the fixed paths /porw/*, /vendor/* and /node_worker.js
+# instead, which is a weaker thing and, on the deployed domain, was not even granted. Measured 2026-09-20: those
+# paths came back `max-age=14400` on fly.ai.gg against `max-age=300` on *.pages.dev, because the zone's Browser
+# Cache TTL raises any shorter origin max-age. /assets/* was untouched -- it asks for longer. So the rule that was
+# protecting the files that change was the one being overridden, and the consequence was seen in a real tab
+# minutes after a deploy: the new bundle called an op on a four-hour-old cached worker that had never heard of it,
+# and the page hung with no error at all. A cache header is a request; a content-addressed URL is not.
 #
 # Deliberately absent: COOP/COEP. The node runs the single-memory kernel in a plain worker and never touches
 # SharedArrayBuffer, and require-corp would force every cross-origin fetch -- including a 28 MB brain from the
@@ -14,14 +20,14 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-/porw/*
-  Cache-Control: public, max-age=300, must-revalidate
+/porw.*
+  Cache-Control: public, max-age=31536000, immutable
 
-/vendor/*
-  Cache-Control: public, max-age=300, must-revalidate
+/vendor.*
+  Cache-Control: public, max-age=31536000, immutable
 
-/node_worker.js
-  Cache-Control: public, max-age=300, must-revalidate
+/node_worker.*.js
+  Cache-Control: public, max-age=31536000, immutable
 
 /*
   X-Content-Type-Options: nosniff
