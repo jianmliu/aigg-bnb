@@ -508,10 +508,15 @@ it is efficient, so the margin is where competition will show up. Second, the he
 **redundancy** instead of profit: three or five independent providers per row, at the same total price, buys more
 agreement than a fatter margin does.
 
-**A price per step ignores the brain.** The fee is `steps × redundancy × p`, and `p` is one number for the whole
-gateway — but min2 costs a host nearly twice what min5 does for the same 5,000 steps, and a larger connectome would
-cost far more. `p` belongs to the model, not to the network: `/v1/models` already carries a price per model, and only
-the configuration is still global.
+**A price per step ignored the brain, and the stimulus.** It carries both now (`gateway/pricing.json`, measured):
+min2 is 1.54× min5 for the same 5,000 steps, and across the battery's thirteen stimuli a run spans 9.4× — `ocelli`
+0.28, `pheromone` 2.64.
+
+**That is cost. Value differs too, and it differs by fly.** What the atlas shows to be an outlier gets asked about;
+an individual that nothing distinguishes does not. But that difference arrives as **volume**, not as a rate: the
+royalty is a fixed share of a fee the caller pays, so an interesting fly earns by being called more often, and what
+capitalises is its resale price — the scarce thing is a measured phenotype, not a token. Earnings will be a power law,
+most individuals will earn close to nothing, and nothing on the page should suggest otherwise.
 
 **The invariant to keep.** `MINT_PRICE − MINT_BOND ≥ steps × runs × redundancy × p(model)` for the standard battery:
 a mint must cover the measurement of the individual it creates. It holds today (0.05 against 0.039) with about 20%
