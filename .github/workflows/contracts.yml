@@ -56,6 +56,9 @@ jobs:
       # render.yaml is edited next to a key file: no secret has a value, and the brains it names are known ones
       - run: node test/render_blueprint.mjs
 
+      # the fee rate is stated in three documents and charged in one place: they must be the same number
+      - run: node test/fee_rate_units.mjs
+
       # the genesis set is committed to once, at deployment: the published file is what the generator writes and every proof opens
       - run: node test/genesis_set.mjs
       # where each measured individual stands among the founders, and that the published files still match the runs

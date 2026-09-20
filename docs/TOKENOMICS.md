@@ -483,7 +483,7 @@ export the founders vary (`flywire-783-min2`, 7,595,967 synapses):
 | one battery run, by stimulus | **0.23 s to 2.16 s**, mean **0.82 s** over the thirteen — the sparse ones cost least, the two that ignite the network (pheromone, cold: ~7,000 neurons spiking) most |
 | the same before aigg-porw #31 and #32 | **14.1 s** flat: the simulation went 12.4 → 0.4 s (event-driven), the commitments 1.5 → 0.4 s (incremental) |
 | one individual's standard battery (13 stimuli × 3 seeds = 39 runs) | **32 seconds of CPU** per host — a minute at redundancy 2 |
-| its fee at 0.1 gwei per step per provider | 195,000 steps × 2 × 10⁻¹⁰ = **0.039 BNB** |
+| its fee at 100 gwei per step per provider | 195,000 steps × 2 × 10⁻⁷ = **0.039 BNB** |
 | its gas | one `postBatch` + one `settle` for all 39 runs: ~0.00004 BNB, three orders of magnitude below the fee |
 | what a mint puts in the treasury | `MINT_PRICE − MINT_BOND` = **0.05 BNB** (the bond is the minter's own stake, and stays theirs) |
 | what a breed puts in | `BREED_FEE − HATCH_BOUNTY` = **0.049 BNB** |
@@ -497,7 +497,7 @@ the project is the task client only in the sense that it spends what adopters pu
 
 ### Where the price comes from, and where it does not
 
-The 0.1 gwei per step per provider is **derived from the budget, not from the cost**: it is what the atlas can pay per
+The 100 gwei (10⁻⁷ BNB) per step per provider is **derived from the budget, not from the cost**: it is what the atlas can pay per
 row if a mint is to cover an individual's battery. Against the cost of the compute it is very high — 0.0195 BNB per
 host per battery, now 32 seconds of CPU, is **2.2 BNB per CPU-hour**: five orders of magnitude above what an ordinary
 cloud core costs, and two more than before the kernel was made event-driven and its commitments incremental.
