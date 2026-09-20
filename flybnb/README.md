@@ -31,6 +31,8 @@ The brains are not in the repository. They are identified by content address, an
 | `flywire-783-min2.bin` | the same export at ≥ 2 synapses: the base individuals are laid out on, so that connections can cross the threshold of five in both directions; on Greenfield as `gnfd://aigg-brains/flywire-fafb-v783-min2.bin` | 77,074,432 | `10a9e16f08174e4c2421f64d10ee17466d39ff88847ba7ab0c1ef57c1a9022a5` | `0x53a7b48e9265bea68fbd3f3640eda751f8dd7742ac76ae6f9c69f1cddc528135` |
 | `malecns-v1.0-min2.bin` | MaleCNS v1.0 (brain and ventral nerve cord), connections of ≥ 2 synapses: the base male individuals are laid out on, and what the male battery's `population` names; on Greenfield as `gnfd://aigg-brains/malecns-v1.0-min2.bin` | 154,169,344 | `38227caa7f35af4913a85d0f59c473c4b870e5f9373bb4e07e143163e7a571ba` | `0x7a22e8b8a1eae502ea7528be8ed0699b5c31ce5bf6fd2d4e56aedb46bf17394e` |
 
+All three are also on the Cloudflare Pages mirror `https://aigg-brains.pages.dev`, in parts, because Pages refuses a file over 25 MiB: `<object>.parts.json` says how many, and the page concatenates them and recomputes `model_id`, so a missing, reordered or hostile part fails exactly as a wrong whole file does (`js/mirror_pack.mjs`). The mirror is tried first and costs no storage-provider read quota; the male brain's eight parts reassemble to its 154,169,344 bytes in about eight seconds.
+
 All three are served, public-read, by the Greenfield testnet storage provider `https://gnfd-testnet-sp2.bnbchain.org` (`/view/aigg-brains/<object>`); fetch either and check it before use, as the scripts do:
 
 ```bash
