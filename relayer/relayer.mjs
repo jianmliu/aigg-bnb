@@ -11,7 +11,7 @@
 //                  POST /tx/delegate {instance,session,expiry,sig}  POST /tx/materialize {mep,epoch,instance}
 //                  POST /tx/result {taskId,execDigest,execRoot,signature}  POST /tx/settle {taskId,instance}
 import { verifyMessage } from "viem";
-import { providerModels, hostStats } from "./providers.mjs";
+import { providerModelReader, hostStats } from "./providers.mjs";
 import { wakeMessage } from "./wake.mjs";
 import fs from "node:fs"; import http from "node:http"; import path from "node:path"; import { fileURLToPath } from "node:url";
 import { keccak_256 } from "@noble/hashes/sha3.js";
@@ -332,12 +332,13 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
   const p = sponsorChain.then(run, run); sponsorChain = p.catch(() => {}); return p;
 }
 const readHostStats = hostStats(ch, dep.addresses.market);
+const readProviderModels = providerModelReader(ch, meps);
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
     if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
-    if (u.pathname === "/meps") return json(res, 200, await providerModels(ch, meps));
+    if (u.pathname === "/meps") return json(res, 200, await readProviderModels());
     if (u.pathname === "/hosts") {
       const instance = u.searchParams.get("instance") || "";
       if (!/^0x[0-9a-fA-F]{40}$/.test(instance)) return json(res, 400, { error: "instance must be an address" });
