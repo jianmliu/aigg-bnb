@@ -32,7 +32,13 @@ try {
       default: throw new Error("unsupported " + method);
     }
   });
-  await page.addInitScript(() => { window.ethereum = { isPorwTestWallet: true, request: ({ method, params }) => window.__walletRequest(method, params || []) }; });
+  await page.addInitScript(() => {
+    const provider = { request: ({ method, params }) => window.__walletRequest(method, params || []) };
+    window.ethereum = { request: () => { throw new Error("competing wallet must not receive requests"); } };
+    window.addEventListener("eip6963:requestProvider", () => window.dispatchEvent(new CustomEvent("eip6963:announceProvider", {
+      detail: { info: { uuid: "test-metamask", rdns: "io.metamask", name: "MetaMask" }, provider },
+    })));
+  });
   await page.goto(fe.url + "/"); await page.waitForFunction(() => window.__ready === true);
   await page.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
   await page.click("#btnDep"); await page.waitForFunction(() => window.app.state.deployment !== null);

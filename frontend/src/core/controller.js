@@ -32,6 +32,7 @@ export const log = (m) => {
 };
 
 export const state = { deployment: null, unit: null /* wei per vote, read from this deployment */, meps: [], hosted: new Set(), active: null, wallet: null, chainId: null, chainOk: false,
+  walletConnecting: false, walletError: null, walletName: null,
   balance: 0n, bonded: 0n, weight: 0n, exitAt: 0n, inMep: [], session: null, delegation: null, resolved: null, epochInfo: null,
   prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null,
   flies: null, // the collection, as flies.js reads it: null until a deployment that names one is loaded
@@ -58,7 +59,25 @@ async function onTaskResult(res) {
   const r = await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
   log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
 }
-export const eth = () => window.ethereum;
+// EIP-6963 avoids the last-installed extension winning window.ethereum. Keep the
+// chosen provider for all reads and signatures, even if another extension replaces the global.
+const walletProviders = new Map();
+let selectedWallet = null;
+window.addEventListener?.("eip6963:announceProvider", ({ detail }) => {
+  if (detail?.info?.uuid && typeof detail.provider?.request === "function") walletProviders.set(detail.info.uuid, detail);
+});
+const discoverWallets = () => window.dispatchEvent?.(new Event("eip6963:requestProvider"));
+discoverWallets();
+function preferredWallet() {
+  const announced = [...walletProviders.values()];
+  const meta = announced.find((w) => w.info.rdns === "io.metamask");
+  if (meta) return { provider: meta.provider, name: "MetaMask" };
+  const legacy = window.ethereum?.providers?.find((p) => p.isMetaMask && !p.isTrust && !p.isBraveWallet);
+  if (legacy) return { provider: legacy, name: "MetaMask" };
+  if (announced.length) return { provider: announced[0].provider, name: announced[0].info.name };
+  return { provider: window.ethereum, name: window.ethereum?.isMetaMask ? "MetaMask" : "wallet" };
+}
+export const eth = () => selectedWallet || window.ethereum;
 // Looking needs no wallet. A read goes through the wallet only when one is connected AND on this deployment's chain --
 // the node that just mined your transaction is the one that knows about it -- and otherwise to the deployment's own RPC,
 // which the relayer names: a visitor without a wallet can still see the colony, and a wallet left on another chain
@@ -91,11 +110,30 @@ export async function loadDeployment() {
   try { state.unit = decodeUint(await call(deployment.addresses.instances, "UNIT()")); onChange(); } catch (e) { log("could not read UNIT: " + (e.message || e)); }
 }
 export async function connect() {
-  if (!eth()) throw new Error("no wallet (window.ethereum)");
-  const accts = await eth().request({ method: "eth_requestAccounts" }); state.wallet = accts[0].toLowerCase();
-  const cid = Number(await eth().request({ method: "eth_chainId" })); state.chainId = cid; state.chainOk = cid === state.deployment.chainId;
-  if (!state.chainOk) { try { await eth().request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + state.deployment.chainId.toString(16) }] }); state.chainOk = Number(await eth().request({ method: "eth_chainId" })) === state.deployment.chainId; } catch (e) { log("chain switch refused: " + (e.message || e)); } }
-  onChange(); log("wallet connected"); await refreshBond();
+  if (state.walletConnecting) return;
+  state.walletConnecting = true; state.walletError = null;
+  try {
+    discoverWallets();
+    const choice = selectedWallet ? { provider: selectedWallet, name: state.walletName } : preferredWallet();
+    if (!choice.provider) throw new Error("No wallet detected. Enable MetaMask for this site, or open this page in the MetaMask mobile browser.");
+    selectedWallet = choice.provider; state.walletName = choice.name; onChange();
+    const accts = await eth().request({ method: "eth_requestAccounts" });
+    if (!accts?.length) throw new Error("No account selected. Open your wallet and approve the connection.");
+    state.wallet = accts[0].toLowerCase();
+    const cid = Number(await eth().request({ method: "eth_chainId" })); state.chainId = cid; state.chainOk = cid === state.deployment.chainId;
+    if (!state.chainOk) {
+      try { await eth().request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + state.deployment.chainId.toString(16) }] }); }
+      catch (e) { state.walletError = "Switch your wallet to chain " + state.deployment.chainId + ": " + (e.message || e); log(state.walletError); }
+      state.chainId = Number(await eth().request({ method: "eth_chainId" })); state.chainOk = state.chainId === state.deployment.chainId;
+    }
+    onChange(); log("wallet connected"); await refreshBond();
+  } catch (e) {
+    state.walletError = Number(e.code) === -32002 ? "A connection request is already pending. Open your wallet extension to approve or cancel it."
+      : Number(e.code) === 4001 ? "Connection rejected. Click Connect wallet to try again."
+      : String(e.message || e);
+    if (!state.wallet) selectedWallet = null;
+    throw new Error(state.walletError);
+  } finally { state.walletConnecting = false; onChange(); }
 }
 export async function refreshBond() {
   const a = state.deployment.addresses.instances;

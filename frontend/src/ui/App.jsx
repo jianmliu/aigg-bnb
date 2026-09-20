@@ -162,11 +162,15 @@ export default function App() {
 
         <div className="me">
           <Pill tone={st.tone}>{st.text}</Pill>
-          <Button id="btnConnect" tone={s.wallet ? undefined : "money"} onClick={on(C.connect)} disabled={!s.deployment}>
-            {s.wallet ? short(s.wallet) : "Connect wallet"}
+          <Button id="btnConnect" tone={s.wallet ? undefined : "money"} onClick={on(C.connect)} disabled={!s.deployment || s.walletConnecting}>
+            {s.walletConnecting ? "Connecting…" : s.wallet ? short(s.wallet) : "Connect wallet"}
           </Button>
         </div>
       </header>
+      {(s.walletConnecting || s.walletError) && <div className="wallet-notice" role={s.walletError ? "alert" : "status"}>
+        {s.walletError || `Open ${s.walletName || "your wallet"} to approve the connection. If no popup appears, open the extension from your browser toolbar.`}
+      </div>}
+
 
       <div className="strip">
         <div className="telemetry">

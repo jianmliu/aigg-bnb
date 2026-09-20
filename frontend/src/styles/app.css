@@ -432,3 +432,5 @@ span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
 .docs-body .links li { padding-left: 14px; border-left: 2px solid var(--line-strong); font-size: 14px; color: var(--muted); }
 .docs-body .links a { color: var(--text); font-weight: 700; text-decoration-color: var(--gold); text-underline-offset: 3px; }
 @media (max-width: 560px) { .docs-body .terms-grid .kv { flex-direction: column; gap: 2px; } .docs-body .amt.mono, .docs-body .amt.wide { text-align: left; } }
+
+.wallet-notice { padding: 12px 20px; margin: 12px 0; border: 1px solid currentColor; border-radius: 12px; overflow-wrap: anywhere; }
