@@ -13,6 +13,7 @@ import { RelayClient } from "/porw/relay_client.js";
 import { NodeService } from "/porw/node_service.js";
 import * as V from "/porw/verify.js";
 import { decodeHeader } from "/porw/model.js";
+import { isDelta2, isDelta3, decodeDelta2, decodeDelta3, applyDelta, LAYOUT } from "/porw/delta.js";
 
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
@@ -29,14 +30,33 @@ const ops = {
   },
   // model_id is the whole point of downloading a brain: the bytes are accepted only if they reproduce what the
   // MEP pins on-chain. Recomputing it is a keccak over every 4 KiB tile -- 28 MB of it, which is why it is here.
-  async prepare({ mepId, bytes }) {
-    const b = new Uint8Array(bytes); pending.set(mepId, b);
-    const hdr = decodeHeader(b); const prof = V.profileOf(b, hdr); // model id AND the CSR roots: mep_id binds both now
-    return { modelId: hex(prof.modelId), synapseRoot: hex(prof.synapseRoot), name: hdr.name, neurons: hdr.neurons, synapses: hdr.synapses, bytes: b.length };
+  /** What a brain's bytes are: a whole payload, or a DELTA that has to be applied to one. An individual of a
+   *  collection is published as a delta -- a few hundred bytes of edits over a base everybody already has -- so
+   *  `bytes` is then the base and `delta` the edits, and the model is what applying them produces. The page reads
+   *  which it is from the bytes themselves and fetches the base if it has to; here the two cases only differ in
+   *  where the payload comes from, and what is kept afterwards is the payload either way. */
+  async deltaInfo({ bytes }) {
+    const b = new Uint8Array(bytes);
+    const d = isDelta3(b) ? decodeDelta3(b) : isDelta2(b) ? decodeDelta2(b) : null;
+    if (!d) return { isDelta: false, bytes: b.length };
+    if (d.layout !== undefined && d.layout !== LAYOUT.inplace) throw new Error("this delta is in the compact layout, which the page cannot apply yet");
+    return { isDelta: true, baseModelId: hex(d.baseModelId), name: d.name ?? null, bytes: b.length };
   },
-  async host({ mepId, name, maxSteps, exec, wUnitQ16 = 0 }) {
+  async prepare({ mepId, bytes, delta = null, baseModelId = null }) {
+    let b = new Uint8Array(bytes);
+    // Applying is what produces the individual: byte for byte what a direct publication of it would have been, and
+    // so the same model_id. The in-place layout applies in plain JS, which is why this needs no kernel and can run
+    // before the node exists -- the page prepares a brain long before it decides to host one.
+    if (delta) b = applyDelta(b, new Uint8Array(delta), { baseModelId: baseModelId ? unhex(baseModelId) : null });
+    pending.set(mepId, b);
+    const hdr = decodeHeader(b); const prof = V.profileOf(b, hdr); // model id AND the CSR roots: mep_id binds both now
+    return { modelId: hex(prof.modelId), synapseRoot: hex(prof.synapseRoot), name: hdr.name, neurons: hdr.neurons, synapses: hdr.synapses, bytes: b.length, applied: !!delta };
+  },
+  /** `terms`: a profile registered under a beneficiary and a royalty is a DIFFERENT mep id from the same bytes,
+   *  and the terms are nowhere in them -- so the host has to be told, or it serves an id nothing on-chain draws. */
+  async host({ mepId, name, maxSteps, exec, wUnitQ16 = 0, terms = null }) {
     const bytes = pending.get(mepId); if (!bytes) throw new Error("no bytes prepared for this brain");
-    const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec, wUnitQ16 }); // under another unit the same bytes are another MEP: the id check below is what catches a wrong one
+    const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec, wUnitQ16, terms }); // under another unit, or other terms, the same bytes are another MEP: the id check below is what catches a wrong one
     const local = hex(st.mep.mepId).toLowerCase();
     if (svc && local === mepId) svc.serve(st.mep.mepId);
     return { localMepId: local, matches: local === mepId, neurons: st.hdr.neurons };
