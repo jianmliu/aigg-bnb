@@ -12,6 +12,11 @@ const root = path.join(import.meta.dirname, "..");
 const read = (p) => { try { return fs.readFileSync(path.join(root, p), "utf8"); } catch { return ""; } }; // missing reads as empty: the checks below then FAIL rather than the suite crashing
 let fails = 0; const check = (n, ok, note = "") => { console.log((ok ? "  ok   " : "  FAIL ") + n + (ok || !note ? "" : "  " + note)); if (!ok) fails++; };
 
+// every js/ script that is a CLI at all: what "a terminal path exists" is decided from, in both directions below
+const scriptsWithArgv = (fs.existsSync(path.join(import.meta.dirname, "../js")) ? fs.readdirSync(path.join(import.meta.dirname, "../js")) : [])
+  .filter((f) => /\.(mjs|js)$/.test(f))
+  .map((f) => ({ f, src: fs.readFileSync(path.join(import.meta.dirname, "../js", f), "utf8") }))
+  .filter((x) => /process\.argv/.test(x.src));
 const SKILL = "skills/flybnb/SKILL.md";
 check("the skill exists", fs.existsSync(path.join(root, SKILL)));
 if (!fs.existsSync(path.join(root, SKILL))) { console.log("1 FAILURES"); process.exit(1); }
@@ -108,17 +113,26 @@ const prose = md.replace(/\s+/g, " ");
   check("and it is labelled in the right unit (100 gwei, not 0.1)", md.includes("100 gwei")); }
 
 // ---- the honesty requirements: the reason this skill is trustworthy at all ----
-{ // the SECTION, not just the phrase: the intro mentions it too, so a deleted section must still fail
-  check("it has a section naming the operations with NO terminal path", /^## What has no terminal path$/m.test(md));
-  for (const op of ["adopt", "breed", "hatch", "withdraw"]) check(`  including ${op}`, new RegExp(`\\*\\*${op}`, "i").test(md));
+const browserOnly = (md.split(/^## What has no terminal path$/m)[1] || "").split(/^## /m)[0] || "";
+{ // Whatever the skill lists as browser-only must BE browser-only, and anything with a command must not be listed
+  // there. The four owner operations moved from one side to the other the day js/fly.mjs landed, and this is what
+  // made that show up as a failure rather than as a document quietly telling agents the wrong thing.
+  const listed = [...browserOnly.matchAll(/\*\*([a-z][a-z ]*?)\*\*/g)].map((m) => m[1].trim());
+  check("the browser-only section, if it exists, names what is in it", !/^## What has no terminal path$/m.test(md) || listed.length > 0, JSON.stringify(browserOnly.slice(0, 60)));
+  for (const op of listed) {
+    const offered = scriptsWithArgv.filter((x) => new RegExp(`case "${op}"`).test(x.src)).map((x) => `js/${x.f}`);
+    check(`  "${op}" really has no command`, offered.length === 0, `${offered.join(" ")} offers it`); }
   // if a CLI for any of them ever lands, this test should fail so the skill gets updated rather than going stale
-  // A file NAMED for one of them is not a CLI for it -- js/breed_recipe.mjs is a library. What makes something a
-  // terminal path is that it reads argv, so that is what is looked for; the day one appears, this fails and the
-  // skill gets corrected instead of going on telling agents to open a browser.
-  const cliish = (fs.existsSync(path.join(root, "js")) ? fs.readdirSync(path.join(root, "js")) : [])
-    .filter((f) => /adopt|breed|hatch|withdraw/i.test(f) && /\.(mjs|js)$/.test(f))
-    .filter((f) => /process\.argv/.test(read(`js/${f}`)));
-  check("and no CLI for them has quietly appeared since", cliish.length === 0, `js/${cliish.join(" js/")} parses argv now -- update the skill`);
+  // A filename proves nothing in either direction: js/breed_recipe.mjs is named for one of these and is a library,
+  // and js/fly.mjs is named for none of them and does all four. So this looks for the CAPABILITY -- a script that
+  // reads argv and offers the operation as a command -- and the skill must then not still be calling it impossible.
+  const scripts = scriptsWithArgv;
+  for (const op of ["adopt", "breed", "hatch", "withdraw"]) {
+    const offered = scripts.filter((x) => new RegExp(`case "${op}"|"${op}"\\s*:|--${op}\\b`).test(x.src)).map((x) => `js/${x.f}`);
+    const impossible = new RegExp(`\\*\\*${op}\\*\\*[^\\n]*`, "i").test(browserOnly);
+    check(`${op}: what the skill says matches what exists`, offered.length === 0 ? impossible : !impossible,
+      offered.length ? `${offered.join(" ")} offers it, but the skill still lists it as browser-only` : `nothing offers it, and the skill must say so`);
+    if (offered.length) check(`  and the skill names the command`, new RegExp(`node ${offered[0].replace("/", "\\/")}`).test(md), `expected \`node ${offered[0]}\` in the skill`); }
   check("it says the headless host is a reference, not a product", /reference implementation, not a product/.test(prose));
   check("  and test/live_bsc.mjs is still what it points at", fs.existsSync(path.join(root, "test/live_bsc.mjs")));
   check("it forbids printing private keys", /[Nn]ever print.*private key/.test(prose));

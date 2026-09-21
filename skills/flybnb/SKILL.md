@@ -12,9 +12,9 @@ two hosts that disagree about what a run produced cannot both be paid.
 For an agent this means one useful thing: **you can ask a real fly brain what it does, and get an answer that
 two independent machines agreed on.** That is what the gateway is for, and most of this skill is about it.
 
-**Before anything else, read "What has no terminal path" at the bottom.** Adopting a fly, breeding, and
-withdrawing earnings cannot be done from a shell today. Saying you will do them and then failing is worse than
-saying so up front.
+What an owner does with a fly — adopt, breed, hatch, collect earnings — is `js/fly.mjs`, below. Everything it
+writes is a dry run until `--broadcast`, so you can show the user exactly what a command would do, and what it
+would cost, before anything is spent.
 
 ## Money and safety — these are not negotiable
 
@@ -209,19 +209,51 @@ epoch, executes tasks and settles. It lives in `test/`, is not an npm script, an
 self-executes one task because it was written as an evidence run. Treat it as a reference implementation, not
 a product. Tell the user that rather than presenting it as "the host command".
 
+## Being a fly's owner: adopt, breed, hatch, withdraw
+
+`js/fly.mjs` is the whole owner's side from a terminal. **Every writing command prints the exact call, the exact
+value and who receives it, and sends nothing without `--broadcast`** — so run it without the flag first and show
+the user that output. The key comes from `FLY_KEY` and is never printed; what is shown is the address it derives
+to, which is what the user should check.
+
+```bash
+node js/fly.mjs terms      --relayer <url>     # what the collection charges            (free, no key)
+node js/fly.mjs list       --relayer <url>     # every individual, its holder, earnings (free)
+node js/fly.mjs inventory  --relayer <url>     # what the treasury has open, with prices(free)
+
+node js/fly.mjs adopt 12   --relayer <url>                 # shows what it would do
+node js/fly.mjs adopt 12   --relayer <url> --broadcast     # and this does it
+```
+
+| command | what it does |
+|---|---|
+| `adopt <id>` | buys a founder from the treasury inventory. An **existing NFT moves**; nothing is minted. The price and revision read from the listing are passed back to the contract, so a listing that moved reverts instead of charging a price nobody quoted |
+| `breed <dam> <sire>` | approves the factory for both parents, then pairs them. Costs `BREED_FEE` plus the battery budget that funds the child's runs. The child is an **egg** |
+| `hatch <id>` | turns an egg into an individual, fixing what it is from its seed block's hash. Pays the hatcher a bounty |
+| `rearm <id>` | an egg whose seed block aged out of reach. Costs another breed fee — say so before running it |
+| `settle <id>` | moves what a fly's experiments set aside into its owner's balance |
+| `withdraw` | collects everything owed to you |
+
+Sexes are `female`, `male`, and `egg (unhatched)`; breeding needs a female dam and a male sire, and an egg cannot
+breed. The tool checks all of that, and every listing and ownership condition, **before** it would spend anything.
+
+Two things it will not do, and should not be worked around:
+
+- **the token battery route** for breeding needs a liquidity quote, which stays on the page for now. `breed`
+  refuses and says so rather than guessing a price.
+- **a deployment with no battery budget** cannot breed at all; `breed` says that too.
+
+If a command refuses, the message is the contract's own words. Read it to the user rather than retrying.
+
 ## What has no terminal path
 
-These are **browser-only** today — the page at `https://fly.ai.gg` does them and nothing else does:
+Still browser-only, at `https://fly.ai.gg`:
 
-- **adopt** a fly (`frontend/src/core/flies.js`)
-- **breed** two flies
-- **hatch** an egg (the relayer's keeper does this automatically when configured, but there is no CLI)
-- **withdraw royalties** — the earnings a fly's owner has accrued
-- **request/finalise exit** of a bonded instance
+- **bond** an instance, and **request/finalise its exit** — putting up or taking back the stake that makes a host
+  eligible. `test/live_bsc.mjs` bonds as part of its evidence run, but there is no command for it on its own.
 
-If the user asks for one of these, say so and point them at the page. Do not improvise raw `cast` calls
-against the ABIs unless the user explicitly asks for that and understands they are signing an unreviewed
-transaction.
+If the user asks for one of these, say so and point them at the page. Do not improvise raw `cast` calls against
+the ABIs unless they explicitly ask and understand they are signing an unreviewed transaction.
 
 ## Where the detail lives
 
@@ -229,3 +261,4 @@ transaction.
   money and royalties
 - `flybnb/README.md` — the brains, their content addresses, and how to reproduce the pilot
 - `README.md` — the mesh itself, and how the pieces fit
+- `node js/fly.mjs --help` — the owner's commands, always current with the code
