@@ -50,6 +50,7 @@ jobs:
       - run: npm ci
 
       - run: node --test test/rpc_budget.mjs test/base_relayer.mjs test/family_task.mjs test/host_capacity.mjs test/host_capacity_ui.mjs
+      - run: node --test test/synchronous_*.mjs test/witness_profile.mjs
       - run: node test/env_mapping.mjs
       # the gateway's registration with ai.gg, against a stand-in for its admin API: no chain, no network
       - run: node test/aigg_src_sync.mjs

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 import "./FlyCollection.sol";
 import "aigg-porw/mesh/TaskMarket.sol";
+import "./BatterySettlement.sol";
 
 /// One fixed, versioned battery policy. Redeploy to change terms; existing jobs retain theirs.
 struct BatteryPolicy {
@@ -13,6 +14,7 @@ struct BatteryPolicy {
 contract BatteryJob {
     FlyCollection public immutable collection;
     TaskMarket public immutable market;
+    bool public immutable synchronous;
     address public immutable operator;
     address public immutable payer;
     uint256 public immutable tokenId;
@@ -29,12 +31,14 @@ contract BatteryJob {
     modifier guard() { require(!busy, "reentrant"); busy = true; _; busy = false; }
     modifier worker() { require(msg.sender == operator, "operator"); _; }
     constructor(FlyCollection c, TaskMarket m, address op, address who, uint256 id, BatteryPolicy memory p) payable {
+        synchronous=BatterySettlement.isSynchronous(address(m));
         collection=c; market=m; operator=op; payer=who; tokenId=id; policy=p; expiresAt=block.timestamp+p.lifetime;
         require(msg.value == p.fee * p.attempts, "budget");
     }
     receive() external payable { require(msg.sender == address(market), "market refund only"); }
     function settledFinal() public view returns (bool) {
         if (taskId == bytes32(0)) return true;
+        if(synchronous){uint8 phase=BatterySettlement.phase(address(market),taskId);return phase==4||phase==5;}
         (,,,, uint64 at, bool exists, bool settled, bool disputed,) = market.tasks(taskId);
         if(disputed){
             // New multi-asset markets distinguish historical disputes from unresolved ones.
@@ -45,6 +49,7 @@ contract BatteryJob {
     }
     function accepted() public view returns (bool) {
         if (taskId == bytes32(0) || !settledFinal()) return false;
+        if(synchronous)return BatterySettlement.phase(address(market),taskId)==4;
         (,,,,,,,, bool repudiated) = market.tasks(taskId);
         if (repudiated) return false;
         address ref = market.settledRef(taskId); if (ref == address(0)) return false;
@@ -58,6 +63,7 @@ contract BatteryJob {
     function post(uint64 deadline) external worker guard returns(bytes32 id) {
         require(!closed && block.timestamp < expiresAt && attempt < policy.attempts, "job closed/exhausted");
         require(settledFinal() && !accepted(), "active/accepted task");
+        if(synchronous)BatterySettlement.pull(address(market),address(0));
         require(address(this).balance>=policy.fee && deadline>block.number, "funds/deadline");
         (,,,bytes32 mepId,,,,,,)=collection.individuals(tokenId); require(mepId!=bytes32(0), "waiting model");
         ITaskMarket.Task memory t=ITaskMarket.Task(mepId,0,policy.steps,policy.stride,policy.runsRoot,policy.fee,deadline,policy.redundancy);
@@ -70,6 +76,7 @@ contract BatteryJob {
     }
     function refund() external guard {
         require(msg.sender==payer && (closed || block.timestamp>=expiresAt) && settledFinal(), "refund unavailable");
+        if(synchronous)BatterySettlement.pull(address(market),address(0));
         closed=true; uint256 amount=address(this).balance; require(amount>0,"empty");
         (bool ok,)=payer.call{value:amount}(""); require(ok,"refund"); emit Refunded(payer,amount);
     }

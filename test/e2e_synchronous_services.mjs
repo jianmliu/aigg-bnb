@@ -1,0 +1,41 @@
+// Local HTTP boundary: real signature recovery, onchain simulation, replay prevention and legacy fail-closed routing.
+import assert from 'node:assert/strict';
+import {parseEther} from 'viem';
+import * as H from './harness.mjs';
+import {clients} from '../relayer/chain.mjs';
+H.forgeBuild();
+const anvil=await H.startAnvil(Number(process.env.SYNC_SERVICE_TEST_PORT||8596));let relayer;
+try {
+ const dep=await H.deployMesh(anvil.rpc),owner=H.clientsFor(dep,H.KEYS[0]);
+ const S=await H.registerSyntheticMep(dep,H.KEYS[0],{neurons:8,synapses:16,steps:1});
+ const market=await H.create(owner,'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,20n,20n,200n]);
+ const rowCounts=new Uint32Array(S.st.hdr.neurons),records=new DataView(S.payload.buffer,S.payload.byteOffset,S.payload.byteLength);
+ for(let i=0;i<S.st.hdr.synapses;i++)rowCounts[records.getUint32(S.st.hdr.synOffset+i*10+4,true)]++;
+ await H.sendTo(owner,market,'SynchronousTaskMarket','setProfileSupport',[S.mepId,Math.max(...rowCounts)]);
+ dep.addresses.market=market;dep.verification={mode:'synchronous-v1'};
+ const disputes=await H.create(owner,'SynchronousExecutionDisputes',[dep.addresses.meps,dep.addresses.instances,market,5n,parseEther('0.01')]);dep.addresses.disputes=disputes;
+ const cap=await H.create(owner,'HostCapacity');
+ await H.sendTo(owner,market,'SynchronousTaskMarket','setDisputes',[disputes]);
+ await H.sendTo(owner,cap,'HostCapacity','setMarket',[market,true]);
+ await H.sendTo(owner,market,'SynchronousTaskMarket','setHostCapacity',[cap]);
+ await H.sendTo(owner,dep.addresses.instances,'InstanceRegistry','setSlasher',[market,true]);
+ const host=clients(dep,H.KEYS[1]);
+ await host.pub.waitForTransactionReceipt({hash:await host.instances.write.bond([[S.mepId]],{value:parseEther('0.5')})});
+ await H.sendTo(host,cap,'HostCapacity','setCapacity',[1]);
+ relayer=await H.startRelayer(dep,H.KEYS[3],[S.mepId],{env:{PORW_VERIFICATION_MODE:'synchronous-v1',PORW_SYNC_CONFIRMATIONS:'0',PORW_BEACON_LAZY:'1',PORW_SPONSOR_EPOCH_GAS:'160000000',PORW_SPONSOR_DAY_GAS:'350000000'}});
+ const capability=(await relayer.api('/deployment')).verification;assert.equal(capability.mode,'synchronous-v1');assert.equal(capability.totalBlocks,'240');assert.equal(capability.commitBlocks,'20');assert.deepEqual(capability.sponsorship,{configured:true,minimumEpochGas:160000000,minimumDayGas:350000000,reserveGas:350000000,epochGasLimit:160000000,dayGasLimit:350000000});
+ const request={instance:host.account.address,ready:true,expiry:String(await host.pub.getBlockNumber({cacheTime:0})+200n),nonce:'0'};
+ const hash=await host.market.read.readinessDigest([request.instance,true,BigInt(request.expiry),0n]);request.signature=await host.account.sign({hash});
+ assert.equal((await relayer.api('/tx/sync/readiness',{...request,instance:owner.account.address})).ok,undefined);
+ assert.equal(await host.market.read.ready([host.account.address]),false);
+ assert.equal((await relayer.api('/tx/sync/readiness',request)).ok,true);
+ assert.equal(await host.market.read.ready([host.account.address]),true);
+ const replay=await relayer.api('/tx/sync/readiness',request);assert.match(replay.error,/would revert/);
+ await anvil.mine(64);
+ const pending=await relayer.api('/sync/pending?instance='+host.account.address);assert.equal(pending.ready,true);assert.equal(pending.taskId,'0x'+'00'.repeat(32));
+ assert.match((await relayer.api('/tx/result',{taskId:'0x'+'11'.repeat(32)})).error,/requires authenticated/);
+ assert.match((await relayer.api('/tx/settle',{taskId:'0x'+'11'.repeat(32),instance:host.account.address})).error,/requires authenticated/);
+ assert.match((await relayer.api('/tx/sync/withdraw',request)).error,/unsupported/);
+ const state=await relayer.api('/sync/session?taskId='+'0x'+'11'.repeat(32));assert.equal(state.phase,0);assert.equal('results' in state,false);
+ console.log('PASS synchronous HTTP readiness authentication, nonce replay, bounded reads and legacy fail-closed routes');
+}finally{relayer?.stop();anvil.stop();}

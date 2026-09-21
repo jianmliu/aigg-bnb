@@ -369,10 +369,29 @@ contract FlyCollection {
     mapping(address=>mapping(address=>uint256)) public tokenOwed;
     mapping(address=>uint256) public tokenLiability;
     event TokenRoyaltyCredited(bytes32 indexed mepId,address indexed token,address indexed holder,uint256 amount);
+    /// Synchronous markets read recipients and credit them in-market without calling or paying them at settlement.
+    function royaltyRecipients(bytes32 mepId) external view returns(address holder,address baseVendor,uint16 baseShareBps){
+        holder=ownerOf(tokenOfMep[mepId]);return(holder,BASE_VENDOR,BASE_SHARE_BPS);
+    }
+    /// Recovery for a market royalty whose recipient snapshot failed. Normal synchronous royalties live in market credits.
+    /// As with a failed native settle, this exceptional recovery uses the current owner at recovery time.
+    bool private settlingToken;
+    function settleToken(uint256 id,address token) external returns(uint256 amount){
+        require(!settlingToken&&token!=address(0),"settling/token");
+        address holder=ownerOf(id);bytes32 mepId=individuals[id].mepId;
+        if(mepId==bytes32(0))return 0;
+        uint256 pending=ITokenRoyaltyMarket(address(MARKET)).tokenRoyalties(mepId,token);if(pending==0)return 0;
+        settlingToken=true;uint256 before_=IERC20Budget(token).balanceOf(address(this));
+        amount=ITokenRoyaltyMarket(address(MARKET)).withdrawTokenRoyalty(mepId,token);
+        require(amount==pending&&IERC20Budget(token).balanceOf(address(this))==before_+amount,"nonexact royalty");
+        _creditTokenRoyalty(mepId,token,amount,holder);settlingToken=false;
+    }
     function supportsTokenRoyalties() external pure returns(bool){return true;}
     function onTokenRoyalty(bytes32 mepId,address token,uint256 amount) external {
         require(msg.sender==address(MARKET)&&token!=address(0),"market/token");
-        uint256 id=tokenOfMep[mepId];address holder=ownerOf(id);
+        _creditTokenRoyalty(mepId,token,amount,ownerOf(tokenOfMep[mepId]));
+    }
+    function _creditTokenRoyalty(bytes32 mepId,address token,uint256 amount,address holder) internal {
         require(amount>0&&IERC20Budget(token).balanceOf(address(this))>=tokenLiability[token]+amount,"unfunded royalty");
         tokenLiability[token]+=amount;uint256 base=amount*BASE_SHARE_BPS/10000;
         if(base>0)tokenOwed[token][BASE_VENDOR]+=base;
@@ -466,3 +485,5 @@ interface IMEPTerms { function registerMEPWithTerms(IMEPRegistry.MEP calldata m,
 /// @notice the royalty side of aigg-porw's TaskMarket: what is set aside per MEP, and the beneficiary's withdrawal
 interface IRoyaltyMarket { function royalties(bytes32 mepId) external view returns (uint256); function withdrawRoyalty(bytes32 mepId) external returns (uint256 amt); }
 interface IInstanceBonding { function bondFor(address instance, bytes32[] calldata mepIds) external payable; }
+
+interface ITokenRoyaltyMarket { function tokenRoyalties(bytes32,address) external view returns(uint256); function withdrawTokenRoyalty(bytes32,address) external returns(uint256); }

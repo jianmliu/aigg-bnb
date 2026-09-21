@@ -1,5 +1,6 @@
 import { parseAbi, parseAbiItem } from 'viem';
 import { bsc, bscTestnet } from 'viem/chains';
+import {mapBounded} from './rpc-budget.mjs';
 import { InstanceRegistryAbi } from './abi.mjs';
 const taskAsset = parseAbiItem('event TaskAsset(bytes32 indexed taskId, address indexed token, uint256 fee)');
 const settled = parseAbiItem('event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)');
@@ -40,14 +41,15 @@ export async function providerModels(ch, meps) {
 }
 
 // One scan shared by all visitors; only complete successful snapshots are cached.
-export function providerModelReader(ch, meps, { cacheMs = 10000 } = {}) {
+export function providerModelReader(ch, meps, { cacheMs = 10000, verificationSupport = null } = {}) {
   let cache = null, pending = null;
   return async function get() {
     const key = [...meps.keys()].join(',');
     if (cache && cache.key === key && Date.now() - cache.at < cacheMs) return cache.rows;
     if (pending) { await pending; return get(); }
     const snapshot = new Map(meps);
-    pending = providerModels(ch, snapshot).then(rows => {
+    pending = providerModels(ch, snapshot).then(async rows => {
+      if(verificationSupport)rows=await mapBounded(rows,async row=>({...row,verificationSupport:await verificationSupport(row.mepId)}));
       cache = { key, rows, at: Date.now() }; return rows;
     }).finally(() => { pending = null; });
     return pending;

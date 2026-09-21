@@ -7,20 +7,23 @@ import {getContractAddress,stringToHex,parseEther,hexToBytes,toHex} from 'viem';
 import {withBase,withTerms} from '../contracts/lib/aigg-porw/web/porw-browser/mep.js';
 import * as H from './harness.mjs';
 import {launchInventory} from '../js/launch_founder_inventory.mjs';
-const baseEnrollment=process.env.TEST_BASE_ENROLMENT==='1';
+const synchronous=process.env.TEST_SYNCHRONOUS_DEPLOY==='1';
+const baseEnrollment=synchronous||process.env.TEST_BASE_ENROLMENT==='1';
 const legacyJournal=fileURLToPath(new URL('../deployments/founder-inventory-97.json',import.meta.url));
 const rejected=spawnSync(process.execPath,[fileURLToPath(new URL('../js/launch_founder_inventory.mjs',import.meta.url)),'--broadcast','--base-enrollment','--journal',legacyJournal],{encoding:'utf8',env:{...process.env,PORW_DEPLOYER_KEY:''}});
 assert.notEqual(rejected.status,0);
 assert.match(rejected.stderr,/base-enrollment launch requires a separate journal/);
 H.forgeBuild();
-const anvil=await H.startAnvil(8579), journal='/tmp/aigg-inventory-launch-anvil.json';
+const anvil=await H.startAnvil(synchronous?8599:8579), journal=synchronous?'/tmp/aigg-sync-inventory-launch-anvil.json':'/tmp/aigg-inventory-launch-anvil.json';
 try {
  fs.rmSync(journal,{force:true});
  const dep=await H.deployMesh(anvil.rpc),c=H.clientsFor(dep,H.KEYS[0]);
+ if(synchronous)dep.addresses.market=await H.create(c,'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,40n,40n,3000n]);
  for(const unit of [7209,18022])await H.sendTo(c,dep.addresses.meps,'MEPRegistry','declareLifKind',[unit]);
  const treasury=await H.create(c,'TreasuryRouter',[c.account.address,c.account.address]);
  const whitelist=await H.create(c,'CollectionWhitelist',[c.account.address]);
  const cfg={chainId:31337,treasury,whitelist,meps:dep.addresses.meps,instances:dep.addresses.instances,market:dep.addresses.market,owner:c.account.address};
+ if(synchronous)cfg.protocol='synchronous-v1';
  // An outsider pre-registers the exact future terms with a wrong location hint.
  const ps=JSON.parse(fs.readFileSync(new URL('../flybnb/genesis/founder-profiles-v2.json',import.meta.url)));
  if(baseEnrollment){
@@ -28,7 +31,7 @@ try {
   for(const b of ps.bases)await H.sendTo(c,cfg.meps,'MEPRegistry','registerMEP',[{...b,weightsDA:stringToHex(b.weightsDA)}]);
   const capacity=await H.create(c,'HostCapacity');
   await H.sendTo(c,capacity,'HostCapacity','setMarket',[cfg.market,true]);
-  await H.sendTo(c,cfg.market,'TaskMarket','setHostCapacity',[capacity]);
+  await H.sendTo(c,cfg.market,synchronous?'SynchronousTaskMarket':'TaskMarket','setHostCapacity',[capacity]);
   cfg.baseEnrollment=true;
  }
  const expected=getContractAddress({from:c.account.address,nonce:BigInt(await c.pub.getTransactionCount({address:c.account.address}))});
@@ -47,6 +50,7 @@ try {
   const raw={mepId:hexToBytes(profile.mepId)};
   const expectedMep=toHex(withTerms(baseEnrollment?withBase(raw,base.mepId):raw,staged.addresses.collection,1000).mepId);
   assert.equal(row.mepId,expectedMep);
+  if(synchronous)assert.equal(await H.readFrom(c,cfg.market,'SynchronousTaskMarket','profileMaxInDegree',[row.mepId]),profile.maxInDegree);
   if(baseEnrollment){
    assert.equal(await H.readFrom(c,cfg.meps,'MEPRegistry','baseOf',[row.mepId]),base.mepId);
    assert.equal(await H.readFrom(c,cfg.instances,'InstanceRegistry','enrollmentMep',[row.mepId]),base.mepId);

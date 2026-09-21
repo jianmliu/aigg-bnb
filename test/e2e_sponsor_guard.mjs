@@ -4,7 +4,7 @@
 // unattributed call is refused, an unbonded one is refused, a call that would revert is refused WITHOUT
 // broadcasting anything, a good call goes through and is charged, and both budgets stop a caller who keeps going.
 // The relayer runs with PORW_BEACON_LAZY=1 so it sends nothing of its own and every transaction in /status is one
-// it was asked to sponsor. Budgets are set just under one delegateBySig (~55k gas) so two calls trip them.
+// it was asked to sponsor. Budgets cover one delegateBySig plus estimation margin; the next call cannot fit.
 import { parseEther } from "viem";
 import * as H from "./harness.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
@@ -12,7 +12,7 @@ const anvil = await H.startAnvil(Number(process.env.SPONSOR_TEST_PORT || 8557));
 try {
   const dep = await H.deploy(anvil.rpc);
   const { mepId } = await H.registerSyntheticMep(dep, H.KEYS[0]);
-  const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_SPONSOR_EPOCH_GAS: "50000", PORW_SPONSOR_DAY_GAS: "100000" } });
+  const R = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_SPONSOR_EPOCH_GAS: "80000", PORW_SPONSOR_DAY_GAS: "150000" } });
   const d = await R.api("/deployment"); const domains = d.domains;
   const E = await H.porw("eip712.js"); const { keypair } = await H.porw("claim.js");
   const sent = async () => (await R.api("/status")).txs.length;
@@ -21,7 +21,7 @@ try {
   const delegation = async (wallet, seed) => { const s = keypair("0x" + seed.repeat(32)); return await E.makeDelegation(wallet, domains.registry, H.hex(s.address), 100000); };
   const delegateCall = (del) => R.api("/tx/delegate", { instance: del.instance, session: del.session, expiry: del.expiry, sig: del.sig });
 
-  check("the relayer is idle: lazy beacon, nothing sent yet", (await sent()) === 0 && (await sponsorOf()).epochGasLimit === 50000);
+  check("the relayer is idle: lazy beacon, nothing sent yet", (await sent()) === 0 && (await sponsorOf()).epochGasLimit === 80000);
 
   // ---- 1. a sponsored call must say who it is for ----
   let n = await sent();
@@ -74,8 +74,8 @@ try {
 
   // Concurrent requests must not all pass the same unused budget while the first receipt is pending.
   for (const [label, limits, wallets] of [
-    ["epoch", { PORW_SPONSOR_EPOCH_GAS: "50000", PORW_SPONSOR_DAY_GAS: "10000000" }, [A.wallet, A.wallet, A.wallet]],
-    ["daily", { PORW_SPONSOR_EPOCH_GAS: "10000000", PORW_SPONSOR_DAY_GAS: "50000" }, [A.wallet, B.wallet, C.wallet]],
+    ["epoch", { PORW_SPONSOR_EPOCH_GAS: "80000", PORW_SPONSOR_DAY_GAS: "10000000" }, [A.wallet, A.wallet, A.wallet]],
+    ["daily", { PORW_SPONSOR_EPOCH_GAS: "10000000", PORW_SPONSOR_DAY_GAS: "80000" }, [A.wallet, B.wallet, C.wallet]],
   ]) {
     const Q = await H.startRelayer(dep, H.KEYS[3], [mepId], { env: { PORW_BEACON_LAZY: "1", ...limits } });
     try {
