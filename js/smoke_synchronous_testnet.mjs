@@ -16,6 +16,12 @@ import {createFamilyResolver} from '../frontend/src/core/family-task.js';
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const GAS_ALLOWANCE=parseEther('0.001'),CAP=parseEther('0.02');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+export async function atStage(stage,fn){try{return await fn();}catch(error){error.safeStage||=stage;throw error;}}
+export function safeFailure(error){
+ const text=String(error?.shortMessage||error?.message||'');
+ const category=/claim reached no relay/.test(text)?'claim-not-delivered':/exceeds defined limit|rate.limit|429/i.test(text)?'rate-limited':/fetch failed|timeout|timed out|HTTP request failed|network/i.test(text)?'transport-unavailable':'operation-failed';
+ return {stage:error?.safeStage||'setup',category};
+}
 export function validateDeployment(dep){
  if(Number(dep.chainId)!==97)throw Error('smoke requires chain 97');
  if(dep.verification?.mode!=='synchronous-v1')throw Error('synchronous deployment required');
@@ -71,15 +77,15 @@ export class PrivateJournal{
  load(){return fs.existsSync(this.file)?deserialize(fs.readFileSync(this.file)):null;}
  save(value){const temp=this.file+'.tmp';const fd=fs.openSync(temp,'wx',0o600);try{fs.writeFileSync(fd,serialize(value));fs.fsyncSync(fd);}finally{fs.closeSync(fd);}fs.renameSync(temp,this.file);const d=fs.openSync(path.dirname(this.file),'r');try{fs.fsyncSync(d);}finally{fs.closeSync(d);}}
 }
-export async function worker(identity,onAssignment){
+export async function worker(identity,onAssignment,overrides={}){
  const base=path.join(ROOT,'contracts/lib/aigg-porw/web/porw-browser');
  const mod=n=>import(pathToFileURL(path.join(base,n)).href);
  const [{PorwNode},{loadKernelFromBytes},{RelayClient},{NodeService},{FamilyNodeService},{FamilyReplayJournal},V,L,model,delta]=await Promise.all(['node.js','porw.js','relay_client.js','node_service.js','family_service.js','family_journal.js','verify.js','lif.js','model.js','delta.js'].map(mod));
  const wasm=fs.readFileSync(path.join(base,'sketch.wasm'));
  const context={Uint8Array,Uint32Array,Map,Set,ArrayBuffer,BigInt,performance,setTimeout,clearTimeout,structuredClone,console,
-  self:{postMessage:m=>{if(m.op==='synchronous-assignment')onAssignment(m.env);}},PorwNode,RelayClient,NodeService,FamilyNodeService,FamilyReplayJournal,V,L,...model,...delta,loadKernel:()=>loadKernelFromBytes(wasm)};
+  self:{postMessage:m=>{if(m.op==='synchronous-assignment')onAssignment(m.env);}},PorwNode,RelayClient:overrides.RelayClient||RelayClient,NodeService,FamilyNodeService,FamilyReplayJournal,V,L,...model,...delta,loadKernel:()=>loadKernelFromBytes(wasm)};
  vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(ROOT,'frontend/public/node_worker.js'),'utf8').replace(/^import .*;$/gm,'')+'\n;globalThis.smokeOps=ops;',context);
- const ask=async(op,args)=>context.smokeOps[op](args);await ask('init',identity);return ask;
+ const ask=async(op,args)=>atStage('worker:'+op,()=>context.smokeOps[op](args));await ask('init',identity);return ask;
 }
 async function main(){
  const {values:a}=parseArgs({options:{relayer:{type:'string'},gateway:{type:'string'},journal:{type:'string'},payload:{type:'string'},mep:{type:'string'},'max-steps':{type:'string',default:'4'},broadcast:{type:'boolean',default:false}}});
@@ -88,7 +94,7 @@ async function main(){
  if(!/^0x[0-9a-fA-F]{64}$/.test(a.mep))throw Error('invalid MEP');a.mep=a.mep.toLowerCase();
  const steps=Number(a['max-steps']);if(!Number.isInteger(steps)||steps<1||steps>16)throw Error('smoke max-steps must be 1..16');
  const journal=new PrivateJournal(a.journal),base=a.relayer.replace(/\/$/,'');
- const api=async(route,body)=>{if(body&&!a.broadcast)throw Error('broadcast flag required');const r=await fetch(base+route,{signal:AbortSignal.timeout(45000),...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body,(_,v)=>typeof v==='bigint'?String(v):v)}:{})});const j=await r.json();if(!r.ok||j.error||j.ok===false)throw Error('relayer request failed: '+route);return j;};
+ const api=async(route,body)=>atStage('relayer:'+route.split('?')[0],async()=>{if(body&&!a.broadcast)throw Error('broadcast flag required');const r=await fetch(base+route,{signal:AbortSignal.timeout(45000),...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body,(_,v)=>typeof v==='bigint'?String(v):v)}:{})});const j=await r.json();if(!r.ok||j.error||j.ok===false)throw Error('relayer request failed: '+route);return j;});
  const dep=await api('/deployment');validateDeployment(dep);const reader=clients(dep);
  if(await reader.pub.getChainId()!==97)throw Error('RPC chain mismatch');
  const mep=(await api('/meps')).find(m=>m.mepId.toLowerCase()===a.mep);
@@ -139,21 +145,23 @@ async function main(){
    resolve:async env=>{if(env.mepId.toLowerCase()!==a.mep||env.payload.steps>steps)throw Error('smoke only accepts exact bounded profile');const resolver=createFamilyResolver({deployment:dep,instance:h.instance,families,client:{getChainId:()=>c.pub.getChainId(),getBlockNumber:async()=>(await c.pub.getBlock({blockTag:'finalized'})).number,readContract:x=>c.pub.readContract(x)}});const m=await resolver(env);m.baseTerms=terms;return m;},
    transport:(kind,p)=>api('/tx/sync/'+kind,p),onChange:s=>{h.status={phase:s.phase,safeToClose:s.safeToClose};}});
   const eligible=async p=>{const epoch=await c.claims.read.currentEpoch();return c.instances.read.isEligible([h.instance,a.mep,epoch],{blockNumber:p.blockNumber});};
-  await host.start();runtimes.push({h,c,host,ask,eligible,commit});console.log('host resident: '+h.instance);
+  await atStage('host:start',()=>host.start());runtimes.push({h,c,host,ask,eligible,commit});console.log('host resident: '+h.instance);
  }
 
  for(;;){
   for(const runtime of runtimes){
    const {h,c,host,ask}=runtime;
+   try{
    await api('/wake',{instance:h.instance});
    if(!taskRecorded(runtime)&&!h.readinessConsumed){
     const ep=await api('/epoch?mep='+a.mep),epoch=Number(ep.epoch);
     if(!ep.rolled)continue;
     if(!h.announced.includes(epoch)){await ask('announce',{mepId:a.mep,challenge:ep.challenge});h.announced.push(epoch);commit();}
     for(const old of h.announced.filter(e=>e<epoch))try{await api('/tx/materialize',{mep:a.mep,epoch:old,instance:h.instance});}catch{/* claim root may not yet be posted */}
-    await reconcileSmokeReadiness(runtime);
+    await atStage('host:readiness',()=>reconcileSmokeReadiness(runtime));
    }
-   await host.tick();
+   await atStage('host:tick',()=>host.tick());
+   }catch(error){const failure=safeFailure(error);console.error(JSON.stringify({host:h.instance,...failure}));if(failure.category==='operation-failed')throw error;}
   }
   if(!saved.readyAnnounced&&(await Promise.all(runtimes.map(confirmedSmokeReady))).every(Boolean)){saved.readyAnnounced=true;commit();console.log('READY: root may issue exactly one paid request via '+a.gateway);}
   if(runtimes.every(r=>r.host.session.record&&!r.host.session.record.idle&&r.host.session.status.safeToClose)){
@@ -163,4 +171,4 @@ async function main(){
   await sleep(3000);
  }
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(error=>{if(!process.argv.includes('--broadcast'))console.error('Dry-run failed: '+(error.shortMessage||error.message));console.error('Smoke stopped. No secret diagnostics printed. Preserve private journal/lock and inspect chain state before resuming.');process.exit(1);});
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(error=>{if(!process.argv.includes('--broadcast'))console.error('Dry-run failed: '+(error.shortMessage||error.message));console.error(JSON.stringify(safeFailure(error)));console.error('Smoke stopped. No secret diagnostics printed. Preserve private journal/lock and inspect chain state before resuming.');process.exit(1);});

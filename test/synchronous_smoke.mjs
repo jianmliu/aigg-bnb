@@ -55,3 +55,12 @@ test('latest nonce advancement waits for finality without replay or premature RE
 test('public funding amounts format both hosts as BNB without treating array indexes as units',async()=>{
  const {formatFundingPlan}=await import('../js/smoke_synchronous_testnet.mjs');assert.deepEqual(formatFundingPlan([6000000000000000n,6000000000000000n]),['0.006','0.006']);
 });
+
+test('offline smoke residency decodes hex challenge and safely diagnoses absent aggregator',async()=>{
+ const H=await import('./harness.mjs');const {synthesizePayloadV2}=await H.porw('synth.js');const {PorwNode}=await H.porw('node.js');const {loadKernelFromBytes}=await H.porw('porw.js');
+ const payload=synthesizePayloadV2('smoke-residency',16,32),node=new PorwNode(await loadKernelFromBytes(fs.readFileSync(H.porwDir+'/sketch.wasm')));const m=await node.loadModel('smoke-residency',payload,{exec:'lif',maxSteps:4}),mepId=H.hex(m.mep.mepId);let delivered=1;
+ class Relay{async connect(){return 1;}async redial(){}serve(){return()=>{};}close(){}async publishTo(_topic,type,_id,payload){assert.equal(type,'claim');assert.equal(payload.claim.challenge,'0x'+'01'.repeat(32));return {delivered};}}
+ const ask=await worker({},()=>{},{RelayClient:Relay});await ask('prepare',{mepId,bytes:payload});await ask('relay',{url:'unused',synchronous:true});await ask('host',{mepId,name:'smoke-residency',exec:'lif',maxSteps:4});
+ assert.match((await ask('announce',{mepId,challenge:'0x'+'01'.repeat(32)})).claimHash,/^0x[0-9a-f]{64}$/);delivered=0;
+ await assert.rejects(ask('announce',{mepId,challenge:'0x'+'01'.repeat(32)}),error=>error.safeStage==='worker:announce');await ask('close');
+});
