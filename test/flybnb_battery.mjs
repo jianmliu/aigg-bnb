@@ -53,4 +53,12 @@ check("a perturbed battery is the same batch with a silence set on every run", p
   check(`its battery was settled on chain and all ${F.offline.expected} digests equal the row committed here`, a.complete === true && F.settled.matches === true && F.offline.ok === true && F.offline.matched === m0.rows.length);
   const want = new Map(m0.rows.map((w) => [w.stim + "|" + w.seed, w.digest.toLowerCase()]));
   check("checked against the committed rows themselves, not against the summary in the file", a.rows.every((r) => want.get(r.stimulus + "|" + r.seed) === r.countsDigest.toLowerCase())); }
+// the published male wiring: the run that DOES reproduce the dataset's base row, which #80's could not
+{ const P = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/min5.json", import.meta.url))), a = P.attestation;
+  const rows = zlib.gunzipSync(fs.readFileSync(new URL("../flybnb/results/male/pilot/rows.jsonl.gz", import.meta.url))).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  const base = rows.find((r) => r.kind === "base"); const want = new Map(base.rows.map((w) => [w.stim + "|" + w.seed, w.digest.toLowerCase()]));
+  check(`the published male wiring settled on chain and reproduces all ${base.rows.length} of the dataset's base digests`,
+    a.complete === true && P.settled.matches === true && a.rows.length === base.rows.length && a.rows.every((r) => want.get(r.stimulus + "|" + r.seed) === r.countsDigest.toLowerCase()));
+  const sub = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/attestation.json", import.meta.url))).attestation;
+  check("and the substrate's run of the same battery does NOT -- the two male payloads are two networks", sub.rows.every((r, k) => r.countsDigest !== a.rows[k].countsDigest)); }
 console.log(fails ? `${fails} FAILURES` : "flybnb battery: all checks passed"); process.exit(fails ? 1 : 0);

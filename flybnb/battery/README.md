@@ -83,6 +83,8 @@ Task `0xc832cc87…0648` on BSC testnet: the 42-run battery as **one** batched t
 
 Redundancy was 1, because one instance is enrolled for this brain. That settles and attests a result; it does not cross-check it. `agreed` stays false and the attestation says so.
 
+**And on the published wiring** (task `0x553db67d…c6c6`, settled on `0xcdada85b…5c4d`): all 42 digests equal the dataset's `base` row. This is the run the substrate could not be, and the pair is now the evidence for the distinction below — the same battery, the same weight unit, two male payloads, and **not one of the 42 digests is shared between them**. `test/flybnb_battery.mjs` checks both directions.
+
 **And then on a minted fly** (task `0x4df627a8…7d32`, settled on `0xc8ccb0f9…5ec6`). `fly #101` of the founder collection is, by delta id, the pilot founder `M000` of `flybnb/results/male/pilot/`: the same FLYDELTAv3 recipe, seed 1000, the male dispersion table and mean ratio. Its battery was posted as one task, executed, settled — and **all 42 counts digests equal the row already committed in this repository**, checked against those rows themselves rather than a summary.
 
 That run needed no special reference, which is the individual case being clean: a genotype zeroes what falls under `min_syn`, so a fly's payload and its offline row are the same network. Two things it did need, both of which a base payload does not: the payload is the substrate with the fly's delta applied (`FD.apply_any`), and the MEP id **wraps the collection's royalty terms** (1000 bps), so a node must be told them or the same bytes reproduce a different id — `loadModel({ terms })`, exactly as the relayer does.
