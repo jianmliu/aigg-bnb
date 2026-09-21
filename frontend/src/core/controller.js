@@ -154,7 +154,7 @@ export async function refreshBond() {
 }
 /** bond for every hosted MEP (a top-up adds MEPs to an existing bond) */
 export async function bond() {
-  const ids = [...state.hosted]; if (!ids.length) throw new Error("choose at least one MEP to host");
+  const ids = [...new Set([...state.hosted].map(id => mepById(id)?.enrollmentMepId || id))]; if (!ids.length) throw new Error("choose at least one MEP to host");
   const v = BigInt(Math.round(parseFloat($("amount").value) * 1e6)) * 10n ** 12n;
   if (v <= 0n) throw new Error("the registry needs a positive amount (a small top-up adds MEPs to an existing bond)");
   await send(state.deployment.addresses.instances, "bond(bytes32[])", [ids], v); await refreshBond();
@@ -287,9 +287,24 @@ export async function loadModel() {
     [bytes?.buffer, delta?.buffer].filter(Boolean)); // transferred, not copied
   const ok = r.modelId.toLowerCase() === m.modelId.toLowerCase();
   state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, bytes: r.bytes, modelId: r.modelId, ok };
+  if (ok) await prepareEnrollmentBase(m);
   if (state.node) await hostOnNode(m); // hot-add to a running node
   onChange(); log(`${mepName(m)}: model_id ${r.modelId.slice(0, 14)}… ${ok ? "matches the MEP" : "DOES NOT MATCH the MEP (claims would be rejected)"}`);
   $("file").value = ""; $("url").value = "";
+}
+// A derived execution profile claims residency against its authoritative base pool.
+async function prepareEnrollmentBase(m) {
+  const id=m.enrollmentMepId;if(!id||id===m.mepId)return;
+  const base=mepById(id);if(!base)throw Error("Enrollment base missing from the catalog; refresh before hosting.");
+  state.hosted.add(id);
+  if(!state.prepared.has(id)){
+    const held=await ask("hasBase",{modelId:base.modelId});
+    const bytes=held.held?null:await fetchBrain(sourcesFor(base.weightsDA, $("sp")?.value),mepName(base));
+    const r=await ask("prepare",{mepId:id,baseModelId:base.modelId,...(bytes?{bytes:bytes.buffer}:{})},bytes?[bytes.buffer]:[]);
+    if(r.modelId.toLowerCase()!==base.modelId.toLowerCase())throw Error("Enrollment base model mismatch.");
+    state.prepared.add(id);state.loaded[id]={...r,ok:true};
+  }
+  if(state.node)await hostOnNode(base);
 }
 // Leave room for the kernel heap, alignment, and execution/dispute scratch.
 const HOST_MEMORY_BUDGET = WASM32_MAX_BYTES - 64 * 1024 ** 2;
@@ -328,7 +343,7 @@ export async function hostOnNode(m) {
   // The TERMS, when the brain is an individual of a collection: its mep id is keccak(profile, beneficiary, bps) and
   // the terms are nowhere in the bytes, so a host that is not told them serves an id the chain never draws.
   const terms = m.royaltyBps > 0 && m.beneficiary ? { beneficiary: m.beneficiary, royaltyBps: m.royaltyBps } : null;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, terms }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, baseMepId: m.baseMepId || null, terms }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
   if (!r.matches) { log(`WARNING ${mepName(m)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
   log(`${mepName(m)}: resident on the node, serving audits and tasks`);
@@ -367,7 +382,7 @@ async function runPass() {
   const me = state.resolved || state.wallet;
   if (me && state.wokeEpoch !== e.epoch) { state.wokeEpoch = e.epoch; api("/wake", { instance: me }).catch(() => {}); }
   if (!e.rolled) return;
-  for (const id of state.hosted) {
+  for (const id of new Set([...state.hosted].map(id => mepById(id)?.enrollmentMepId || id))) {
     const m = mepById(id); if (!state.node || !state.node.models.has(id)) continue;
     state.claims[id] ||= {}; state.materialized[id] ||= {};
     if (!state.claims[id][e.epoch]) { const info = await api("/epoch?mep=" + id); const r = await ask("announce", { mepId: id, challenge: info.challenge }); state.claims[id][e.epoch] = r.claimHash; log(`${mepName(m)} epoch ${e.epoch}: claim announced (slot ${r.slotMs} ms)`); }

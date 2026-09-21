@@ -1,6 +1,8 @@
 // Human-readable ABIs (viem parseAbi) for the mesh contracts the relayer and the frontend talk to.
 import { parseAbi } from "viem";
 export const InstanceRegistryAbi = parseAbi([
+  "function enrollmentMep(bytes32 mepId) view returns (bytes32)",
+  "function mepRegistry() view returns (address)",
   "function bond(bytes32[] mepIds) payable",
   "function requestExit()",
   "function finalizeExit()",
@@ -72,6 +74,7 @@ export const TaskMarketAbi = parseAbi([
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",
 ]);
 export const MEPRegistryAbi = parseAbi([
+  "function baseOf(bytes32 mepId) view returns (bytes32)",
   "struct MEP { bytes32 modelId; bytes32 schemeDigest; bytes32 execKind; uint32 neurons; uint32 synapses; bytes32 synapseRoot; bytes weightsDA; }",
   "function registerMEP(MEP m) returns (bytes32)",
   "function getMEP(bytes32 id) view returns (MEP)",

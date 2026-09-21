@@ -49,7 +49,7 @@ jobs:
 
       - run: npm ci
 
-      - run: node --test test/rpc_budget.mjs
+      - run: node --test test/rpc_budget.mjs test/base_relayer.mjs
       - run: node test/env_mapping.mjs
       # the gateway's registration with ai.gg, against a stand-in for its admin API: no chain, no network
       - run: node test/aigg_src_sync.mjs
@@ -86,6 +86,8 @@ jobs:
 
       - run: node test/frontend_wallet.mjs
       - run: node test/frontend_memory.mjs
+      - run: node contracts/lib/aigg-porw/web/porw-browser/test_mep_base.mjs
+      - run: node contracts/lib/aigg-porw/web/porw-browser/test_node_base.mjs
 
       # chain-free: the FlyBnB battery file is well formed and its batch form is order-preserving; the paper build never touches prose
       - run: node test/flybnb_battery.mjs

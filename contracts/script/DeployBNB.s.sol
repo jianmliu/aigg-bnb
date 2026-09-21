@@ -62,6 +62,7 @@ contract DeployBNB is Script {
         // these registries, and the curator lists them. The curator decides only what is listed -- it holds no funds and
         // no protocol role -- and defaults to the deployer; hand it to a multisig with proposeCurator / acceptCurator.
         CollectionWhitelist whitelist = new CollectionWhitelist(vm.envOr("CURATOR", msg.sender));
+        if(vm.envOr("BASE_ENROLMENT",false)) inst.setMEPRegistry(address(meps));
         vm.stopBroadcast();
         d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays), address(whitelist));
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);
