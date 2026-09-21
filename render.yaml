@@ -8,9 +8,8 @@
 # What is deliberately NOT here:
 #   - PORW_RELAYER_KEY, and PORW_RPC (a provider URL may carry an API key). Both are `sync: false`: Render asks for
 #     them once, when the Blueprint is first created, and ignores them on every later sync. They stay in the dashboard.
-#   - the sponsorship budgets and the beacon's wake window (PORW_SPONSOR_EPOCH_GAS, PORW_SPONSOR_DAY_GAS,
-#     PORW_BEACON_WAKE_EPOCHS). A key listed here OVERWRITES the dashboard's value on every sync, and a key that is not
-#     listed is left alone. These are an operator's knobs, so they are left alone; unset, the code's defaults apply.
+#   - the beacon wake window (PORW_BEACON_WAKE_EPOCHS) remains an operator setting.
+# Synchronous sponsorship budgets below are explicit: a Blueprint sync applies these reviewed limits.
 #
 # The service block mirrors the live service exactly (read with `render services -o json`, 2026-09-18): plan, region,
 # commands, health check, auto-deploy OFF. Render's own warning is the reason: an option omitted from a Blueprint falls
@@ -54,7 +53,9 @@ services:
       - key: PORW_PUBLIC_RELAY_URL
         value: wss://aigg-bnb-relayer-testnet.onrender.com/relay
 
-      # ---- the deployment: BSC testnet, scheme v3 family mesh, deployed 2026-09-21 (aigg-porw 6b5f290) ----
+      # ---- the deployment: BSC testnet, scheme v3 synchronous mesh, deployed 2026-09-21 (aigg-porw 6b5f290) ----
+      - key: PORW_VERIFICATION_MODE
+        value: synchronous-v1
       - key: PORW_NETWORK
         value: bsc-testnet
       - key: PORW_CHAIN_ID
@@ -62,21 +63,21 @@ services:
       - key: PORW_EPOCH_BLOCKS
         value: "200"
       - key: PORW_VERIFIER
-        value: "0xd9694a1d08d1d7011dd122e16811847314f83795"
+        value: "0x01b8226f85b67b325944461cd1fb650cec2cbfdd"
       - key: PORW_MEP_REGISTRY
-        value: "0x19de92004c19ea6860641738a8b1e5656e7efb16"
+        value: "0xb8b383fd9e35adc637a4a846e69d40e0a5b5918f"
       - key: PORW_INSTANCES
-        value: "0x91a99283d7cb667b42c0121b877006456deb83a4"
+        value: "0xa9d68521352690d4611602e8f8f2442d9e282ab7"
       - key: PORW_BEACON
-        value: "0xa2e008c2f5923ce877279b67b0d8d2cd14face61"
+        value: "0x9a82fbba3afa4ab19ab90f8b99ee3befdfc3532f"
       - key: PORW_CLAIMS
-        value: "0x1b08029eb81bc3478f286bb8d648154a0e7bfba4"
+        value: "0x8be6d9e20edd4bffa612d933d9513ad2d83c45e8"
       - key: PORW_MARKET
-        value: "0x3e89d16f05cfd9919fb473eb4657289ca9c8b5db"
+        value: "0xd179ddef43480dce2dd1176941ba5bcbb779323c"
       - key: PORW_DISPUTES
-        value: "0x455bd9f09b146021c93d176ab7b14973f4670537"
+        value: "0xfb3f2f339efada1eaa49d0d33f35515748a17a97"
       - key: PORW_RELAYS
-        value: "0xd17b1b1b5c40ddcbf6bf51a54de70dbfc26e09cc"
+        value: "0xc1f178d9e3a5de4a4f5627ec6b772efd5135ac88"
       - key: PORW_CLAIM_VALIDITY_EPOCHS
         value: "6"
 
@@ -84,7 +85,7 @@ services:
       # the base brains it names and every brain bound to one of its flies, bred ones included, with nothing restarted.
       # All four root profiles are pinned so family claim sponsorship is ready before collection discovery.
       - key: PORW_WHITELIST
-        value: "0x05fcbb56da3a27796906079d516cd8d17f45baa5"
+        value: "0xcf69aedc8e932a4589a60d41c76c266d0a68492d"
       # PINNED: female and male >= 2 and >= 5 profiles; children enroll through their root family.
       # The male pair is the same distinction the female pair is: >= 2 is the substrate individuals are drawn on,
       # >= 5 is the published wiring, and a battery posted for one does NOT reproduce the other's rows.
@@ -105,19 +106,25 @@ services:
       - key: PORW_TASK_CLIENTS
         value: "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa,0xf5Cfcb350268aEC30e8d814E48DaB01CBE54B5A7"
 
+      # Bounded synchronous proof sessions require explicit finite sponsorship reserves.
+      - key: PORW_SPONSOR_EPOCH_GAS
+        value: "160000000"
+      - key: PORW_SPONSOR_DAY_GAS
+        value: "350000000"
+
       # ---- the beacon follows demand: a cold epoch never rolls and costs nothing ----
       - key: PORW_BEACON_LAZY
         value: "1"
 
-      # ---- genesis v2 family-bound treasury inventory, 2026-09-21: 100 female + 100 male Founders.
+      # ---- genesis v2 synchronous treasury inventory, 2026-09-21: 100 female + 100 male Founders.
       # Protected zero-cost pre-mint into FounderInventoryVault; public Adopt is resale at 0.01 tBNB.
       # Full BNB proceeds go to the existing TreasuryRouter (0x1Bef7990…3708); no adopter Host bond.
       # Breed fee 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps; base share 1000 bps; resale 500 bps.
       # Legacy collection/NFTs remain intact. Battery budget/worker require separate deployment.
       - key: PORW_COLLECTION
-        value: "0xef927d0e5e5b919dfba91eb816fbf5a284e33498"
+        value: "0x62ea36be228046393b1f876dec93db22c5ecc04c"
       - key: PORW_INVENTORY_SALE
-        value: "0xd974C8c0c18D31AfdEfa0630D06E3960Ee681291"
+        value: "0x7a0611Dc6Fa085E0549B00BF7c8E7598E6B428E8"
 
       # ---- secrets: asked for once, never synced, never in git ----
       - key: PORW_RELAYER_KEY
@@ -157,14 +164,17 @@ services:
       - key: GATEWAY_HOST
         value: 0.0.0.0
       - key: GATEWAY_STATE
-        value: /var/data/gateway-family-v1-state.json
-      # Previous market calls/counts remain archived at /var/data/gateway-state.json(.counts).
+        value: /var/data/gateway-synchronous-v1-state.json
+      # Previous market calls/counts remain archived at /var/data/gateway-state.json(.counts)
+      # and /var/data/gateway-family-v1-state.json(.counts).
       # the relayer: /meps, and the relay the gateway announces tasks on. Its /deployment must agree with the PORW_*
       # below on the market, or the gateway refuses to start -- money is not sent where an HTTP endpoint says
       - key: GATEWAY_RELAYER
         value: https://aigg-bnb-relayer-testnet.onrender.com
 
       # ---- the deployment: the same as the relayer's, above ----
+      - key: PORW_VERIFICATION_MODE
+        value: synchronous-v1
       - key: PORW_NETWORK
         value: bsc-testnet
       - key: PORW_CHAIN_ID
@@ -172,21 +182,21 @@ services:
       - key: PORW_EPOCH_BLOCKS
         value: "200"
       - key: PORW_VERIFIER
-        value: "0xd9694a1d08d1d7011dd122e16811847314f83795"
+        value: "0x01b8226f85b67b325944461cd1fb650cec2cbfdd"
       - key: PORW_MEP_REGISTRY
-        value: "0x19de92004c19ea6860641738a8b1e5656e7efb16"
+        value: "0xb8b383fd9e35adc637a4a846e69d40e0a5b5918f"
       - key: PORW_INSTANCES
-        value: "0x91a99283d7cb667b42c0121b877006456deb83a4"
+        value: "0xa9d68521352690d4611602e8f8f2442d9e282ab7"
       - key: PORW_BEACON
-        value: "0xa2e008c2f5923ce877279b67b0d8d2cd14face61"
+        value: "0x9a82fbba3afa4ab19ab90f8b99ee3befdfc3532f"
       - key: PORW_CLAIMS
-        value: "0x1b08029eb81bc3478f286bb8d648154a0e7bfba4"
+        value: "0x8be6d9e20edd4bffa612d933d9513ad2d83c45e8"
       - key: PORW_MARKET
-        value: "0x3e89d16f05cfd9919fb473eb4657289ca9c8b5db"
+        value: "0xd179ddef43480dce2dd1176941ba5bcbb779323c"
       - key: PORW_DISPUTES
-        value: "0x455bd9f09b146021c93d176ab7b14973f4670537"
+        value: "0xfb3f2f339efada1eaa49d0d33f35515748a17a97"
       - key: PORW_RELAYS
-        value: "0xd17b1b1b5c40ddcbf6bf51a54de70dbfc26e09cc"
+        value: "0xc1f178d9e3a5de4a4f5627ec6b772efd5135ac88"
 
       # ---- what it offers ----
       # the names callers use; `mep:0x…` works for any served brain, and a registered fly is `fly-<token>`
