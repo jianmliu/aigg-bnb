@@ -195,7 +195,9 @@ export async function rearm(id) { await send(state.flies.address, "rearm(uint256
 // The escrow is authoritative; the worker's status adds off-chain execution/publication progress.
 export async function loadBattery(){
  const F=state.flies;if(!F||F.missing)return;const tokenMode=state.batteryRoute==='token';const address=state.deployment?.addresses?.[tokenMode?'tokenBatteryBudget':'batteryBudget'];
- if(!address){F.battery={error:"Battery budget is not configured; funded breeding is unavailable.",jobs:{}};return;}
+ // every other exit from this function notifies; this one returned without it, so "Refresh battery status" on a
+ // deployment with no queue redrew nothing and looked like a dead button.
+ if(!address){F.battery={error:"Battery budget is not configured; funded breeding is unavailable.",jobs:{}};notify();return;}
  try {
   if(decodeAddress(await call(address,"collection()")).toLowerCase()!==F.address.toLowerCase())throw Error("Battery collection mismatch");
   const budget=decodeUint(await call(address,"budget()"));const jobs={};
@@ -217,7 +219,7 @@ export async function loadBattery(){
   F.battery={address,budget,jobs,tokenMode,paymentToken,decimals,quote:null};
  }catch(e){F.battery={error:e.message,jobs:{}};}notify();
 }
-export async function selectBatteryRoute(mode){if(!['native','token'].includes(mode))throw Error('Invalid route');state.batteryRoute=mode;state.flies.battery={error:'Loading battery route…',jobs:{}};notify();await loadBattery();}
+export async function selectBatteryRoute(mode){if(!['native','token'].includes(mode))throw Error('Invalid route');state.batteryRoute=mode;state.flies.battery={error:'Loading battery route…',loading:true,jobs:{}};notify();await loadBattery();}
 export async function quoteBattery(){
  const b=state.flies?.battery;if(!b?.tokenMode||b.error)throw Error('Select the token route');
  const input=decodeUint(await call(b.address,'quoteNativeInput()'));if(input<=0n)throw Error('No liquidity quote');
@@ -227,3 +229,4 @@ export async function quoteBattery(){
 }
 export async function fundBattery(id){if(!state.wallet||!state.chainOk||Number(await ethChainId())!==Number(state.deployment.chainId))throw Error("Connect your wallet on the deployment chain first.");const F=state.flies;if(!F.battery?.address)throw Error("Battery not configured");if(F.battery.tokenMode)throw Error("Direct token funding is available through the treasury contract interface.");const r=await send(F.battery.address,"fund(uint256)",[id],F.battery.budget);if(r.status!=="0x1")throw Error("Funding reverted");await loadBattery();}
 export async function refundBattery(id){if(!state.wallet||!state.chainOk||Number(await ethChainId())!==Number(state.deployment.chainId))throw Error("Connect your wallet on the deployment chain first.");const q=state.flies?.battery?.jobs[id];if(!q?.refund||q.payer.toLowerCase()!==state.wallet?.toLowerCase())throw Error("Refund unavailable");const r=await send(q.job,"refund()");if(r.status!=="0x1")throw Error("Refund reverted");await loadBattery();}
+export { batteryQueue } from "./battery_queue.js";   // a pure decision, in its own file so node can test it

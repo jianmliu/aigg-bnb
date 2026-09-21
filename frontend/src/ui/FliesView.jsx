@@ -197,7 +197,10 @@ export default function FliesView() {
       <Panel title="Battery queue" note="funded experiments · rarity waits for measured results">
         <Button onClick={C.wrap(F.loadBattery)}>Refresh battery status</Button>
         {flies.battery?.error && <p className="hint">{flies.battery.error}</p>}
-        {flies.all.map(f => {const j=flies.battery?.jobs?.[f.id];return <div key={f.id} className="row tight">
+        {/* a fly is "not funded" only where it COULD be funded; see F.batteryQueue */}
+        {F.batteryQueue(flies.battery) === "checking" && <p className="hint" id="batteryQueueState">Reading the battery queue…</p>}
+        {F.batteryQueue(flies.battery) === "unavailable" && <p className="hint" id="batteryQueueState">No battery queue on this deployment, so no experiment can be funded here yet — this is not a state of any individual fly.</p>}
+        {F.batteryQueue(flies.battery) === "ready" && flies.all.map(f => {const j=flies.battery?.jobs?.[f.id];return <div key={f.id} className="row tight">
           <span>Fly #{f.id}: {j?.status || "not funded"}</span>
           {!j && f.mine && flies.battery?.address && !flies.battery.tokenMode && <Button onClick={C.wrap(()=>F.fundBattery(f.id))}>Fund battery · {bnb(flies.battery.budget)} BNB</Button>}
           {j?.artifactUrl && <a href={j.artifactUrl} target="_blank" rel="noreferrer">Experiment results</a>}

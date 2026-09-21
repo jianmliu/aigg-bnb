@@ -70,6 +70,9 @@ jobs:
       # is held against the code it describes, because an agent follows a stale instruction without checking
       - run: node test/skill_flybnb.mjs
 
+      # "not funded" is a claim about one fly; on a deployment with no queue it was being made about all of them
+      - run: node test/battery_queue_panel.mjs
+
       # DESIGN §4b distinguishes optional multi-asset contracts from the legacy native gateway
       - run: node test/settlement_assets.mjs
 
