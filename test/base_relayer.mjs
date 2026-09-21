@@ -54,3 +54,25 @@ test('BNB RPC empty revert getter falls back while reasoned and nonempty reverts
  const absent=async()=>{throw wrapped;};
  assert.deepEqual(await enrollmentMetadata({meps:{read:{baseOf:absent}},instances:{read:{enrollmentMep:absent}}},child),{baseMepId:null,enrollmentMepId:child});
 });
+
+test('family hosting enabled only when instance registry is wired to the configured MEP registry',async()=>{
+ const {familyHostingEnabled}=await import('../relayer/enrollment.mjs');
+ const addr='0x'+'11'.repeat(20),ch={instances:{address:addr},pub:{readContract:async()=>addr}};
+ assert.equal(await familyHostingEnabled(ch,addr),true);
+ ch.pub.readContract=async()=> '0x'+'00'.repeat(20);assert.equal(await familyHostingEnabled(ch,addr),false);
+ ch.pub.readContract=async()=>{throw {name:'ContractFunctionZeroDataError'};};assert.equal(await familyHostingEnabled(ch,addr),false);
+ ch.pub.readContract=async()=>{throw Error('RPC timeout');};await assert.rejects(familyHostingEnabled(ch,addr),/timeout/);
+});
+
+test('family sponsorship includes only explicit pinned roots, not implicit whitelist dependencies',async()=>{
+ const {servesTaskMep}=await import('../relayer/enrollment.mjs');
+ const root='0x'+'11'.repeat(32),child='0x'+'22'.repeat(32),outside='0x'+'33'.repeat(32);
+ const ch={meps:{read:{baseOf:async()=>root}},instances:{read:{enrollmentMep:async()=>root}}};
+ const meps=new Map([[root,{pinned:true}]]);
+ assert.equal(await servesTaskMep(ch,meps,child,true),true);
+ assert.equal(await servesTaskMep(ch,meps,child,false),false);
+ meps.get(root).pinned=false;assert.equal(await servesTaskMep(ch,meps,child,true),false);
+ meps.set(child,{pinned:false});assert.equal(await servesTaskMep(ch,meps,child,true),true);
+ ch.instances.read.enrollmentMep=async()=>child;await assert.rejects(servesTaskMep(ch,meps,outside,true),/mismatch/);
+ ch.instances.read.enrollmentMep=async()=>{throw Error('RPC unavailable');};await assert.rejects(servesTaskMep(ch,meps,outside,true),/RPC/);
+});

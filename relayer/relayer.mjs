@@ -1,6 +1,6 @@
 import { capacityReader } from './capacity.mjs';
 import {ReadCache,UnboundBackoff,ensureAggregator,mapBounded} from './rpc-budget.mjs';
-import { enrollmentMetadata, reconcileEnrollmentBases } from './enrollment.mjs';
+import { servesTaskMep, enrollmentMetadata, reconcileEnrollmentBases, familyHostingEnabled } from './enrollment.mjs';
 import { fliesPageReader } from './flies-page.mjs';
 // The BNB relayer: one process = (1) the stage-1 WebSocket relay hub, (2) the epoch aggregator for the MEPs it
 // serves (collects claims over the relay, posts one root per epoch), (3) a commit-reveal beacon participant and
@@ -35,6 +35,7 @@ if (!dep) throw new Error("no deployment: source the .env.<network> from deploy.
 dep.rpc = process.env.PORW_RPC || cfg.rpc || dep.rpc; if (!dep.rpc) throw new Error("PORW_RPC (or config.rpc) required");
 if (!cfg.privateKey) throw new Error("PORW_RELAYER_KEY (or config.privateKey) required"); if (!(cfg.meps && cfg.meps.length) && !dep.addresses.whitelist) throw new Error("nothing to serve: PORW_MEP_IDS (or config.meps) and/or PORW_WHITELIST required");
 const ch = clients(dep, cfg.privateKey); const domains = eip712Domains(dep);
+const FAMILY_HOSTING = await familyHostingEnabled(ch, dep.addresses.meps);
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
 
@@ -334,7 +335,7 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
     // every task on this network is one the FlyBnB dataset needs, posted by the project. The market is permissionless
     // and cannot refuse anybody's task; what is withheld is this relayer's gas, and a session key holds none of its own.
     if (taskId) { let m = ZERO32, client = null; try { const t = await ch.market.read.taskInfo([taskId]); m = String(t[0]).toLowerCase(); client = String(t[2]).toLowerCase(); } catch {}
-      if (m !== ZERO32 && !meps.has(m)) return refuse(res, 403, label, "the task's MEP is not one this relayer serves (not pinned, not on the whitelist)");
+      if (m !== ZERO32 && !(await servesTaskMep(ch,meps,m,FAMILY_HOSTING))) return refuse(res, 403, label, "the task's MEP is not one this relayer serves (not pinned, not on the whitelist)");
       if (m !== ZERO32 && TASK_CLIENTS && !TASK_CLIENTS.has(client)) return refuse(res, 403, label, "tasks are not open to third parties yet: this relayer sponsors only the dataset's own (PORW_TASK_CLIENTS)"); }
     try { await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
     const r = await tx(label, send);
@@ -351,7 +352,7 @@ const readProviderModels = providerModelReader(ch, meps);
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, familyHosting: FAMILY_HOSTING, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
     if (req.method === "GET" && u.pathname === "/flies/page") {
       try { return json(res, 200, await readFliesPage(u.searchParams)); }

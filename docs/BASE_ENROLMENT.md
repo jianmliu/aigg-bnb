@@ -1,6 +1,6 @@
 # Base enrolment and eligibility
 
-Implements the registration/eligibility portion of aigg-porw PR #36. No live migration is performed. Sampled claims and automatic on-demand child loading are separate work.
+Implements the registration/eligibility portion of aigg-porw PR #36. No live migration is performed. Browser family hosting now supports automatic on-demand child loading. Sampled claims remain separate work.
 
 ## Identities and registration
 
@@ -28,7 +28,9 @@ FlyCollection detects base-mode configuration at construction, verifies its fema
 
 Relayer catalog rows expose `baseMepId` (null for roots) and `enrollmentMepId` (authoritative from InstanceRegistry). It retains child metadata, loads missing base dependencies, aggregates base claims only and shares provider/eligibility reads across the pool. `/epoch?mep=child` still reports the exact child's challenge and identifies its enrollment MEP; clients must request the base for residency. Failed RPC reads never silently choose legacy routing. Older contracts with unsupported getters preserve per-MEP behavior.
 
-The browser carries base identity through model loading, prepares the enrollment base when a child is prepared, bonds to distinct pools, and announces/materializes once per loaded base. The current browser serves loaded execution models only. A base-only host is eligible for its derivatives at protocol level but will not automatically materialize and answer every future derivative. Do not enable pooled production task traffic until an on-demand loader or equivalent operational host service handles the whole supported family. The dashboard states this limit.
+When `/deployment.familyHosting` is true, the browser Host catalog lists roots only. Hosts load and bond the base, announce/materialize base claims, and automatically answer assigned root or descendant tasks. The resolver reads the exact task, executor snapshot, enrollment route and child MEP directly from one chain block, so descendants registered after node startup do not need a catalog refresh. Legacy deployments retain per-MEP hosting.
+
+A child recipe and content-addressed ancestors are fetched only after assignment validation. The worker checks ancestor hashes, family/layout, reconstructs the payload from resident base bytes and verifies the exact child MEP including royalty terms. Each task uses a temporary WASM node; the root stays resident for audits and later tasks. See [browser family hosting](FAMILY_HOSTING.md) for limits and replay behavior.
 
 ## Activation and migration
 
