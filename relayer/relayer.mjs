@@ -1,3 +1,4 @@
+import {ReadCache,UnboundBackoff,ensureAggregator,mapBounded} from './rpc-budget.mjs';
 import { fliesPageReader } from './flies-page.mjs';
 // The BNB relayer: one process = (1) the stage-1 WebSocket relay hub, (2) the epoch aggregator for the MEPs it
 // serves (collects claims over the relay, posts one root per epoch), (3) a commit-reveal beacon participant and
@@ -130,6 +131,9 @@ function aggregatorFor(id, epoch, challenge) {
   const M = meps.get(id); if (!M.aggregators.has(epoch)) { const A = new Aggregator(rc, M.mep, unhex(challenge), { epoch, domain: domains.claimManager, blockNumber: Number(lastBlock) }); A.stop = A.watch(); M.aggregators.set(epoch, A); }
   return M.aggregators.get(epoch);
 }
+const epochReads = new ReadCache({ttl:1000,max:4});
+const challengeReads = new ReadCache({ttl:86400000,max:2048});
+const readChallenge = (epoch,id) => challengeReads.get(`${epoch}:${id}`,()=>ch.claims.read.epochChallenge([BigInt(epoch),id]));
 let lastBlock = 0n, lastEpoch = -1;
 async function tick() {
   const bn = await ch.pub.getBlockNumber(); lastBlock = bn; const e = Number(bn / BigInt(EPOCH_BLOCKS)); const start = BigInt(e) * BigInt(EPOCH_BLOCKS);
@@ -160,7 +164,7 @@ async function tick() {
   // (2) aggregation: collect this epoch's claims once it is rolled -- but post the previous epoch's root either
   // way. An epoch with no beacon (nobody revealed, or a cold epoch under PORW_BEACON_LAZY) must not strand the
   // claims collected in the epoch before it: without that root nobody can materialize them.
-  if (rolled) for (const [id] of meps) { const chal = await ch.claims.read.epochChallenge([BigInt(e), id]); aggregatorFor(id, e, chal); }
+  if (rolled) for (const [id, M] of meps) await ensureAggregator(M, e, () => readChallenge(e,id), (epoch, chal) => aggregatorFor(id, epoch, chal));
   // ONE root for the previous epoch over the claims of every MEP served here (the leaf carries its mepId), so the
   // cost of the root does not grow with the number of brains. Proofs are served from this shared tree.
   const prev = e - 1;
@@ -191,6 +195,7 @@ async function tick() {
 const note = (list, entry) => { list.push(entry); if (list.length > 50) list.shift(); };
 const WL_EVERY = BigInt(cfg.whitelistEvery || 20), WL_MAX = 5000;
 const wl = ch.whitelist ? { walked: null, bound: new Map() /* collection -> Map(token -> mepId) */ } : null;
+const unboundBackoff = new UnboundBackoff(WL_EVERY);
 status.whitelist = wl ? { address: dep.addresses.whitelist, collections: [], served: 0, walkedAt: null, skipped: [] } : null;
 async function follow(bn) {
   if (wl.walked !== null && bn < wl.walked + WL_EVERY) return;
@@ -201,11 +206,12 @@ async function follow(bn) {
     if (!wl.bound.has(c)) wl.bound.set(c, new Map()); const bound = wl.bound.get(c);
     const n = Math.min(Number(await rd("totalSupply")), WL_MAX);
     for (let t = 1; t <= n; t++) {
-      if (!bound.has(t)) { const mepId = String((await rd("individuals", [BigInt(t)]))[3]).toLowerCase(); if (mepId !== ZERO32) bound.set(t, mepId); }
+      const scanKey = `${c}:${t}`;
+      if (!bound.has(t) && unboundBackoff.due(scanKey, bn)) { const mepId = String((await rd("individuals", [BigInt(t)]))[3]).toLowerCase(); if (mepId !== ZERO32) {bound.set(t, mepId);unboundBackoff.clear(scanKey);} else unboundBackoff.miss(scanKey, bn); }
       const id = bound.get(t); if (id && !want.has(id)) want.set(id, { collection: c, token: t, name: `fly #${t}` });
     }
   }
-  for (const c of [...wl.bound.keys()]) if (!listed.includes(c)) wl.bound.delete(c);
+  for (const c of [...wl.bound.keys()]) if (!listed.includes(c)) {wl.bound.delete(c);for(const key of unboundBackoff.entries.keys())if(key.startsWith(c+":"))unboundBackoff.clear(key);}
   for (const [id, from] of want) { const M = meps.get(id);
     if (M) { if (!M.info.collection) Object.assign(M.info, { collection: from.collection, token: from.token, name: M.info.name || from.name }); continue; }
     try { meps.set(id, await loadMep(id, from)); log(`whitelist: now serving ${id.slice(0, 12)}… (${from.name}, collection ${from.collection.slice(0, 10)}…)`); }
@@ -334,6 +340,7 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
 }
 const readFliesPage = fliesPageReader(ch, dep.addresses);
 const readHostStats = hostStats(ch, dep.addresses.market);
+const hostEligibility = new ReadCache({ttl:5000,max:128});
 const readProviderModels = providerModelReader(ch, meps);
 api.on("request", async (req, res) => {
   try {
@@ -350,13 +357,13 @@ api.on("request", async (req, res) => {
       if (!/^0x[0-9a-fA-F]{40}$/.test(instance)) return json(res, 400, { error: "instance must be an address" });
       const epoch = await ch.claims.read.currentEpoch();
       const ids = [...meps.keys()];
-      const eligible = await Promise.all(ids.map((id) => ch.instances.read.isEligible([instance, id, epoch])));
+      const eligible = await hostEligibility.get(`${instance.toLowerCase()}:${epoch}:${ids.join(",")}`, () => mapBounded(ids, id => ch.instances.read.isEligible([instance, id, epoch])));
       return json(res, 200, { ...await readHostStats(instance), epoch: Number(epoch),
         beacon: (await ch.claims.read.beacon([epoch])) !== ZERO32, eligibleModels: ids.filter((_, i) => eligible[i]) });
     }
-    if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
-    if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);
-      return json(res, 200, { epoch: e, block: await ch.pub.getBlockNumber(), beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? await ch.claims.read.epochChallenge([BigInt(e), id]) : null }); }
+    if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, rpcCache: {hostEligibility: {hits:hostEligibility.hits,misses:hostEligibility.misses,entries:hostEligibility.size}}, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
+    if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const {e,b,block} = await epochReads.get('head',async()=>{const e=Number(await ch.claims.read.currentEpoch());return {e,b:await ch.claims.read.beacon([BigInt(e)]),block:await ch.pub.getBlockNumber()};});
+      return json(res, 200, { epoch: e, block, beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? (b !== ZERO32 ? await readChallenge(e,id) : await ch.claims.read.epochChallenge([BigInt(e), id])) : null }); }
     if (u.pathname === "/proof") { const id = (u.searchParams.get("mep") || "").toLowerCase(), e = Number(u.searchParams.get("epoch")), inst = u.searchParams.get("instance"); const M = meps.get(id); const T = epochTrees.get(e); const p = M && T && T.proofFor(id, inst);
       return p ? json(res, 200, { ...p.payload, aggregator: ch.account.address, posted: M.posted.has(e) }) : json(res, 404, { error: "no proof (not included, unknown epoch, or root not built)" }); }
     if (req.method !== "POST") return json(res, 404, { error: "not found" });
