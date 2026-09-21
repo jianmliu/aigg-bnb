@@ -121,6 +121,19 @@ try {
   check('token refund denomination is visible',/AIGG/.test(await page.textContent('#batteryQuote')));
   await page.selectOption('#batteryRoute','native');await page.waitForFunction(()=>window.app.state.flies.battery?.tokenMode===false);
   check('native route and its existing jobs remain available',await page.evaluate(()=>!!window.app.state.flies.battery.jobs[3]));
+  // The configured branch is what every assertion above exercises. What ships on BSC testnet is the OTHER one --
+  // no battery budget at all -- and it used to render "not funded" once per fly beneath a line saying funding was
+  // unavailable. Drive the page into that state and check it says whose state it is.
+  { check('with a queue, a fly without a job is told so per fly', /not funded/.test(await page.textContent('body')));
+    // take the queue away the way a deployment without one has it: no address, then re-read
+    await page.evaluate(async () => { window.__bb = window.app.state.deployment.addresses.batteryBudget; window.app.state.deployment.addresses.batteryBudget = null; await window.appActions.loadBattery(); });
+    await page.waitForSelector('#batteryQueueState', { timeout: 30000 });
+    const text = await page.textContent('body');
+    check('without one, the page stops claiming it about every fly', !/not funded/.test(text));
+    check('  and says it is the deployment that has no queue', /no experiment can be funded here yet/i.test(text) && /not a state of any individual fly/i.test(text));
+    await page.evaluate(async () => { window.app.state.deployment.addresses.batteryBudget = window.__bb; await window.appActions.loadBattery(); });
+    await page.waitForFunction(() => !!window.app.state.flies.battery?.address, null, { timeout: 30000 });
+    check('  and it comes back when the queue is read again', /not funded/.test(await page.textContent('body'))); }
   await page.click('#navHost');await page.getByRole('button',{name:'Accept AIGG tasks',exact:true}).click();
   check('host explicitly opts in to AIGG',await waitFor(async()=>await H.readFrom(W,dep.addresses.market,'MultiAssetTaskMarket','acceptedToken',[W.account.address,token])));
   await page.getByRole('button',{name:'Stop accepting new AIGG tasks',exact:true}).click();
