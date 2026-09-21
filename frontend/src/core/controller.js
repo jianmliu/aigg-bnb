@@ -356,10 +356,11 @@ export async function startNode() {
   { const total = ready.reduce((s, id) => s + reservedBytes(brainBytes(mepById(id), taskCapacity(mepById(id)))), 0);
     requireMemory(total);
     if (total) log(`hosting ${ready.length} brain(s) will hold about ${MB(total)} of wasm memory resident${total > 1024 ** 3 ? " — over a gigabyte; a laptop tab may not survive it" : ""}`); }
+  const identity = Object.freeze({ instance: state.delegation.instance, chainId: state.deployment.chainId, market: state.deployment.addresses.market });
   const k = sessionKey();
   await ask("init", { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
   await ask("relay", { url: state.deployment.relay });
-  state.node = { models: new Map(), memoryBytes: 0 }; // the page's view of what the worker holds resident
+  state.node = { models: new Map(), memoryBytes: 0, identity }; // the page's view of what the worker holds resident
   for (const id of ready) await hostOnNode(mepById(id));
   // Nothing is prepared from here on, so the base kept for applying deltas is dead weight in the worker's heap.
   { const f = await ask("releaseBase"); if (f.freed) log(`released the ${MB(f.freed)} base the individuals were applied over`); }

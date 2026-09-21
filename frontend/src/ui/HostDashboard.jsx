@@ -1,3 +1,4 @@
+import HostCapacity from './HostCapacity.jsx';
 import { useEffect, useState } from 'react';
 import { Panel, Button } from './primitives.jsx';
 import * as C from '../core/controller.js';
@@ -50,6 +51,7 @@ export default function HostDashboard({ active }) {
   return <div id="provider-dashboard">
     <Panel title="Your hosting" note="provider dashboard">
       {s.meps.some(m=>m.enrollmentMepId && m.enrollmentMepId!==m.mepId) && <p className="hint">Stake and residency claims cover a base pool. This browser serves loaded models; automatic loading of future derivatives is not enabled.</p>}
+      <HostCapacity active={active} />
       <div className="host-metrics">
         <div><span className="metric-label">Models online in this tab</span><strong id="host-online">{online.length}</strong></div>
         <div><span className="metric-label">Requests served · settled</span><strong id="host-served">{stats ? stats.requestsServed : '—'}</strong></div>

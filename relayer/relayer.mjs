@@ -1,3 +1,4 @@
+import { capacityReader } from './capacity.mjs';
 import {ReadCache,UnboundBackoff,ensureAggregator,mapBounded} from './rpc-budget.mjs';
 import { enrollmentMetadata, reconcileEnrollmentBases } from './enrollment.mjs';
 import { fliesPageReader } from './flies-page.mjs';
@@ -344,18 +345,23 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
 }
 const readFliesPage = fliesPageReader(ch, dep.addresses);
 const readHostStats = hostStats(ch, dep.addresses.market);
+const readCapacity = capacityReader(ch.pub, dep.addresses.market);
 const hostEligibility = new ReadCache({ttl:5000,max:128});
 const readProviderModels = providerModelReader(ch, meps);
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
     if (req.method === "GET" && u.pathname === "/flies/page") {
       try { return json(res, 200, await readFliesPage(u.searchParams)); }
       catch(e) { return json(res, e.statusCode || 503, {error:e.message}); }
     }
     if (u.pathname === "/meps") return json(res, 200, await readProviderModels());
+    if (req.method === "GET" && u.pathname === "/capacity") {
+      try { return json(res, 200, await readCapacity(u.searchParams.get("instance") || "")); }
+      catch (e) { return json(res, e.statusCode || 503, { error: e.statusCode === 400 ? e.message : "Capacity unavailable; retry later" }); }
+    }
     if (u.pathname === "/hosts") {
       const instance = u.searchParams.get("instance") || "";
       if (!/^0x[0-9a-fA-F]{40}$/.test(instance)) return json(res, 400, { error: "instance must be an address" });

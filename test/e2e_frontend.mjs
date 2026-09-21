@@ -11,7 +11,8 @@ import { startFrontend } from "../frontend/serve.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
 const anvil = await H.startAnvil(8556); let browser;
 try {
-  const dep = await H.deploy(anvil.rpc); const { mep, mepId, payload, steps } = await H.registerSyntheticMep(dep, H.KEYS[0]);
+  const capacityMode = process.env.TEST_HOST_CAPACITY === "1";
+  const dep = await H.deploy(anvil.rpc, capacityMode ? { HOST_CAPACITY: "true" } : {}); const { mep, mepId, payload, steps } = await H.registerSyntheticMep(dep, H.KEYS[0]);
   const M2 = await H.registerSyntheticMep(dep, H.KEYS[0], { name: "male-cns", neurons: 3000, synapses: 30000, steps: 3 }); const mepId2 = M2.mepId;
   const R = await H.startRelayer(dep, H.KEYS[3], [mepId, mepId2]);
   const fe = await startFrontend(0, { payloads: { "/payload.bin": payload, "/payload2.bin": M2.payload } });
@@ -72,6 +73,13 @@ try {
   }
   await page.fill("#steps", "3");
   await page.click("#btnStart"); await page.waitForFunction(() => window.app.state.node !== null && window.app.state.node.models.size === 2, null, { timeout: 120000 }); check("node started hosting both brains", true);
+  if (capacityMode) {
+    await page.waitForSelector('#host-capacity');
+    check('capacity starts paused', (await R.api('/capacity?instance=' + W.account.address)).limit === 0);
+    await page.getByRole('button', { name: 'Set 1 browser slot' }).click();
+    await page.waitForFunction(() => document.querySelector('#host-capacity strong')?.textContent === '1', null, { timeout: 20000 });
+    check('browser can opt into one serial execution slot', Number(await H.readFrom(W, dep.addresses.hostCapacity, 'HostCapacity', 'capacityOf', [W.account.address])) === 1);
+  }
   // epochs: commit / reveal / roll driven by anvil_mine; the page claims each epoch and materializes the previous one
   const EPOCH = dep.epochBlocks; const toBlock = async (b) => { const cur = await anvil.block(); if (b > cur) await anvil.mine(b - cur); };
   const waitFor = async (pred, ms = 30000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await pred()) return true; await H.sleep(400); } return false; };
@@ -92,6 +100,12 @@ try {
   const Vf = await H.porw("verifier.js"); const { loadKernelFromBytes } = await H.porw("porw.js"); const re = Vf.reexecute(await loadKernelFromBytes(fs.readFileSync(path.join(H.porwDir, "sketch.wasm"))), M2.payload, { stimulusSeed: 7, steps: 3, execDigest: H.unhex(resp.payload.execDigest) });
   check("the result matches an independent re-execution of the male brain (3 steps)", re.matches);
   check("relayer submitted the tab's result on-chain", await waitFor(async () => C.market.read.submitted([taskId, W.account.address])));
+  if (capacityMode) {
+    check('accepted result releases its execution slot', Number(await H.readFrom(W, dep.addresses.hostCapacity, 'HostCapacity', 'activeSlots', [W.account.address])) === 0);
+    await page.getByRole('button', { name: 'Pause new assignments' }).click();
+    await page.waitForFunction(() => document.querySelector('#host-capacity strong')?.textContent === '0', null, { timeout: 20000 });
+    check('pause is recorded on chain without deleting submitted results', Number(await H.readFrom(W, dep.addresses.hostCapacity, 'HostCapacity', 'capacityOf', [W.account.address])) === 0 && await C.market.read.submitted([taskId, W.account.address]));
+  }
   const s = await R.api("/tx/settle", { taskId, instance: W.account.address }); check("task settled, fee paid to the tab's wallet", s.ok);
   check("Host dashboard updates settled request count and earned BNB", await waitFor(async () => await page.locator("#host-served").textContent().catch(() => "") === "1", 20000));
   check("Host dashboard separates local online models from chain earnings", await page.locator("#host-online").textContent().catch(() => "") === "2" && /0.01 BNB/.test(await page.locator("#host-earned").textContent().catch(() => "")));
