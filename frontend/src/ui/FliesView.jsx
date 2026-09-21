@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { formatEther, formatUnits } from "viem";
 import * as C from "../core/controller.js";
 import * as F from "../core/flies.js";
-import { loadPhenotypes, phenotypesOf, standing } from "../core/phenotypes.js";
+import { phenotypesOf, standing } from "../core/phenotypes.js";
 import { Panel, Button } from "./primitives.jsx";
 import { Portrait } from "./Portrait.jsx";
 import { SOLO } from "./mode.js";
@@ -87,6 +87,10 @@ function FlyCard({ fly, byId, slot, onPick }) {
 export default function FliesView() {
   const s = C.state; const flies = s.flies;
   const [breeding, setBreeding] = useState(false); const [dam, setDam] = useState(null); const [sire, setSire] = useState(null);
+  const [view, setView] = useState("adopt");
+  const [sex, setSex] = useState("all");
+  const [page, setPage] = useState(1);
+  useEffect(() => { setDam(null); setSire(null); setPage(1); }, [s.wallet, s.deployment, s.chainOk]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const request = useRef(0);
@@ -94,40 +98,53 @@ export default function FliesView() {
     if (!s.deployment) return;
     const id = ++request.current;
     setLoading(true); setLoadError(null);
-    try { await F.loadFlies(); }
+    try { await F.loadFlies({ view, sex, page }); }
     catch (e) { if (request.current === id) setLoadError(e.message || String(e)); }
     finally { if (request.current === id) setLoading(false); }
-  }, [s.deployment, s.wallet]);
+  }, [s.deployment, s.wallet, view, sex, page]);
   useEffect(() => {
     void refresh();
     return () => { request.current++; };
   }, [refresh]);
-  const refreshButton = <Button id="btnFlies" tone="chain" disabled={loading} onClick={refresh}>{loading ? "Loading colony…" : "Refresh"}</Button>;
-  const loadStatus = loadError
-    ? <p className="hint" role="alert">Could not load the colony: {loadError}. Select Refresh to retry.</p>
-    : loading ? <p className="hint" role="status">Reading the colony from the chain…</p> : null;
+  const refreshButton = <Button id="btnFlies" tone="chain" disabled={loading} onClick={refresh}>{loading ? "Loading…" : "Refresh"}</Button>;
+  const pageError = loadError || flies?.error;
+  const loadStatus = pageError
+    ? <p className="hint" role="alert">Could not load flies: {pageError}. Select Refresh to retry.</p>
+    : (loading || !flies || flies.loading) ? <p className="hint" role="status">Loading this page…</p> : null;
 
 
   if (!s.deployment) return <div className="main single"><Panel title="Flies"><p className="hint">{SOLO ? "Connecting to the network…" : <>Put a relayer’s address in the <b>Mesh</b> capsule above first: it names the collection this page reads.</>}</p></Panel></div>;
-  if (!flies) return <div className="main single"><Panel title="Flies"><div className="row tight">{refreshButton}</div>{loadStatus}</Panel></div>;
-  if (flies.missing) return <div className="main single"><Panel title="Flies">{refreshButton}{loadStatus}<p className="hint" id="noCollection">This deployment names no collection (the relayer has no <code>PORW_COLLECTION</code>), so there are no flies to read here.</p></Panel></div>;
+  const navigation = <div className="row tight center flies-controls">
+    <Button id="tabAdopt" aria-pressed={view === "adopt"} onClick={() => {setView("adopt");setPage(1);}}>Adopt</Button>
+    <Button id="tabMyFlies" aria-pressed={view === "mine"} onClick={() => {setView("mine");setPage(1);}}>My flies</Button>
+    <label>Sex <select id="fliesSex" value={sex} onChange={e => {setSex(e.target.value);setPage(1);}}>
+      <option value="all">All</option><option value="female">Female ♀</option><option value="male">Male ♂</option>
+    </select></label>{refreshButton}
+  </div>;
+  if (view === "mine" && !s.wallet) return <div className="main single">{navigation}<Panel title="My flies"><p className="hint">Connect your wallet to see your flies and breed.</p></Panel></div>;
+  if (!flies || flies.loading || loading || pageError) return <div className="main single">{navigation}<Panel title={view === "adopt" ? "Adopt" : "My flies"}>{loadStatus}</Panel></div>;
+  if (flies.missing) return <div className="main single">{navigation}<Panel title="Flies"><p className="hint" id="noCollection">This deployment names no collection.</p></Panel></div>;
+  const paging = <div className="row tight center flies-paging">
+    <Button id="fliesPrev" disabled={flies.page.page <= 1} onClick={() => setPage(flies.page.page - 1)}>Previous</Button>
+    <span id="fliesPageInfo">Page {flies.page.page} of {flies.page.pages} · {flies.page.total} flies · 12 per page</span>
+    <Button id="fliesNext" disabled={flies.page.page >= flies.page.pages} onClick={() => setPage(flies.page.page + 1)}>Next</Button>
+  </div>;
 
   const byId = new Map(flies.all.map((f) => [f.id, f]));
-  const mine = flies.all.filter((f) => f.mine); const others = flies.all.length - mine.length;
-  const pick = (f) => { if (f.sex === F.FEMALE) setDam(dam === f.id ? null : f.id); else setSire(sire === f.id ? null : f.id); };
-  const D = byId.get(dam), S = byId.get(sire); const problem = F.checkPair(D, S) || flies.battery?.error || (flies.battery?.tokenMode&&!flies.battery.quote?"get a BNB quote first":null);
+  const pick = (f) => { if (f.sex === F.FEMALE) setDam(dam?.id === f.id ? null : f); else setSire(sire?.id === f.id ? null : f); };
+  const D = dam && (byId.get(dam.id) || dam), S = sire && (byId.get(sire.id) || sire); const problem = F.checkPair(D, S) || flies.battery?.error || (flies.battery?.tokenMode&&!flies.battery.quote?"get a BNB quote first":null);
 
   return (
     <div className="main single">
       <section className="hosthead">
         <p className="kicker">Your flies</p>
-        <h2>A colony, and its pedigree.</h2>
+        <h2>Adopt a fly. Follow its research.</h2>
         <p className="lede">Each individual is a real variant of a released brain. What one is worth is what has been measured about it — so there are no trait badges here, only lineage, and the experiments run against it.</p>
       </section>
-      <Panel title="Colony" note={`${mine.length} yours · ${others} others`}>
+      {navigation}
+      {view === "mine" && <Panel title="My flies" note={`${flies.page.total} yours`}>
         {loadStatus}
         <div className="row tight center">
-          {refreshButton}
           <span className="kv" id="fliesInfo">collection {flies.address.slice(0, 10)}… · block {flies.block}{s.wallet ? "" : " · connect your wallet (top right) to see which are yours"}</span>
         </div>
         {flies.royaltyBps > 0 && (
@@ -136,18 +153,17 @@ export default function FliesView() {
             <Button id="btnWithdraw" tone="money" disabled={!s.wallet || flies.owed === 0n} onClick={C.wrap(F.withdraw)}>Withdraw</Button>
           </div>
         )}
-        {flies.all.length === 0 && <p className="hint">Nobody has adopted a fly from this collection yet.</p>}
+        {flies.all.length === 0 && <p className="hint">No flies match this wallet and filter.</p>}
         <div className="brains" id="colony">
-          {flies.all.map((f) => <FlyCard key={f.id} fly={f} byId={byId} slot={f.id === dam ? "dam" : f.id === sire ? "sire" : null} onPick={() => pick(f)} />)}
+          {flies.all.map((f) => <FlyCard key={f.id} fly={f} byId={byId} slot={f.id === dam?.id ? "dam" : f.id === sire?.id ? "sire" : null} onPick={() => pick(f)} />)}
         </div>
-        {flies.truncated && <p className="hint">Showing the first 500 individuals; the rest need an indexer.</p>}
+        {paging}
         <p className="hint">Click a fly of yours to put it in the pairing below. An egg or an unborn child cannot breed: its delta is not pinned yet.</p>
-      </Panel>
+      </Panel>}
 
-      <Panel title="Adopt" note="treasury inventory · existing NFTs">
-        <p className="lede">Adopt a fly already held by the AIGG treasury. Your BNB payment and the NFT transfer complete together. You receive the individual and its future holder rights; earnings accrued before transfer remain with the seller.</p>
+      {view === "adopt" && <Panel title="Adopt" note="treasury inventory · existing NFTs">
+        <p className="lede">Adopt a fly already held by the FlyBnB treasury. Your BNB payment and the NFT transfer complete together. You receive the individual and its future holder rights; earnings accrued before transfer remain with the seller.</p>
         <p className="hint" id="adoptFee">The full listed price goes to the selling treasury. No Host bond, additional marketplace royalty, or liquidity deposit is included. Host participation requires a separate bond. Treasury liquidity management happens separately.</p>
-        <Button id="btnGenesis" tone="chain" onClick={C.wrap(F.loadGenesis)}>Refresh treasury inventory</Button>
         {flies.sale?.unavailable && <p className="hint" role="status">{flies.sale.unavailable}</p>}
         {flies.sale?.treasury && <p className="hint">Seller / BNB recipient: <code>{flies.sale.treasury}</code></p>}
         {flies.sale && !flies.sale.unavailable && !flies.sale.open.length && <p className="hint">No treasury NFTs are currently available for adoption.</p>}
@@ -163,10 +179,10 @@ export default function FliesView() {
             </div>
           ))}
         </div>
-        {flies.truncated && <p className="hint">Inventory checks cover the first 500 collection tokens. Additional inventory requires an indexer.</p>}
-      </Panel>
+        {paging}
+      </Panel>}
 
-      <Panel title="Breed" note="a recipe, not yet a brain">
+      {view === "mine" && <> <Panel title="Breed" note="a recipe, not yet a brain">
         <div className="pairing">
           <div className="slot" data-filled={!!D} id="slotDam"><span className="legend">dam ♀</span>{D ? F.lineage(D, byId) : "—"}</div>
           <span className="times">×</span>
@@ -189,7 +205,7 @@ export default function FliesView() {
         </div> : <p className="hint" id="batteryQuote">Battery budget: {bnb(flies.battery.budget)} BNB locked in a dedicated job. Total: {bnb(flies.breedFee + flies.battery.budget)} BNB plus wallet transaction gas. Parent approvals may require separate transactions.</p>)}
         <div className="row tight center">
           <Button id="btnBreed" tone="money" disabled={!s.wallet || !!problem || breeding}
-                  onClick={C.wrap(async () => { setBreeding(true); try { await F.breed(dam, sire); setDam(null); setSire(null); } finally { setBreeding(false); } })}>Breed + fund battery</Button>
+                  onClick={C.wrap(async () => { setBreeding(true); try { await F.breed(D.id, S.id); setDam(null); setSire(null); } finally { setBreeding(false); } })}>Breed + fund battery</Button>
           <span className="kv empty" id="breedProblem">{!s.wallet ? "connect your wallet (top right)" : problem || "ready"}</span>
         </div>
         <p className="hint">This creates the child’s lineage entry; it does not yet create its brain. The child’s seed — and its sex — is the hash of the block after this transaction, so nobody, including you, knows it when you press the button. The page shows it a block later; the chain records it when someone calls <code>hatch</code> (the relayer’s keeper does, for the bounty). After that the brain still has to be computed from the parents and the seed, and registered.</p>
@@ -204,7 +220,7 @@ export default function FliesView() {
           {j?.refund && j.payer.toLowerCase()===s.wallet?.toLowerCase() && <Button onClick={C.wrap(()=>F.refundBattery(f.id))}>Recover unused budget</Button>}
         </div>;})}
         <p className="hint">Model generation and owner registration must finish before execution. Completion requires verified battery outputs; a rarity percentile additionally needs a versioned reference cohort. Expired, inactive jobs and completed jobs can return unused funds to the original payer.</p>
-      </Panel>
+      </Panel></>}
     </div>
   );
 }

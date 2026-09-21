@@ -397,7 +397,11 @@ span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
 .holders .addr { color: var(--text); font-weight: 600; }
 .holders .toks { color: var(--muted); overflow-wrap: anywhere; }
 .holders .you { margin-left: auto; padding: 3px 8px; border-radius: var(--r-pill); background: var(--gold); color: #1b1a17; font: 700 10.5px/1 var(--sans); letter-spacing: 0.04em; text-transform: uppercase; }
-.listings.adoptable { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 22px 16px; }
+.flies-controls { flex-wrap: wrap; margin-bottom: 20px; }
+.flies-controls .btn[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #1b1a17; }
+.flies-controls select { font: inherit; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px; background: var(--bg); }
+.flies-paging { flex-wrap: wrap; margin-top: 20px; }
+.listings.adoptable { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 22px 16px; }
 .listings.adoptable .brain.listing { cursor: default; }
 .listings.adoptable .btn { margin-top: 6px; padding: 9px 12px; font-size: 13px; }
 

@@ -88,7 +88,7 @@ export const read = async (method, params = []) => {
   const r = await (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) })).json();
   if (r.error) throw new Error(r.error.message || "RPC error"); return r.result;
 };
-export const call = async (to, sig, args = []) => read("eth_call", [{ to, data: encode(sig, args) }, "latest"]);
+export const call = async (to, sig, args = [], block = "latest") => read("eth_call", [{ to, data: encode(sig, args) }, block]);
 export const send = async (to, sig, args = [], value = 0n) => {
   const expectedChain=state.deployment?.chainId, from=state.wallet;
   if(!expectedChain||!from)throw new Error("Connect your wallet on the deployment chain first.");
@@ -102,7 +102,7 @@ export const send = async (to, sig, args = [], value = 0n) => {
 // The relayer URL is read from the DOM rather than from React state on purpose: the field is uncontrolled, so a
 // test (or a paste) that sets `#relayer.value` directly is what the next request uses.
 export const relayer = () => $("relayer").value.replace(/\/$/, "");
-const api = async (p, body) => (await fetch(relayer() + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
+export const api = async (p, body) => (await fetch(relayer() + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
 
 export const mepById = (id) => state.meps.find((m) => m.mepId === id);
 export const mepName = (m) => m.name || m.mepId.slice(0, 10);

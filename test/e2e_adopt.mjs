@@ -25,29 +25,27 @@ try {
   await visitor.goto(fe.url); await visitor.waitForFunction(() => window.__ready === true);
   await visitor.evaluate((u) => { document.getElementById("relayer").value = u; }, R.apiBase);
   await visitor.click("#btnDep"); await visitor.waitForFunction(() => window.app.state.deployment !== null);
-  await visitor.click("#navFlies"); await visitor.waitForFunction(() => window.app.state.flies?.all.length === 2, null, { timeout: 5000 });
-  check("colony loads automatically for a visitor without a wallet", await visitor.locator("#fly-1").isVisible());
+  await visitor.click("#navFlies"); await visitor.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1, null, { timeout: 5000 });
+  check("Adopt loads automatically for a visitor without a wallet", await visitor.locator("#btnAdopt-1").isVisible());
   let failRead = true;
-  await visitor.route(dep.rpc, async route => {
-    const body = route.request().postDataJSON();
-    if (failRead && body?.method === "eth_call" && body.params[0].data.startsWith("0x18160ddd")) {
-      failRead = false;
-      return route.fulfill({ json: { jsonrpc: "2.0", id: body.id, error: { code: -32000, message: "Temporary colony RPC failure" } } });
-    }
+  await visitor.route(R.apiBase + "/flies/page?**", async route => {
+    if (failRead) {failRead=false;return route.fulfill({status:503,json:{error:"Temporary index failure"}});}
     return route.continue();
   });
   await visitor.click("#btnFlies");
   await visitor.getByRole("alert").waitFor();
-  check("a failed refresh shows an actionable error and preserves the colony", (await visitor.getByRole("alert").innerText()).includes("Refresh to retry") && await visitor.locator("#fly-1").isVisible());
+  check("a failed refresh hides stale purchase actions and offers retry", (await visitor.getByRole("alert").innerText()).includes("Refresh to retry") && await visitor.locator("#btnAdopt-1").count() === 0);
   await visitor.click("#btnFlies");
   await visitor.getByRole("alert").waitFor({ state: "detached" });
   await visitor.waitForFunction(() => !document.getElementById("btnFlies").disabled);
   await visitor.unroute(dep.rpc);
 
-  await visitor.click("#btnGenesis"); await visitor.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1);
+   await visitor.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1);
   check("visitors can inspect listed inventory without a wallet but cannot buy", await visitor.isDisabled("#btnAdopt-1"));
+  await visitor.click("#tabMyFlies");
+  check("My flies asks disconnected visitors to connect", (await visitor.locator("body").innerText()).includes("Connect your wallet to see your flies"));
   await visitor.close();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }); page.on("console", (m) => { if (m.type() === "error") console.error("page:", m.text()); });
+  const page = await browser.newPage({ reducedMotion: "reduce", viewport: { width: 1280, height: 900 } }); page.on("console", (m) => { if (m.type() === "error") console.error("page:", m.text()); });
   await page.exposeFunction("__walletRequest", async (method, params) => {
     switch (method) {
       case "eth_requestAccounts": case "eth_accounts": return [W.account.address];
@@ -56,7 +54,7 @@ try {
       case "eth_getBalance": return "0x" + (await W.pub.getBalance({ address: params[0] })).toString(16);
       case "eth_getBlockByNumber": return W.pub.request({method, params});
       case "eth_blockNumber": return "0x" + (await W.pub.getBlockNumber()).toString(16);
-      case "eth_getTransactionReceipt": { try { const r = await W.pub.getTransactionReceipt({ hash: params[0] }); return { status: r.status === "success" ? "0x1" : "0x0" }; } catch { return null; } }
+      case "eth_getTransactionReceipt": { try { const r = await W.pub.getTransactionReceipt({ hash: params[0] }); return { status: r.status === "success" ? "0x1" : "0x0", blockNumber: "0x"+r.blockNumber.toString(16) }; } catch { return null; } }
       case "eth_sendTransaction": { const t = params[0]; prompts.push("tx"); return W.wallet.sendTransaction({ to: t.to, data: t.data, value: t.value ? BigInt(t.value) : 0n }); }
       default: throw new Error("unsupported " + method);
     }
@@ -69,7 +67,7 @@ try {
   await page.click("#navFlies"); await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies && !window.app.state.flies.missing);
 
 
-  await page.click("#btnGenesis"); await page.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1);
+  await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies?.sale?.open.length === 1);
   check("only listed treasury inventory is displayed", await page.locator("#adoptable .brain.listing").count() === 1);
   check("the exact quoted price is displayed", (await page.locator("#btnAdopt-1").innerText()).includes("0.123456789 BNB"));
   check("purchase excludes host collateral and liquidity", (await page.locator("#adoptFee").innerText()).includes("No Host bond"));
@@ -78,16 +76,52 @@ try {
   await H.sendTo(T, S, "TreasuryInventorySale", "list", [1n, PRICE, expiry]);
   const stale = await page.evaluate(async () => { try { await window.appActions.adopt(1); return false; } catch { return true; } });
   check("old quote cannot execute after relisting", stale && (await H.readFrom(T, C, "FlyCollection", "ownerOf", [1n])).toLowerCase() === T.account.address.toLowerCase());
-  await page.click("#btnGenesis"); await page.waitForFunction(() => window.app.state.flies?.sale?.open[0]?.revision === 3n);
+  await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies?.sale?.open[0]?.revision === 3n);
   const before = await T.pub.getBalance({address:T.account.address});
-  await page.click("#btnAdopt-1"); await page.waitForFunction(() => window.app.state.flies?.all[0]?.mine === true, null, {timeout:60000});
+  let failReceiptRefresh = true;
+  await page.route(R.apiBase + "/flies/page?**", async route => {
+    if (failReceiptRefresh && new URL(route.request().url()).searchParams.has("minBlock")) { failReceiptRefresh=false; return route.fulfill({status:503,json:{error:"Receipt snapshot temporarily unavailable"}}); }
+    return route.continue();
+  });
+  await page.click("#btnAdopt-1");
+  await page.getByRole("alert").waitFor();
+  check("a failed post-purchase refresh shows a retryable error", (await page.getByRole("alert").innerText()).includes("Receipt snapshot temporarily unavailable"));
+  await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies?.sale?.open.length === 0, null, {timeout:60000});
   await page.waitForFunction(() => window.app.state.flies?.sale?.open.length === 0);
   check("buyer owns the NFT and supply is unchanged", (await H.readFrom(W,C,"FlyCollection","ownerOf",[1n])).toLowerCase() === W.account.address.toLowerCase() && await H.readFrom(W,C,"FlyCollection","totalSupply") === 2n);
   check("all BNB reaches seller treasury", (await T.pub.getBalance({address:T.account.address})) - before === PRICE);
   check("adoption does not create a host bond", await W.instances.read.bonded([W.account.address]) === 0n);
   const again = await page.evaluate(async () => { try { await window.appActions.adopt(1); return false; } catch { return true; } });
   check("sold NFT cannot be adopted again", again && await page.locator("#btnAdopt-1").count() === 0);
+  await page.click("#tabMyFlies");
+  await page.waitForFunction(() => window.app.state.flies?.all[0]?.mine === true);
+  check("purchased fly appears only in My flies", await page.locator("#fly-1").isVisible() && await page.locator("#adoptable").count() === 0);
+  await page.click("#tabAdopt");
+  await page.waitForFunction(() => !!window.app.state.flies?.sale);
   await page.evaluate(async () => { delete window.app.state.deployment.addresses.inventorySale; await window.appActions.loadGenesis(); });
   check("missing sale configuration fails closed", (await page.locator("body").innerText()).includes("Treasury adoption is not configured"));
+  // A full page plus one: only current-page details reach the browser.
+  for (const g of G.individuals.slice(2, 14)) await H.sendTo(T,C,"FlyCollection","mint",[g.index,g.sex,g.deltaHash,g.proof],H.FLY_PRICE);
+  await H.sendTo(T,C,"FlyCollection","setApprovalForAll",[S,true]);
+  for(let id=2;id<=14;id++) await H.sendTo(T,S,"TreasuryInventorySale","list",[BigInt(id),PRICE,expiry]);
+  const freshBlock=Number(await T.pub.getBlockNumber({cacheTime:0}));
+  const individualIds=[];
+  await page.route(dep.rpc,async route=>{
+    const b=route.request().postDataJSON();
+    if(b?.method==='eth_call' && b.params[0].to.toLowerCase()===C.toLowerCase()) individualIds.push(b.params[0].data);
+    return route.continue();
+  });
+  await page.evaluate(async ({sale,block})=>{window.app.state.deployment.addresses.inventorySale=sale;await window.appActions.loadFlies({view:'adopt',sex:'all',page:1,minBlock:block});},{sale:S,block:freshBlock});
+  check('Adopt renders at most 12 inventory cards',await page.locator('#adoptable .listing').count()===12 && await page.locator('#colony').count()===0);
+  check('browser reads no NFT beyond the requested first page',!individualIds.some(data=>data.length===74&&BigInt('0x'+data.slice(10))===14n));
+  await page.click('#fliesNext');await page.waitForFunction(()=>window.app.state.flies?.page.page===2 && !window.app.state.flies.loading && !!window.app.state.flies?.sale);
+  check('next page contains only the remaining NFT',await page.locator('#adoptable .listing').count()===1 && await page.locator('#btnAdopt-14').isVisible());
+  await page.selectOption('#fliesSex','male');await page.waitForFunction(()=>window.app.state.flies?.page.sex==='male' && !window.app.state.flies.loading && !!window.app.state.flies?.sale);
+  check('sex filter resets page and shows an explicit empty result',await page.locator('#adoptable .listing').count()===0 && (await page.locator('#fliesPageInfo').innerText()).includes('Page 1 of 1'));
+  await page.selectOption('#fliesSex','female');await page.waitForFunction(()=>window.app.state.flies?.page.sex==='female' && !window.app.state.flies.loading && !!window.app.state.flies?.sale);
+  await page.screenshot({path:'/tmp/flies-paged-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  check('mobile layout has no horizontal overflow',await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+  await page.screenshot({path:'/tmp/flies-paged-mobile.png',fullPage:true});
 } catch (e) { console.error(e); fails++; } finally { if (browser) await browser.close(); for (const f of stop) try { f(); } catch {} anvil.stop(); }
 console.log(fails ? `${fails} FAILURES` : "inventory adoption: all checks passed"); process.exit(fails ? 1 : 0);
