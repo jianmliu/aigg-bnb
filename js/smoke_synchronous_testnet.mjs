@@ -21,6 +21,7 @@ export function validateDeployment(dep){
  if(dep.verification?.mode!=='synchronous-v1')throw Error('synchronous deployment required');
  if(!dep.addresses?.market||!dep.addresses?.instances||!dep.rpc)throw Error('incomplete deployment');
 }
+export const formatFundingPlan=plan=>plan.map(amount=>formatEther(amount));
 export function fundingPlan(unit,balances,spent=0n){
  const plan=balances.map(b=>unit+GAS_ALLOWANCE>b?unit+GAS_ALLOWANCE-b:0n);
  if(plan.reduce((a,b)=>a+b,spent)>CAP)throw Error('total funding exceeds 0.02 tBNB cap');
@@ -101,7 +102,7 @@ async function main(){
  const terms=mep.royaltyBps>0?{beneficiary:mep.beneficiary,royaltyBps:mep.royaltyBps}:null;
  const hostArgs={mepId:a.mep,name:prepared.name,maxSteps:steps,exec:'lif',wUnitQ16:mep.wUnitQ16||0,terms,family:true};
  if(!(await probe('host',hostArgs)).matches)throw Error('payload/profile mismatch');await probe('close');
- console.log(JSON.stringify({mode:a.broadcast?'broadcast':'dry-run',chainId:97,market:dep.addresses.market,mep:a.mep,gateway:a.gateway,fundingLimit:'0.02',plannedFunding:initialPlan.map(formatEther),scope:'hosts only; gateway request and cleanup are separate'}));
+ console.log(JSON.stringify({mode:a.broadcast?'broadcast':'dry-run',chainId:97,market:dep.addresses.market,mep:a.mep,gateway:a.gateway,fundingLimit:'0.02',plannedFunding:formatFundingPlan(initialPlan),scope:'hosts only; gateway request and cleanup are separate'}));
  if(!a.broadcast)return;
  const ownerKey=process.env.SMOKE_OWNER_KEY;if(!ownerKey)throw Error('SMOKE_OWNER_KEY required');const owner=clients(dep,ownerKey);
  const lock=fs.openSync(journal.file+'.lock','wx',0o600);fs.writeFileSync(lock,String(process.pid));fs.closeSync(lock);
@@ -162,4 +163,4 @@ async function main(){
   await sleep(3000);
  }
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(()=>{console.error('Smoke stopped. No secret diagnostics printed. Preserve private journal/lock and inspect chain state before resuming.');process.exit(1);});
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(error=>{if(!process.argv.includes('--broadcast'))console.error('Dry-run failed: '+(error.shortMessage||error.message));console.error('Smoke stopped. No secret diagnostics printed. Preserve private journal/lock and inspect chain state before resuming.');process.exit(1);});

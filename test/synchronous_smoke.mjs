@@ -51,3 +51,7 @@ test('latest nonce advancement waits for finality without replay or premature RE
  const args={h,host,eligible:async()=>true,commit:()=>{}};await reconcileSmokeReadiness(args);assert.equal(sends,0);assert.equal(arms,0);assert.equal(await confirmedSmokeReady(args),false);assert.equal(h.readinessConsumed,undefined);
  p.ready=true;p.nonce=1n;assert.equal(await confirmedSmokeReady(args),true);
 });
+
+test('public funding amounts format both hosts as BNB without treating array indexes as units',async()=>{
+ const {formatFundingPlan}=await import('../js/smoke_synchronous_testnet.mjs');assert.deepEqual(formatFundingPlan([6000000000000000n,6000000000000000n]),['0.006','0.006']);
+});
