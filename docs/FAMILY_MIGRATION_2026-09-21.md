@@ -1,10 +1,12 @@
 # BSC testnet family deployment — 2026-09-21
 
+The subsequent [synchronous verification migration](SYNCHRONOUS_MIGRATION_2026-09-21.md) supersedes this active deployment. This record retains its historical addresses and obligations.
+
 This deployment replaces the active non-upgradeable mesh and Founder inventory so hosts enroll by root base, keep that base resident, and load assigned descendant deltas on demand. It enables shared capacity admission in the task market. It does not add sampled claims or an automatic on-chain dispute responder.
 
 The published genesis v2 and delta assets are unchanged: 100 female and 100 male Founders. Each new child MEP binds its root plus the new collection's royalty terms. Token numbers are local to a collection; the new NFTs are not transfers or burns of the old NFTs.
 
-## Active addresses (chain 97)
+## Addresses at this migration (chain 97)
 
 | Contract | Address |
 | --- | --- |

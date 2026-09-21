@@ -35,7 +35,7 @@ try {
   const node=new PorwNode(await loadKernelFromBytes(wasm),{privHex:sessionKey,domains:published.domains,delegation});await node.loadModel('sync-service-brain',payload,{exec:'lif',maxSteps:4});
   const relay=new RelayClient([published.relay],node.key);await relay.connect();cleanup.push(()=>relay.close());
   const service=new NodeService(node,relay);service.serve(model.mep.mepId,{tasks:false});
-  const arm=async()=>{const nonce=await c.market.read.readinessNonce([c.account.address]),expiry=await c.pub.getBlockNumber({cacheTime:0})+500n;const hash=await c.market.read.readinessDigest([c.account.address,true,expiry,nonce]);const r=await R.api('/tx/sync/readiness',{instance:c.account.address,ready:true,expiry:String(expiry),nonce:String(nonce),signature:await c.account.sign({hash})});assert.equal(r.ok,true,JSON.stringify(r));};
+  const arm=async()=>{const nonce=await c.market.read.readinessNonce([c.account.address]),expiry=await c.pub.getBlockNumber({cacheTime:0})+500n;const hash=await c.market.read.readinessDigest([c.account.address,true,expiry,nonce]);const r=await R.api('/tx/sync/readiness',{instance:c.account.address,ready:true,expiry:String(expiry),nonce:String(nonce),signature:await session.sign({hash})});assert.equal(r.ok,true,JSON.stringify(r));};
   const host={c,node,relay,service,arm,stopTask:null};hosts.push(host);
   host.stopTask=relay.serve('task-announce',mepId,async env=>{
    try {

@@ -41,7 +41,7 @@
 //   GATEWAY_PORT / PORT, GATEWAY_HOST, GATEWAY_KEEPALIVE_MS (20000), GATEWAY_RESULT_TIMEOUT_MS (600000), GATEWAY_POLL_MS (1000)
 import http from "node:http"; import fs from "node:fs"; import path from "node:path"; import crypto from "node:crypto"; import { EventEmitter } from "node:events"; import { fileURLToPath } from "node:url";
 import { parseAbi, parseAbiItem, decodeEventLog, keccak256, encodeAbiParameters } from "viem";
-import {readFinalized,assignmentReady,verifyDeployment,verificationMode,normalizeSession,sessionExpired,waitForSession,acceptedSession} from "../relayer/synchronous.mjs";
+import {synchronousInbox,readFinalized,assignmentReady,verifyDeployment,verificationMode,normalizeSession,sessionExpired,waitForSession,acceptedSession} from "../relayer/synchronous.mjs";
 import { loadEnv, deploymentFromEnv } from "../relayer/env.mjs"; import { clients } from "../relayer/chain.mjs";
 import { wakeMessage } from "../relayer/wake.mjs";
 import { readyCapacity, CapacityError, abortable } from "./capacity.mjs";
@@ -219,7 +219,8 @@ const SESSION = parseAbiItem("event SessionKeySet(address indexed instance, addr
 // finally lapses. The entry is therefore never trusted on its own: every call re-reads the few blocks since it was
 // taken, which is one small query, and a newer delegation wins.
 const sessions = new Map();
-async function sessionOf(wallet) {
+async function sessionOf(wallet,taskId) {
+  if(SYNCHRONOUS)return synchronousInbox(ch,wallet,taskId);
   const inst = wallet.toLowerCase(); const block = await blockNumber();
   const newest = async (from, to) => (await ch.pub.getLogs({ address: dep.addresses.instances, event: SESSION, args: { instance: wallet }, fromBlock: from, toBlock: to }))
     .filter((l) => BigInt(l.args.expiry) > block).at(-1);
@@ -278,7 +279,7 @@ async function drive(c, signal) {
         const [state,head,finalized]=await Promise.all([ch.market.read.sessionState([c.id]),blockNumber(),ch.pub.getBlock({blockTag:"finalized"})]);
         const decision=assignmentReady(normalizeSession(state),head,finalized.number,stored[3]);
         if(decision==='closed')return;if(decision==='ready')break;await sleep(cfg.pollMs);
-      }} const got = await relay.request(await sessionOf(a), "task-announce", c.mepId, announce, { timeoutMs: cfg.resultTimeoutMs, responseType: "result" }); if(SYNCHRONOUS&&Number((await ch.market.read.sessionState([c.id]))[0])<2)throw Error("result arrived before both commitments"); r = { execDigest: got.payload.execDigest, execRoot: got.payload.execRoot };
+      }} const got = await relay.request(await sessionOf(a,c.id), "task-announce", c.mepId, announce, { timeoutMs: cfg.resultTimeoutMs, responseType: "result" }); if(SYNCHRONOUS&&Number((await ch.market.read.sessionState([c.id]))[0])<2)throw Error("result arrived before both commitments"); r = { execDigest: got.payload.execDigest, execRoot: got.payload.execRoot };
         if (typeof got.payload.counts === "string" && got.payload.countsEncoding === "u32le-base64") { const bytes = new Uint8Array(Buffer.from(got.payload.counts, "base64"));
           r.counts = bytes.length % 4 === 0 && V.hex(L.countsDigest(new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4))) === r.execDigest.toLowerCase() ? "match the digest it signed" : "DO NOT match the digest it signed";
           if (r.counts.startsWith("match")) offered.set(a, bytes); } }
