@@ -11,6 +11,8 @@ import { loadKernel } from "/porw/porw.js";
 import { PorwNode } from "/porw/node.js";
 import { RelayClient } from "/porw/relay_client.js";
 import { NodeService } from "/porw/node_service.js";
+import { FamilyNodeService } from "/porw/family_service.js";
+import { FamilyReplayJournal } from "/porw/family_journal.js";
 import * as V from "/porw/verify.js";
 import { decodeHeader } from "/porw/model.js";
 import { isDelta2, isDelta3, decodeDelta2, decodeDelta3, applyDelta, LAYOUT } from "/porw/delta.js";
@@ -20,7 +22,15 @@ const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt
 const reply = (m, data) => self.postMessage({ ok: true, reqId: m.reqId, ...data });
 const say = (op, data) => self.postMessage({ op, ...data });
 
-let node = null, rc = null, svc = null;
+let node = null, rc = null, svc = null, familySvc = null, identity = null, familyMode = false;
+let nextResolveId = 0;
+const familyResolvers = new Map();
+const resolveFamily = (env) => new Promise((resolve, reject) => {
+  const resolveId = ++nextResolveId;
+  const timer = setTimeout(() => { familyResolvers.delete(resolveId); reject(new Error("family resolution timed out")); }, 60000);
+  familyResolvers.set(resolveId, { resolve, reject, timer });
+  say("family-resolve", { resolveId, env });
+});
 // The base a delta was applied over, kept between prepares: the individuals of one collection all edit the same one,
 // and re-fetching it per fly is tens of megabytes each time. One at a time, and only until `releaseBase`.
 let heldBase = null;
@@ -28,7 +38,8 @@ const pending = new Map(); // mepId -> bytes, kept here so the page never holds 
 
 const ops = {
   async init({ privHex, domains, delegation }) {
-    node = new PorwNode(await loadKernel("/porw/sketch.wasm"), { privHex, domains, delegation });
+    identity = { privHex, domains, delegation };
+    node = new PorwNode(await loadKernel("/porw/sketch.wasm"), identity);
     return { address: hex(node.key.address) };
   },
   // model_id is the whole point of downloading a brain: the bytes are accepted only if they reproduce what the
@@ -65,25 +76,46 @@ const ops = {
   },
   /** `terms`: a profile registered under a beneficiary and a royalty is a DIFFERENT mep id from the same bytes,
    *  and the terms are nowhere in them -- so the host has to be told, or it serves an id nothing on-chain draws. */
-  async host({ mepId, name, maxSteps, exec, wUnitQ16 = 0, baseMepId = null, terms = null }) {
+  async host({ mepId, name, maxSteps, exec, wUnitQ16 = 0, baseMepId = null, terms = null, family = false }) {
     const bytes = pending.get(mepId); if (!bytes) throw new Error("no bytes prepared for this brain");
     const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec, wUnitQ16, baseMepId, terms }); // under another unit, or other terms, the same bytes are another MEP: the id check below is what catches a wrong one
     const local = hex(st.mep.mepId).toLowerCase();
-    if (svc && local === mepId) svc.serve(st.mep.mepId);
+    if (local === mepId.toLowerCase()) {
+      st.family = family === true && familyMode;
+      pending.delete(mepId);
+      if (svc) svc.serve(st.mep.mepId, { tasks: !st.family });
+    }
     return { localMepId: local, matches: local === mepId, neurons: st.hdr.neurons };
   },
-  async relay({ url }) { rc = new RelayClient([url], node.key, { onLog: (m) => say("log", { msg: m }) }); const n = await rc.connect();
-    svc = new NodeService(node, rc, { onResult: (res) => say("result", { res }) }); return { connected: n }; },
+  async relay({ url, familyMode: enabled = false, maxWorkingBytes = 2 * 1024 ** 3 }) {
+    familySvc?.stop(); svc?.stop(); rc?.close();
+    familyMode = enabled === true;
+    rc = new RelayClient([url], node.key, { onLog: (m) => say("log", { msg: m }) }); const n = await rc.connect();
+    svc = new NodeService(node, rc, { onResult: (res) => say("result", { res }) });
+    if (familyMode) {
+      const executionIdentity = identity;
+      const namespace = JSON.stringify({ market: identity.domains?.market, instance: identity.delegation?.instance || hex(node.key.address) }).toLowerCase();
+      familySvc = new FamilyNodeService(node, rc, { resolve: resolveFamily, maxWorkingBytes: Math.min(2 * 1024 ** 3, Number(maxWorkingBytes) || 2 * 1024 ** 3),
+        createNode: async () => new PorwNode(await loadKernel("/porw/sketch.wasm"), executionIdentity),
+        journal: new FamilyReplayJournal(namespace), onResult: (res) => say("result", { res }), onStatus: (status) => say("family-status", status) });
+      familySvc.serve();
+    }
+    for (const st of node.models.values()) svc.serve(st.mep.mepId, { tasks: !st.family });
+    return { connected: n };
+  },
+  async taskReplay({ taskId }) { if (!familySvc) throw new Error("family service is not enabled"); return familySvc.replay(taskId); },
   async announce({ mepId, challenge }) {
     const t0 = performance.now(); const { r } = await svc.announce(unhex(mepId), unhex(challenge)); // residency only: no inference in a claim
     const t = r.timings || {}; const slot = (t.sketchMs || 0) + (t.commitMs || 0) + (t.inferMs || 0) + (t.disputeCommitMs || 0);
     return { claimHash: hex(r.claimHash), slotMs: Math.round(slot || performance.now() - t0) };
   },
-  async close() { try { rc && rc.close(); } catch {} return {}; },
+  async close() { familySvc?.stop(); svc?.stop(); for (const p of familyResolvers.values()) { clearTimeout(p.timer); p.reject(new Error("worker closed")); } familyResolvers.clear(); try { rc && rc.close(); } catch {} return {}; },
 };
 
 self.onmessage = async (ev) => {
-  const m = ev.data; const fn = ops[m.op];
+  const m = ev.data;
+  if (m.op === "familyResolved") { const p = familyResolvers.get(m.resolveId); if (p) { familyResolvers.delete(m.resolveId); clearTimeout(p.timer); m.error ? p.reject(new Error(m.error)) : p.resolve(m.manifest); } return; }
+  const fn = ops[m.op];
   if (!fn) return self.postMessage({ ok: false, reqId: m.reqId, error: "unknown op " + m.op });
   try { reply(m, await fn(m)); } catch (e) { self.postMessage({ ok: false, reqId: m.reqId, error: String(e.message || e) }); }
 };
