@@ -44,6 +44,7 @@ export const SynchronousMarketAbi=parseAbi([
  'function resultCommitment(bytes32 id,address host,bytes32 execDigest,bytes32 execRoot,bytes32 salt) view returns (bytes32)',
  'function expire(bytes32 id)',
  'function ready(address) view returns (bool)',
+ 'function readinessSigner(address) view returns (address)',
  'function readinessNonce(address) view returns (uint256)',
  'function pendingTask(address) view returns (bytes32)',
  'function commitments(bytes32,address) view returns (bytes32)',
@@ -182,4 +183,19 @@ export function sponsorAdmission(gas,epochRemaining,dayRemaining) {
 }
 export function syncSponsorReady(epoch,day,balance,gasPrice) {
  return Number.isSafeInteger(epoch)&&Number.isSafeInteger(day)&&epoch>=160000000&&day>=350000000&&BigInt(balance)>=350000000n*BigInt(gasPrice);
+}
+
+// Readiness records the currently authorized inbox; an explicit drain may change it.
+// Revalidate the pending task and key lifetime rather than infer a key from logs.
+export async function synchronousInbox(ch,host,taskId){
+ return readFinalized(ch.pub,async (options,block)=>{
+  const [signer,pending,state]=await Promise.all([ch.market.read.readinessSigner([host],options),ch.market.read.pendingTask([host],options),ch.market.read.sessionState([taskId],options)]);
+  if(pending.toLowerCase()!==taskId.toLowerCase()||Number(state[0])!==1||block.number>BigInt(state[1]))throw Error('synchronous assignment is not committing');
+  if(!address(signer)||BigInt(signer)===0n||(await ch.instances.read.resolve([signer],options)).toLowerCase()!==host.toLowerCase())throw Error('invalid readiness signer');
+  if(signer.toLowerCase()!==host.toLowerCase()){
+   const [owner,expiry]=await ch.instances.read.delegations([signer],options);
+   if(owner.toLowerCase()!==host.toLowerCase()||BigInt(expiry)<BigInt(state[3]))throw Error('readiness delegation does not cover the session');
+  }
+  return signer.toLowerCase();
+ });
 }

@@ -482,8 +482,28 @@
     "localForgeTests": 318,
     "localSyncTests": 48,
     "liveTask": "pending",
-    "services": "pending",
-    "frontend": "pending"
+    "services": {
+      "commit": "4f48ee38a6a7b1da1ef702803481245f929c2a7e",
+      "relayerDeploy": "dep-daoqh1uk1f9s738c87k0",
+      "gatewayDeploy": "dep-daoqhn740ujc7389tn2g",
+      "synchronousCapability": true,
+      "marketMatches": true,
+      "gatewayMaintenance": false
+    },
+    "frontend": {
+      "commit": "4f48ee38a6a7b1da1ef702803481245f929c2a7e",
+      "url": "https://65af9770.aigg-fly.pages.dev",
+      "production": "https://fly.ai.gg",
+      "hostFamilies": 4,
+      "mepCount": 204,
+      "adoptPagination": "Page 1 of 17 \u00b7 200 flies \u00b7 12 per page",
+      "pageErrors": []
+    },
+    "liveAdopt": {
+      "transaction": "0x8e3f209070f50e2e214b9a14e6d4a05a27617168dc3e3c3ba59ac78746ca3699",
+      "treasuryReceiptWei": "10000000000000000",
+      "testNFT": "returned and relisted"
+    }
   },
   "limitations": [
     "Two independently administered executors are required for the honest-executor assumption; two smoke wallets do not prove independence.",

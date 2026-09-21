@@ -1,7 +1,7 @@
 // Dedicated battery coordinator. Own BNB pays operational gas; job contracts hold all execution fees.
 import fs from 'node:fs';import path from 'node:path';import http from 'node:http';import {fileURLToPath} from 'node:url';
 import {parseAbiItem,keccak256,toHex} from 'viem';
-import {readFinalized,assignmentReady,verifyDeployment,normalizeSession,sessionOutcome,sessionExpired,acceptedSession,SynchronousMarketAbi} from '../relayer/synchronous.mjs';
+import {synchronousInbox,readFinalized,assignmentReady,verifyDeployment,normalizeSession,sessionOutcome,sessionExpired,acceptedSession,SynchronousMarketAbi} from '../relayer/synchronous.mjs';
 import {clients} from '../relayer/chain.mjs';import {BatteryQueue,atomic,stringify} from './queue.mjs';
 import {state0Root} from '../gateway/state0.mjs';import {batteryBatch,resolvedRuns,rowOf} from '../flybnb/battery/battery_batch.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -39,7 +39,7 @@ process.on('exit',()=>{if(fs.existsSync(lockPath)&&fs.readFileSync(lockPath,'utf
 const relay=new RelayClient([need('BATTERY_RELAY')],keypair(process.env.BATTERY_KEY));await relay.connect();
 let verifiedModel=null;
 const entries=new Map(); const ZERO='0x'+'0'.repeat(64);const artifactDir=path.join(dirs,'artifacts');
-async function sessions(wallet){const head=await ch.pub.getBlockNumber({cacheTime:0});const event=parseAbiItem('event SessionKeySet(address indexed instance, address indexed session, uint64 expiry)');
+async function sessions(wallet,taskId){if(SYNCHRONOUS)return synchronousInbox(ch,wallet,taskId);const head=await ch.pub.getBlockNumber({cacheTime:0});const event=parseAbiItem('event SessionKeySet(address indexed instance, address indexed session, uint64 expiry)');
  let logs=[];const start=BigInt(process.env.BATTERY_REGISTRY_FROM_BLOCK||0);
  for(let from=start;from<=head;from+=2000n)logs.push(...await ch.pub.getLogs({address:dep.addresses.instances,event,args:{instance:wallet},fromBlock:from,toBlock:from+1999n>head?head:from+1999n}));
  for(const l of logs.reverse())if(l.args.expiry>head&&(await ch.instances.read.resolve([l.args.session])).toLowerCase()===wallet.toLowerCase())return l.args.session;
@@ -85,12 +85,12 @@ const adapter={
   const executors=await ch.market.read.executors([s.taskId]);
   // Start both inbox requests without blocking expiry polling on a silent peer.
   for(const who of executors){const key=s.taskId+who;if(announcements.has(key))continue;
-   const request=(async()=>{try{await relay.request(await sessions(who),'batch-announce',s.mepId,{...batch,taskId:s.taskId,initStateRoot:runsRoot},{timeoutMs:Number(process.env.BATTERY_RESULT_TIMEOUT_MS||600000),responseType:'result'});}catch(e){atomic(path.join(dirs,job+'.execution.json'),{taskId:s.taskId,executor:who,error:e.message});}finally{announcements.delete(key);}})();
+   const request=(async()=>{try{await relay.request(await sessions(who,s.taskId),'batch-announce',s.mepId,{...batch,taskId:s.taskId,initStateRoot:runsRoot},{timeoutMs:Number(process.env.BATTERY_RESULT_TIMEOUT_MS||600000),responseType:'result'});}catch(e){atomic(path.join(dirs,job+'.execution.json'),{taskId:s.taskId,executor:who,error:e.message});}finally{announcements.delete(key);}})();
    announcements.set(key,request);
   }return;
  }
  const ex=await ch.market.read.executors([s.taskId]);for(const who of ex){if(await ch.market.read.submitted([s.taskId,who]))continue;
- try{const got=await relay.request(await sessions(who),'batch-announce',s.mepId,{...batch,taskId:s.taskId,initStateRoot:runsRoot},{timeoutMs:Number(process.env.BATTERY_RESULT_TIMEOUT_MS||600000),responseType:'result'});
+ try{const got=await relay.request(await sessions(who,s.taskId),'batch-announce',s.mepId,{...batch,taskId:s.taskId,initStateRoot:runsRoot},{timeoutMs:Number(process.env.BATTERY_RESULT_TIMEOUT_MS||600000),responseType:'result'});
  const p=got.payload;
  if(!await ch.market.read.submitted([s.taskId,who]))await tx(dep.addresses.market,marketAbi,'submitResult',[s.taskId,{execDigest:p.execDigest,execRoot:p.execRoot},p.signature]);
  }catch(e){atomic(path.join(dirs,job+'.execution.json'),{taskId:s.taskId,executor:who,error:e.message});}}

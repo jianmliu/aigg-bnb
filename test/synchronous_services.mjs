@@ -101,3 +101,13 @@ test('sponsor admission includes predicted gas and bounded synchronous readiness
  assert.equal(syncSponsorReady(160000000,350000000,350000000n,1n),true);
  assert.equal(syncSponsorReady(160000000,350000000,349999999n,1n),false);
 });
+test('synchronous inbox routing uses finalized readiness signer and never registry logs',async()=>{
+ const {synchronousInbox}=await load();const host='0x'+'11'.repeat(20),signer='0x'+'22'.repeat(20),id='0x'+'33'.repeat(32),seen=[];
+ const ch={pub:{getBlock:async()=>({number:100n,hash:'0xaa'}),getLogs:()=>{throw Error('logs forbidden');}},market:{read:{readinessSigner:async(a,o)=>{seen.push(o.blockNumber);return signer;},pendingTask:async()=>id,sessionState:async()=>[1,120n,130n,200n]}},instances:{read:{resolve:async()=>host,delegations:async()=>[host,200n]}}};
+ assert.equal(await synchronousInbox(ch,host,id),signer);assert.deepEqual(seen,[100n]);
+ ch.instances.read.delegations=async()=>[host,199n];await assert.rejects(synchronousInbox(ch,host,id),/delegation/);
+ ch.instances.read.resolve=async()=>'0x'+'44'.repeat(20);await assert.rejects(synchronousInbox(ch,host,id),/signer/);
+ ch.market.read.readinessSigner=async()=>host;ch.instances.read.resolve=async()=>host;ch.instances.read.delegations=async()=>{throw Error('owner needs no delegation');};assert.equal(await synchronousInbox(ch,host,id),host);
+ ch.market.read.sessionState=async()=>[1,99n,130n,200n];await assert.rejects(synchronousInbox(ch,host,id),/assignment/);ch.market.read.sessionState=async()=>[1,120n,130n,200n];
+ ch.market.read.pendingTask=async()=>'0x'+'00'.repeat(32);await assert.rejects(synchronousInbox(ch,host,id),/assignment/);
+});
