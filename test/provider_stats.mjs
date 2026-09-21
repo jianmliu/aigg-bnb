@@ -24,3 +24,38 @@ test('token payouts never inflate native BNB earnings',async()=>{
  const ch={pub:{getBlockNumber:async()=>5n,getLogs:async p=>p.event.name==='TaskAsset'?[{args:{token:B}}]:[{args:{taskId:'token-paid',executors:[A]}}],readContract:async()=>[{mepId:'brain',fee:100n},A,1n,1n]},meps:{read:{termsOf:async()=>[B,1000]}}};
  const result=await hostStats(ch,A)(A);assert.equal(result.earnedWei,'0');assert.equal(result.tokenEarnings[B],'90');assert.equal(result.requestsServed,1);
 });
+
+test('a 200-model catalog bounds concurrent RPC reads',async()=>{
+ const {providerModels}=await import('../relayer/providers.mjs');
+ let active=0,peak=0;
+ const ch={claims:{read:{currentEpoch:async()=>7n,beacon:async()=>1n}},instances:{read:{eligibleVotes:async()=>{
+  active++;peak=Math.max(peak,active);await new Promise(r=>setTimeout(r,1));active--;return [A,A,B];
+ }}}};
+ const models=new Map(Array.from({length:200},(_,i)=>[String(i),{info:{mepId:String(i)}}]));
+ const rows=await providerModels(ch,models);
+ assert(peak<=4,`RPC fan-out reached ${peak}`);assert.equal(rows.length,200);
+ assert.equal(rows[199].mepId,'199');assert.equal(rows[0].providers,2);assert.equal(rows[0].votes,3);
+});
+
+test('catalog requests share a scan and cache, refresh membership, and retry failures',async()=>{
+ const {providerModelReader}=await import('../relayer/providers.mjs');
+ let calls=0,fail=false;
+ const ch={claims:{read:{currentEpoch:async()=>7n,beacon:async()=>1n}},instances:{read:{eligibleVotes:async()=>{
+  calls++;await new Promise(r=>setTimeout(r,2));if(fail)throw Error('RPC limited');return [A];
+ }}}};
+ const models=new Map([['a',{info:{mepId:'a'}}]]),get=providerModelReader(ch,models,{cacheMs:10000});
+ const rows=await Promise.all([get(),get(),get()]);assert.equal(calls,1);assert.equal(rows[0].length,1);
+ await get();assert.equal(calls,1);
+ models.set('b',{info:{mepId:'b'}});assert.equal((await get()).length,2);assert.equal(calls,3);
+ models.set('c',{info:{mepId:'c'}});fail=true;await assert.rejects(get(),/RPC limited/);
+ fail=false;assert.equal((await get()).length,3,'failure must not cache missing providers or poison the next scan');
+});
+
+test('BSC catalogs batch provider votes through Multicall instead of 200 RPC requests',async()=>{
+ const {providerModels}=await import('../relayer/providers.mjs');let batches=0;
+ const ch={chain:{id:97},pub:{multicall:async p=>{
+  batches++;assert.equal(p.allowFailure,false);assert(p.contracts.length<=32);return p.contracts.map(c=>{assert.equal(c.functionName,'eligibleVotes');assert.equal(c.args[1],7n);return [A,A,B];});
+ }},claims:{read:{currentEpoch:async()=>7n,beacon:async()=>1n}},instances:{address:A,read:{eligibleVotes:async()=>{throw Error('Individual RPC must not be used');}}}};
+ const models=new Map(Array.from({length:200},(_,i)=>[String(i),{info:{mepId:String(i)}}]));
+ const rows=await providerModels(ch,models);assert.equal(rows.length,200);assert.equal(rows[199].providers,2);assert.equal(batches,7);
+});

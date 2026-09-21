@@ -111,16 +111,15 @@ services:
       - key: PORW_BEACON_LAZY
         value: "1"
 
-      # ---- the genesis collection, second deployment (deploy_collection.sh, 2026-09-19, from main at 8bfb263): the FlyBnB
-      # pilot's hundred founders, root 0x02d6d4d2… = flybnb/genesis/genesis-v1.json, with what the mainnet revision added --
-      # the base's tenth of every royalty, ERC-2981 (500 bps), ERC-4906, owner() with one power, tokenURI drawn on-chain
-      # (FlyRenderer 0x7126a022…f544) -- and a TreasuryRouter (0x1Bef7990…3708) as its immutable treasury. Testnet-scale
-      # prices: adopt 0.01 (0.005 of it the adopter's own bond), breed 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps.
-      # The first deployment (0xE0a5a93C…7AA4) predates the revision; nobody adopted from it, and it is off the whitelist. The relayer names this one to
-      # the page (the Flies view, the Paper view's acknowledgments) and hatches its eggs for the bounty; PORW_KEEPER=0 keeps
-      # the first and drops the second.
+      # ---- genesis v2 treasury inventory, 2026-09-20: 100 female + 100 male Founders.
+      # Protected zero-cost pre-mint into FounderInventoryVault; public Adopt is resale at 0.01 tBNB.
+      # Full BNB proceeds go to the existing TreasuryRouter (0x1Bef7990…3708); no adopter Host bond.
+      # Breed fee 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps; base share 1000 bps; resale 500 bps.
+      # Legacy collection/NFTs remain intact. Battery budget/worker require separate deployment.
       - key: PORW_COLLECTION
-        value: "0x6c4e3EBCf8d1ae3fce16F290Cd1D839419925164"
+        value: "0xb42dfb7b281535ddc836b3de8df62e5f59b5b7c5"
+      - key: PORW_INVENTORY_SALE
+        value: "0x9668397498C564DB5e604b1156EEE97Ed6A62f62"
 
       # ---- secrets: asked for once, never synced, never in git ----
       - key: PORW_RELAYER_KEY

@@ -1,57 +1,69 @@
-# Make frontend version skew impossible (root fix)
+# A terminal path for adopt / breed / hatch / withdraw
 
-## The defect, measured 2026-09-20 on the live domain
+## The gap
 
-| path | `*.pages.dev` | **fly.ai.gg** |
+`skills/flybnb/SKILL.md` has to tell an agent that the four things a fly's OWNER most wants to do cannot be
+done from a shell at all:
+
+- **adopt** — buy a founder from the treasury inventory
+- **breed** — pair two flies, which funds a battery for the child
+- **hatch** — turn an egg into an individual (and `rearm` when its seed block ages out)
+- **withdraw** — collect the royalties the owner has earned
+
+All four exist only in `frontend/src/core/flies.js`. So a user who wants to operate through an agent hits a
+wall on exactly the operations that are theirs, and an agent that tries anyway is writing raw calldata
+against a contract nobody reviewed with it.
+
+## What they actually are, on today's main
+
+Read out of `frontend/src/core/flies.js`, which is the reference implementation:
+
+| operation | call | value |
 |---|---|---|
-| `/node_worker.js` | 300 s | **14400 s** |
-| `/porw/*` | 300 s | **14400 s** |
-| `/assets/*` | 31536000, immutable | 31536000 |
-| `/` | 0 | 0 |
+| adopt | `TreasuryInventorySale.buy(id, price, revision, deadline)` | `price` |
+| breed | approve the factory for both parents, then `batteryBudget.breed(dam, sire)` | `BREED_FEE + budget` |
+| hatch | `FlyCollection.hatch(id)` | 0 |
+| rearm | `FlyCollection.rearm(id)` | `BREED_FEE` |
+| settle | `FlyCollection.settle(id)` | 0 |
+| withdraw | `FlyCollection.withdraw()` | 0 |
 
-The zone's Browser Cache TTL raises any origin `max-age` shorter than 4 h, so exactly the two fixed
-paths whose freshness matters lose the `_headers` rule that `public/_headers` was written to give
-them. `/assets/*` survives because it is longer, and because it is content-hashed it would not care.
-
-Observed consequence, in a real tab on fly.ai.gg right after a deploy: the new bundle called
-`deltaInfo` on a four-hour-old cached worker that has no such op, and the page hung for 58 s with an
-empty `errors` list and a frozen log. The `_headers` comment predicted this in the `/porw/` form -- a
-model_id that no longer matches the registry, "a silently rejected claim, not an error anyone would
-see."
-
-Five minutes of skew is not the fix. Content-addressed URLs are: a build cannot reference a stale
-file if the file's URL contains its content.
+Adoption is a **transfer of an existing NFT**, never a mint: the listing is `listings(id)` →
+`(price, expiresAt, revision)` and `available(id)`, and the seller is the treasury.
 
 ## Plan
 
-- [x] establish that `/porw/*` modules import each other RELATIVELY (they do: `./verify.js` etc.),
-      so renaming the directory needs no edit inside them
-- [x] `runtime.mjs`: `runtimeId(repoRoot)` = sha256 over every servable runtime file's path+bytes
-- [x] `runtime.mjs`: `rewriteBareImports(src, vendorPrefix)`, `copyRuntime(root, out, id)`
-- [x] `vite.config.mjs`: compute the id at `buildStart`; rewrite `/porw/`, `/vendor/` and
-      `/node_worker.js` in every emitted chunk; emit `porw.<id>/`, `vendor.<id>/`,
-      `node_worker.<wid>.js`; drop the unhashed worker Vite copies from `public/`
-- [x] dev server unchanged (`/porw/`, `/node_worker.js`): there is no CDN in front of it
-- [x] `_headers`: the hashed paths are immutable, which the zone TTL cannot shorten
-- [x] `test/deployed_build.mjs`: no unhashed reference survives, and every import the emitted worker
-      makes resolves to a file that exists in `dist`
-- [x] a test for the property itself: change one runtime byte -> the id changes -> the URL changes
-- [ ] verify by deploying and re-running the fly #1 load on the real domain
+- [x] `js/fly.mjs`, one CLI with subcommands, in the shape of `js/greenfield_admin.mjs`
+- [x] bootstrap from `--relayer <url>` (what an outside user has) OR the sourced `.env.<network>` (what an
+      operator has). A user with neither gets told which to supply.
+- [x] read-only subcommands first and free: `terms`, `list`, `inventory`
+- [x] **every writing subcommand is a dry run unless `--broadcast`** — the pattern
+      `js/launch_founder_inventory.mjs` already establishes. It prints the exact call, the exact value, and
+      who receives it, and sends nothing.
+- [x] the key comes from `FLY_KEY` (falling back to `PORW_DEPLOYER_KEY`) and is never printed, logged or
+      written anywhere
+- [x] refuse on the wrong chain, on a listing that has moved (price/revision), on a pair that cannot breed,
+      and on the token battery route — which needs a liquidity quote and stays on the page for now
+- [x] `test/fly_cli.mjs`: deploy a collection on anvil and drive every subcommand end to end, including that
+      a dry run sends NOTHING and that `--broadcast` sends exactly one transaction
+- [x] update `skills/flybnb/SKILL.md`: the four operations move out of "no terminal path" into commands, and
+      `test/skill_flybnb.mjs` must be the thing that forces that update
 
 ## Review
 
-`/porw.<id>/`, `/vendor.<id>/` and `node_worker.<id>.js`, where `<id>` is sha256 over every servable
-runtime file's path AND bytes. The modules under /porw/ import each other relatively, so renaming the
-directory needed no edit inside any of them; only the eleven absolute specifiers in the page and the
-worker had to learn the id, which a `renderChunk` pass does. Dev still serves the unhashed paths --
-there is no CDN in front of it.
+`js/fly.mjs`, one CLI, dry-run by default. 23 checks in `test/fly_cli.mjs` drive it as a subprocess against a
+real collection on anvil, including the two that matter most: a dry run moves no nonce, no balance and no block,
+and the key never appears in anything the tool prints.
 
-One thing bit during the work and is worth keeping: rolldown hands every plugin hook its own context
-object, so the id could not live on `this` between `buildStart` and `closeBundle`. The guard in
-`copyRuntime` ("an unnamed copy is the stale-cache bug this exists to remove") caught it on the first
-build rather than silently emitting an unhashed directory, which is exactly what it was written for.
+Two bugs the work caught, both of the same kind -- a guess about someone else's code:
 
-Verified: 19 checks on the id itself, including that a changed `sketch.wasm` renames the runtime (the
-one file whose staleness would be silent) and that a non-servable file does not; 14 new checks on the
-build output, each shown to fail against a deliberate corruption; all six frontend e2e suites, which
-drive a real browser against the built page and so exercise the hashed worker and modules end to end.
+1. `FlyCollection.sol` has `FEMALE = 0, MALE = 1, UNHATCHED = 2`. The first draft assumed 0 meant "egg", so it
+   labelled all 100 female founders as eggs and would have refused every legitimate breeding pair. Nothing about
+   it errored; it was caught by running `inventory` against the live testnet and reading the output.
+2. `viem` nests the contract's revert reason; `metaMessages[0]` is the call trace, not the reason. Two wrong
+   guesses in a row here, fixed by printing the actual error object instead of guessing a third time.
+
+The skill test did NOT force the skill to be updated when this landed -- it decided "is there a CLI" from the
+filename, and `js/fly.mjs` is named for none of the four operations. That was the exact drift it existed to
+prevent, so the check now works from capability in both directions: anything the skill calls browser-only must
+have no command, and anything with a command must not be listed as browser-only. Both directions were shown to
+fail before being trusted.
