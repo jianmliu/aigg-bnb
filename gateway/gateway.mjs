@@ -41,6 +41,7 @@
 //   GATEWAY_PORT / PORT, GATEWAY_HOST, GATEWAY_KEEPALIVE_MS (20000), GATEWAY_RESULT_TIMEOUT_MS (600000), GATEWAY_POLL_MS (1000)
 import http from "node:http"; import fs from "node:fs"; import path from "node:path"; import crypto from "node:crypto"; import { EventEmitter } from "node:events"; import { fileURLToPath } from "node:url";
 import { parseAbi, parseAbiItem, decodeEventLog, keccak256, encodeAbiParameters } from "viem";
+import {readFinalized,assignmentReady,verifyDeployment,verificationMode,normalizeSession,sessionExpired,waitForSession,acceptedSession} from "../relayer/synchronous.mjs";
 import { loadEnv, deploymentFromEnv } from "../relayer/env.mjs"; import { clients } from "../relayer/chain.mjs";
 import { wakeMessage } from "../relayer/wake.mjs";
 import { readyCapacity, CapacityError, abortable } from "./capacity.mjs";
@@ -69,7 +70,9 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const relayerApi = async (p, signal = AbortSignal.timeout(10000)) => { const r = await fetch(cfg.relayer + p, { signal }); if (!r.ok) throw new Error(`relayer ${p}: HTTP ${r.status}`); return r.json(); };
 const published = await relayerApi("/deployment"); const dep = deploymentFromEnv() || published;
 if (dep.addresses.market.toLowerCase() !== published.addresses.market.toLowerCase() || Number(dep.chainId) !== Number(published.chainId)) throw new Error(`the relayer at ${cfg.relayer} serves another deployment (market ${published.addresses.market} on chain ${published.chainId}) than PORW_* names`);
-const ch = clients(dep, cfg.key); const ME = ch.account.address.toLowerCase();
+if(verificationMode(dep)!==verificationMode(published))throw Error("relayer verification capability mismatch");
+const ch = clients(dep, cfg.key);
+const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion()); const ME = ch.account.address.toLowerCase();
 // what the gateway reads that the relayer does not: the stored task (for finality), the timeout, and a dispute opening at settle
 const MarketExtra = parseAbi(["function TASK_TIMEOUT() view returns (uint64)", "event DisputeOpened(bytes32 indexed taskId, address a, address b)",
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",
@@ -77,7 +80,7 @@ const MarketExtra = parseAbi(["function TASK_TIMEOUT() view returns (uint64)", "
   "function tasks(bytes32) view returns (Task t, address client, uint64 epoch, uint64 postedAt, uint64 settledAt, bool exists, bool settled, bool disputed, bool repudiated)"]);
 const market = dep.addresses.market; const readMarket = (functionName, args = []) => ch.pub.readContract({ address: market, abi: MarketExtra, functionName, args });
 const blockNumber = () => ch.pub.getBlockNumber({ cacheTime: 0 }); // viem remembers the head for seconds; a timeout and a challenge window are counted in blocks
-const TASK_TIMEOUT = Number(await readMarket("TASK_TIMEOUT")); const CHALLENGE_WINDOW = Number(await ch.market.read.challengeWindow());
+const TASK_TIMEOUT = (SYNCHRONOUS?0:Number(await readMarket("TASK_TIMEOUT"))); const CHALLENGE_WINDOW = Number(await ch.market.read.challengeWindow());
 if (published.taskClients && !published.taskClients.includes(ME)) log(`WARNING: ${ME} is not in the relayer's PORW_TASK_CLIENTS (${published.taskClients.join(", ")}): executors' results will not be sponsored, and a tab's session key holds no gas`);
 const relay = new RelayClient([published.relay], keypair(cfg.key)); await relay.connect();
 
@@ -110,7 +113,8 @@ function priceOf(m, setName) {
 }
 const tokensFor = (steps, redundancy, price) => Math.max(1, Math.round(steps * redundancy * price.model_factor * price.set_factor));
 async function capacity(mepId) { const epoch = await ch.claims.read.currentEpoch(); const votes = (await ch.instances.read.eligibleVotes([mepId, epoch])).map((a) => a.toLowerCase());
-  return { epoch: Number(epoch), votes: votes.length, providers: new Set(votes).size, beacon: BigInt(await ch.claims.read.beacon([epoch])) !== 0n }; }
+  let providers=new Set(votes);if(SYNCHRONOUS){const ready=await Promise.all([...providers].map(async a=>await ch.market.read.ready([a])?a:null));providers=new Set(ready.filter(Boolean));}
+  return { epoch: Number(epoch), votes: votes.length, providers: providers.size, beacon: BigInt(await ch.claims.read.beacon([epoch])) !== 0n }; }
 
 // ---- a request -> a task ----
 class Refusal extends Error { constructor(status, type, message, extra = {}) { super(message); this.status = status; this.type = type; this.extra = extra; } }
@@ -157,6 +161,7 @@ async function prepare(body, options = {}) {
 }
 async function plan(body, { signal, onCold, onCapacity } = {}) {
   const m = await resolveModel(body.model, signal); if (!m) throw new Refusal(404, "model_not_found", `no served brain is called "${body.model}" (GET /v1/models)`);
+  if(SYNCHRONOUS&&!m.verificationSupport?.supported)throw new Refusal(503,"verification_unsupported","This exact model is not certified for synchronous verification; model residency remains available.");
   const lif = m.exec === "int-lif"; const x = experimentOf(body.input); const stimulate = idsOf(x.stimulate, "stimulate"), silence = idsOf(x.silence, "silence");
   if (!lif && (stimulate || silence)) throw new Refusal(400, "invalid_request_error", `${m.exec} takes a seed only: stimulate / silence are int-lif's`);
   if ((body.n ?? 1) !== 1) throw new Refusal(400, "invalid_request_error", "n > 1 is a batch, which is not in this milestone");
@@ -181,10 +186,11 @@ async function plan(body, { signal, onCold, onCapacity } = {}) {
   // Nothing is spent before this. A brain with too few eligible hosts is COLD and the caller is told so at once;
   // an epoch with no beacon is a network that is asleep, and this WAKES it and waits, because the caller asking is
   // the reason to wake. It gives up at GATEWAY_WAKE_TIMEOUT_MS with the same 503 it would have refused with.
+  if(SYNCHRONOUS&&redundancy!==2)throw new Refusal(400,"invalid_request_error","synchronous verification requires exactly two executors");
   await readyCapacity({ read: () => capacity(m.mepId), wake, redundancy, timeoutMs: cfg.wakeTimeoutMs, pollMs: cfg.pollMs, signal, onCold, onCapacity });
   signal?.throwIfAborted();
   const block = await blockNumber();
-  const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: block + BigInt(TASK_TIMEOUT), redundancy };
+  const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: SYNCHRONOUS?0n:block + BigInt(TASK_TIMEOUT), redundancy };
   return { m, task, stimulate, silence, stimulated: init?.stimulated ?? null, readout, price };
 }
 
@@ -239,8 +245,8 @@ async function sessionOf(wallet) {
 const executorsOf = async (id) => { try { return (await ch.market.read.executors([id])).map((x) => x.toLowerCase()); } catch { return []; } };
 const wire = (t) => ({ ...t, fee: String(t.fee), deadline: String(t.deadline) }); const unwire = (t) => ({ ...t, fee: BigInt(t.fee), deadline: BigInt(t.deadline) });
 
-function create(p, body) {
-  const nonce = "0x" + crypto.randomBytes(32).toString("hex"); const id = taskIdOf(p.task, nonce);
+async function create(p, body) {
+  const nonce = "0x" + crypto.randomBytes(32).toString("hex"); const id = SYNCHRONOUS?await ch.market.read.taskId([p.task,"0x"+"00".repeat(20),nonce,0,ch.account.address]):taskIdOf(p.task, nonce);
   const c = { id, created_at: Math.floor(Date.now() / 1000), status: "queued", model: body.model, mepId: p.m.mepId, exec: p.m.exec, task: wire(p.task), nonce,
     stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, price: p.price || null, executors: [], results: {}, events: [], error: null, receipt: null };
   calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order
@@ -252,6 +258,7 @@ async function drive(c, signal) {
     if (!ex.length) { // not on the chain yet: post it -- or, after a restart, wait for the transaction that was already sent
       if (!c.post_tx) { c.post_tx = await send(async () => {
         signal?.throwIfAborted();
+        if(SYNCHRONOUS&&Number(await ch.market.read.profileMaxInDegree([task.mepId]))===0)throw new Refusal(503,"verification_unsupported","This exact model is not certified for synchronous verification.");
         const k = await capacity(task.mepId);
         signal?.throwIfAborted();
         if (!k.beacon || k.providers < task.redundancy) throw new CapacityError(k.beacon ? "model_cold" : "epoch_cold", k);
@@ -267,18 +274,39 @@ async function drive(c, signal) {
     // The replies are progress, not the condition: what settles a task is what is ON THE CHAIN, so nothing below waits for them.
     const offered = new Map(); // executor -> the bytes it says are the spike counts, kept only if they hash to the digest IT signed
     const replies = ex.filter((x) => !c.results[x]?.execRoot || c.exec === "int-lif").map(async (a) => { let r;
-      try { const got = await relay.request(await sessionOf(a), "task-announce", c.mepId, announce, { timeoutMs: cfg.resultTimeoutMs, responseType: "result" }); r = { execDigest: got.payload.execDigest, execRoot: got.payload.execRoot };
+      try { if(SYNCHRONOUS){for(;;){
+        const [state,head,finalized]=await Promise.all([ch.market.read.sessionState([c.id]),blockNumber(),ch.pub.getBlock({blockTag:"finalized"})]);
+        const decision=assignmentReady(normalizeSession(state),head,finalized.number,stored[3]);
+        if(decision==='closed')return;if(decision==='ready')break;await sleep(cfg.pollMs);
+      }} const got = await relay.request(await sessionOf(a), "task-announce", c.mepId, announce, { timeoutMs: cfg.resultTimeoutMs, responseType: "result" }); if(SYNCHRONOUS&&Number((await ch.market.read.sessionState([c.id]))[0])<2)throw Error("result arrived before both commitments"); r = { execDigest: got.payload.execDigest, execRoot: got.payload.execRoot };
         if (typeof got.payload.counts === "string" && got.payload.countsEncoding === "u32le-base64") { const bytes = new Uint8Array(Buffer.from(got.payload.counts, "base64"));
           r.counts = bytes.length % 4 === 0 && V.hex(L.countsDigest(new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4))) === r.execDigest.toLowerCase() ? "match the digest it signed" : "DO NOT match the digest it signed";
           if (r.counts.startsWith("match")) offered.set(a, bytes); } }
       catch (err) { r = { error: String(err?.message || err).slice(0, 200) }; }
       if (!TERMINAL.has(c.status)) { c.results[a] = r; emit(c, "response.in_progress", { executor: a, ...r }); } });
-    // settle when every executor's result is on-chain, or when the market's timeout lets anybody settle without them
-    for (;;) { const s = await Promise.all(ex.map((a) => ch.market.read.submitted([c.id, a]))); if (s.every(Boolean)) break;
-      if (Number(await blockNumber()) > c.posted_at + TASK_TIMEOUT) break; await sleep(cfg.pollMs); }
-    const hash = await send(() => ch.market.write.settle([c.id])); c.settle_tx = hash; save(); const rc = await ch.pub.waitForTransactionReceipt({ hash }); if (rc.status !== "success") throw new Error("settle reverted");
-    const evs = rc.logs.filter((l) => l.address.toLowerCase() === market.toLowerCase()).map((l) => { try { return decodeEventLog({ abi: MarketExtra, data: l.data, topics: l.topics }); } catch { return null; } }).filter(Boolean);
-    const settled = evs.find((x) => x.eventName === "TaskSettled"), dispute = evs.find((x) => x.eventName === "DisputeOpened");
+    let hash=null,rc={gasUsed:0n,effectiveGasPrice:0n,logs:[]},settled=null,dispute=null;
+    if(SYNCHRONOUS){
+      const terminal=await waitForSession({
+        read:()=>readFinalized(ch.pub,async options=>normalizeSession(await ch.market.read.sessionState([c.id],options))),block:blockNumber,sleep:()=>sleep(cfg.pollMs),
+        onState:state=>{c.verification={phase:state.phase,commitDeadline:state.commitDeadline,revealDeadline:state.revealDeadline,totalDeadline:state.totalDeadline};save();},
+        finalize:async()=>{
+          // Another executor may close the session between observation and expiry.
+          const latest=normalizeSession(await ch.market.read.sessionState([c.id]));
+          if(!sessionExpired(latest,await blockNumber()))return null;
+          hash=await send(()=>ch.market.write.expire([c.id]));c.settle_tx=hash;save();
+          const receipt=await ch.pub.waitForTransactionReceipt({hash});if(receipt.status!=="success")throw Error("session expiry reverted");return receipt;
+        },
+      });
+      rc=terminal.receipt||rc;
+      if(terminal.outcome.accepted){const accepted=await readFinalized(ch.pub,options=>acceptedSession(ch.market,c.id,options));settled={args:accepted};}
+    }else{
+      // Legacy deployments retain their original result/settle behavior.
+      for (;;) { const s = await Promise.all(ex.map((a) => ch.market.read.submitted([c.id, a]))); if (s.every(Boolean)) break;
+        if (Number(await blockNumber()) > c.posted_at + TASK_TIMEOUT) break; await sleep(cfg.pollMs); }
+      hash = await send(() => ch.market.write.settle([c.id])); c.settle_tx = hash; save(); rc = await ch.pub.waitForTransactionReceipt({ hash }); if (rc.status !== "success") throw new Error("settle reverted");
+      const evs = rc.logs.filter((l) => l.address.toLowerCase() === market.toLowerCase()).map((l) => { try { return decodeEventLog({ abi: MarketExtra, data: l.data, topics: l.topics }); } catch { return null; } }).filter(Boolean);
+      settled = evs.find((x) => x.eventName === "TaskSettled");dispute = evs.find((x) => x.eventName === "DisputeOpened");
+    }
     for (const a of ex) if (!c.results[a]?.execRoot && await ch.market.read.submitted([c.id, a])) { const [execDigest, execRoot] = await ch.market.read.resultOf([c.id, a]); c.results[a] = { execDigest, execRoot }; } // a reply that did not reach us; the chain has it
     // The gas of the call's two transactions, as spent -- from their receipts, not an estimate. It is billed as the call's
     // INPUT tokens: gas wei / wei per step, rounded up, so a token of either kind is worth the same. A call that fails
@@ -288,18 +316,19 @@ async function drive(c, signal) {
     const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, gas, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
       stimulate_ids: c.stimulate, silence_ids: c.silence, stimulated: c.stimulated, price: c.price, results: c.results };
     if (dispute) { c.receipt = { ...base, executors: ex, disputed: [dispute.args.a, dispute.args.b].map((a) => a.toLowerCase()) }; return fail(c, 502, "disputed", "the executors disagreed and the task is in dispute: nothing is billed, and the fee is held until the dispute resolves"); }
-    if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, "no_result", "no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
+    if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, SYNCHRONOUS?"inconclusive":"no_result", SYNCHRONOUS?"verification ended inconclusively: fee refund credited to the client; nothing is billed":"no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
     const at = Number((await readMarket("tasks", [c.id]))[4]);
     // The output. A provider replies after it has submitted, so the task may have settled first: wait a little for a vector
     // that hashes to the SETTLED digest. One is enough, whoever sent it -- the digest is what the providers agreed on.
     const digest = settled.args.execDigest.toLowerCase(); const verified = () => [...offered].find(([a]) => c.results[a]?.execDigest?.toLowerCase() === digest);
     if (c.exec === "int-lif" && BigInt(digest) !== 0n) { let allIn = false; Promise.allSettled(replies).then(() => { allIn = true; }); const t0 = Date.now(); while (!verified() && !allIn && Date.now() - t0 < cfg.countsWaitMs) await sleep(100); }
-    const got = c.exec === "int-lif" ? verified() : null; if (got) { fs.mkdirSync(countsDir, { recursive: true, mode: 0o700 }); fs.writeFileSync(countsFile(c.id), got[1]); }
+    const got = c.exec === "int-lif" ? verified() : null;
+    if(SYNCHRONOUS&&c.exec==="int-lif"&&!got)return fail(c,502,"output_unavailable","completed verification did not return output bytes matching the accepted digest; nothing is billed"); if (got) { fs.mkdirSync(countsDir, { recursive: true, mode: 0o700 }); fs.writeFileSync(countsFile(c.id), got[1]); }
     c.counts = c.exec !== "int-lif" ? { status: "none: " + c.exec + " has no spike counts" } : got ? { status: "verified", from: got[0], neurons: got[1].length / 4 }
       : { status: BigInt(digest) === 0n ? "unavailable: the providers agreed on the root and split on the digest, so there is no digest to check counts against" : "unavailable: no provider returned counts that hash to the settled digest" };
-    c.receipt = { ...base, executors: settled.args.executors.map((a) => a.toLowerCase()), exec_digest: settled.args.execDigest, exec_root: c.results[settled.args.executors[0].toLowerCase()]?.execRoot ?? (await ch.market.read.resultOf([c.id, settled.args.executors[0]]))[1],
+    c.receipt = { ...base, executors: settled.args.executors.map((a) => a.toLowerCase()), exec_digest: settled.args.execDigest, exec_root: SYNCHRONOUS ? settled.args.execRoot : (c.results[settled.args.executors[0].toLowerCase()]?.execRoot ?? (await ch.market.read.resultOf([c.id, settled.args.executors[0]]))[1]),
       settled_at: at, finality: CHALLENGE_WINDOW ? "settled" : "final", final_after_block: at + CHALLENGE_WINDOW,
-      counts: c.counts, ...(got ? { counts_url: `/v1/tasks/${c.id}/counts` } : {}) };
+      ...(SYNCHRONOUS?{verification:"synchronous-v1",assumption:"independently administered executors; local adjudication assumes an honest executor"}:{}),counts: c.counts, ...(got ? { counts_url: `/v1/tasks/${c.id}/counts` } : {}) };
     c.status = "completed"; emit(c, "response.completed"); log(`task ${c.id.slice(0, 12)}… settled: ${c.receipt.executors.length} paid, digest ${c.receipt.exec_digest.slice(0, 12)}…`);
   } catch (err) { fail(c, err.status || 500, err.type || "gateway_error", String(err?.shortMessage || err?.message || err).slice(0, 300)); }
   finally { setTimeout(() => bus.delete(c.id), 1000); }
@@ -368,7 +397,7 @@ async function respond(req, res, body) {
     // events, but the keep-alive comments after the stream opens are what keep a proxy from hanging up on the wait.
     const p = await prepare(body, { signal: abort.signal, onCold: body.stream && !body.background ? open : undefined });
     abort.signal.throwIfAborted();
-    const c = create(p, body); start(c);
+    const c = await create(p, body); start(c);
     if (body.background) return json(res, 200, view(c));
     if (!body.stream) { await done(c); if (res.destroyed) return; return c.status === "completed" ? json(res, 200, view(c)) : json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id }); }
     open();
@@ -420,7 +449,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && p === "/v1/models") {
       const data = await Promise.all((await models()).map(async (m) => { const k = await capacity(m.mepId); const [id, ...aka] = namesOf(m);
         return { id, object: "model", owned_by: m.collection || "mesh", aliases: aka, mep_id: m.mepId, name: m.name, exec: m.exec, neurons: m.neurons, synapses: m.synapses, royalty_bps: m.royaltyBps, collection: m.collection, token: m.token,
-          providers: k.providers, votes: k.votes, available: k.providers >= cfg.minRedundancy && k.beacon, min_redundancy: cfg.minRedundancy,
+          providers: k.providers, votes: k.votes, ...(SYNCHRONOUS?{verification_support:m.verificationSupport}:{}), available: (!SYNCHRONOUS||m.verificationSupport?.supported===true) && k.providers >= cfg.minRedundancy && k.beacon, min_redundancy: cfg.minRedundancy,
           // ONE unit, one price: a token is `wei_per_token` of work, and a step of this brain costs `tokens_per_step`
           // of them -- times a named stimulus set's factor, because a run that ignites the brain is nine times the work
           // of one that barely wakes it (gateway/pricing.json, measured). The differences are in the COUNT, so that a
@@ -438,7 +467,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && p === "/v1/chat/completions") { // a caller that reaches the adapter directly; ai.gg's gateway sends /v1/responses
       const b = await readBody(req); if (b.stream) throw new Refusal(400, "invalid_request_error", "stream /v1/responses instead: this alias is not streamed");
       const abort = new AbortController(); res.on("close", () => abort.abort(new Refusal(499, "request_cancelled", "caller disconnected before posting")));
-      const c = create(await prepare({ ...b, input: b.messages, background: false }, { signal: abort.signal }), b); start(c, abort.signal); await done(c); if (c.status !== "completed") return json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id });
+      const c = await create(await prepare({ ...b, input: b.messages, background: false }, { signal: abort.signal }), b); start(c, abort.signal); await done(c); if (c.status !== "completed") return json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id });
       const v = view(c); return json(res, 200, { id: c.id, object: "chat.completion", created: c.created_at, model: c.model, system_fingerprint: v.system_fingerprint, choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: v.output[0].content[0].text } }],
         usage: { prompt_tokens: 0, completion_tokens: v.usage.output_tokens, total_tokens: v.usage.output_tokens }, receipt: c.receipt });
     }

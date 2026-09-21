@@ -49,3 +49,7 @@ The relayer, gateway, battery worker and frontend must understand the new state 
 - Account reconciliation, preserved old obligations, fully tested migration and verified live smoke task before claiming rollout complete.
 
 Specialized validity proofs remain a separate benchmark track. This implementation does not deliver cheap cryptographic verification of every full brain simulation.
+
+## Implementation refinements from real-model validation
+
+The published min2 payloads exceed the legacy 8,192-input row limit (female 8,861; male 10,167). The synchronous contracts therefore require owner-attested support for each exact MEP and use bounded 1,024-entry row uploads up to 16,384 total entries, reserving all upload rounds at task admission. The certificate does not inherit through the base link, and is not a cryptographic proof of maximum row degree. See [the operational protocol](../../SYNCHRONOUS_VERIFICATION.md) for payment, sponsorship, gas and calibration details. Consumers accept finalized block snapshots rather than treating two confirmations as finality.

@@ -2,6 +2,10 @@
 
 Status: proposed design following the approved direction; not implemented or activated. No change to deployed contracts, fees, bond obligations or existing results is implied.
 
+## Subsequent lifecycle decision
+
+The approved [synchronous session specification](2026-09-21-synchronous-verification-design.md) refines the first implementation: two executors commit before revealing, and any interactive adjudication runs **before** task completion within a disclosed finite session. A host may disconnect once the chain confirms terminal completion/inconclusive closure and its readiness is revoked. Result submission alone does not release the host. The evidence-handoff service discussed below remains a future alternative, not an implemented mechanism or a prerequisite for this pilot. Neither replication nor a local fraud verdict is a standalone validity proof.
+
 ## Objective
 
 Pool intermittent hosts to produce useful, reproducible scientific experiments. Maximize accepted scientific output per unit of total resources, including computation, validation, storage and communication. NFT rarity is a downstream analysis, not the purpose of the compute network or a substitute for result validation.

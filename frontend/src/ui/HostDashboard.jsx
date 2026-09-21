@@ -1,4 +1,5 @@
 import HostCapacity from './HostCapacity.jsx';
+import SynchronousSessionPanel from './SynchronousSessionPanel.jsx';
 import { useEffect, useState } from 'react';
 import { Panel, Button } from './primitives.jsx';
 import * as C from '../core/controller.js';
@@ -12,6 +13,7 @@ const bnb = (wei) => {
 };
 export default function HostDashboard({ active }) {
   const s = C.state, instance = s.wallet, deployment = s.deployment;
+  const synchronous=deployment?.verification?.mode==='synchronous-v1';
   const base = deployment ? C.relayer() : null;
   const key = `${base}:${deployment?.chainId}:${deployment?.addresses?.market}:${instance}`;
   const [snapshot, setSnapshot] = useState(null);
@@ -52,15 +54,16 @@ export default function HostDashboard({ active }) {
     <Panel title="Your hosting" note="provider dashboard">
       {s.meps.some(m=>m.enrollmentMepId && m.enrollmentMepId!==m.mepId) && <p className="hint">Stake and residency claims cover a base pool. On family-enabled deployments, assigned descendants load automatically from verified delta recipes.</p>}
       <HostCapacity active={active} />
+      {synchronous && <SynchronousSessionPanel />}
       <div className="host-metrics">
         <div><span className="metric-label">{s.deployment?.familyHosting ? 'Model families online' : 'Models online in this tab'}</span><strong id="host-online">{online.length}</strong></div>
         <div><span className="metric-label">Requests served · settled</span><strong id="host-served">{stats ? stats.requestsServed : '—'}</strong></div>
-        <div><span className="metric-label">Earned · paid to your wallet</span><strong id="host-earned">{stats ? bnb(stats.earnedWei) : '—'}</strong></div>
+        <div><span className="metric-label">{synchronous?'Earned · credited for withdrawal':'Earned · paid to your wallet'}</span><strong id="host-earned">{stats ? bnb(stats.earnedWei) : '—'}</strong></div>
       </div>
       {stats?.tokenEarnings && <ul>{Object.entries(stats.tokenEarnings).map(([token,units])=><li key={token}>{units} base units earned · token {token}</li>)}</ul>}
       {s.deployment?.familyHosting && <div id="family-activity"><h3>On-demand tasks</h3>
         {!s.familyTasks.length ? <p className="hint">Waiting for assigned tasks. Base models stay resident; descendant payloads are built only when needed.</p> : <ul>{s.familyTasks.map(t=><li key={t.taskId}>{t.mepId.slice(0,12)}… · {t.phase}{t.error ? ` · ${t.error}` : ''}{['journaled','replayed'].includes(t.phase) && <Button onClick={C.wrap(async()=>{await C.replayFamilyTask(t.taskId);C.log(`Replay verified: ${t.taskId}`);})}>Verify replay</Button>}</li>)}</ul>}
-        <p className="hint">Verified task recipes and results are saved in this browser for replay. Do not clear site data while results remain challengeable. Automatic on-chain dispute responses are not enabled.</p>
+        <p className="hint">{synchronous?'Keep task recipes and results available until the verification session has reached a confirmed terminal state.':'Verified task recipes and results are saved in this browser for replay. Do not clear site data while results remain challengeable. Automatic on-chain dispute responses are not enabled.'}</p>
       </div>}
       {asset?.key===key && <p className="hint">BNB tasks remain enabled. AIGG token: {asset.token}. <Button disabled={saving} onClick={C.wrap(toggleAsset)}>{asset.accepted?'Stop accepting new AIGG tasks':'Accept AIGG tasks'}</Button> Changing this applies to new assignments only.</p>}
       {assetError && <p className="hint">Token preference unavailable: {assetError}</p>}
@@ -68,7 +71,7 @@ export default function HostDashboard({ active }) {
         : !s.chainOk ? <p className="hint">Switch to this mesh’s chain to see your hosting activity.</p>
         : error ? <p className="hint" role="status">Hosting activity is unavailable. Retrying…</p>
         : !stats ? <p className="hint" role="status">Loading hosting activity…</p>
-        : <p className="hint">Paid requests and earnings in blocks {stats.fromBlock.toLocaleString()}–{stats.toBlock.toLocaleString()} (up to the latest 5,000 blocks). Earnings exclude royalties and your gas costs; settled results may still be challenged.</p>}
+        : <p className="hint">{synchronous?'Completed requests and credited earnings':'Paid requests and earnings'} in blocks {stats.fromBlock.toLocaleString()}–{stats.toBlock.toLocaleString()} (up to the latest 5,000 blocks). Earnings exclude royalties and your gas costs; {synchronous?'check your withdrawal balance before withdrawing.':'settled results may still be challenged.'}</p>}
       {online.length ? <ul className="host-models">{online.map((id) => {
         const m = data?.models.find((m) => m.mepId === id) || C.mepById(id);
         return <li key={id}><span>{m?.name || id.slice(0, 14) + '…'}</span><span>Resident · {stats ? stats.eligibleModels.includes(id) ? (stats.beacon ? 'eligible for requests' : 'waiting for beacon') : 'waiting for a valid claim' : 'eligibility unavailable'}</span><span>{!error && data ? `${m?.providers ?? 0} eligible host(s) on mesh` : '—'}</span></li>;

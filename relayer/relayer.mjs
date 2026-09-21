@@ -21,6 +21,7 @@ import fs from "node:fs"; import http from "node:http"; import path from "node:p
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
 import { FlyCollectionAbi } from "./abi.mjs";
+import {sponsorAdmission,syncSponsorReady,verifyDeployment,verificationSupportReader,syncReader,prepareSyncMutation,prepareSyncFinalize} from "./synchronous.mjs";
 import { loadEnv, deploymentFromEnv, relayerFromEnv } from "./env.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser/", f));
 const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, withBase, withTerms, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
@@ -35,6 +36,9 @@ if (!dep) throw new Error("no deployment: source the .env.<network> from deploy.
 dep.rpc = process.env.PORW_RPC || cfg.rpc || dep.rpc; if (!dep.rpc) throw new Error("PORW_RPC (or config.rpc) required");
 if (!cfg.privateKey) throw new Error("PORW_RELAYER_KEY (or config.privateKey) required"); if (!(cfg.meps && cfg.meps.length) && !dep.addresses.whitelist) throw new Error("nothing to serve: PORW_MEP_IDS (or config.meps) and/or PORW_WHITELIST required");
 const ch = clients(dep, cfg.privateKey); const domains = eip712Domains(dep);
+const SYNCHRONOUS = await verifyDeployment(dep,()=>ch.market.read.protocolVersion());
+if(SYNCHRONOUS&&!ch.disputes)throw Error("synchronous deployment requires disputes address");
+const SYNC_WINDOWS=SYNCHRONOUS?{commitBlocks:String(await ch.market.read.COMMIT_BLOCKS()),revealBlocks:String(await ch.market.read.REVEAL_BLOCKS()),disputeBlocks:String(await ch.market.read.DISPUTE_BLOCKS()),totalBlocks:String(await ch.market.read.TASK_TIMEOUT())}:{};
 const FAMILY_HOSTING = await familyHostingEnabled(ch, dep.addresses.meps);
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
@@ -287,7 +291,7 @@ async function holders() {
 }
 // ---- (4) HTTP API ----
 const json = (res, code, body) => { res.writeHead(code, { "content-type": "application/json", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" }); res.end(JSON.stringify(body, (k, v) => (typeof v === "bigint" ? v.toString() : v))); };
-const body = (req) => new Promise((r) => { let s = ""; req.on("data", (c) => (s += c)); req.on("end", () => r(s ? JSON.parse(s) : {})); });
+const body = (req) => new Promise((resolve,reject) => { let s="",bytes=0;req.on("data",c=>{bytes+=c.length;if(bytes>600000){reject(Error("request body too large"));return;}s+=c;});req.on("end",()=>{try{resolve(s?JSON.parse(s):{});}catch(e){reject(e);}});req.on("error",reject); });
 // A participating instance is one with at least one sortition vote. `bonded() > 0` is not that: bond() takes any
 // msg.value > 0, so a single wei passes it -- which would make the per-instance budget below worth nothing, since
 // a Sybil could mint one budget per wei. weightOf() is bonded/UNIT (capped), i.e. what the mesh itself means by an
@@ -303,6 +307,8 @@ const hasWeight = async (addr) => (await ch.instances.read.weightOf([addr])) > 0
 const TASK_CLIENTS = cfg.taskClients && cfg.taskClients.length ? new Set(cfg.taskClients) : null; // null: anybody's tasks
 const SPONSOR_EPOCH_GAS = Number(cfg.sponsorEpochGas || 1_500_000);
 const SPONSOR_DAY_GAS = Number(cfg.sponsorDayGas || 50_000_000);
+if(!Number.isSafeInteger(SPONSOR_EPOCH_GAS)||SPONSOR_EPOCH_GAS<=0||!Number.isSafeInteger(SPONSOR_DAY_GAS)||SPONSOR_DAY_GAS<=0)throw Error('sponsorship limits must be finite positive safe integers');
+const SYNC_SPONSOR_CONFIGURED=syncSponsorReady(SPONSOR_EPOCH_GAS,SPONSOR_DAY_GAS,0n,0n);
 const DAY_MS = 24 * 3600 * 1000;
 const spend = new Map(); // instance -> { epoch, gas }
 const day = { since: Date.now(), gas: 0 };
@@ -315,7 +321,7 @@ function budget(instance) {
   spend.set(instance, s);
   if (day.gas >= SPONSOR_DAY_GAS) return { ok: false, why: `relayer daily sponsorship budget spent (${day.gas}/${SPONSOR_DAY_GAS} gas)` };
   if (s.gas >= SPONSOR_EPOCH_GAS) return { ok: false, why: `sponsorship budget for epoch ${e} spent by this instance (${s.gas}/${SPONSOR_EPOCH_GAS} gas)` };
-  return { ok: true, charge: (g) => { s.gas += g; day.gas += g; status.sponsor.dayGas = day.gas; } };
+  return { ok: true, epochRemaining:SPONSOR_EPOCH_GAS-s.gas,dayRemaining:SPONSOR_DAY_GAS-day.gas, charge: (g) => { s.gas += g; day.gas += g; status.sponsor.dayGas = day.gas; } };
 }
 const refuse = (res, code, label, why) => { status.sponsor.refused.push({ label, why, at: new Date().toISOString() }); if (status.sponsor.refused.length > 50) status.sponsor.refused.shift(); log(`${label} refused: ${why}`); return json(res, code, { error: why }); };
 /** bonded instance -> budget -> simulation -> only then sign and send. Nothing is broadcast before all three pass. */
@@ -334,25 +340,34 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
     // And, while PORW_TASK_CLIENTS is set, only for the tasks of those clients. Third-party tasks are not open yet:
     // every task on this network is one the FlyBnB dataset needs, posted by the project. The market is permissionless
     // and cannot refuse anybody's task; what is withheld is this relayer's gas, and a session key holds none of its own.
-    if (taskId) { let m = ZERO32, client = null; try { const t = await ch.market.read.taskInfo([taskId]); m = String(t[0]).toLowerCase(); client = String(t[2]).toLowerCase(); } catch {}
+    if (taskId) { let m = ZERO32, client = null; try { const t = await ch.market.read.taskInfo([taskId]); m = String(t[0]).toLowerCase(); client = String(t[2]).toLowerCase(); } catch(e) {if(SYNCHRONOUS)throw e;}
       if (m !== ZERO32 && !(await servesTaskMep(ch,meps,m,FAMILY_HOSTING))) return refuse(res, 403, label, "the task's MEP is not one this relayer serves (not pinned, not on the whitelist)");
       if (m !== ZERO32 && TASK_CLIENTS && !TASK_CLIENTS.has(client)) return refuse(res, 403, label, "tasks are not open to third parties yet: this relayer sponsors only the dataset's own (PORW_TASK_CLIENTS)"); }
-    try { await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
-    const r = await tx(label, send);
+    let simulation;try { simulation=await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
+    let gas;try{gas=(await ch.pub.estimateContractGas(simulation.request))*120n/100n;}catch(e){return refuse(res,400,label,'gas estimate failed: '+String(e.shortMessage||e.message).slice(0,160));}
+    const admission=sponsorAdmission(gas,bud.epochRemaining,bud.dayRemaining);if(!admission.ok)return refuse(res,429,label,admission.why);
+    const r = await tx(label,o=>send({...o,gas}));
     if (r.gasUsed) bud.charge(r.gasUsed); // a revert that still got mined is charged too: it cost the relayer gas
     return json(res, 200, r);
   };
   const p = sponsorChain.then(run, run); sponsorChain = p.catch(() => {}); return p;
 }
+const readSync = SYNCHRONOUS ? syncReader(ch,{confirmations:Number(process.env.PORW_SYNC_CONFIRMATIONS||2)}) : null;
 const readFliesPage = fliesPageReader(ch, dep.addresses);
 const readHostStats = hostStats(ch, dep.addresses.market);
 const readCapacity = capacityReader(ch.pub, dep.addresses.market);
 const hostEligibility = new ReadCache({ttl:5000,max:128});
-const readProviderModels = providerModelReader(ch, meps);
+const readProviderModels = providerModelReader(ch, meps,{verificationSupport:SYNCHRONOUS?verificationSupportReader(ch):null});
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, familyHosting: FAMILY_HOSTING, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, verification: {mode:SYNCHRONOUS?"synchronous-v1":"legacy",...(SYNCHRONOUS?{...SYNC_WINDOWS,sponsorship:{configured:SYNC_SPONSOR_CONFIGURED,minimumEpochGas:160000000,minimumDayGas:350000000,reserveGas:350000000,epochGasLimit:SPONSOR_EPOCH_GAS,dayGasLimit:SPONSOR_DAY_GAS},sessionEndpoint:"/sync/session",pendingEndpoint:"/sync/pending",confirmations:Number(process.env.PORW_SYNC_CONFIRMATIONS||2)}:{})}, familyHosting: FAMILY_HOSTING, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
+    if(req.method==="GET"&&u.pathname.startsWith("/sync/")) {
+      if(!readSync)return json(res,409,{error:"synchronous verification is not enabled"});
+      try{if(u.pathname==="/sync/session")return json(res,200,await readSync.session(u.searchParams.get("taskId")));
+       if(u.pathname==="/sync/pending")return json(res,200,await readSync.pending(u.searchParams.get("instance")));
+      }catch(e){return json(res,400,{error:String(e.shortMessage||e.message).slice(0,200)});}
+    }
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
     if (req.method === "GET" && u.pathname === "/flies/page") {
       try { return json(res, 200, await readFliesPage(u.searchParams)); }
@@ -379,6 +394,17 @@ api.on("request", async (req, res) => {
       return p ? json(res, 200, { ...p.payload, aggregator: ch.account.address, posted: M.posted.has(e) }) : json(res, 404, { error: "no proof (not included, unknown epoch, or root not built)" }); }
     if (req.method !== "POST") return json(res, 404, { error: "not found" });
     const b = await body(req);
+    if(u.pathname.startsWith("/tx/sync/")) {
+      if(!SYNCHRONOUS)return json(res,409,{error:"synchronous verification is not enabled"});
+      let action;try{const kind=u.pathname.slice("/tx/sync/".length);action=kind==="finalize"?await prepareSyncFinalize(dep,b,ch):await prepareSyncMutation(kind,b,ch);}catch(e){return json(res,400,{error:String(e.shortMessage||e.message).slice(0,200)});}
+      const {instance,contract,functionName,args,taskId}=action;
+      if(functionName==='setReadyBySig'&&b.ready===true){
+        const [balance,gasPrice]=await Promise.all([ch.pub.getBalance({address:ch.account.address}),ch.pub.getGasPrice()]);
+        if(!syncSponsorReady(SPONSOR_EPOCH_GAS,SPONSOR_DAY_GAS,balance,gasPrice))return refuse(res,503,'sync.readiness','synchronous sponsorship unavailable: configure at least 160M gas per instance/epoch, 350M per day and fund the 350M-gas session reserve');
+      }
+      return await sponsored(res,instance,`sync.${functionName}`,()=>contract.simulate[functionName](args,{account:ch.account}),o=>contract.write[functionName](args,o),taskId);
+    }
+    if(SYNCHRONOUS&&["/tx/result","/tx/settle"].includes(u.pathname))return json(res,409,{error:"synchronous verification requires authenticated commit/reveal sessions"});
     // a bonded instance saying it is here, so the lazy beacon keeps producing (see warmth()). The bonded check is
     // skipped while we are already warm through that epoch, so a tab polling once an epoch costs no RPC at all.
     if (u.pathname === "/wake") {

@@ -1,0 +1,107 @@
+{
+  "chainId": 97,
+  "rpc": "https://bsc-testnet-dataseed.bnbchain.org/",
+  "owner": "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa",
+  "legacy": {
+    "verifier": "0xd9694a1d08d1d7011dd122e16811847314f83795",
+    "meps": "0x19de92004c19ea6860641738a8b1e5656e7efb16",
+    "instances": "0x91a99283d7cb667b42c0121b877006456deb83a4",
+    "beacon": "0xa2e008c2f5923ce877279b67b0d8d2cd14face61",
+    "claims": "0x1b08029eb81bc3478f286bb8d648154a0e7bfba4",
+    "market": "0x3e89d16f05cfd9919fb473eb4657289ca9c8b5db",
+    "disputes": "0x455bd9f09b146021c93d176ab7b14973f4670537",
+    "relays": "0xd17b1b1b5c40ddcbf6bf51a54de70dbfc26e09cc",
+    "whitelist": "0x05fcbb56da3a27796906079d516cd8d17f45baa5",
+    "hostCapacity": "0x02ff13eaa571e407fe535b355634eb4cc1a2372c",
+    "collection": "0xef927d0e5e5b919dfba91eb816fbf5a284e33498",
+    "renderer": "0x996a184a0b795459be52d594ddee88cb5514ebfb",
+    "vault": "0x82aa778934a6b9577411dae24e37e039074f23b4",
+    "sale": "0xd974C8c0c18D31AfdEfa0630D06E3960Ee681291"
+  },
+  "treasury": "0x1Bef7990Ea5d9C761aACe71c48432078AAC43708",
+  "params": {
+    "unit": "5000000000000000",
+    "exitDelay": 200,
+    "epochBlocks": 200,
+    "commitBlocks": 40,
+    "revealBlocks": 40,
+    "beaconDeposit": "5000000000000000",
+    "openingWindow": 200,
+    "openingDeposit": "2000000000000000",
+    "slashAmount": "10000000000000000",
+    "taskTimeout": 400,
+    "roundBlocks": 400,
+    "claimValidity": 6,
+    "challengeWindow": 200,
+    "challengeDeposit": "20000000000000000",
+    "challengeSink": "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa",
+    "relayBond": "1000000000000000",
+    "sessionCommitBlocks": 7200,
+    "sessionRevealBlocks": 400,
+    "sessionDisputeBlocks": 30000
+  },
+  "bases": [
+    {
+      "mepId": "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a",
+      "wUnitQ16": 18022,
+      "profile": {
+        "modelId": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+        "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+        "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+        "neurons": 139255,
+        "synapses": 2700513,
+        "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
+        "weightsDA": "0x676e66643a2f2f616967672d627261696e732f666c79776972652d666166622d763738332d6d696e352e62696e"
+      },
+      "maxInDegree": 5080,
+      "payloadSha256": "fd246cc2c0ac74e8928cf5b0012c5d4c48a0a03475595213b301f85f5fe4e1da"
+    },
+    {
+      "mepId": "0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50",
+      "wUnitQ16": 18022,
+      "profile": {
+        "modelId": "0x53a7b48e9265bea68fbd3f3640eda751f8dd7742ac76ae6f9c69f1cddc528135",
+        "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+        "execKind": "0x0c387b3972c70c927c1f37f69ba2b8183ab1d666641f4aa33f46e6cbeda888d9",
+        "neurons": 139255,
+        "synapses": 7595967,
+        "synapseRoot": "0x08c6dd0fc6ac5a1c177a92d65bb5b1e1623ccf50ad126abe0251e37cfa43fb80",
+        "weightsDA": "0x676e66643a2f2f616967672d627261696e732f666c79776972652d666166622d763738332d6d696e322e62696e"
+      },
+      "maxInDegree": 8861,
+      "payloadSha256": "10a9e16f08174e4c2421f64d10ee17466d39ff88847ba7ab0c1ef57c1a9022a5"
+    },
+    {
+      "mepId": "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214",
+      "wUnitQ16": 7209,
+      "profile": {
+        "modelId": "0x7a22e8b8a1eae502ea7528be8ed0699b5c31ce5bf6fd2d4e56aedb46bf17394e",
+        "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+        "execKind": "0x716c4516187684f44e9110292af25ccb03bd4a98c030fc595a16838bb7173e3e",
+        "neurons": 166700,
+        "synapses": 15283237,
+        "synapseRoot": "0xa506f1271bc376b9bd917e2fa5d12c04765e92f2a216a30ed836f6c06147e5ed",
+        "weightsDA": "0x676e66643a2f2f616967672d627261696e732f6d616c65636e732d76312e302d6d696e322e62696e"
+      },
+      "maxInDegree": 10167,
+      "payloadSha256": "38227caa7f35af4913a85d0f59c473c4b870e5f9373bb4e07e143163e7a571ba"
+    },
+    {
+      "mepId": "0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc",
+      "wUnitQ16": 7209,
+      "profile": {
+        "modelId": "0x1ea92843693217431f137ff8a7953ef7259daa3fa7c167f2ffb7ef3398ef8a71",
+        "schemeDigest": "0x48bbcf993c40ccbab6c43697518f5ebe860e8ef282390f3519bfd5c212111726",
+        "execKind": "0x716c4516187684f44e9110292af25ccb03bd4a98c030fc595a16838bb7173e3e",
+        "neurons": 166700,
+        "synapses": 6242118,
+        "synapseRoot": "0x151f70653e238941c84c2267e4ea02ac4db111f3bb194d359b5ba52ca4b3196c",
+        "weightsDA": "0x676e66643a2f2f616967672d627261696e732f6d616c65636e732d76312e302d6d696e352e62696e"
+      },
+      "maxInDegree": 6660,
+      "payloadSha256": "c5619f702895d1b4792c918d6712b70aa21a2c4a66af4d150dc42e7146e852c9"
+    }
+  ],
+  "protocol": "synchronous-v1",
+  "calibration": "tasks/benchmarks/synchronous-profiles-2026-09-21.json"
+}

@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "date": "2026-09-21",
+  "purpose": "Local WASM and CSR calibration for bounded synchronous sessions; not a cross-device latency guarantee. Runs use stimulus seed 7; this is not a full scientific battery.",
+  "reports": [
+    {
+      "payload": "flywire-783-min2.bin",
+      "payloadSha256": "10a9e16f08174e4c2421f64d10ee17466d39ff88847ba7ab0c1ef57c1a9022a5",
+      "wasmSha256": "bcbf02df89f3ba8d45a72cdb9bc818b3312e57170ed911b207b33d85b1f7e24a",
+      "modelId": "0x53a7b48e9265bea68fbd3f3640eda751f8dd7742ac76ae6f9c69f1cddc528135",
+      "mepId": "0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50",
+      "synapseRoot": "0x08c6dd0fc6ac5a1c177a92d65bb5b1e1623ccf50ad126abe0251e37cfa43fb80",
+      "neurons": 139255,
+      "synapses": 7595967,
+      "maxInDegree": 8861,
+      "steps": 100,
+      "stride": 10,
+      "loadMs": 1837.838083,
+      "executeMs": 421.84450000000015,
+      "replayMs": 314.431916,
+      "timings": {
+        "inferMs": 3.534127000000808,
+        "disputeCommitMs": 403.61075100000016
+      },
+      "node": "v23.6.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    {
+      "payload": "flywire-783-min5.bin",
+      "payloadSha256": "fd246cc2c0ac74e8928cf5b0012c5d4c48a0a03475595213b301f85f5fe4e1da",
+      "wasmSha256": "bcbf02df89f3ba8d45a72cdb9bc818b3312e57170ed911b207b33d85b1f7e24a",
+      "modelId": "0x9747cc81830375103eae957a93d3800875223c17bdc6399f5783be62a19da93a",
+      "mepId": "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a",
+      "synapseRoot": "0xcd8ee8e9929e94913b368781bd97b28375e3def06c372469dce6c1c08a48fb75",
+      "neurons": 139255,
+      "synapses": 2700513,
+      "maxInDegree": 5080,
+      "steps": 100,
+      "stride": 10,
+      "loadMs": 825.028042,
+      "executeMs": 362.1495829999999,
+      "replayMs": 456.23637499999995,
+      "timings": {
+        "inferMs": 2.825655999999981,
+        "disputeCommitMs": 338.7599559999999
+      },
+      "node": "v23.6.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    {
+      "payload": "malecns-v1.0-min5.bin",
+      "payloadSha256": "c5619f702895d1b4792c918d6712b70aa21a2c4a66af4d150dc42e7146e852c9",
+      "wasmSha256": "bcbf02df89f3ba8d45a72cdb9bc818b3312e57170ed911b207b33d85b1f7e24a",
+      "modelId": "0x1ea92843693217431f137ff8a7953ef7259daa3fa7c167f2ffb7ef3398ef8a71",
+      "mepId": "0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc",
+      "synapseRoot": "0x151f70653e238941c84c2267e4ea02ac4db111f3bb194d359b5ba52ca4b3196c",
+      "neurons": 166700,
+      "synapses": 6242118,
+      "maxInDegree": 6660,
+      "steps": 100,
+      "stride": 10,
+      "loadMs": 1583.5332910000002,
+      "executeMs": 435.161167,
+      "replayMs": 398.22387500000013,
+      "timings": {
+        "inferMs": 3.519750999995722,
+        "disputeCommitMs": 410.6873749999995
+      },
+      "node": "v23.6.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    {
+      "payload": "malecns-v1.0-min2.bin",
+      "payloadSha256": "38227caa7f35af4913a85d0f59c473c4b870e5f9373bb4e07e143163e7a571ba",
+      "wasmSha256": "bcbf02df89f3ba8d45a72cdb9bc818b3312e57170ed911b207b33d85b1f7e24a",
+      "modelId": "0x7a22e8b8a1eae502ea7528be8ed0699b5c31ce5bf6fd2d4e56aedb46bf17394e",
+      "mepId": "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214",
+      "synapseRoot": "0xa506f1271bc376b9bd917e2fa5d12c04765e92f2a216a30ed836f6c06147e5ed",
+      "neurons": 166700,
+      "synapses": 15283237,
+      "maxInDegree": 10167,
+      "steps": 100,
+      "stride": 10,
+      "loadMs": 2407.732209,
+      "executeMs": 666.365875,
+      "replayMs": 454.255709,
+      "timings": {
+        "inferMs": 11.764926999999716,
+        "disputeCommitMs": 625.9535419999993
+      },
+      "node": "v23.6.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    {
+      "payload": "malecns-v1.0-min2.bin",
+      "payloadSha256": "38227caa7f35af4913a85d0f59c473c4b870e5f9373bb4e07e143163e7a571ba",
+      "wasmSha256": "bcbf02df89f3ba8d45a72cdb9bc818b3312e57170ed911b207b33d85b1f7e24a",
+      "modelId": "0x7a22e8b8a1eae502ea7528be8ed0699b5c31ce5bf6fd2d4e56aedb46bf17394e",
+      "mepId": "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214",
+      "synapseRoot": "0xa506f1271bc376b9bd917e2fa5d12c04765e92f2a216a30ed836f6c06147e5ed",
+      "neurons": 166700,
+      "synapses": 15283237,
+      "maxInDegree": 10167,
+      "steps": 5000,
+      "stride": 500,
+      "loadMs": 2033.4818750000002,
+      "executeMs": 4640.436333000001,
+      "replayMs": 24920.216292,
+      "timings": {
+        "inferMs": 2716.568498999978,
+        "disputeCommitMs": 1866.9638769999997
+      },
+      "node": "v23.6.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    }
+  ]
+}

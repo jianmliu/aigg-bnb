@@ -10,35 +10,35 @@
 
 ## 1. Freeze contract/client interfaces
 
-- [ ] Review the companion spec against TaskMarket, MultiAssetTaskMarket, ExecutionDisputes, InstanceRegistry and the browser proof API.
-- [ ] Define commitment, reveal, dispute-move authentication, task-state/party-state getters, one-shot readiness and events; use exact ABI fixtures as the integration boundary.
-- [ ] Resolve total deadline and stake/slot ownership on every terminal transition before coding.
+- [x] Review the companion spec against TaskMarket, MultiAssetTaskMarket, ExecutionDisputes, InstanceRegistry and the browser proof API.
+- [x] Define commitment, reveal, dispute-move authentication, task-state/party-state getters, one-shot readiness and events; use exact ABI fixtures as the integration boundary.
+- [x] Resolve total deadline and stake/slot ownership on every terminal transition before coding.
 
 ## 2. Contracts
 
 Files: new `contracts/src/SynchronousTaskMarket.sol`, `contracts/src/SynchronousExecutionDisputes.sol`; new `contracts/test/SynchronousVerification.t.sol` and token/batch coverage.
 
-- [ ] Write failing tests for both-host commitment/reveal, payout escrow, expiry, replay and objective disagreement.
-- [ ] Implement contracts preserving asset identities and royalty/refund accounting, with finite deadlines and no later challenge path.
-- [ ] Add rejecting-recipient, task-hold, capacity-release and native/token fuzz invariants, including a rejecting slash beneficiary.
-- [ ] Run focused tests, full contract suite, size checks and independent security review.
+- [x] Write failing tests for both-host commitment/reveal, payout escrow, expiry, replay and objective disagreement.
+- [x] Implement contracts preserving asset identities and royalty/refund accounting, with finite deadlines and no later challenge path.
+- [x] Add rejecting-recipient, task-hold, capacity-release and native/token fuzz invariants, including a rejecting slash beneficiary.
+- [x] Run focused tests, full contract suite, size checks and independent security review.
 
 ## 3. Browser/relayer session
 
 Files: new client session module and journal tests near `frontend/src/core/`; bounded proof responder using `contracts/lib/aigg-porw/web/porw-browser/node.js` APIs; new relayer routes/module beside `relayer/relayer.mjs`.
 
-- [ ] Write protocol tests before implementation, including restart between commit and reveal.
-- [ ] Authenticate and sponsor bounded moves; preserve budgets and client restrictions.
-- [ ] Keep exact task reconstruction/proof material available through terminal state; never silently evict pending evidence.
-- [ ] Add actual browser/Anvil tests for honest agreement, disagreement and peer failure through the total deadline.
+- [x] Write protocol tests before implementation, including restart between commit and reveal.
+- [x] Authenticate and sponsor bounded moves; preserve budgets and client restrictions.
+- [x] Keep exact task reconstruction/proof material available through terminal state; never silently evict pending evidence.
+- [x] Add actual browser/Anvil tests for honest agreement, disagreement and peer failure through the total deadline.
 
 ## 4. Consumers and UI
 
 Files: `frontend/src/ui/HostDashboard.jsx`, controller/session bindings, `gateway/gateway.mjs`, `battery/worker.mjs` and their focused tests.
 
-- [ ] Add explicit verification states and safe-to-close indicator based on pending sessions.
-- [ ] Ensure inconclusive does not become completed, billed inference or a validated battery row.
-- [ ] Preserve legacy behavior using the deployment capability; old clients fail closed on synchronous tasks.
+- [x] Add explicit verification states and safe-to-close indicator based on pending sessions.
+- [x] Ensure inconclusive does not become completed, billed inference or a validated battery row.
+- [x] Preserve legacy behavior using the deployment capability; old clients fail closed on synchronous tasks.
 
 ## 5. Migration and publication
 
