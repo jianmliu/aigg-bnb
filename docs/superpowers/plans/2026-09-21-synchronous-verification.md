@@ -42,8 +42,10 @@ Files: `frontend/src/ui/HostDashboard.jsx`, controller/session bindings, `gatewa
 
 ## 5. Migration and publication
 
-- [ ] Reconcile live task, bond, royalty and inventory states immediately before migration.
-- [ ] Rehearse complete deployment and any required collection transition on Anvil.
-- [ ] Commit/review/merge code, deploy new contracts and matching service/frontend versions, preserve old claims and keys.
-- [ ] Exercise a live paid task through finality and confirm that later challenges cannot create host obligations.
-- [ ] Record addresses, receipts, version hashes, measured deadline parameters and any limitations; do not describe a partial deployment as complete.
+- [x] Reconcile live task, bond, royalty and inventory states immediately before migration.
+- [x] Rehearse complete deployment and any required collection transition on Anvil.
+- [x] Commit/review/merge code, deploy new contracts and matching service/frontend versions, preserve old claims and keys.
+- [x] Exercise a live paid task through finality and confirm that later challenges cannot create host obligations.
+- [x] Record addresses, receipts, version hashes, measured deadline parameters and any limitations; do not describe a partial deployment as complete.
+
+Live completion evidence: [deployment and acceptance record](../../SYNCHRONOUS_MIGRATION_2026-09-21.md).

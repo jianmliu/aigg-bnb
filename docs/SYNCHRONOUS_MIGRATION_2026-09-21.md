@@ -29,3 +29,13 @@ Before deployment: 318 contract tests, 48 synchronous/profile tests, real-browse
 Live service, frontend and paid-task status is tracked in the public record. A local pass is not evidence that a live step has completed.
 
 Two hosts controlled by the same operator can validate integration but do not establish executor independence. This mechanism assumes an independently administered honest executor; it is not a succinct proof of every computation. Battery budgets/workers and conversion adapters require separate deployment. The selected public RPC rejects historical event queries. Synchronous gateway and battery routing therefore read the on-chain readiness signer directly and validate its live delegation against the assigned session, without scanning delegation logs. The older keeper event-log scan remains a separate operational limitation.
+
+## Live acceptance
+
+Paid task `0x3cbfe7215f86f98ace1a83a3e76777c8eb64a6654bcd694f973470e264d422c8` executed the actual FlyWire female min5 model for four steps with two temporary hosts. Both committed before revealing, produced matching roots and digests, and completed at block 132404743. The gateway verified output bytes for 139,255 neurons against the accepted digest. Each host received 400,000,000,000 wei of task credit; both reported a confirmed terminal state with no readiness or pending assignment and safe-to-close status.
+
+The initial gateway could not discover session addresses through this RPC's historical logs. PR #95 fixes that path with direct finalized signer reads. The gateway then resumed the same persisted task; the public record contains its sole posting transaction and both commit/reveal transactions. No second execution fee was paid.
+
+A finalized read at block 132404788 confirmed that both task holds were released. A read-only call to the old post-completion `challengeResult` selector reverted on the deployed market. This checks the deployed interface; the contract tests additionally cover terminal-session rejection and no timeout slashing. The two temporary hosts belong to one operator, so this test establishes integration, not independent replication or a general scientific validity claim.
+
+Both temporary hosts withdrew their task credits, requested exit, waited the 200-block exit delay, and finalized withdrawal. Their remaining wallet funds were returned to the deployment owner. Finalized reads confirmed zero bonds and zero task credits for both; transaction hashes are in the public record. Both Render services and the Pages frontend run `8dd659b1bffa58be3ed105cad22c9308a615e57e`; the relayer serves 204 certified MEPs and the gateway contains exactly the one accepted test call.

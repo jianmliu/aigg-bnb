@@ -481,22 +481,215 @@
   "validation": {
     "localForgeTests": 318,
     "localSyncTests": 48,
-    "liveTask": "pending",
+    "liveTask": {
+      "at": "2026-09-21T22:18:01.196Z",
+      "finalizedBlock": "132404788",
+      "taskId": "0x3cbfe7215f86f98ace1a83a3e76777c8eb64a6654bcd694f973470e264d422c8",
+      "phase": 4,
+      "hosts": [
+        {
+          "address": "0x8baf18025537283b6150e51ea095f1247f7308e9",
+          "pending": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "ready": false,
+          "holds": "0",
+          "creditWei": "400000000000"
+        },
+        {
+          "address": "0xc192bd7bbfe6a950d424cf01e774506a93cefec0",
+          "pending": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "ready": false,
+          "holds": "0",
+          "creditWei": "400000000000"
+        }
+      ],
+      "legacyChallengeSelectorRejected": true,
+      "receipt": {
+        "chain": 97,
+        "market": "0xd179ddef43480dce2dd1176941ba5bcbb779323c",
+        "task": "0x3cbfe7215f86f98ace1a83a3e76777c8eb64a6654bcd694f973470e264d422c8",
+        "post_tx": "0x9031e4a4aeb91ff58134aee1d90c0108eb30733c7dee45b9fba6a1646b8f1ee1",
+        "settle_tx": null,
+        "fee_wei": "800000000000",
+        "gas": {
+          "post_task": 687483,
+          "settle": 0,
+          "wei": "68748300000000",
+          "tokens": 688
+        },
+        "redundancy": 2,
+        "steps": 4,
+        "commit_stride": 1,
+        "seed": 7,
+        "init_state_root": "0xaf3822bb9a2850c28b793778b2edcac5e21947b10dad7a1a4fab6520f38bd656",
+        "stimulate_ids": null,
+        "silence_ids": null,
+        "stimulated": 151,
+        "price": {
+          "model_factor": 1,
+          "set_factor": 1,
+          "set": null,
+          "wei_per_token": "100000000000",
+          "output_tokens": 8
+        },
+        "results": {
+          "0xc192bd7bbfe6a950d424cf01e774506a93cefec0": {
+            "execDigest": "0x94db57db837ce3243758aefed110cb141310f7dd2a87cabafdb7066cb24d106e",
+            "execRoot": "0x58cc04fe11b606153d034819c6cf13a3ecb900c7319aafde9a096bdf6a75c9a0",
+            "counts": "match the digest it signed"
+          },
+          "0x8baf18025537283b6150e51ea095f1247f7308e9": {
+            "execDigest": "0x94db57db837ce3243758aefed110cb141310f7dd2a87cabafdb7066cb24d106e",
+            "execRoot": "0x58cc04fe11b606153d034819c6cf13a3ecb900c7319aafde9a096bdf6a75c9a0"
+          }
+        },
+        "executors": [
+          "0x8baf18025537283b6150e51ea095f1247f7308e9",
+          "0xc192bd7bbfe6a950d424cf01e774506a93cefec0"
+        ],
+        "exec_digest": "0x94db57db837ce3243758aefed110cb141310f7dd2a87cabafdb7066cb24d106e",
+        "exec_root": "0x58cc04fe11b606153d034819c6cf13a3ecb900c7319aafde9a096bdf6a75c9a0",
+        "settled_at": 132404743,
+        "finality": "final",
+        "final_after_block": 132404743,
+        "verification": "synchronous-v1",
+        "assumption": "independently administered executors; local adjudication assumes an honest executor",
+        "counts": {
+          "status": "verified",
+          "from": "0xc192bd7bbfe6a950d424cf01e774506a93cefec0",
+          "neurons": 139255
+        },
+        "counts_url": "/v1/tasks/0x3cbfe7215f86f98ace1a83a3e76777c8eb64a6654bcd694f973470e264d422c8/counts"
+      },
+      "singleOperatorSmoke": true,
+      "safeToCloseBoth": true,
+      "transportRecovery": "Gateway resumed the same paid task after replacing unsupported historical log lookup with confirmed on-chain readiness signer routing; no repost or second fee.",
+      "sponsoredTransactions": [
+        {
+          "label": "sync.setReadyBySig",
+          "hash": "0xa8aca6190e960ac9714055ac47bf0cbb55fb7596f0b4fbe0adca6dfef8de501f",
+          "ok": true,
+          "gas": 111064,
+          "nonce": 3514,
+          "blockNumber": "132403484"
+        },
+        {
+          "label": "sync.setReadyBySig",
+          "hash": "0xb5c64efa8fc4fb4b8c9c86a8a170a1242c0199297b6ba8565a8c615980cb2815",
+          "ok": true,
+          "gas": 111052,
+          "nonce": 3515,
+          "blockNumber": "132403506"
+        },
+        {
+          "label": "sync.commitResult",
+          "hash": "0x3a906843a5760622ab70fbcd5eada507f00816a31128861a15bf026249e45782",
+          "ok": true,
+          "gas": 75378,
+          "nonce": 3535,
+          "blockNumber": "132404696"
+        },
+        {
+          "label": "sync.commitResult",
+          "hash": "0xdddbfca940b1b8c2c850d58bdf6e472f6df12dfb6caca6b42e2f7232649b4aa5",
+          "ok": true,
+          "gas": 81096,
+          "nonce": 3536,
+          "blockNumber": "132404707"
+        },
+        {
+          "label": "sync.revealResult",
+          "hash": "0xa355049c03af52c0fe57fb917f427fb57f3f84dcfa9ce24a647972af83277c92",
+          "ok": true,
+          "gas": 130523,
+          "nonce": 3537,
+          "blockNumber": "132404729"
+        },
+        {
+          "label": "sync.revealResult",
+          "hash": "0xd59cd6581eef34e7e7d864755e7b57a00f4092acb7d3f1ead97a7d8943022d1d",
+          "ok": true,
+          "gas": 303548,
+          "nonce": 3538,
+          "blockNumber": "132404743"
+        }
+      ],
+      "cleanup": {
+        "complete": true,
+        "finalizedBlock": "132405402",
+        "hosts": {
+          "0xc192bD7bBfE6A950D424cf01e774506a93CeFeC0": {
+            "finalBondWei": "0",
+            "finalCreditWei": "0",
+            "remainingWalletWei": "0",
+            "transactions": {
+              "credit": {
+                "hash": "0x686c252b3faa59b13b7c309c421c271a1301eb69112a1b7b12ef463815727dfb",
+                "status": "success"
+              },
+              "requestExit": {
+                "hash": "0xfb1df14a0525133b3e3aaeaed526ae925d486812bddf61b4e5bbb1aecf161c6b",
+                "status": "success"
+              },
+              "finalizeExit": {
+                "hash": "0x1fa1b56a6948dbadd71ad0d4cdb65ef594204e1b379e96bed1ae1b941dae917a",
+                "status": "success"
+              },
+              "returnGas": {
+                "hash": "0x3cf6f724f9db0c70a39e6c808d69ca57868c9fe999ae219a2d4582e7254f07d2",
+                "status": "success",
+                "valueWei": "5966418400000000"
+              }
+            }
+          },
+          "0x8bAf18025537283b6150e51Ea095f1247F7308e9": {
+            "finalBondWei": "0",
+            "finalCreditWei": "0",
+            "remainingWalletWei": "0",
+            "transactions": {
+              "credit": {
+                "hash": "0xd7cdef21f5b67fbcf4e16efe3cbf4b38936ba8c7444c06428df1325055aaa242",
+                "status": "success"
+              },
+              "requestExit": {
+                "hash": "0x91abd96853ec49f4a89c4ee538c70a1d8d2958de555cc7209dd6cbdbcb4eb214",
+                "status": "success"
+              },
+              "finalizeExit": {
+                "hash": "0x2d0358d92b811e7072cf38cd5b0dc70b6d866622a9c618c32913c279629dbfec",
+                "status": "success"
+              },
+              "returnGas": {
+                "hash": "0x963e98dfe01a27c2bcc36d223ac844df64bd3d26278a16fb7251f8e8b04fb5c7",
+                "status": "success",
+                "valueWei": "5970416400000000"
+              }
+            }
+          }
+        }
+      },
+      "independentOutputCheck": {
+        "bytes": 557020,
+        "neurons": 139255,
+        "digestMatches": true
+      }
+    },
     "services": {
-      "commit": "4f48ee38a6a7b1da1ef702803481245f929c2a7e",
-      "relayerDeploy": "dep-daoqh1uk1f9s738c87k0",
-      "gatewayDeploy": "dep-daoqhn740ujc7389tn2g",
+      "commit": "8dd659b1bffa58be3ed105cad22c9308a615e57e",
+      "relayerDeploy": "dep-daoqqbf40ujc738b315g",
+      "gatewayDeploy": "dep-daoqpbn40ujc738augc0",
       "synchronousCapability": true,
       "marketMatches": true,
-      "gatewayMaintenance": false
+      "gatewayMaintenance": false,
+      "catalogMepCount": 204,
+      "certifiedMepCount": 204
     },
     "frontend": {
-      "commit": "4f48ee38a6a7b1da1ef702803481245f929c2a7e",
-      "url": "https://65af9770.aigg-fly.pages.dev",
+      "commit": "8dd659b1bffa58be3ed105cad22c9308a615e57e",
+      "url": "https://ce83cd0b.aigg-fly.pages.dev",
       "production": "https://fly.ai.gg",
       "hostFamilies": 4,
       "mepCount": 204,
-      "adoptPagination": "Page 1 of 17 \u00b7 200 flies \u00b7 12 per page",
+      "adoptPagination": "Page 1 of 17 · 200 flies · 12 per page",
       "pageErrors": []
     },
     "liveAdopt": {
@@ -511,5 +704,20 @@
     "New child profiles require their own measured witness certificate.",
     "Battery budgets and workers require separate deployment; this migration does not enable them.",
     "Prior legacy bonds and royalties are preserved; no funds are moved from old contracts."
-  ]
+  ],
+  "code": {
+    "market": {
+      "bytes": 23326,
+      "keccak256": "0x51da6c726537315ed8dfa5032052cd753a7df2f9b40b16cba4f156a02bcb359c"
+    },
+    "disputes": {
+      "bytes": 24541,
+      "keccak256": "0x4d96c7e0afc165822bcfaa3f2631d4c227932beb8282e881a4dfa0025f2e3606"
+    },
+    "collection": {
+      "bytes": 19499,
+      "keccak256": "0xeb08a271d4029e242ad13b45929275f6d093608fb9c47654fbdeda3093378beb"
+    }
+  },
+  "completedAt": "2026-09-21T22:22:35.050Z"
 }
