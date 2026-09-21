@@ -49,6 +49,7 @@ export default function HostDashboard({ active }) {
   const online = [...(s.node?.models.keys() || [])];
   return <div id="provider-dashboard">
     <Panel title="Your hosting" note="provider dashboard">
+      {s.meps.some(m=>m.enrollmentMepId && m.enrollmentMepId!==m.mepId) && <p className="hint">Stake and residency claims cover a base pool. This browser serves loaded models; automatic loading of future derivatives is not enabled.</p>}
       <div className="host-metrics">
         <div><span className="metric-label">Models online in this tab</span><strong id="host-online">{online.length}</strong></div>
         <div><span className="metric-label">Requests served · settled</span><strong id="host-served">{stats ? stats.requestsServed : '—'}</strong></div>

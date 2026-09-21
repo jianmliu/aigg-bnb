@@ -52,7 +52,7 @@ const ops = {
   async releaseBase() { const was = heldBase?.bytes.length ?? 0; heldBase = null; return { freed: was }; },
   async prepare({ mepId, bytes, delta = null, baseModelId = null }) {
     let b = bytes ? new Uint8Array(bytes) : null;
-    if (!b && delta && baseModelId && heldBase?.modelId === baseModelId.toLowerCase()) b = heldBase.bytes; // the base is already here
+    if (!b && baseModelId && heldBase?.modelId === baseModelId.toLowerCase()) b = heldBase.bytes; // the base is already here
     if (!b) throw new Error("no bytes to prepare from");
     if (delta && baseModelId) heldBase = { modelId: baseModelId.toLowerCase(), bytes: b }; // keep it for the next individual
     // Applying is what produces the individual: byte for byte what a direct publication of it would have been, and
@@ -65,9 +65,9 @@ const ops = {
   },
   /** `terms`: a profile registered under a beneficiary and a royalty is a DIFFERENT mep id from the same bytes,
    *  and the terms are nowhere in them -- so the host has to be told, or it serves an id nothing on-chain draws. */
-  async host({ mepId, name, maxSteps, exec, wUnitQ16 = 0, terms = null }) {
+  async host({ mepId, name, maxSteps, exec, wUnitQ16 = 0, baseMepId = null, terms = null }) {
     const bytes = pending.get(mepId); if (!bytes) throw new Error("no bytes prepared for this brain");
-    const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec, wUnitQ16, terms }); // under another unit, or other terms, the same bytes are another MEP: the id check below is what catches a wrong one
+    const st = await node.loadModel(name, bytes, { maxSteps: maxSteps || 100, exec, wUnitQ16, baseMepId, terms }); // under another unit, or other terms, the same bytes are another MEP: the id check below is what catches a wrong one
     const local = hex(st.mep.mepId).toLowerCase();
     if (svc && local === mepId) svc.serve(st.mep.mepId);
     return { localMepId: local, matches: local === mepId, neurons: st.hdr.neurons };

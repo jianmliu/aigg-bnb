@@ -1,4 +1,5 @@
 import {ReadCache,UnboundBackoff,ensureAggregator,mapBounded} from './rpc-budget.mjs';
+import { enrollmentMetadata, reconcileEnrollmentBases } from './enrollment.mjs';
 import { fliesPageReader } from './flies-page.mjs';
 // The BNB relayer: one process = (1) the stage-1 WebSocket relay hub, (2) the epoch aggregator for the MEPs it
 // serves (collects claims over the relay, posts one root per epoch), (3) a commit-reveal beacon participant and
@@ -21,7 +22,7 @@ import { clients, eip712Domains } from "./chain.mjs";
 import { FlyCollectionAbi } from "./abi.mjs";
 import { loadEnv, deploymentFromEnv, relayerFromEnv } from "./env.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser/", f));
-const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, withTerms, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
+const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, withBase, withTerms, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => { if (v.startsWith("--")) a.push([v.slice(2), arr[i + 1]]); return a; }, []));
 loadEnv(args.env || process.env.PORW_ENV_FILE);
@@ -60,21 +61,24 @@ let CHALLENGE = { windowBlocks: 0, depositWei: "0" }; try { CHALLENGE = { window
 const ZERO_ADDR = "0x" + "0".repeat(40);
 async function loadMep(id, { name = null, collection = null, token = null, pinned = false } = {}) {
   id = id.toLowerCase(); const m = await ch.meps.read.getMEP([id]);
+  const routing = await enrollmentMetadata(ch, id);
   // int-lif is a FAMILY of kinds, one per weight unit (a connectome counted on another scale pins another unit); the
   // chain knows which digests are int-lif and under what unit. Older deployments have no such getter: the default kind only.
   let wUnitQ16 = 0; try { wUnitQ16 = Number(await ch.meps.read.lifWeightUnit([m.execKind])); } catch { wUnitQ16 = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? 18022 : 0; }
   const isLif = wUnitQ16 !== 0;
   let terms = null; try { const [beneficiary, royaltyBps] = await ch.meps.read.termsOf([id]); if (beneficiary !== ZERO_ADDR) terms = { beneficiary, royaltyBps: Number(royaltyBps) }; } catch {} // a registry older than terms
-  const info = { mepId: id, modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", wUnitQ16: isLif ? wUnitQ16 : null, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
+  const info = { mepId: id, ...routing, modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", wUnitQ16: isLif ? wUnitQ16 : null, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
     weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || name,
     collection, token, beneficiary: terms ? terms.beneficiary : null, royaltyBps: terms ? terms.royaltyBps : 0 };
   let mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind: isLif ? lifExecKind(wUnitQ16) : EXEC_INT_SPMV_Q16 /* recomputed from the unit, so a kind the chain mis-stated would not reproduce the id below */, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
+  if (routing.baseMepId) mep = withBase(mep, routing.baseMepId);
   if (terms) mep = withTerms(mep, terms.beneficiary, terms.royaltyBps);
   if (hex(mep.mepId).toLowerCase() !== id) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind/terms mismatch)`);
   return { mep, info, aggregators: new Map(), posted: new Set(), pinned };
 }
 // PORW_MEP_IDS: brains this relayer serves whatever any list says. A mismatch here is a misconfiguration: refuse to start.
 for (const id of cfg.meps || []) meps.set(id.toLowerCase(), await loadMep(id, { pinned: true }));
+await reconcileEnrollmentBases(meps, new Set(), loadMep);
 const EPOCH_BLOCKS = Number(await ch.claims.read.EPOCH_BLOCKS());
 const beaconOn = ch.beacon && (await ch.claims.read.beaconProvider()).toLowerCase() === dep.addresses.beacon.toLowerCase();
 const bcfg = beaconOn ? { commit: Number(await ch.beacon.read.COMMIT_BLOCKS()), reveal: Number(await ch.beacon.read.REVEAL_BLOCKS()), deposit: await ch.beacon.read.DEPOSIT() } : null;
@@ -164,7 +168,7 @@ async function tick() {
   // (2) aggregation: collect this epoch's claims once it is rolled -- but post the previous epoch's root either
   // way. An epoch with no beacon (nobody revealed, or a cold epoch under PORW_BEACON_LAZY) must not strand the
   // claims collected in the epoch before it: without that root nobody can materialize them.
-  if (rolled) for (const [id, M] of meps) await ensureAggregator(M, e, () => readChallenge(e,id), (epoch, chal) => aggregatorFor(id, epoch, chal));
+  if (rolled) for (const [id, M] of meps) if (M.info.enrollmentMepId === id) await ensureAggregator(M, e, () => readChallenge(e,id), (epoch, chal) => aggregatorFor(id, epoch, chal));
   // ONE root for the previous epoch over the claims of every MEP served here (the leaf carries its mepId), so the
   // cost of the root does not grow with the number of brains. Proofs are served from this shared tree.
   const prev = e - 1;
@@ -217,7 +221,7 @@ async function follow(bn) {
     try { meps.set(id, await loadMep(id, from)); log(`whitelist: now serving ${id.slice(0, 12)}… (${from.name}, collection ${from.collection.slice(0, 10)}…)`); }
     catch (err) { const why = String(err.shortMessage || err.message).slice(0, 160); if (!status.whitelist.skipped.some((x) => x.mepId === id)) { note(status.whitelist.skipped, { mepId: id, ...from, why }); log(`whitelist: NOT serving ${id.slice(0, 12)}…: ${why}`); } } }
   // what is no longer listed is no longer served -- except what PORW_MEP_IDS pins
-  for (const [id, M] of [...meps]) if (!M.pinned && !want.has(id)) { for (const A of M.aggregators.values()) A.stop && A.stop(); meps.delete(id); log(`whitelist: no longer serving ${id.slice(0, 12)}… (its collection left the list)`); }
+  await reconcileEnrollmentBases(meps, new Set(want.keys()), loadMep);
   wl.walked = bn; Object.assign(status.whitelist, { collections: listed, served: [...meps.values()].filter((M) => !M.pinned).length, walkedAt: Number(bn) });
 }
 
@@ -356,14 +360,14 @@ api.on("request", async (req, res) => {
       const instance = u.searchParams.get("instance") || "";
       if (!/^0x[0-9a-fA-F]{40}$/.test(instance)) return json(res, 400, { error: "instance must be an address" });
       const epoch = await ch.claims.read.currentEpoch();
-      const ids = [...meps.keys()];
+      const ids = [...new Set([...meps.values()].map(M => M.info.enrollmentMepId))];
       const eligible = await hostEligibility.get(`${instance.toLowerCase()}:${epoch}:${ids.join(",")}`, () => mapBounded(ids, id => ch.instances.read.isEligible([instance, id, epoch])));
       return json(res, 200, { ...await readHostStats(instance), epoch: Number(epoch),
-        beacon: (await ch.claims.read.beacon([epoch])) !== ZERO32, eligibleModels: ids.filter((_, i) => eligible[i]) });
+        beacon: (await ch.claims.read.beacon([epoch])) !== ZERO32, eligibleModels: [...meps.values()].filter(M => eligible[ids.indexOf(M.info.enrollmentMepId)]).map(M => M.info.mepId) });
     }
     if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, rpcCache: {hostEligibility: {hits:hostEligibility.hits,misses:hostEligibility.misses,entries:hostEligibility.size}}, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
     if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const {e,b,block} = await epochReads.get('head',async()=>{const e=Number(await ch.claims.read.currentEpoch());return {e,b:await ch.claims.read.beacon([BigInt(e)]),block:await ch.pub.getBlockNumber()};});
-      return json(res, 200, { epoch: e, block, beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? (b !== ZERO32 ? await readChallenge(e,id) : await ch.claims.read.epochChallenge([BigInt(e), id])) : null }); }
+      return json(res, 200, { mepId: id || null, enrollmentMepId: meps.get(id)?.info.enrollmentMepId || id || null, epoch: e, block, beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? (b !== ZERO32 ? await readChallenge(e,id) : await ch.claims.read.epochChallenge([BigInt(e), id])) : null }); }
     if (u.pathname === "/proof") { const id = (u.searchParams.get("mep") || "").toLowerCase(), e = Number(u.searchParams.get("epoch")), inst = u.searchParams.get("instance"); const M = meps.get(id); const T = epochTrees.get(e); const p = M && T && T.proofFor(id, inst);
       return p ? json(res, 200, { ...p.payload, aggregator: ch.account.address, posted: M.posted.has(e) }) : json(res, 404, { error: "no proof (not included, unknown epoch, or root not built)" }); }
     if (req.method !== "POST") return json(res, 404, { error: "not found" });

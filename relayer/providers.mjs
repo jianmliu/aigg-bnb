@@ -11,35 +11,32 @@ const taskAbi = parseAbi([
 export async function providerModels(ch, meps) {
   const epoch = await ch.claims.read.currentEpoch();
   const beacon = BigInt(await ch.claims.read.beacon([epoch])) !== 0n;
-  const entries = [...meps.values()], rows = new Array(entries.length);
-  // Use the canonical deployment shipped in viem's BSC chain definitions. Keep local/other chains compatible.
+  const entries = [...meps.values()];
+  const ids = [...new Set(entries.map(({ info }) => info.enrollmentMepId || info.mepId))];
+  const counts = new Map();
+  const remember = (id, votes) => counts.set(id, { providers: new Set(votes.map(a => a.toLowerCase())).size, votes: votes.length });
+  // Read each enrollment pool once, then fan its capacity out to the exact execution identities.
   const multicall = ({ [bsc.id]: bsc, [bscTestnet.id]: bscTestnet })[ch.chain?.id]?.contracts.multicall3.address;
   if (multicall && ch.pub?.multicall) {
-    for (let start = 0; start < entries.length; start += 32) {
-      const batch = entries.slice(start, start + 32);
+    for (let start = 0; start < ids.length; start += 32) {
+      const batch = ids.slice(start, start + 32);
       const results = await ch.pub.multicall({ multicallAddress: multicall, allowFailure: false, batchSize: 0,
-        contracts: batch.map(({ info }) => ({ address: ch.instances.address, abi: InstanceRegistryAbi,
-          functionName: 'eligibleVotes', args: [info.mepId, epoch] })) });
-      results.forEach((votes, i) => {
-        rows[start + i] = { ...batch[i].info, epoch: Number(epoch), beacon,
-          providers: new Set(votes.map(a => a.toLowerCase())).size, votes: votes.length };
-      });
+        contracts: batch.map(id => ({ address: ch.instances.address, abi: InstanceRegistryAbi,
+          functionName: 'eligibleVotes', args: [id, epoch] })) });
+      results.forEach((votes, i) => remember(batch[i], votes));
     }
-    return rows;
+  } else {
+    let next = 0, failure;
+    await Promise.all(Array.from({ length: Math.min(4, ids.length) }, async () => {
+      while (!failure && next < ids.length) {
+        const id = ids[next++];
+        try { remember(id, await ch.instances.read.eligibleVotes([id, epoch])); }
+        catch (error) { failure = error; }
+      }
+    }));
+    if (failure) throw failure;
   }
-  let next = 0, failure;
-  // Hundreds of Founders must not turn one catalog request into hundreds of simultaneous RPC calls.
-  await Promise.all(Array.from({ length: Math.min(4, entries.length) }, async () => {
-    while (!failure && next < entries.length) {
-      const index = next++, { info } = entries[index];
-      let votes;
-      try { votes = await ch.instances.read.eligibleVotes([info.mepId, epoch]); }
-      catch (error) { failure = error; break; }
-      rows[index] = { ...info, epoch: Number(epoch), beacon, providers: new Set(votes.map((a) => a.toLowerCase())).size, votes: votes.length };
-    }
-  }));
-  if (failure) throw failure;
-  return rows;
+  return entries.map(({info}) => ({...info, epoch: Number(epoch), beacon, ...counts.get(info.enrollmentMepId || info.mepId)}));
 }
 
 // One scan shared by all visitors; only complete successful snapshots are cached.
