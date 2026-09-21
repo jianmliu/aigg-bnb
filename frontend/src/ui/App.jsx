@@ -20,7 +20,7 @@ import * as C from "../core/controller.js";
 import { useNodeState } from "../core/store.js";
 import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
-import { BrainCard } from "./BrainCard.jsx";
+import { BrainCatalog } from "./BrainCatalog.jsx";
 import HostDashboard from "./HostDashboard.jsx";
 import FliesView from "./FliesView.jsx";
 import { BAKED_RELAYER, SOLO } from "./mode.js";
@@ -246,12 +246,7 @@ export default function App() {
         <section className="shelf">
           <header><h2>Brains on this mesh</h2><span className="note">{s.meps.length ? `${s.meps.length} listed` : "no mesh loaded"}</span></header>
           {s.meps.length === 0 && <p className="hint empty-shelf">{SOLO ? "Connecting to the network… the listings come from the chain, through the relayer." : <>Put a relayer’s address in the <b>Mesh</b> capsule above and press the arrow. The listings come from the chain it points at.</>}</p>}
-          <div className="listings">
-            {s.meps.map((m, i) => (
-              <BrainCard key={m.mepId} listing index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
-                         steps={stepsNum} onSelect={() => C.setActive(m.mepId)} onHost={(v) => C.host(m.mepId, v)} />
-            ))}
-          </div>
+          <BrainCatalog visible={view === "stay"} listing steps={stepsNum} />
         </section>
 
         {active && (
@@ -375,12 +370,7 @@ export default function App() {
         <div className="col">
           <Panel step={3} title="Move a brain in" note={`${s.meps.length} on this mesh`}>
             {s.meps.length === 0 && <p className="hint">{SOLO ? "Connecting to the network…" : "Load a mesh in the capsule above to see the brains it lists."}</p>}
-            <div className="brains">
-              {s.meps.map((m, i) => (
-                <BrainCard key={m.mepId} index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
-                           steps={stepsNum} onSelect={() => C.setActive(m.mepId)} onHost={(v) => C.host(m.mepId, v)} />
-              ))}
-            </div>
+            <BrainCatalog visible={view === "host"} steps={stepsNum} />
 
             <div className="legend">Bytes for the selected brain</div>
             <Field label="Greenfield SP endpoint (optional)" htmlFor="sp">

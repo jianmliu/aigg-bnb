@@ -9,13 +9,14 @@
 // nobody hatches in that window needs `rearm`, which costs a whole BREED_FEE. A relayer running the hatch keeper
 // makes that window irrelevant; the Hatch button is for when nobody is.
 import { keccakWords, decodeUint, decodeAddress } from "./abi.js";
-import { state, call, send, read, log, notify, eth } from "./controller.js";
+import { state, call, send, read, log, notify, eth, api } from "./controller.js";
 import { loadPhenotypes } from "./phenotypes.js";
 
 export const FEMALE = 0, MALE = 1, UNHATCHED = 2;
 export const WINDOW = 256; // block hashes the EVM keeps
 const ZERO32 = "0x" + "0".repeat(64);
-const MAX_LISTED = 500; // the page walks ids 1..totalSupply (the contract has no owner index); past this it needs an indexer
+let pageRequest = 0, pageDeployment;
+let pageQuery = { view: "adopt", sex: "all", page: 1 };
 
 const words = (data) => { const h = data.slice(2); const out = []; for (let i = 0; i + 64 <= h.length; i += 64) out.push("0x" + h.slice(i, i + 64)); return out; };
 const blockNumber = async () => Number(await read("eth_blockNumber"));
@@ -56,34 +57,54 @@ export async function loadTerms() {
   notify(); return state.flyTerms;
 }
 
-/** read the whole collection: the fees, and every individual with whether this wallet holds it */
-export async function loadFlies() {
-  await loadPhenotypes(); // what the published runs measured about these individuals; absent, the page says so per fly
-  const address = state.deployment?.addresses?.collection;
-  if (!address) { state.flies = { missing: true, all: [] }; notify(); return; }
-  const T = await loadTerms();
-  const n = Number(decodeUint(await call(address, "totalSupply()")));
-  const flies = { address, missing: false, truncated: n > MAX_LISTED, block: await blockNumber(),
-    breedFee: T.breedFee, bounty: T.bounty, mintPrice: T.mintPrice, mintBond: T.mintBond,
-    royaltyBps: T.royaltyBps, baseShareBps: T.baseShareBps, market: decodeAddress(await call(address, "MARKET()")),
-    genesisRoot: await call(address, "GENESIS_ROOT()"), owed: state.wallet ? decodeUint(await call(address, "owed(address)", [state.wallet])) : 0n,
-    genesis: null, sale: null,
-    baseFemale: await call(address, "BASE_FEMALE()"), baseMale: await call(address, "BASE_MALE()"), all: [] };
-  for (let id = 1; id <= Math.min(n, MAX_LISTED); id++) {
-    const f = decodeIndividual(id, await call(address, "individuals(uint256)", [id]));
-    f.owner = decodeAddress(await call(address, "ownerOf(uint256)", [id])); f.mine = !!state.wallet && f.owner === state.wallet;
-    f.preview = state.flies?.all.find((x) => x.id === id && x.seedBlock === f.seedBlock)?.preview || null; // keep what we already worked out
-    // what its experiments have set aside and nobody has moved to its owner yet (the market holds it until `settle`)
-    f.pending = flies.royaltyBps > 0 && f.mepId !== ZERO32 ? decodeUint(await call(flies.market, "royalties(bytes32)", [f.mepId])) : 0n;
-    flies.all.push(f);
+/** Discover one indexed page, then verify its individuals and sale quotes on-chain. */
+export async function loadFlies(options = {}) {
+  const request = ++pageRequest, deployment = state.deployment, wallet = state.wallet, previous = state.flies;
+  if (pageDeployment !== deployment) { delete pageQuery.minBlock; pageDeployment = deployment; }
+  pageQuery = { ...pageQuery, ...options };
+  const query = { ...pageQuery };
+  const current = () => request === pageRequest && state.deployment === deployment && state.wallet === wallet;
+  state.flies = null; notify();
+  if (query.view === "mine" && !wallet) return;
+  try {
+    await loadPhenotypes(); // what the published runs measured about these individuals; absent, the page says so per fly
+    if (!current()) return;
+    const address = deployment?.addresses?.collection;
+    if (!address) { state.flies = { missing: true, all: [] }; notify(); return; }
+    const T = await loadTerms();
+    const page = await api("/flies/page?" + new URLSearchParams({ ...query, ...(wallet ? {owner:wallet} : {}) }));
+    if (page.error) throw new Error(page.error);
+    if (page.collection?.toLowerCase() !== address.toLowerCase() || !Array.isArray(page.ids) || page.ids.length > 12) throw new Error("Invalid collection page response.");
+    const flies = { address, missing: false, loading: true, page, block: await blockNumber(),
+      breedFee: T.breedFee, bounty: T.bounty, mintPrice: T.mintPrice, mintBond: T.mintBond,
+      royaltyBps: T.royaltyBps, baseShareBps: T.baseShareBps, market: decodeAddress(await call(address, "MARKET()")),
+      genesisRoot: await call(address, "GENESIS_ROOT()"), owed: state.wallet ? decodeUint(await call(address, "owed(address)", [state.wallet])) : 0n,
+      genesis: null, sale: null,
+      baseFemale: await call(address, "BASE_FEMALE()"), baseMale: await call(address, "BASE_MALE()"), all: [] };
+    for (const id of page.ids) {
+      const f = decodeIndividual(id, await call(address, "individuals(uint256)", [id]));
+      f.owner = decodeAddress(await call(address, "ownerOf(uint256)", [id])); f.mine = !!state.wallet && f.owner.toLowerCase() === state.wallet.toLowerCase();
+      f.preview = previous?.all.find((x) => x.id === id && x.seedBlock === f.seedBlock)?.preview || null; // keep what we already worked out
+      // what its experiments have set aside and nobody has moved to its owner yet (the market holds it until `settle`)
+      f.pending = flies.royaltyBps > 0 && f.mepId !== ZERO32 ? decodeUint(await call(flies.market, "royalties(bytes32)", [f.mepId])) : 0n;
+      if (query.view !== "mine" || f.mine) flies.all.push(f);
+    }
+    if (!current()) return;
+    state.flies = flies;
+    if (query.view === "adopt") await loadGenesis();
+    else { await loadBattery(); await watchEggs(); }
+    if (current()) { delete pageQuery.minBlock; flies.loading = false; notify(); }
+  } catch (error) {
+    if (current()) { state.flies = { error: error.message || String(error), all: [] }; notify(); }
+    throw error;
   }
-  state.flies = flies; await loadBattery(); notify(); await watchEggs();
 }
 
 /** what the child will be, from the seed block's hash -- the same arithmetic as FlyCollection.hatch */
-async function previewOf(f, byId) {
+async function previewOf(f, byId, address) {
   const b = await read("eth_getBlockByNumber", ["0x" + f.seedBlock.toString(16), false]);
   if (!b || !b.hash) return null;
+  for (const id of [f.parentA, f.parentB]) if (!byId.has(id)) byId.set(id, decodeIndividual(id, await call(address, "individuals(uint256)", [id])));
   const seed = keccakWords([byId.get(f.parentA).deltaHash, byId.get(f.parentB).deltaHash, f.parentA, f.parentB, f.id, b.hash]);
   return { seed, sex: Number(BigInt(seed) & 1n) };
 }
@@ -92,22 +113,23 @@ async function previewOf(f, byId) {
 let pass = null, timer = null;
 export function watchEggs() { return pass ||= runPass().finally(() => { pass = null; }); }
 async function runPass() {
-  const F = state.flies; if (!F || F.missing) return;
+  const F = state.flies; if (!F || F.missing || F.error) return;
   const eggs = F.all.filter((f) => stageOf(f) === "egg");
   if (!eggs.length) { if (timer) { clearInterval(timer); timer = null; } return; }
   if (!timer) timer = setInterval(() => watchEggs().catch(() => {}), 1500); // only while there is an egg to watch
   F.block = await blockNumber(); const byId = new Map(F.all.map((f) => [f.id, f]));
   for (const f of eggs) {
+    if (state.flies !== F) return;
     const fresh = decodeIndividual(f.id, await call(F.address, "individuals(uint256)", [f.id]));
     if (fresh.seedBlock !== f.seedBlock) f.preview = null; // re-armed: a new block is a new draw
     Object.assign(f, fresh);
     if (f.seed !== ZERO32) { log(`fly #${f.id} hatched on-chain: ${sexMark(f.sex)}, seed ${f.seed.slice(0, 12)}…`); continue; }
     if (!f.preview && F.block > f.seedBlock && F.block <= f.seedBlock + WINDOW) {
-      f.preview = await previewOf(f, byId);
+      f.preview = await previewOf(f, byId, F.address);
       if (f.preview) log(`fly #${f.id}: block ${f.seedBlock} is in — it will be ${sexMark(f.preview.sex)} (seed ${f.preview.seed.slice(0, 12)}…), waiting for hatch`);
     }
   }
-  notify();
+  if (state.flies === F) notify();
 }
 /** blocks left before the seed block's hash is gone; <= 0 means it needs rearm */
 export const blocksLeft = (f) => (state.flies ? f.seedBlock + WINDOW - state.flies.block : 0);
@@ -120,7 +142,16 @@ export function checkPair(dam, sire) {
   return null;
 }
 export async function breed(damId, sireId) {
-  const F = state.flies; const byId = new Map(F.all.map((f) => [f.id, f]));
+  const F = state.flies;
+  if (!F || F.loading || F.error) throw new Error("Wait for your flies to load.");
+  const wallet = state.wallet, deployment = state.deployment;
+  const byId = new Map();
+  for (const id of [damId, sireId]) {
+    const f = decodeIndividual(id, await call(F.address, "individuals(uint256)", [id]));
+    f.mine = decodeAddress(await call(F.address, "ownerOf(uint256)", [id])).toLowerCase() === state.wallet?.toLowerCase();
+    byId.set(id, f);
+  }
+  if (state.wallet !== wallet || state.deployment !== deployment || state.flies !== F) throw new Error("Wallet or page changed; review the pair again.");
   const problem = checkPair(byId.get(damId), byId.get(sireId)); if (problem) throw new Error(problem);
   if (!F.battery?.address || F.battery.error) throw new Error("Funded battery breeding is not configured.");
   if (!state.wallet || !state.chainOk) throw new Error("Connect on the deployment chain first.");
@@ -138,12 +169,13 @@ export async function breed(damId, sireId) {
     ? await send(factory,"breedWithBNB(uint256,uint256,uint256)",[damId,sireId,battery.quote.deadline],F.breedFee+battery.quote.maxInput)
     : await send(factory,"breed(uint256,uint256)",[damId,sireId],F.breedFee+battery.budget);
   if(r.status!=="0x1")throw new Error("Funded breed reverted");
-  await loadFlies();
-  return state.flies.all.length; // ids are sequential: the newborn is the last one
+  const newborn = Number(decodeUint(await call(F.address, "totalSupply()", [], r.blockNumber)));
+  await loadFlies({ minBlock: Number(BigInt(r.blockNumber)) });
+  return newborn;
 }
 // ---- treasury inventory adoption (existing NFTs, never mint) ----
 export async function loadGenesis() {
-  const F = state.flies; if (!F || F.missing) return;
+  const F = state.flies; if (!F || F.missing || F.error) return;
   F.sale = null; notify();
   const address = state.deployment?.addresses?.inventorySale;
   if (!address) { F.sale = { unavailable: "Treasury adoption is not configured for this deployment.", open: [] }; notify(); return; }
@@ -181,7 +213,7 @@ export async function adopt(id) {
     log(`adopting treasury fly #${id}: existing NFT, BNB proceeds to ${sale.treasury}`);
     const r = await send(sale.address, "buy(uint256,uint256,uint256,uint256)", [id, x.price, x.revision, deadline], x.price);
     if (r.status !== "0x1") throw new Error("Adoption reverted; refresh inventory before retrying.");
-    await loadFlies(); await loadGenesis();
+    await loadFlies({ minBlock: Number(BigInt(r.blockNumber)) });
   } finally { pendingAdoptions.delete(key); x.pending = false; notify(); }
 }
 const ethChainId = () => eth().request({ method: "eth_chainId" });

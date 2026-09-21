@@ -1,3 +1,4 @@
+import { fliesPageReader } from './flies-page.mjs';
 // The BNB relayer: one process = (1) the stage-1 WebSocket relay hub, (2) the epoch aggregator for the MEPs it
 // serves (collects claims over the relay, posts one root per epoch), (3) a commit-reveal beacon participant and
 // epoch roller, (4) a gas-sponsoring transaction submitter for bonded instances (delegateBySig, materializeClaim,
@@ -331,6 +332,7 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
   };
   const p = sponsorChain.then(run, run); sponsorChain = p.catch(() => {}); return p;
 }
+const readFliesPage = fliesPageReader(ch, dep.addresses);
 const readHostStats = hostStats(ch, dep.addresses.market);
 const readProviderModels = providerModelReader(ch, meps);
 api.on("request", async (req, res) => {
@@ -338,6 +340,10 @@ api.on("request", async (req, res) => {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
     if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
+    if (req.method === "GET" && u.pathname === "/flies/page") {
+      try { return json(res, 200, await readFliesPage(u.searchParams)); }
+      catch(e) { return json(res, e.statusCode || 503, {error:e.message}); }
+    }
     if (u.pathname === "/meps") return json(res, 200, await readProviderModels());
     if (u.pathname === "/hosts") {
       const instance = u.searchParams.get("instance") || "";

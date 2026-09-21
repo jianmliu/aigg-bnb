@@ -28,7 +28,9 @@ try {
   check("the paper is linked; the dataset says it is in preparation rather than linking nowhere", /paper\.md$/.test(await page.getAttribute("#flybnbPaper", "href")) && /in preparation/.test(await page.locator("#flybnbDataset").innerText()));
   check("a visitor with no wallet sees who holds the individuals", await waitFor(async () => /1 holder · 2 individuals/.test(await page.locator("#flybnbHoldersSummary").innerText().catch(() => ""))));
   const a = A.account.address, b = B.account.address; const short = (x) => `${x.slice(0, 6)}…${x.slice(-4)}`;
-  check("by address, with the tokens held", (await page.locator("#flybnbHolders li").count()) === 1 && (await page.locator("#flybnbHolders").innerText()).includes(short(a)) && /#1 #2/.test(await page.locator("#flybnbHolders").innerText()));
+  await page.locator("#flybnbHolders summary").click();
+  await page.locator("#flybnbHolders .toks").waitFor();
+  check("by address, with the tokens held on demand", (await page.locator("#flybnbHolders li").count()) === 1 && (await page.locator("#flybnbHolders").innerText()).includes(short(a)) && /#1 #2/.test(await page.locator("#flybnbHolders").innerText()));
 
   await H.sendTo(A, C, "FlyCollection", "transferFrom", [a, b, 2n]); await anvil.mine(12);
   await page.click("#navStay"); await page.click("#navFlyBnb"); // the view reads the list when it opens (and every 30 s while open)
