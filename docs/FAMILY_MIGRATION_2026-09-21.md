@@ -50,3 +50,9 @@ The audit reconciled the full balances of the old market and instance registry. 
 Both scripts save exact signed transaction bytes before broadcast and resume by re-sending those bytes, not by allocating a replacement nonce. Private journals are mode 0600; the public record strips signed bytes. Preserve original private journals for recovery and do not run competing deployments from the same account.
 
 Validation: Anvil mesh deployment/recovery and full legacy/base-bound 200-Founder inventory flows; interruption before broadcast; staged resume; Adopt payment and return/relist; Render blueprint/environment mapping; production frontend build. Live transaction and cutover evidence is recorded with the public deployment record.
+
+## Service cutover verification
+
+PR #93 merged as `20316cda027f4af0e53929eb010171118a742bbc`; both Render services and the Pages frontend were deployed from that commit. The live relayer reports `familyHosting: true`, 204 MEPs, and an authorized shared-capacity registry. The Host page offers four root families. Adopt loads 200 Founders in 17 pages of up to 12. The gateway is out of maintenance, connected to the new market, with zero new calls at cutover.
+
+Known operational limitation: the selected public BSC RPC still rejects the existing keeper event-log scan with `Request exceeds defined limit`. This predates the migration and is not resolved by redeploying contracts; automatic event discovery needs a separate RPC/scan fix. Browser task execution, a production Breed round and new host qualification have not been live-tested as part of this cutover. Host owners must re-enroll before the fresh market can serve tasks.

@@ -2539,5 +2539,39 @@
     "0x47ab66a7f0ebc3c1086a94c4adaa4d06d35e8fea2bc8667c1801ea808daeb7aa",
     "0xf1ed1a1c5dcefc36abe233a178e860a0d6f81544c925c1ab7d86c835a6a2dec8",
     "0x8114f84d3f99661cdd3d037a21910b9fece08b95697359186140949dfebc0c2b"
-  ]
+  ],
+  "serviceCutover": {
+    "runtimeCommit": "20316cda027f4af0e53929eb010171118a742bbc",
+    "pullRequest": "https://github.com/jianmliu/aigg-bnb/pull/93",
+    "relayerDeploy": "dep-daobp9942hec7397n0lg",
+    "gatewayDeploy": "dep-daobq0jm8hqs73e2ids0",
+    "frontendDeploy": "https://81274215.aigg-fly.pages.dev",
+    "familyHosting": true,
+    "catalogMepCount": 204,
+    "hostFamilyCount": 4,
+    "capacity": {
+      "enabled": true,
+      "registry": "0x02ff13eaa571e407fe535b355634eb4cc1a2372c",
+      "market": "0x3e89d16f05cfd9919fb473eb4657289ca9c8b5db",
+      "instance": "0xfe560af8f5cfc209794b3df7dc7e281d4ef81eda",
+      "authorized": true,
+      "limit": 0,
+      "active": 0,
+      "free": 0
+    },
+    "gateway": {
+      "ok": true,
+      "wallet": "0xf5cfcb350268aec30e8d814e48dab01cbe54b5a7",
+      "chain": 97,
+      "market": "0x3e89d16f05cfd9919fb473eb4657289ca9c8b5db",
+      "calls": 0,
+      "relay": {
+        "url": "wss://aigg-bnb-relayer-testnet.onrender.com/relay",
+        "connected": 1,
+        "reconnects": 0
+      }
+    },
+    "adoptPage": "Page 1 of 17 \u00b7 200 flies \u00b7 12 per page",
+    "knownLimitation": "Public RPC eth_getLogs limit still affects the pre-existing keeper scan; this migration does not resolve that separate issue."
+  }
 }
