@@ -10,7 +10,7 @@
 // block (docs/flybnb/build.mjs). Addresses only -- a name is the holder's to give, not the page's to guess.
 import { useEffect, useState } from "react";
 import * as C from "../core/controller.js";
-import { Panel } from "./primitives.jsx";
+import { Panel, Button } from "./primitives.jsx";
 import { SOLO } from "./mode.js";
 
 const REPO = "https://github.com/jianmliu/aigg-bnb/blob/main/docs/flybnb";
@@ -32,8 +32,11 @@ const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 export default function FlyBnbView() {
   const s = C.state;
+  const [page, setPage] = useState(1);
+  const [expanded, setExpanded] = useState(new Set());
   const [h, setH] = useState(null); const [err, setErr] = useState(null);
   useEffect(() => {
+    setPage(1); setExpanded(new Set());
     let live = true;
     const pull = async () => {
       try { const r = await fetch(C.relayer() + "/flybnb/holders"); const j = await r.json(); if (!live) return; if (j.error) { setErr(j.error); setH(null); } else { setH(j); setErr(null); } }
@@ -41,6 +44,8 @@ export default function FlyBnbView() {
     };
     pull(); const t = setInterval(pull, EVERY_MS); return () => { live = false; clearInterval(t); };
   }, [s.deployment]);
+  const pages = Math.max(1, Math.ceil((h?.holders.length || 0) / 12));
+  const current = Math.min(page, pages);
   const me = s.wallet ? s.wallet.toLowerCase() : null;
 
   return (
@@ -71,14 +76,25 @@ export default function FlyBnbView() {
           <>
             <div className="kv strong" id="flybnbHoldersSummary">{h.holders.length} holder{h.holders.length === 1 ? "" : "s"} · {h.totalSupply} individual{h.totalSupply === 1 ? "" : "s"}{h.truncated ? " · list truncated" : ""}</div>
             <ol className="holders" id="flybnbHolders">
-              {h.holders.map((x) => (
+              {h.holders.slice((current - 1) * 12, current * 12).map((x) => (
                 <li key={x.address} data-me={me === x.address.toLowerCase()}>
                   <span className="addr" title={x.address}>{short(x.address)}</span>
-                  <span className="toks">{x.tokens.map((id) => `#${id}`).join(" ")}</span>
+                  <details open={expanded.has(x.address)} onToggle={e => {
+                    const open = e.currentTarget.open;
+                    setExpanded(previous => { const next = new Set(previous); open ? next.add(x.address) : next.delete(x.address); return next; });
+                  }}>
+                    <summary>{x.tokens.length} {x.tokens.length === 1 ? "individual" : "individuals"} · view IDs</summary>
+                    {expanded.has(x.address) && <span className="toks">{x.tokens.map((id) => `#${id}`).join(" ")}</span>}
+                  </details>
                   {me === x.address.toLowerCase() && <span className="you">you</span>}
                 </li>
               ))}
             </ol>
+            {pages > 1 && <div className="row tight center flies-paging">
+              <Button disabled={current === 1} onClick={() => setPage(current - 1)}>Previous</Button>
+              <span>Page {current} of {pages}</span>
+              <Button disabled={current === pages} onClick={() => setPage(current + 1)}>Next</Button>
+            </div>}
           </>
         )}
       </Panel>

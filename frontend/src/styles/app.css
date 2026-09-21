@@ -454,3 +454,10 @@ span.btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
 .host-models li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 12px; }
 .host-models li > span:first-child { font-weight: 700; }
 @media (max-width: 600px) { .host-metrics { grid-template-columns: 1fr; } }
+
+.catalog-controls { display: flex; flex-wrap: wrap; gap: 16px; margin: 18px 0; }
+.catalog-controls label { display: grid; gap: 6px; flex: 1 1 200px; font-size: 13px; }
+.catalog-controls input, .catalog-controls select { min-width: 0; width: 100%; padding: 10px 12px; font: inherit; color: var(--text); border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); }
+.holders details { min-width: 0; }
+.holders summary { cursor: pointer; }
+.holders details .toks { display: block; margin-top: 8px; }
