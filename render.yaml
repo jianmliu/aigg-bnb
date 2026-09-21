@@ -54,7 +54,7 @@ services:
       - key: PORW_PUBLIC_RELAY_URL
         value: wss://aigg-bnb-relayer-testnet.onrender.com/relay
 
-      # ---- the deployment: BSC testnet, scheme v3, deployed 2026-09-19 from main at b3a88d7 (aigg-porw 994ccf4) ----
+      # ---- the deployment: BSC testnet, scheme v3 family mesh, deployed 2026-09-21 (aigg-porw 6b5f290) ----
       - key: PORW_NETWORK
         value: bsc-testnet
       - key: PORW_CHAIN_ID
@@ -62,39 +62,37 @@ services:
       - key: PORW_EPOCH_BLOCKS
         value: "200"
       - key: PORW_VERIFIER
-        value: "0xcE023ee73A1Ab3A8Ca481B4EA540E48AE24F3365"
+        value: "0xd9694a1d08d1d7011dd122e16811847314f83795"
       - key: PORW_MEP_REGISTRY
-        value: "0xC779151b405513B48787B8F1111f79FAC10CDb7A"
+        value: "0x19de92004c19ea6860641738a8b1e5656e7efb16"
       - key: PORW_INSTANCES
-        value: "0x50b015f2a2a04E2D177343bE4bDB652AFf8100B1"
+        value: "0x91a99283d7cb667b42c0121b877006456deb83a4"
       - key: PORW_BEACON
-        value: "0x3F4AB29555b696BACbB2450188ad640013941484"
+        value: "0xa2e008c2f5923ce877279b67b0d8d2cd14face61"
       - key: PORW_CLAIMS
-        value: "0x2E9da33606a21e31DDceD22d960b906bAc199c1F"
+        value: "0x1b08029eb81bc3478f286bb8d648154a0e7bfba4"
       - key: PORW_MARKET
-        value: "0x71120BcF8EFDcc6E4c0299e035676dB6d0d68F19"
+        value: "0x3e89d16f05cfd9919fb473eb4657289ca9c8b5db"
       - key: PORW_DISPUTES
-        value: "0xeEC51cFaB44B45dEc8d34941F75044C5230841de"
+        value: "0x455bd9f09b146021c93d176ab7b14973f4670537"
       - key: PORW_RELAYS
-        value: "0x50Cd9B2A00b4B8B33a130C879E7095A9Da7f29Ce"
+        value: "0xd17b1b1b5c40ddcbf6bf51a54de70dbfc26e09cc"
       - key: PORW_CLAIM_VALIDITY_EPOCHS
         value: "6"
 
       # ---- the brains it serves. What it serves FOLLOWS THE WHITELIST: for every collection the curator has listed,
       # the base brains it names and every brain bound to one of its flies, bred ones included, with nothing restarted.
-      # The genesis collection's base is the >= 2-synapse export (0x79af…: the base its hundred founders are variants
-      # of), so that one is not pinned here; it arrives through the list.
+      # All four root profiles are pinned so family claim sponsorship is ready before collection discovery.
       - key: PORW_WHITELIST
-        value: "0xAd8e7206A9bE4F24Ce0aa2c861F1E9331A16681C"
-      # PINNED on top of the list: the >= 5-synapse export the gate task and test/live_bsc.mjs run on, and BOTH male
-      # brains (MaleCNS v1.0). None of them belongs to a collection, so without this line nobody would serve them.
+        value: "0x05fcbb56da3a27796906079d516cd8d17f45baa5"
+      # PINNED: female and male >= 2 and >= 5 profiles; children enroll through their root family.
       # The male pair is the same distinction the female pair is: >= 2 is the substrate individuals are drawn on,
       # >= 5 is the published wiring, and a battery posted for one does NOT reproduce the other's rows.
       # The male one is the first brain here that is NOT int-lif at FlyWire's weight unit: its exec kind pins 7209
       # (0.40 of 18022, because MaleCNS counts the same connections 1.55-1.62x higher and at 18022 every male stimulus
       # ignites the whole network). The relayer asks the chain for a kind's unit, so nothing here has to say it twice.
       - key: PORW_MEP_IDS
-        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a,0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214,0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc"
+        value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a,0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214,0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc,0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50"
       - key: PORW_MEP_NAMES
         value: "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a=FlyWire female (FAFB v783),0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50=FlyWire female · the founders' base (≥ 2 synapses),0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214=MaleCNS v1.0 male · brain and nerve cord (≥ 2 synapses),0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc=MaleCNS v1.0 male · the published wiring (≥ 5 synapses)"
 
@@ -111,15 +109,15 @@ services:
       - key: PORW_BEACON_LAZY
         value: "1"
 
-      # ---- genesis v2 treasury inventory, 2026-09-20: 100 female + 100 male Founders.
+      # ---- genesis v2 family-bound treasury inventory, 2026-09-21: 100 female + 100 male Founders.
       # Protected zero-cost pre-mint into FounderInventoryVault; public Adopt is resale at 0.01 tBNB.
       # Full BNB proceeds go to the existing TreasuryRouter (0x1Bef7990…3708); no adopter Host bond.
       # Breed fee 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps; base share 1000 bps; resale 500 bps.
       # Legacy collection/NFTs remain intact. Battery budget/worker require separate deployment.
       - key: PORW_COLLECTION
-        value: "0xb42dfb7b281535ddc836b3de8df62e5f59b5b7c5"
+        value: "0xef927d0e5e5b919dfba91eb816fbf5a284e33498"
       - key: PORW_INVENTORY_SALE
-        value: "0x9668397498C564DB5e604b1156EEE97Ed6A62f62"
+        value: "0xd974C8c0c18D31AfdEfa0630D06E3960Ee681291"
 
       # ---- secrets: asked for once, never synced, never in git ----
       - key: PORW_RELAYER_KEY
@@ -159,7 +157,8 @@ services:
       - key: GATEWAY_HOST
         value: 0.0.0.0
       - key: GATEWAY_STATE
-        value: /var/data/gateway-state.json
+        value: /var/data/gateway-family-v1-state.json
+      # Previous market calls/counts remain archived at /var/data/gateway-state.json(.counts).
       # the relayer: /meps, and the relay the gateway announces tasks on. Its /deployment must agree with the PORW_*
       # below on the market, or the gateway refuses to start -- money is not sent where an HTTP endpoint says
       - key: GATEWAY_RELAYER
@@ -173,21 +172,21 @@ services:
       - key: PORW_EPOCH_BLOCKS
         value: "200"
       - key: PORW_VERIFIER
-        value: "0xcE023ee73A1Ab3A8Ca481B4EA540E48AE24F3365"
+        value: "0xd9694a1d08d1d7011dd122e16811847314f83795"
       - key: PORW_MEP_REGISTRY
-        value: "0xC779151b405513B48787B8F1111f79FAC10CDb7A"
+        value: "0x19de92004c19ea6860641738a8b1e5656e7efb16"
       - key: PORW_INSTANCES
-        value: "0x50b015f2a2a04E2D177343bE4bDB652AFf8100B1"
+        value: "0x91a99283d7cb667b42c0121b877006456deb83a4"
       - key: PORW_BEACON
-        value: "0x3F4AB29555b696BACbB2450188ad640013941484"
+        value: "0xa2e008c2f5923ce877279b67b0d8d2cd14face61"
       - key: PORW_CLAIMS
-        value: "0x2E9da33606a21e31DDceD22d960b906bAc199c1F"
+        value: "0x1b08029eb81bc3478f286bb8d648154a0e7bfba4"
       - key: PORW_MARKET
-        value: "0x71120BcF8EFDcc6E4c0299e035676dB6d0d68F19"
+        value: "0x3e89d16f05cfd9919fb473eb4657289ca9c8b5db"
       - key: PORW_DISPUTES
-        value: "0xeEC51cFaB44B45dEc8d34941F75044C5230841de"
+        value: "0x455bd9f09b146021c93d176ab7b14973f4670537"
       - key: PORW_RELAYS
-        value: "0x50Cd9B2A00b4B8B33a130C879E7095A9Da7f29Ce"
+        value: "0xd17b1b1b5c40ddcbf6bf51a54de70dbfc26e09cc"
 
       # ---- what it offers ----
       # the names callers use; `mep:0x…` works for any served brain, and a registered fly is `fly-<token>`

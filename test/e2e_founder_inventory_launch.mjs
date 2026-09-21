@@ -34,6 +34,10 @@ try {
  const expected=getContractAddress({from:c.account.address,nonce:BigInt(await c.pub.getTransactionCount({address:c.account.address}))});
  const p=ps.founders[0],outsider=H.clientsFor(dep,H.KEYS[1]);
  await H.sendTo(outsider,cfg.meps,'MEPRegistry',baseEnrollment?'registerDerivedMEPWithTerms':'registerMEPWithTerms',[{...p,weightsDA:stringToHex('https://invalid.example/front-run')},...(baseEnrollment?[ps.bases.find(b=>b.sex===p.sex).mepId]:[]),expected,1000]);
+ const rawSend=c.wallet.sendRawTransaction;let dropFirst=true;
+ c.wallet.sendRawTransaction=async request=>{if(dropFirst){dropFirst=false;throw Error('pre-broadcast interruption');}return rawSend(request);};
+ await assert.rejects(launchInventory({c,cfg,journal,activate:false,smoke:false}),/pre-broadcast interruption/);
+ assert(JSON.parse(fs.readFileSync(journal)).transactions.collection.serializedTransaction);
  const staged=await launchInventory({c,cfg,journal,activate:false,smoke:false});
  assert.equal(await H.readFrom(c,staged.addresses.sale,'TreasuryInventorySale','paused'),true);
  assert(!staged.transactions['activate-sale']);assert(!staged.transactions['test-adoption']);

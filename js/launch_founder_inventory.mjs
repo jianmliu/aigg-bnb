@@ -47,7 +47,7 @@ export async function launchInventory({c,cfg,journal,activate=true,smoke=true}) 
  const configHash=keccak256(stringToHex(json({cfg,genesisRoot:g.root,profilesHash:keccak256(stringToHex(json(profiles))),artifacts:["TreasuryFounderCollection","FounderInventoryVault","FlyRenderer"].map(n=>keccak256(artifact(n).bytecode.object))})));
  const state=fs.existsSync(journal)?JSON.parse(fs.readFileSync(journal)):{version:1,chainId:cfg.chainId,configHash,owner:cfg.owner,addresses:{},transactions:{}};
  assert.equal(state.configHash,configHash,'journal configuration mismatch');
- const save=()=>{fs.mkdirSync(path.dirname(journal),{recursive:true});fs.writeFileSync(journal+'.tmp',json(state));fs.renameSync(journal+'.tmp',journal);};
+ const save=()=>{fs.mkdirSync(path.dirname(journal),{recursive:true});fs.writeFileSync(journal+'.tmp',json(state),{mode:0o600});fs.renameSync(journal+'.tmp',journal);};
  save();
  if(Object.keys(state.transactions).length===0){
   const requiredGas=150_000_000n*(await c.pub.getGasPrice());
@@ -64,10 +64,15 @@ export async function launchInventory({c,cfg,journal,activate=true,smoke=true}) 
    assert(await c.pub.getBalance({address:cfg.owner})>gas*gasPrice+value+parseEther('0.002'),'insufficient gas reserve');
    const request=await c.wallet.prepareTransactionRequest({account:c.account,to,data,value,nonce,gas,gasPrice,type:'legacy'});
    const signed=await c.wallet.signTransaction(request),hash=keccak256(signed);
-   row=state.transactions[label]={hash,nonce,status:'prepared',gas:gas.toString(),gasPrice:gasPrice.toString()};
+   row=state.transactions[label]={hash,nonce,status:'prepared',serializedTransaction:signed,gas:gas.toString(),gasPrice:gasPrice.toString()};
    // Save the expected hash BEFORE broadcast. If interrupted here, investigate the hash/nonce, never silently redeploy.
    save();
-   await c.wallet.sendRawTransaction({serializedTransaction:signed});row.status='submitted';save();
+  }
+  if(['prepared','submitted'].includes(row.status) && row.serializedTransaction){
+   assert.equal(keccak256(row.serializedTransaction),row.hash,'corrupt signed transaction');
+   try{await c.wallet.sendRawTransaction({serializedTransaction:row.serializedTransaction});}
+   catch(error){try{await c.pub.getTransaction({hash:row.hash});}catch{throw error;}}
+   row.status='submitted';save();
   }
   const receipt=await c.pub.waitForTransactionReceipt({hash:row.hash,confirmations:cfg.chainId===97?3:1,timeout:180_000});
   if(label!=='test-adoption')assert.equal(receipt.status,'success',`transaction ${label} reverted`);
