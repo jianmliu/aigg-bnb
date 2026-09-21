@@ -36,20 +36,23 @@ if (!payloadPath) { console.error("usage: live_male_battery.mjs <malecns-v1.0-mi
 const dep = deploymentFromEnv(); const pk = process.env.PORW_DEPLOYER_KEY; if (!dep || !pk) throw new Error("source .env.bsc-testnet first");
 const c = clients(dep, pk); const wallet = c.account.address;
 const d = await api("/deployment");
-const MALE = (process.env.PORW_MEP || "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214").toLowerCase();
+// The registered male base, pinned as a literal so test/brain_addresses.mjs can hold this file to the same
+// content address as the battery, the profile and the genesis bases. PORW_MEP runs the script on another brain.
+const MALE = "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214";
+const MEP = (process.env.PORW_MEP || MALE).toLowerCase();
 const served = await api("/meps");
-const info = served.find((m) => m.mepId.toLowerCase() === MALE);
+const info = served.find((m) => m.mepId.toLowerCase() === MEP);
 if (!info) throw new Error("the relayer does not serve the male brain");
 if (info.wUnitQ16 !== battery.population.w_unit_q16) throw new Error(`the relayer says unit ${info.wUnitQ16}, the battery's population says ${battery.population.w_unit_q16}`);
-log(`relayer ${d.relayer} | male MEP ${MALE.slice(0, 14)}… unit ${info.wUnitQ16} | wallet ${wallet}`);
+log(`relayer ${d.relayer} | male MEP ${MEP.slice(0, 14)}… unit ${info.wUnitQ16} | wallet ${wallet}`);
 if (!clientAllowed(d, wallet)) throw new Error(`${wallet} is not a task client of this relayer: its results would never be sponsored`);
 
-const evidence = { chainId: dep.chainId, wallet, mepId: MALE, wUnitQ16: info.wUnitQ16, battery: { name: battery.name, version: battery.version, runs: battery.stimuli.length * battery.seeds.length }, txs: {} };
+const evidence = { chainId: dep.chainId, wallet, mepId: MEP, wUnitQ16: info.wUnitQ16, battery: { name: battery.name, version: battery.version, runs: battery.stimuli.length * battery.seeds.length }, txs: {} };
 
 // ---- 1. enrol this instance for the male brain (it is bonded already; any value adds to the bond and enrols) ----
 const ENROL = process.env.PORW_ENROL_BNB || "0.002";
-if (!(await c.instances.read.isBondedFor([wallet, MALE]))) {
-  const h = await c.instances.write.bond([[MALE]], { value: parseEther(ENROL) });
+if (!(await c.instances.read.isBondedFor([wallet, MEP]))) {
+  const h = await c.instances.write.bond([[MEP]], { value: parseEther(ENROL) });
   const r = await c.pub.waitForTransactionReceipt({ hash: h }); evidence.txs.bond = h;
   log(`enrolled for the male brain: ${r.status}, bond now ${formatEther(await c.instances.read.bonded([wallet]))} BNB, ${await c.instances.read.weightOf([wallet])} vote(s)`);
 } else log(`already enrolled for the male brain (bond ${formatEther(await c.instances.read.bonded([wallet]))} BNB, ${await c.instances.read.weightOf([wallet])} vote(s))`);
@@ -74,7 +77,7 @@ let t0 = Date.now();
 const terms = info.beneficiary && info.royaltyBps ? { beneficiary: info.beneficiary, royaltyBps: info.royaltyBps } : null;
 if (terms) log(`terms: ${terms.royaltyBps} bps to ${terms.beneficiary.slice(0, 10)}… -- the MEP id wraps them`);
 const st = await nd.loadModel(process.env.PORW_MODEL_NAME || "malecns-v1.0-min2", payload, { maxSteps: battery.steps, exec: "lif", wUnitQ16: battery.population.w_unit_q16, terms });
-if (H.hex(st.mep.mepId).toLowerCase() !== MALE) throw new Error(`this payload under unit ${battery.population.w_unit_q16} is MEP ${H.hex(st.mep.mepId)}, not ${MALE}`);
+if (H.hex(st.mep.mepId).toLowerCase() !== MEP) throw new Error(`this payload under unit ${battery.population.w_unit_q16} is MEP ${H.hex(st.mep.mepId)}, not ${MEP}`);
 log(`resident: ${st.hdr.neurons} neurons, ${st.hdr.synapses} synapses, mepId reproduces (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 
 const rc = new RelayClient([d.relay], nd.key); await rc.connect();
@@ -88,21 +91,21 @@ const EV = process.env.PORW_EVIDENCE || "/tmp/live-male-battery.json";
 const deadline = Date.now() + Number(process.env.PORW_DEADLINE_MIN || 75) * 60 * 1000;
 while (Date.now() < deadline && !settled) {
   try {
-    const e = await api("/epoch?mep=" + MALE);
+    const e = await api("/epoch?mep=" + MEP);
     if (woke !== e.epoch) { woke = e.epoch; const w = await api("/wake", { instance: wallet }).catch(() => ({})); if (w.lazy) log(`epoch ${e.epoch}: woke the beacon through ${w.wakeUntil}`); }
     if (e.rolled && !claims[e.epoch]) { const { r } = await svc.announce(st.mep.mepId, H.unhex(e.challenge)); claims[e.epoch] = H.hex(r.claimHash); log(`epoch ${e.epoch}: claim announced`); }
     const prev = e.epoch - 1;
     if (claims[prev] && !materialized[prev]) {
-      const p = await api(`/proof?mep=${MALE}&epoch=${prev}&instance=${wallet}`);
-      if (p.posted) { const r = await api("/tx/materialize", { mep: MALE, epoch: prev, instance: wallet }); if (r.ok) { materialized[prev] = r.hash; evidence.txs.materialize = r.hash; log(`epoch ${prev}: materialized ${r.hash}`); } }
+      const p = await api(`/proof?mep=${MEP}&epoch=${prev}&instance=${wallet}`);
+      if (p.posted) { const r = await api("/tx/materialize", { mep: MEP, epoch: prev, instance: wallet }); if (r.ok) { materialized[prev] = r.hash; evidence.txs.materialize = r.hash; log(`epoch ${prev}: materialized ${r.hash}`); } }
     }
-    if (!att && materialized[prev] && (await c.instances.read.isEligible([wallet, MALE, BigInt(e.epoch)]))) {
+    if (!att && materialized[prev] && (await c.instances.read.isEligible([wallet, MEP, BigInt(e.epoch)]))) {
       if (!runsRoot) { t0 = Date.now(); runsRoot = (await nd.batchRunsRoot(st.mep.mepId, resolvedRuns(batteryBatch(battery)))).runsRoot; log(`runs root over ${batteryBatch(battery).runs.length} runs (${((Date.now() - t0) / 1000).toFixed(0)} s)`); }
       // A task is posted AT MOST ONCE. Announcing is what fails on a flaky RPC, and re-posting to retry it pays the
       // fee again -- which is exactly what this script did thirteen times before it was split in two.
-      if (!posted) { posted = await postBatteryTask({ battery, mepId: MALE, runsRoot, chain: c, fee: parseEther(process.env.PORW_FEE || "0.002"), redundancy: 1, deadlineBlocks: 4000, log: (m) => log("  " + m) }); evidence.taskId = posted.taskId; evidence.txs.postBatch = posted.txHash; evidence.gasUsed = posted.gasUsed; fs.writeFileSync(EV, JSON.stringify(evidence, null, 1)); }
+      if (!posted) { posted = await postBatteryTask({ battery, mepId: MEP, runsRoot, chain: c, fee: parseEther(process.env.PORW_FEE || "0.002"), redundancy: 1, deadlineBlocks: 4000, log: (m) => log("  " + m) }); evidence.taskId = posted.taskId; evidence.txs.postBatch = posted.txHash; evidence.gasUsed = posted.gasUsed; fs.writeFileSync(EV, JSON.stringify(evidence, null, 1)); }
       t0 = Date.now();
-      att = await announceBattery({ battery, mepId: MALE, runsRoot, chain: c, relay: rc, porw, ...posted, timeoutMs: 40 * 60 * 1000, log: (m) => log("  " + m) });
+      att = await announceBattery({ battery, mepId: MEP, runsRoot, chain: c, relay: rc, porw, ...posted, timeoutMs: 40 * 60 * 1000, log: (m) => log("  " + m) });
       log(`executed and returned in ${((Date.now() - t0) / 60000).toFixed(1)} min: ${att.rows.length} rows, batch root ${att.batchRoot || "(single executor)"}`);
       if (!att.rows.length) { log(`  no rows came back: ${JSON.stringify(att.replies).slice(0, 240)} -- will retry the ANNOUNCE for the same task`); att = null; }
     }
