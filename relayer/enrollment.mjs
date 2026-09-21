@@ -33,3 +33,18 @@ export async function reconcileEnrollmentBases(meps, listed, load) {
     meps.delete(id);
   }
 }
+
+export async function familyHostingEnabled(ch, mepRegistry) {
+ const configured=await optionalRead(()=>ch.pub.readContract({address:ch.instances.address,
+   abi:[{type:'function',name:'mepRegistry',stateMutability:'view',inputs:[],outputs:[{type:'address'}]}],functionName:'mepRegistry'}),'0x'+'00'.repeat(20));
+ return configured.toLowerCase()===mepRegistry.toLowerCase();
+}
+
+// Explicit root pins opt into sponsoring future descendants. A root loaded only as a
+// whitelist dependency does not grant sponsorship to arbitrary off-list children.
+export async function servesTaskMep(ch, meps, id, familyMode) {
+ if (meps.has(id)) return true;
+ if (!familyMode) return false;
+ const { baseMepId, enrollmentMepId } = await enrollmentMetadata(ch,id);
+ return !!baseMepId && baseMepId===enrollmentMepId && !!meps.get(baseMepId)?.pinned;
+}

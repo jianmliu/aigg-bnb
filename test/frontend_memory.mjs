@@ -32,6 +32,17 @@ await check('reject combined 4.48 GiB before worker initialization', async () =>
   const p = page(); p.add('female',139255,2700513,6866); p.add('male',166700,6242118,15566);
   await assert.rejects(p.startNode(), /memory|GiB|GB/i); assert.equal(p.calls.length, 0);
 });
+await check('family mode reserves a separate derivation/execution budget before starting', async () => {
+  const p = page(); p.state.deployment.familyHosting = true;
+  p.add('female',139255,2700513,6866);
+  await assert.rejects(p.startNode(), /memory|GiB|GB/i); assert.equal(p.calls.length,0);
+});
+await check('family hot-add retains the separate task budget', async () => {
+  const p = page(); p.state.deployment.familyHosting = true;
+  p.state.node = { models:new Map(), memoryBytes:0 };
+  await assert.rejects(p.hostOnNode(p.add('female',139255,2700513,6866)), /memory|GiB|GB/i);
+  assert.equal(p.calls.length,0);
+});
 await check('hot-add includes existing capacity even after input changes', async () => {
   const p = page(); const first = p.add('female',139255,2700513,6866); p.state.node = { models: new Map(), memoryBytes: 0 };
   await p.hostOnNode(first);

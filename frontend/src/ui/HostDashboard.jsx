@@ -1,3 +1,4 @@
+import HostCapacity from './HostCapacity.jsx';
 import { useEffect, useState } from 'react';
 import { Panel, Button } from './primitives.jsx';
 import * as C from '../core/controller.js';
@@ -49,13 +50,18 @@ export default function HostDashboard({ active }) {
   const online = [...(s.node?.models.keys() || [])];
   return <div id="provider-dashboard">
     <Panel title="Your hosting" note="provider dashboard">
-      {s.meps.some(m=>m.enrollmentMepId && m.enrollmentMepId!==m.mepId) && <p className="hint">Stake and residency claims cover a base pool. This browser serves loaded models; automatic loading of future derivatives is not enabled.</p>}
+      {s.meps.some(m=>m.enrollmentMepId && m.enrollmentMepId!==m.mepId) && <p className="hint">Stake and residency claims cover a base pool. On family-enabled deployments, assigned descendants load automatically from verified delta recipes.</p>}
+      <HostCapacity active={active} />
       <div className="host-metrics">
-        <div><span className="metric-label">Models online in this tab</span><strong id="host-online">{online.length}</strong></div>
+        <div><span className="metric-label">{s.deployment?.familyHosting ? 'Model families online' : 'Models online in this tab'}</span><strong id="host-online">{online.length}</strong></div>
         <div><span className="metric-label">Requests served · settled</span><strong id="host-served">{stats ? stats.requestsServed : '—'}</strong></div>
         <div><span className="metric-label">Earned · paid to your wallet</span><strong id="host-earned">{stats ? bnb(stats.earnedWei) : '—'}</strong></div>
       </div>
       {stats?.tokenEarnings && <ul>{Object.entries(stats.tokenEarnings).map(([token,units])=><li key={token}>{units} base units earned · token {token}</li>)}</ul>}
+      {s.deployment?.familyHosting && <div id="family-activity"><h3>On-demand tasks</h3>
+        {!s.familyTasks.length ? <p className="hint">Waiting for assigned tasks. Base models stay resident; descendant payloads are built only when needed.</p> : <ul>{s.familyTasks.map(t=><li key={t.taskId}>{t.mepId.slice(0,12)}… · {t.phase}{t.error ? ` · ${t.error}` : ''}{['journaled','replayed'].includes(t.phase) && <Button onClick={C.wrap(async()=>{await C.replayFamilyTask(t.taskId);C.log(`Replay verified: ${t.taskId}`);})}>Verify replay</Button>}</li>)}</ul>}
+        <p className="hint">Verified task recipes and results are saved in this browser for replay. Do not clear site data while results remain challengeable. Automatic on-chain dispute responses are not enabled.</p>
+      </div>}
       {asset?.key===key && <p className="hint">BNB tasks remain enabled. AIGG token: {asset.token}. <Button disabled={saving} onClick={C.wrap(toggleAsset)}>{asset.accepted?'Stop accepting new AIGG tasks':'Accept AIGG tasks'}</Button> Changing this applies to new assignments only.</p>}
       {assetError && <p className="hint">Token preference unavailable: {assetError}</p>}
       {!instance ? <p className="hint">Connect your wallet to see settled requests and earnings.</p>
