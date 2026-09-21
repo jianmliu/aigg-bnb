@@ -5,7 +5,7 @@ const ZERO32 = '0x' + '00'.repeat(32);
 export function unsupportedGetter(error) {
   for (let e = error; e; e = e.cause) {
     if (e.name === 'ContractFunctionZeroDataError') return true;
-    if (e.name === 'ContractFunctionRevertedError' && (!e.reason || e.reason === 'execution reverted') && !e.data && (!e.raw || e.raw === '0x')) return true;
+    if (e.name === 'ContractFunctionRevertedError' && (!e.reason || e.reason === 'execution reverted' || (e.reason === 'execution reverted: 0x' && e.raw === '0x')) && !e.data && (!e.raw || e.raw === '0x')) return true;
   }
   return false;
 }

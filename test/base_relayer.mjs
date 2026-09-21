@@ -44,3 +44,13 @@ test('reverted getters with Solidity error data and inconsistent registries are 
  const ch={meps:{read:{baseOf:async()=>base}},instances:{read:{enrollmentMep:async()=>'unrelated'}}};
  await assert.rejects(enrollmentMetadata(ch,child),/enrollment mismatch/);
 });
+
+test('BNB RPC empty revert getter falls back while reasoned and nonempty reverts fail closed',async()=>{
+ const { enrollmentMetadata, unsupportedGetter }=await import('../relayer/enrollment.mjs');
+ const empty={name:'ContractFunctionRevertedError',reason:'execution reverted: 0x',raw:'0x'};
+ const wrapped={name:'ContractFunctionExecutionError',cause:empty};
+ assert.equal(unsupportedGetter(wrapped),true);
+ for(const e of [{...empty,raw:'0x12345678'},{...empty,reason:'execution reverted: denied'},{...empty,data:{errorName:'Denied'}}]) assert.equal(unsupportedGetter({cause:e}),false);
+ const absent=async()=>{throw wrapped;};
+ assert.deepEqual(await enrollmentMetadata({meps:{read:{baseOf:absent}},instances:{read:{enrollmentMep:absent}}},child),{baseMepId:null,enrollmentMepId:child});
+});
