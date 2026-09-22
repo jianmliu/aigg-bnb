@@ -1,6 +1,6 @@
 // The standard battery and its batch form. The battery file is data that every later row of the dataset depends on,
 // so what is checked is that it is well formed and that turning it into a batch is order-preserving and total.
-import fs from "node:fs";
+import fs from "node:fs"; import zlib from "node:zlib";
 import { batteryBatch, rowOf, resolvedRuns } from "../flybnb/battery/battery_batch.mjs";
 let fails = 0; const check = (n, ok) => { console.log((ok ? "  ok   " : "  FAIL ") + n); if (!ok) fails++; };
 const B = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-v1.json", import.meta.url)));
@@ -45,4 +45,27 @@ check("a perturbed battery is the same batch with a silence set on every run", p
     a.rows.length === M.stimuli.length * M.seeds.length && a.complete === true && a.rows.every((r) => r.agree) && att.settled.matches === true && root === a.batchRoot && att.settled.onChain.every((r) => r === a.batchRoot));
   check(`and all ${att.offline.expected} counts digests equal what numpy computes for the registered payload (unit ${ref.w_unit_q16})`, att.offline.ok === true && att.offline.matched === att.offline.expected && ref.model_id.toLowerCase() === M.population.base_model_id.toLowerCase());
   check("the reference is the payload as registered, not the dataset's thresholded base", ref.records > M.population.min_syn * 0 && ref.records === 15283237 && /no min_syn threshold/.test(ref.kind)); }
+// a MINTED fly, on the live network: the individual case, where no special reference is needed at all
+{ const F = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/fly101.json", import.meta.url))), a = F.attestation;
+  const rows = zlib.gunzipSync(fs.readFileSync(new URL("../flybnb/results/male/pilot/rows.jsonl.gz", import.meta.url))).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  const m0 = rows.find((r) => r.id === F.offline.id);
+  check(`fly #101 of the pre-migration collection IS the pilot founder ${F.offline.id}: the same FLYDELTA recipe, by delta id`, m0 && F.offline.id === "M000" && m0.delta_id === "0x68ac445c99252b618b2f70958bff1a271c613081eee008ccb0e88af197db6bbd");
+  check(`its battery was settled on chain and all ${F.offline.expected} digests equal the row committed here`, a.complete === true && F.settled.matches === true && F.offline.ok === true && F.offline.matched === m0.rows.length);
+  const want = new Map(m0.rows.map((w) => [w.stim + "|" + w.seed, w.digest.toLowerCase()]));
+  check("checked against the committed rows themselves, not against the summary in the file", a.rows.every((r) => want.get(r.stimulus + "|" + r.seed) === r.countsDigest.toLowerCase()));
+  // the run was on the pre-migration mesh; the BRAIN is still in the replacement inventory, and that is what the run is about
+  const inv = JSON.parse(fs.readFileSync(new URL("../flybnb/genesis/founder-profiles-v2.json", import.meta.url))), prof = JSON.stringify(inv);
+  const entry = (inv.founders || inv.profiles || []).find((x) => String(x.deltaHash).toLowerCase() === m0.delta_id.toLowerCase());
+  // in-place derivation is a function of (base, recipe, unit), so those three identify the brain -- no model_id literal needed
+  const Mb = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-male-v1.json", import.meta.url))).population;
+  check("the same brain is in the replacement inventory -- same recipe, same base, same unit -- and only the old wrapped id is gone",
+    !!entry && entry.baseModelId.toLowerCase() === Mb.base_model_id.toLowerCase() && Number(entry.wUnitQ16) === Mb.w_unit_q16 && !prof.includes(F.mepId.slice(2, 18))); }
+// the published male wiring: the run that DOES reproduce the dataset's base row, which #80's could not
+{ const P = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/min5.json", import.meta.url))), a = P.attestation;
+  const rows = zlib.gunzipSync(fs.readFileSync(new URL("../flybnb/results/male/pilot/rows.jsonl.gz", import.meta.url))).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  const base = rows.find((r) => r.kind === "base"); const want = new Map(base.rows.map((w) => [w.stim + "|" + w.seed, w.digest.toLowerCase()]));
+  check(`the published male wiring settled on chain and reproduces all ${base.rows.length} of the dataset's base digests`,
+    a.complete === true && P.settled.matches === true && a.rows.length === base.rows.length && a.rows.every((r) => want.get(r.stimulus + "|" + r.seed) === r.countsDigest.toLowerCase()));
+  const sub = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/attestation.json", import.meta.url))).attestation;
+  check("and the substrate's run of the same battery does NOT -- the two male payloads are two networks", sub.rows.every((r, k) => r.countsDigest !== a.rows[k].countsDigest)); }
 console.log(fails ? `${fails} FAILURES` : "flybnb battery: all checks passed"); process.exit(fails ? 1 : 0);
