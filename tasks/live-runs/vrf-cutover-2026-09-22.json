@@ -1,0 +1,146 @@
+{
+  "chainId": 97,
+  "mode": "synchronous-vrf-v1",
+  "activatedAt": "2026-09-22T17:09:47.386Z",
+  "addresses": {
+    "collection": "0x7f2dad577a69d92eb9508883842b9bc7eaabb95c",
+    "renderer": "0xd6f512d694a71f51713f02092e52f4f7dd529f77",
+    "vault": "0x67b5bd21f3aa77c8da102954adff72d490f82cb0",
+    "sale": "0x656cAdB5DD63c1f11BdfCC6268a3EA4cF8862faA"
+  },
+  "verifiedCount": 200,
+  "verification": {
+    "mode": "synchronous-vrf-v1",
+    "certifiedFounders": 200,
+    "maxInDegree": 10167
+  },
+  "oldAudit": {
+    "block": "132555142",
+    "blockHash": "0x0eeb15a7559f3a6478c5504bc238fdc824677a23682be54a5f91201ab6fa1607",
+    "all200InVault": true,
+    "paused": true,
+    "oldRegistryBalanceWei": "0",
+    "oldMarketBalanceWei": "0",
+    "addresses": {
+      "collection": "0x62ea36be228046393b1f876dec93db22c5ecc04c",
+      "renderer": "0x69a4132874694218905615ed7b9c8c21bffffdc9",
+      "vault": "0x1608e1a66edd6b35e3784d80c2c29a70a1e3b9f2",
+      "sale": "0x7a0611Dc6Fa085E0549B00BF7c8E7598E6B428E8"
+    }
+  },
+  "treasuryBeforeWei": "35000000000000000",
+  "treasuryAfterWei": "45000000000000000",
+  "breedSimulation": {
+    "balanceOverrideOnly": true,
+    "transactionsBroadcast": false,
+    "female": "1",
+    "male": "101",
+    "result": "201",
+    "feeWei": "5000000000000000"
+  },
+  "operations": {
+    "pause-old-sale": {
+      "hash": "0xd10d113f41f4b9dea0b0eb2c9f942d1da7f08f09fe76500ad48a31d7907d466d",
+      "blockNumber": "132554548",
+      "done": true
+    },
+    "activate-new-sale": {
+      "hash": "0x09017eb837e09b63c02a73c3562a1977ce4319815928df50782a2e255ad39f95",
+      "blockNumber": "132555608",
+      "done": true
+    },
+    "smoke-adopt": {
+      "hash": "0xde3c7ddfa48e463301290930a6128ec5e3a52873501a99f71f7318ec3c275b90",
+      "blockNumber": "132555619",
+      "done": true
+    },
+    "return-adopted-founder": {
+      "hash": "0x22a6884350cd4f5e925e6d131678b67a06b851b000b4bfa9590d8f02cf0441aa",
+      "blockNumber": "132555628",
+      "done": true
+    },
+    "relist-founder": {
+      "hash": "0x4a67e286c99af08bffbb460ead38a31a3e68ca7332c22e20e1322b576642d572",
+      "blockNumber": "132555638",
+      "done": true
+    }
+  },
+  "finalizedInventory": {
+    "block": "132555857",
+    "hash": "0x256c14354614a14dbb91d2a36be76e9be531879d6e7dc2a4903803fd4c982b20",
+    "oldSalePaused": true,
+    "newSalePaused": false,
+    "oldSupply": "200",
+    "newSupply": "200",
+    "oldVaultBalance": "200",
+    "newVaultBalance": "200",
+    "testTokenAvailable": true
+  },
+  "sourceCommit": "8c143c41e87542ba1735cc8580c47ab6afdbcbb3",
+  "frontend": {
+    "production": "https://fly.ai.gg",
+    "deployment": "https://0a228078.aigg-fly.pages.dev",
+    "publicIndexMatchesBuild": true,
+    "uiChecks": {
+      "adoptAutomaticLoad": true,
+      "inventoryCount": 200,
+      "cardsPerPage": 12,
+      "pages": 17,
+      "listedPriceBNB": "0.01",
+      "missingConfigurationWarning": false,
+      "hostVrfReadinessBlocks": 400,
+      "hostBaseFamilies": 4
+    }
+  },
+  "services": {
+    "relayer": {
+      "deployId": "dep-dapbdpid0e5s73f8kosg",
+      "status": "live",
+      "commit": "8c143c41e87542ba1735cc8580c47ab6afdbcbb3"
+    },
+    "gateway": {
+      "deployId": "dep-dapbecid0e5s73f8n4p0",
+      "status": "live",
+      "commit": "8c143c41e87542ba1735cc8580c47ab6afdbcbb3"
+    }
+  },
+  "gatewayReady": {
+    "ok": true,
+    "wallet": "0xf5cfcb350268aec30e8d814e48dab01cbe54b5a7",
+    "chain": 97,
+    "market": "0x15380e14f63a6188196ee98e05ff951b66582152",
+    "calls": 0,
+    "relay": {
+      "url": "wss://aigg-bnb-relayer-testnet.onrender.com/relay",
+      "connected": 1,
+      "reconnects": 0
+    }
+  },
+  "liveVerification": {
+    "mode": "synchronous-vrf-v1",
+    "commitBlocks": "7200",
+    "revealBlocks": "400",
+    "disputeBlocks": "30000",
+    "totalBlocks": "38800",
+    "admissionVersion": 2,
+    "admission": "0x311B256d75F3B37fAc0F49158D8f40517094Ac18",
+    "randomnessWaitBlocks": "800",
+    "activationBlocks": "400",
+    "readyTtlBlocks": "400",
+    "maxCandidates": 32,
+    "nativeAdmissionFeeWei": "1000000000000000",
+    "admissionFeeRefundable": false,
+    "sponsorship": {
+      "configured": true,
+      "minimumEpochGas": 160000000,
+      "minimumDayGas": 350000000,
+      "reserveGas": 350000000,
+      "epochGasLimit": 160000000,
+      "dayGasLimit": 350000000
+    },
+    "sessionEndpoint": "/sync/session",
+    "pendingEndpoint": "/sync/pending",
+    "confirmations": 2
+  },
+  "servedMepCount": 204
+}
