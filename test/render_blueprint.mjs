@@ -62,6 +62,11 @@ if (GW) {
   const g = GW.vars; const val = (k) => g.get(k)?.value;
   check("the gateway's three secrets are declared, so a fresh service asks for them", ["GATEWAY_KEY", "GATEWAY_BEARER", "PORW_RPC"].every((k) => g.get(k)?.raw === "sync: false"));
   check("its deployment is the relayer's, contract by contract: it refuses to start if the relayer disagrees on the market", [...ADDR, "PORW_CHAIN_ID"].every((k) => (val(k) || "").toLowerCase() === (vars.get(k)?.value || "").toLowerCase() && val(k)));
+  check("verification modes agree", val("PORW_VERIFICATION_MODE") === vars.get("PORW_VERIFICATION_MODE")?.value);
+  if (val("PORW_VERIFICATION_MODE") === "synchronous-vrf-v1") {
+    check("VRF admission has a positive bounded lifetime budget", /^\d+$/.test(val("GATEWAY_VRF_ADMISSION_BUDGET_WEI") || "") && BigInt(val("GATEWAY_VRF_ADMISSION_BUDGET_WEI") || "0") > 0n);
+    check("VRF cutover uses a separate state journal", (val("GATEWAY_STATE") || "").includes("synchronous-vrf-v1"));
+  }
   const relayerUrl = (vars.get("PORW_PUBLIC_RELAY_URL")?.value || "").replace(/^wss:/, "https:").replace(/\/relay$/, "");
   check(`it talks to that relayer (${relayerUrl})`, val("GATEWAY_RELAYER") === relayerUrl);
   check("it listens on every interface, as a hosted web service must", val("GATEWAY_HOST") === "0.0.0.0");

@@ -53,9 +53,9 @@ services:
       - key: PORW_PUBLIC_RELAY_URL
         value: wss://aigg-bnb-relayer-testnet.onrender.com/relay
 
-      # ---- the deployment: BSC testnet, scheme v3 synchronous mesh, deployed 2026-09-21 (aigg-porw 6b5f290) ----
+      # ---- the deployment: BSC testnet, scheme v3 VRF synchronous mesh, deployed 2026-09-22 ----
       - key: PORW_VERIFICATION_MODE
-        value: synchronous-v1
+        value: synchronous-vrf-v1
       - key: PORW_NETWORK
         value: bsc-testnet
       - key: PORW_CHAIN_ID
@@ -63,21 +63,21 @@ services:
       - key: PORW_EPOCH_BLOCKS
         value: "200"
       - key: PORW_VERIFIER
-        value: "0x01b8226f85b67b325944461cd1fb650cec2cbfdd"
+        value: "0x44a7fc83d00f4b77e18124c273b73060cd446045"
       - key: PORW_MEP_REGISTRY
-        value: "0xb8b383fd9e35adc637a4a846e69d40e0a5b5918f"
+        value: "0x950fab76aa19d4249486bd5ac05753cd84adf4e1"
       - key: PORW_INSTANCES
-        value: "0xa9d68521352690d4611602e8f8f2442d9e282ab7"
+        value: "0x01aa28193aec27ce793dba3af2d717db5acd66f8"
       - key: PORW_BEACON
-        value: "0x9a82fbba3afa4ab19ab90f8b99ee3befdfc3532f"
+        value: "0x108ca55478beec3d57f639e759c1fc9a4139dba0"
       - key: PORW_CLAIMS
-        value: "0x8be6d9e20edd4bffa612d933d9513ad2d83c45e8"
+        value: "0x4a3a8f2290d446d23d87ad32cadd5824a60f4efc"
       - key: PORW_MARKET
-        value: "0xd179ddef43480dce2dd1176941ba5bcbb779323c"
+        value: "0x15380e14f63a6188196ee98e05ff951b66582152"
       - key: PORW_DISPUTES
-        value: "0xfb3f2f339efada1eaa49d0d33f35515748a17a97"
+        value: "0x11b6360823f443fa16748b785ba30bb2cdb6872d"
       - key: PORW_RELAYS
-        value: "0xc1f178d9e3a5de4a4f5627ec6b772efd5135ac88"
+        value: "0x2014cf271622e9cc52c624654891059f93dbde95"
       - key: PORW_CLAIM_VALIDITY_EPOCHS
         value: "6"
 
@@ -85,7 +85,7 @@ services:
       # the base brains it names and every brain bound to one of its flies, bred ones included, with nothing restarted.
       # All four root profiles are pinned so family claim sponsorship is ready before collection discovery.
       - key: PORW_WHITELIST
-        value: "0xcf69aedc8e932a4589a60d41c76c266d0a68492d"
+        value: "0x2484d18fad2cf344ec19de25dcd089ff66e9362c"
       # PINNED: female and male >= 2 and >= 5 profiles; children enroll through their root family.
       # The male pair is the same distinction the female pair is: >= 2 is the substrate individuals are drawn on,
       # >= 5 is the published wiring, and a battery posted for one does NOT reproduce the other's rows.
@@ -116,15 +116,15 @@ services:
       - key: PORW_BEACON_LAZY
         value: "1"
 
-      # ---- genesis v2 synchronous treasury inventory, 2026-09-21: 100 female + 100 male Founders.
+      # ---- genesis v2 VRF treasury inventory, 2026-09-22: 100 female + 100 male Founders.
       # Protected zero-cost pre-mint into FounderInventoryVault; public Adopt is resale at 0.01 tBNB.
       # Full BNB proceeds go to the existing TreasuryRouter (0x1Bef7990…3708); no adopter Host bond.
       # Breed fee 0.005, hatch bounty 0.0001 tBNB; royalty 1000 bps; base share 1000 bps; resale 500 bps.
       # Legacy collection/NFTs remain intact. Battery budget/worker require separate deployment.
       - key: PORW_COLLECTION
-        value: "0x62ea36be228046393b1f876dec93db22c5ecc04c"
+        value: "0x7f2dad577a69d92eb9508883842b9bc7eaabb95c"
       - key: PORW_INVENTORY_SALE
-        value: "0x7a0611Dc6Fa085E0549B00BF7c8E7598E6B428E8"
+        value: "0x656cAdB5DD63c1f11BdfCC6268a3EA4cF8862faA"
 
       # ---- secrets: asked for once, never synced, never in git ----
       - key: PORW_RELAYER_KEY
@@ -164,7 +164,11 @@ services:
       - key: GATEWAY_HOST
         value: 0.0.0.0
       - key: GATEWAY_STATE
-        value: /var/data/gateway-synchronous-v1-state.json
+        value: /var/data/gateway-synchronous-vrf-v1-state.json
+      # Lifetime VRF admission budget: 0.01 tBNB; journal persists beside GATEWAY_STATE.
+      - key: GATEWAY_VRF_ADMISSION_BUDGET_WEI
+        value: "10000000000000000"
+      # Previous synchronous state remains at /var/data/gateway-synchronous-v1-state.json.
       # Previous market calls/counts remain archived at /var/data/gateway-state.json(.counts)
       # and /var/data/gateway-family-v1-state.json(.counts).
       # the relayer: /meps, and the relay the gateway announces tasks on. Its /deployment must agree with the PORW_*
@@ -174,7 +178,7 @@ services:
 
       # ---- the deployment: the same as the relayer's, above ----
       - key: PORW_VERIFICATION_MODE
-        value: synchronous-v1
+        value: synchronous-vrf-v1
       - key: PORW_NETWORK
         value: bsc-testnet
       - key: PORW_CHAIN_ID
@@ -182,21 +186,21 @@ services:
       - key: PORW_EPOCH_BLOCKS
         value: "200"
       - key: PORW_VERIFIER
-        value: "0x01b8226f85b67b325944461cd1fb650cec2cbfdd"
+        value: "0x44a7fc83d00f4b77e18124c273b73060cd446045"
       - key: PORW_MEP_REGISTRY
-        value: "0xb8b383fd9e35adc637a4a846e69d40e0a5b5918f"
+        value: "0x950fab76aa19d4249486bd5ac05753cd84adf4e1"
       - key: PORW_INSTANCES
-        value: "0xa9d68521352690d4611602e8f8f2442d9e282ab7"
+        value: "0x01aa28193aec27ce793dba3af2d717db5acd66f8"
       - key: PORW_BEACON
-        value: "0x9a82fbba3afa4ab19ab90f8b99ee3befdfc3532f"
+        value: "0x108ca55478beec3d57f639e759c1fc9a4139dba0"
       - key: PORW_CLAIMS
-        value: "0x8be6d9e20edd4bffa612d933d9513ad2d83c45e8"
+        value: "0x4a3a8f2290d446d23d87ad32cadd5824a60f4efc"
       - key: PORW_MARKET
-        value: "0xd179ddef43480dce2dd1176941ba5bcbb779323c"
+        value: "0x15380e14f63a6188196ee98e05ff951b66582152"
       - key: PORW_DISPUTES
-        value: "0xfb3f2f339efada1eaa49d0d33f35515748a17a97"
+        value: "0x11b6360823f443fa16748b785ba30bb2cdb6872d"
       - key: PORW_RELAYS
-        value: "0xc1f178d9e3a5de4a4f5627ec6b772efd5135ac88"
+        value: "0x2014cf271622e9cc52c624654891059f93dbde95"
 
       # ---- what it offers ----
       # the names callers use; `mep:0x…` works for any served brain, and a registered fly is `fly-<token>`

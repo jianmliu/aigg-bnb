@@ -1,0 +1,219 @@
+{
+  "date": "2026-09-22T15:47:31.928Z",
+  "chainId": 97,
+  "stage": "subscription-and-fresh-mesh-staged",
+  "coordinator": "0xDA3b641D438362C440Ac5458c57e00a712b66700",
+  "subscriptionId": "16827904030502239886684173102318092411495140734875771880973600016057278287621",
+  "consumer": "0x311B256d75F3B37fAc0F49158D8f40517094Ac18",
+  "addresses": {
+    "verifier": "0x44a7fc83d00f4b77e18124c273b73060cd446045",
+    "meps": "0x950fab76aa19d4249486bd5ac05753cd84adf4e1",
+    "instances": "0x01aa28193aec27ce793dba3af2d717db5acd66f8",
+    "beacon": "0x108ca55478beec3d57f639e759c1fc9a4139dba0",
+    "claims": "0x4a3a8f2290d446d23d87ad32cadd5824a60f4efc",
+    "market": "0x15380e14f63a6188196ee98e05ff951b66582152",
+    "admission": "0x311B256d75F3B37fAc0F49158D8f40517094Ac18",
+    "disputes": "0x11b6360823f443fa16748b785ba30bb2cdb6872d",
+    "relays": "0x2014cf271622e9cc52c624654891059f93dbde95",
+    "whitelist": "0x2484d18fad2cf344ec19de25dcd089ff66e9362c",
+    "hostCapacity": "0x5ce76e3ea772bcc0ccd5c0c631b9d9760b5ff387"
+  },
+  "subscription": {
+    "owner": "0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa",
+    "nativeBalanceWei": "10000000000000000",
+    "requestCount": "0",
+    "consumers": [
+      "0x311B256d75F3B37fAc0F49158D8f40517094Ac18"
+    ]
+  },
+  "gasCostWei": "2424994900000000",
+  "ownerBalanceWei": "72956405980129837",
+  "preflight": {
+    "configurationValid": true,
+    "liveProofVerified": false,
+    "errors": [],
+    "subscription": {
+      "status": "external-check-required",
+      "checks": [
+        "subscription exists",
+        "controller is an authorized consumer",
+        "sufficient balance for selected payment asset"
+      ]
+    },
+    "liveProof": {
+      "status": "not-verified",
+      "required": "A real coordinator request and callback followed by successful task activation."
+    },
+    "chainId": 97,
+    "blockNumber": "132544718",
+    "blockHash": "0xaebc4069c07908022d64781bd2f0763aecb70f9a84869caf50e88c87e46873d9",
+    "blockTag": "finalized",
+    "addresses": {
+      "market": "0x15380e14f63a6188196ee98e05ff951b66582152",
+      "controller": "0x311B256d75F3B37fAc0F49158D8f40517094Ac18",
+      "capacity": "0x5cE76e3ea772bcC0CcD5C0c631b9D9760b5FF387",
+      "registry": "0x01Aa28193AeC27Ce793DbA3AF2D717db5ACd66f8",
+      "disputes": "0x11b6360823f443FA16748B785bA30bB2cDB6872d"
+    },
+    "config": {
+      "coordinator": "0xDA3b641D438362C440Ac5458c57e00a712b66700",
+      "keyHash": "0x8596b430971ac45bdf6088665b9ad8e8630c9d5049ab54b14dff711bee7c0e26",
+      "subId": "16827904030502239886684173102318092411495140734875771880973600016057278287621",
+      "requestConfirmations": 3,
+      "callbackGasLimit": 200000,
+      "nativePayment": true,
+      "WAIT_BLOCKS": "800",
+      "ACTIVATION_BLOCKS": "400",
+      "READY_TTL": "400",
+      "feeRecipient": "0x1Bef7990Ea5d9C761aACe71c48432078AAC43708",
+      "nativeAdmissionFee": "1000000000000000"
+    }
+  },
+  "transactions": {
+    "create-subscription": {
+      "hash": "0xc158b9621f3ec96023dc4bf9f93fed3b2607da24262e894dfd83e2f8cc49211e",
+      "blockNumber": "132544373",
+      "gasUsed": "109784"
+    },
+    "fund-subscription": {
+      "hash": "0x39d08206f575278c6365bf3a9b5ed1ab1759e4348cb1cd9cc9fc716a9ff48c8b",
+      "blockNumber": "132544383",
+      "gasUsed": "56065"
+    },
+    "add-consumer": {
+      "hash": "0x12264d943a333339035d4349896cafdfa06469bfae38f29fd3ca5c70a869ab79",
+      "blockNumber": "132544656",
+      "gasUsed": "95186"
+    },
+    "verifier": {
+      "hash": "0x42853f1e323d308b05d2de3f21ea481f7600871ca78f8e96d328fbd9e6a8c480",
+      "blockNumber": "132544393",
+      "gasUsed": "2205622"
+    },
+    "meps": {
+      "hash": "0x294ecc7d2f9ffd2acab301d5860be8bf87e1f4e845a420669f1dd7cc408cca22",
+      "blockNumber": "132544403",
+      "gasUsed": "945056"
+    },
+    "instances": {
+      "hash": "0x08c94424558ab4913a73e144764c4d27e74e8ed8ac5e91b88c42141613d51068",
+      "blockNumber": "132544412",
+      "gasUsed": "1760469"
+    },
+    "beacon": {
+      "hash": "0x48e6e9673b8a8268666654994d1db0d43ef35cd9c4cdfdcda13bf585d10b4732",
+      "blockNumber": "132544422",
+      "gasUsed": "747799"
+    },
+    "claims": {
+      "hash": "0x9dd61bcbf3034d5ee000bea6488f988761cc76b65a51207cb256f745784fd713",
+      "blockNumber": "132544440",
+      "gasUsed": "2111329"
+    },
+    "market": {
+      "hash": "0x7166dc3a77514f09e92d941834ad078c1c0b0aa9f5eae0fbbc46bc0ea1474c24",
+      "blockNumber": "132544452",
+      "gasUsed": "7343718"
+    },
+    "disputes": {
+      "hash": "0x6178bd74b7dd2850718c8596213b4cf194755dc7a26550fcb949a5bb5d38cb2a",
+      "blockNumber": "132544461",
+      "gasUsed": "5357778"
+    },
+    "relays": {
+      "hash": "0xeeaf07161c5bb0f55d5613dc6d552fc78f16d488600e4a218afb45dd3a7704f0",
+      "blockNumber": "132544471",
+      "gasUsed": "748349"
+    },
+    "whitelist": {
+      "hash": "0x497af0ce140992b801474f6a3658c3ac3e00f65ba73e1557702a8ca6c55c3142",
+      "blockNumber": "132544480",
+      "gasUsed": "619666"
+    },
+    "hostCapacity": {
+      "hash": "0x069f052569444c602e636cf6d3316f9afab872fec0b91ce7ee93bddacdf00b34",
+      "blockNumber": "132544490",
+      "gasUsed": "541384"
+    },
+    "wire-claims": {
+      "hash": "0x4733e1b49a68d9bd8dcfc582ab8a618df0acec01a9d1473a40208a8857d0f296",
+      "blockNumber": "132544500",
+      "gasUsed": "74402"
+    },
+    "wire-slasher": {
+      "hash": "0xfef6309d0295b3c2726d50620673246f97a73bf35c9d7fc9cada882d3aab3d85",
+      "blockNumber": "132544512",
+      "gasUsed": "46353"
+    },
+    "wire-disputes": {
+      "hash": "0xdbf6933632d6a76306875f469d023dbddc87c6d70af54fb8c24b1ca94618a57f",
+      "blockNumber": "132544520",
+      "gasUsed": "46280"
+    },
+    "wire-task-holds": {
+      "hash": "0x1123a62e6b2b512f8e6c5b0fb862af4946b29223449ca1296a79bee3637a4331",
+      "blockNumber": "132544530",
+      "gasUsed": "46353"
+    },
+    "wire-base-enrollment": {
+      "hash": "0x25b4f6e9f48f8cce516aa6a2d2dd9869d78448a2dffafc0e1134fd10da38bfa8",
+      "blockNumber": "132544540",
+      "gasUsed": "49064"
+    },
+    "authorize-capacity": {
+      "hash": "0xb077c3413cef163fa1498c42606751d2e7240fc299291522f403c47ecd0cb046",
+      "blockNumber": "132544550",
+      "gasUsed": "45532"
+    },
+    "authorize-controller-capacity": {
+      "hash": "0xfdd489833b5f99cd0e71079d9a9b596bd5a673b954b0e0f304f3c32cc3c22a6a",
+      "blockNumber": "132544559",
+      "gasUsed": "45532"
+    },
+    "wire-capacity": {
+      "hash": "0xac48eace0269bc96e7aeca3e2d37a81f09c73bcbd36eff6d9f935398ce031b2b",
+      "blockNumber": "132544569",
+      "gasUsed": "49913"
+    },
+    "lif-18022": {
+      "hash": "0x6db0a0c9db5b7eee33e1e0693fba9116e5129226bd9d0f97682fa1f5564d1c13",
+      "blockNumber": "132544584",
+      "gasUsed": "24259"
+    },
+    "lif-7209": {
+      "hash": "0xbc19834d32aaf8491d2cdbd45a40c52730315d9d15cb8d47983cda15bc6f7a93",
+      "blockNumber": "132544589",
+      "gasUsed": "45869"
+    },
+    "base-0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a": {
+      "hash": "0x440968fe0335180d730874f509b13b02d2e99ce046c08f174e2825f386fffb99",
+      "blockNumber": "132544599",
+      "gasUsed": "228051"
+    },
+    "base-0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50": {
+      "hash": "0x08e3dae9065ccdf304e526f6c81bf3c6eea3a896acfde523cfacda578a540510",
+      "blockNumber": "132544608",
+      "gasUsed": "228051"
+    },
+    "base-0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214": {
+      "hash": "0x3f285cf643eac74a9aaaf8755d4155002f0dafcde91b15cfdfad66f603910284",
+      "blockNumber": "132544618",
+      "gasUsed": "227991"
+    },
+    "base-0x93496ed953a2e783e322a116e5b118fc82d6234608647545c5b32294f70d4cdc": {
+      "hash": "0xa0523d093b18ad5ab44a6cb7e88e9dfe926e5abda3112ba8e05c8cbc9e519275",
+      "blockNumber": "132544628",
+      "gasUsed": "227991"
+    },
+    "certify-bases-0": {
+      "hash": "0x46b1bbbfdef534d7583e7e780ea0b8a551c6e4df55df6603dcc9fdbd0236826b",
+      "blockNumber": "132544642",
+      "gasUsed": "222103"
+    }
+  },
+  "liveProofVerified": false,
+  "serviceCutover": false,
+  "nftMigration": false,
+  "contractSourceCommit": "c6f50b1313dc62321df5ca71ba88e2f569a2f1ee",
+  "subscriptionVerifiedAtBlock": "132544718"
+}

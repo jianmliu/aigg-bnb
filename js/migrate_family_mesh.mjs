@@ -11,9 +11,9 @@ const json=x=>JSON.stringify(x,(_,v)=>typeof v==='bigint'?v.toString():v,2)+'\n'
 export async function deployFamilyMesh({c,cfg,journal}) {
  assert([97,31337].includes(cfg.chainId));assert.equal(await c.pub.getChainId(),cfg.chainId);
  assert.equal(c.account.address.toLowerCase(),cfg.owner.toLowerCase());
- assert(cfg.protocol===undefined || cfg.protocol==='synchronous-v1','unknown deployment protocol');
- const synchronous=cfg.protocol==='synchronous-v1';
- const type=n=>synchronous?({MultiAssetTaskMarket:'SynchronousTaskMarket',ExecutionDisputes:'SynchronousExecutionDisputes'}[n]||n):n;
+ assert(cfg.protocol===undefined || ['synchronous-v1','synchronous-vrf-v1'].includes(cfg.protocol),'unknown deployment protocol');
+ const vrf=cfg.protocol==='synchronous-vrf-v1',synchronous=vrf||cfg.protocol==='synchronous-v1';
+ const type=n=>synchronous?({MultiAssetTaskMarket:vrf?'VrfSynchronousTaskMarket':'SynchronousTaskMarket',ExecutionDisputes:'SynchronousExecutionDisputes'}[n]||n):n;
  const names=['PorwVerifierKeccak','MEPRegistry','InstanceRegistry','CommitRevealBeacon','PoRWClaimManager','MultiAssetTaskMarket','ExecutionDisputes','RelayRegistry','CollectionWhitelist','HostCapacity'].map(type);
  const configHash=keccak256(stringToHex(json({cfg,artifacts:names.map(n=>keccak256(artifact(n).bytecode.object))})));
  const state=fs.existsSync(journal)?JSON.parse(fs.readFileSync(journal)):{version:1,configHash,chainId:cfg.chainId,owner:cfg.owner,addresses:{},transactions:{}};
@@ -50,17 +50,19 @@ export async function deployFamilyMesh({c,cfg,journal}) {
  await deploy('instances','InstanceRegistry',[BigInt(p.unit),p.exitDelay]);
  await deploy('beacon','CommitRevealBeacon',[p.epochBlocks,p.commitBlocks,p.revealBlocks,BigInt(p.beaconDeposit)]);
  await deploy('claims','PoRWClaimManager',[d.meps,d.instances,d.verifier,p.epochBlocks,p.openingWindow,BigInt(p.openingDeposit),BigInt(p.slashAmount),d.beacon]);
- await deploy('market','MultiAssetTaskMarket',synchronous?[d.meps,d.instances,d.claims,p.sessionCommitBlocks,p.sessionRevealBlocks,p.sessionDisputeBlocks]:[d.meps,d.instances,d.claims,p.taskTimeout]);
+ await deploy('market','MultiAssetTaskMarket',synchronous?[d.meps,d.instances,d.claims,p.sessionCommitBlocks,p.sessionRevealBlocks,p.sessionDisputeBlocks,...(vrf?[{...cfg.vrf,subId:BigInt(cfg.vrf.subId)},['0x0000000000000000000000000000000000000000'],[BigInt(cfg.admissionFeeWei)]]:[])]:[d.meps,d.instances,d.claims,p.taskTimeout]);
+ if(vrf){d.admission=await read(d.market,'MultiAssetTaskMarket','admission');save();}
  await deploy('disputes','ExecutionDisputes',[d.meps,d.instances,d.market,p.roundBlocks,BigInt(p.slashAmount)]);
  await deploy('relays','RelayRegistry',[BigInt(p.relayBond),p.exitDelay]);
  await deploy('whitelist','CollectionWhitelist',[cfg.owner]);await deploy('hostCapacity','HostCapacity');
  await call('wire-claims','instances','InstanceRegistry','setClaimManager',[d.claims,p.claimValidity]);
  await call('wire-slasher','instances','InstanceRegistry','setSlasher',[d.disputes,true]);
  await call('wire-disputes','market','MultiAssetTaskMarket','setDisputes',[d.disputes]);
- if(synchronous)await call('wire-task-holds','instances','InstanceRegistry','setSlasher',[d.market,true]);
+ if(synchronous)await call('wire-task-holds','instances','InstanceRegistry','setSlasher',[vrf?d.admission:d.market,true]);
  else await call('wire-challenges','market','MultiAssetTaskMarket','setChallengeParams',[BigInt(p.challengeDeposit),p.challengeWindow,p.challengeSink]);
  await call('wire-base-enrollment','instances','InstanceRegistry','setMEPRegistry',[d.meps]);
  await call('authorize-capacity','hostCapacity','HostCapacity','setMarket',[d.market,true]);
+ if(vrf)await call('authorize-controller-capacity','hostCapacity','HostCapacity','setMarket',[d.admission,true]);
  await call('wire-capacity','market','MultiAssetTaskMarket','setHostCapacity',[d.hostCapacity]);
  for(const unit of [...new Set(cfg.bases.map(x=>x.wUnitQ16))])await call('lif-'+unit,'meps','MEPRegistry','declareLifKind',[unit]);
  for(const b of cfg.bases)await call('base-'+b.mepId,'meps','MEPRegistry','registerMEP',[b.profile]);
@@ -85,8 +87,9 @@ export async function deployFamilyMesh({c,cfg,journal}) {
   checks.push(['market','SynchronousTaskMarket','protocolVersion',[],1],['market','SynchronousTaskMarket','challengeWindow',[],0],
    ['market','SynchronousTaskMarket','COMMIT_BLOCKS',[],p.sessionCommitBlocks],['market','SynchronousTaskMarket','REVEAL_BLOCKS',[],p.sessionRevealBlocks],
    ['market','SynchronousTaskMarket','DISPUTE_BLOCKS',[],p.sessionDisputeBlocks],['market','SynchronousTaskMarket','TASK_TIMEOUT',[],p.sessionCommitBlocks+p.sessionRevealBlocks+p.sessionDisputeBlocks],
-   ['instances','InstanceRegistry','slasher',[d.market],true]);
+   ['instances','InstanceRegistry','slasher',[vrf?d.admission:d.market],true]);
  }
+ if(vrf)checks.push(['hostCapacity','HostCapacity','authorizedMarkets',[d.admission],true],['market','MultiAssetTaskMarket','admissionVersion',[],2]);
  for(const [key,name,fn,args,value] of checks)assert.equal(String(await read(d[key],name,fn,args)).toLowerCase(),String(value).toLowerCase(),key+'.'+fn);
  for(const b of cfg.bases)assert.equal(Number(await read(d.meps,'MEPRegistry','lifWeightUnit',[b.profile.execKind])),b.wUnitQ16);
  if(synchronous){
@@ -99,7 +102,7 @@ export async function deployFamilyMesh({c,cfg,journal}) {
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
  const args=process.argv.slice(2);assert(args.includes('--broadcast'),'explicit --broadcast required');
- const cfg=JSON.parse(fs.readFileSync(args[args.indexOf('--config')+1]));assert.equal(cfg.chainId,97);
+ const cfg=JSON.parse(fs.readFileSync(args[args.indexOf('--config')+1]));assert.equal(cfg.chainId,97);assert(cfg.protocol!=='synchronous-vrf-v1','use deploy_vrf_subscription.mjs for VRF');
  const account=privateKeyToAccount(process.env.PORW_DEPLOYER_KEY);assert.equal(account.address.toLowerCase(),'0xfe560af8f5cfc209794b3df7dc7e281d4ef81eda');
  const chain=defineChain({id:97,name:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:{default:{http:[cfg.rpc]}}});
  const c={account,pub:createPublicClient({chain,transport:http(cfg.rpc)}),wallet:createWalletClient({account,chain,transport:http(cfg.rpc)})};
