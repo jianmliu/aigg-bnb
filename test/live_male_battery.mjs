@@ -6,10 +6,12 @@
 //   source .env.bsc-testnet; PORW_RELAYER_API=https://… [PORW_MEP=0x… PORW_REF=/abs/row.json PORW_MODEL_NAME=…] \\
 //     node test/live_male_battery.mjs <payload.bin>
 //
-// PORW_MEP picks the brain (default: the registered male base). For a minted fly it is that token's MEP and the
-// payload is its base with its delta applied; PORW_REF is then the row run_battery.py already wrote for the same
-// individual -- which, for an individual, needs no special reference: a genotype zeroes what falls under min_syn,
-// so its payload and its offline row are the same network.
+// PORW_MEP picks the brain (default: the registered male base). It runs ROOT brains -- the substrate, the published
+// wiring. Before the base-enrolment migration it also ran a minted fly (the payload its base with its delta applied,
+// the id wrapping the collection's terms); fly #101 of flybnb/results/male/live/ was run that way. A derived id now
+// binds its root base too, which this script does not reconstruct, so it refuses a derived brain up front; minted
+// flies go through battery/worker.mjs. What that path does not do, and this does, is join the network's digests
+// with a SECOND implementation (numpy intlif.py): every production check runs the same WASM kernel.
 //
 // The join is the point. A row of this dataset is a claim about a brain, and it is worth what can be checked:
 // here the wasm kernel on the network and numpy at a desk have to produce the same counts digest for all 42 runs,
@@ -43,6 +45,10 @@ const MEP = (process.env.PORW_MEP || MALE).toLowerCase();
 const served = await api("/meps");
 const info = served.find((m) => m.mepId.toLowerCase() === MEP);
 if (!info) throw new Error("the relayer does not serve the male brain");
+// A derived brain on a base-enrolment mesh binds its root base into its id (aigg-porw #37) as well as its terms, and
+// this script reconstructs only the terms -- which is all a derived id wrapped before the migration, and how fly #101
+// was run. Refuse here, before the bond below spends anything, rather than fail at the id check after it.
+if (info.baseMepId) throw new Error(`${MEP.slice(0, 14)}… is derived from base ${info.baseMepId.slice(0, 14)}…: its id binds the base, which this script does not reconstruct. For minted flies use battery/worker.mjs; this script runs ROOT brains.`);
 if (info.wUnitQ16 !== battery.population.w_unit_q16) throw new Error(`the relayer says unit ${info.wUnitQ16}, the battery's population says ${battery.population.w_unit_q16}`);
 log(`relayer ${d.relayer} | male MEP ${MEP.slice(0, 14)}… unit ${info.wUnitQ16} | wallet ${wallet}`);
 if (!clientAllowed(d, wallet)) throw new Error(`${wallet} is not a task client of this relayer: its results would never be sponsored`);

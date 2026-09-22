@@ -49,10 +49,17 @@ check("a perturbed battery is the same batch with a silence set on every run", p
 { const F = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/fly101.json", import.meta.url))), a = F.attestation;
   const rows = zlib.gunzipSync(fs.readFileSync(new URL("../flybnb/results/male/pilot/rows.jsonl.gz", import.meta.url))).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
   const m0 = rows.find((r) => r.id === F.offline.id);
-  check(`fly #101 on chain IS the pilot founder ${F.offline.id}: the same FLYDELTA recipe, by delta id`, m0 && F.offline.id === "M000" && m0.delta_id === "0x68ac445c99252b618b2f70958bff1a271c613081eee008ccb0e88af197db6bbd");
+  check(`fly #101 of the pre-migration collection IS the pilot founder ${F.offline.id}: the same FLYDELTA recipe, by delta id`, m0 && F.offline.id === "M000" && m0.delta_id === "0x68ac445c99252b618b2f70958bff1a271c613081eee008ccb0e88af197db6bbd");
   check(`its battery was settled on chain and all ${F.offline.expected} digests equal the row committed here`, a.complete === true && F.settled.matches === true && F.offline.ok === true && F.offline.matched === m0.rows.length);
   const want = new Map(m0.rows.map((w) => [w.stim + "|" + w.seed, w.digest.toLowerCase()]));
-  check("checked against the committed rows themselves, not against the summary in the file", a.rows.every((r) => want.get(r.stimulus + "|" + r.seed) === r.countsDigest.toLowerCase())); }
+  check("checked against the committed rows themselves, not against the summary in the file", a.rows.every((r) => want.get(r.stimulus + "|" + r.seed) === r.countsDigest.toLowerCase()));
+  // the run was on the pre-migration mesh; the BRAIN is still in the replacement inventory, and that is what the run is about
+  const inv = JSON.parse(fs.readFileSync(new URL("../flybnb/genesis/founder-profiles-v2.json", import.meta.url))), prof = JSON.stringify(inv);
+  const entry = (inv.founders || inv.profiles || []).find((x) => String(x.deltaHash).toLowerCase() === m0.delta_id.toLowerCase());
+  // in-place derivation is a function of (base, recipe, unit), so those three identify the brain -- no model_id literal needed
+  const Mb = JSON.parse(fs.readFileSync(new URL("../flybnb/battery/battery-male-v1.json", import.meta.url))).population;
+  check("the same brain is in the replacement inventory -- same recipe, same base, same unit -- and only the old wrapped id is gone",
+    !!entry && entry.baseModelId.toLowerCase() === Mb.base_model_id.toLowerCase() && Number(entry.wUnitQ16) === Mb.w_unit_q16 && !prof.includes(F.mepId.slice(2, 18))); }
 // the published male wiring: the run that DOES reproduce the dataset's base row, which #80's could not
 { const P = JSON.parse(fs.readFileSync(new URL("../flybnb/results/male/live/min5.json", import.meta.url))), a = P.attestation;
   const rows = zlib.gunzipSync(fs.readFileSync(new URL("../flybnb/results/male/pilot/rows.jsonl.gz", import.meta.url))).toString("utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
