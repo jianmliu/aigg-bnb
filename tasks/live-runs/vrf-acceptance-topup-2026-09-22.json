@@ -1,0 +1,8 @@
+{
+  "hash": "0x57a061c2c9de4f6d95eed4b2825ee3c2d3a101f5929b477cb62a22da57e2818e",
+  "blockNumber": "132547392",
+  "gasUsed": "38965",
+  "subscriptionId": "16827904030502239886684173102318092411495140734875771880973600016057278287621",
+  "amountWei": "20000000000000000",
+  "reason": "Native max-gas-price fulfillment balance buffer; original request retained"
+}

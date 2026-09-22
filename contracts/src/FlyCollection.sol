@@ -24,11 +24,17 @@ import "./TokenTransfer.sol";
 ///           could ever happen — which is the one property this system has that its neighbours do not.
 ///
 ///         See docs/TOKENOMICS.md. Two things there are still open and are marked OPEN below.
+interface IBaseMEPs {
+    function registerDerivedMEP(IMEPRegistry.MEP calldata m,bytes32 base) external returns(bytes32);
+    function registerDerivedMEPWithTerms(IMEPRegistry.MEP calldata m,bytes32 base,address beneficiary,uint16 bps) external returns(bytes32);
+    function baseOf(bytes32 id) external view returns(bytes32);
+}
 contract FlyCollection {
     // ---- the two bases ----
     uint8 public constant FEMALE = 0;
     uint8 public constant MALE = 1;
     uint8 public constant UNHATCHED = 2; // a bred individual nobody has hatched yet: its seed, and so its sex, does not exist
+    bool public immutable BASE_ENROLMENT;
     bytes32 public immutable BASE_FEMALE; // model_id of the female base payload
     bytes32 public immutable BASE_MALE;   // model_id of the male base payload
     bytes32 public immutable BASE_MEP_FEMALE; // the bases' MEPs: what a minter is enrolled for, because it is what they can host on day one
@@ -181,6 +187,14 @@ contract FlyCollection {
         BASE_FEMALE = baseFemale; BASE_MALE = baseMale; GENESIS_ROOT = genesisRoot; GENESIS_SIZE = genesisSize;
         MINT_PRICE = mintPrice; MINT_BOND = mintBond; BREED_FEE = breedFee; HATCH_BOUNTY = hatchBounty; TREASURY = treasury;
         MEPS = meps; INSTANCES = instances; LINEAGE = lineage; BASE_MEP_FEMALE = baseMepFemale; BASE_MEP_MALE = baseMepMale;
+        (bool baseOk,bytes memory baseData)=address(instances).staticcall(abi.encodeWithSignature("mepRegistry()"));
+        address configured=baseOk&&baseData.length==32?abi.decode(baseData,(address)):address(0);
+        require(configured==address(0)||configured==address(meps),"base registry mismatch");
+        BASE_ENROLMENT=configured!=address(0);
+        if(BASE_ENROLMENT){
+            require(meps.getMEP(baseMepFemale).modelId==baseFemale && meps.getMEP(baseMepMale).modelId==baseMale,"base models");
+            require(IBaseMEPs(address(meps)).baseOf(baseMepFemale)==bytes32(0)&&IBaseMEPs(address(meps)).baseOf(baseMepMale)==bytes32(0),"root bases");
+        }
         require(royaltyBps <= 10000 && (royaltyBps == 0 || address(market) != address(0)), "royalty"); // a rate needs somewhere to collect from
         MARKET = market; ROYALTY_BPS = royaltyBps;
         require(shares.baseShareBps <= 10000 && (shares.baseShareBps == 0 || shares.baseVendor != address(0)), "base share"); // a share needs somebody to pay
@@ -321,6 +335,11 @@ contract FlyCollection {
     function _bindMEP(uint256 id, IMEPRegistry.MEP calldata m) internal returns (bytes32 mepId) {
         require(m.schemeDigest == SCHEME_SKETCH_TILE_KECCAK_V3, "scheme");
         mepId = PorwMeshHash.mepId(m.schemeDigest, m.modelId, m.execKind, m.neurons, m.synapses, m.synapseRoot);
+        bytes32 base;
+        if(BASE_ENROLMENT){
+            base=individuals[id].baseModelId==BASE_FEMALE?BASE_MEP_FEMALE:BASE_MEP_MALE;
+            mepId=PorwMeshHash.mepIdWithBase(mepId,base);
+        }
         // Under a royalty the individual IS the profile under this collection's terms -- another id, because the terms
         // are inside it. The registry is permissionless, so anybody may register the same bytes without terms; that MEP
         // is simply not this fly and not LISTED (below): the page does not show it, the relayer does not aggregate or
@@ -331,6 +350,7 @@ contract FlyCollection {
         // brain that is already somebody's and collecting on it.
         require(tokenOfMep[mepId] == 0, "mep taken"); tokenOfMep[mepId] = id;
         if (IMEPExists(address(MEPS)).exists(mepId)) emit WeightsHint(id, mepId, m.weightsDA);
+        else if(BASE_ENROLMENT) require((ROYALTY_BPS>0?IBaseMEPs(address(MEPS)).registerDerivedMEPWithTerms(m,base,address(this),ROYALTY_BPS):IBaseMEPs(address(MEPS)).registerDerivedMEP(m,base))==mepId,"mep id");
         else require((ROYALTY_BPS > 0 ? IMEPTerms(address(MEPS)).registerMEPWithTerms(m, address(this), ROYALTY_BPS) : MEPS.registerMEP(m)) == mepId, "mep id");
     }
 
@@ -349,10 +369,29 @@ contract FlyCollection {
     mapping(address=>mapping(address=>uint256)) public tokenOwed;
     mapping(address=>uint256) public tokenLiability;
     event TokenRoyaltyCredited(bytes32 indexed mepId,address indexed token,address indexed holder,uint256 amount);
+    /// Synchronous markets read recipients and credit them in-market without calling or paying them at settlement.
+    function royaltyRecipients(bytes32 mepId) external view returns(address holder,address baseVendor,uint16 baseShareBps){
+        holder=ownerOf(tokenOfMep[mepId]);return(holder,BASE_VENDOR,BASE_SHARE_BPS);
+    }
+    /// Recovery for a market royalty whose recipient snapshot failed. Normal synchronous royalties live in market credits.
+    /// As with a failed native settle, this exceptional recovery uses the current owner at recovery time.
+    bool private settlingToken;
+    function settleToken(uint256 id,address token) external returns(uint256 amount){
+        require(!settlingToken&&token!=address(0),"settling/token");
+        address holder=ownerOf(id);bytes32 mepId=individuals[id].mepId;
+        if(mepId==bytes32(0))return 0;
+        uint256 pending=ITokenRoyaltyMarket(address(MARKET)).tokenRoyalties(mepId,token);if(pending==0)return 0;
+        settlingToken=true;uint256 before_=IERC20Budget(token).balanceOf(address(this));
+        amount=ITokenRoyaltyMarket(address(MARKET)).withdrawTokenRoyalty(mepId,token);
+        require(amount==pending&&IERC20Budget(token).balanceOf(address(this))==before_+amount,"nonexact royalty");
+        _creditTokenRoyalty(mepId,token,amount,holder);settlingToken=false;
+    }
     function supportsTokenRoyalties() external pure returns(bool){return true;}
     function onTokenRoyalty(bytes32 mepId,address token,uint256 amount) external {
         require(msg.sender==address(MARKET)&&token!=address(0),"market/token");
-        uint256 id=tokenOfMep[mepId];address holder=ownerOf(id);
+        _creditTokenRoyalty(mepId,token,amount,ownerOf(tokenOfMep[mepId]));
+    }
+    function _creditTokenRoyalty(bytes32 mepId,address token,uint256 amount,address holder) internal {
         require(amount>0&&IERC20Budget(token).balanceOf(address(this))>=tokenLiability[token]+amount,"unfunded royalty");
         tokenLiability[token]+=amount;uint256 base=amount*BASE_SHARE_BPS/10000;
         if(base>0)tokenOwed[token][BASE_VENDOR]+=base;
@@ -446,3 +485,5 @@ interface IMEPTerms { function registerMEPWithTerms(IMEPRegistry.MEP calldata m,
 /// @notice the royalty side of aigg-porw's TaskMarket: what is set aside per MEP, and the beneficiary's withdrawal
 interface IRoyaltyMarket { function royalties(bytes32 mepId) external view returns (uint256); function withdrawRoyalty(bytes32 mepId) external returns (uint256 amt); }
 interface IInstanceBonding { function bondFor(address instance, bytes32[] calldata mepIds) external payable; }
+
+interface ITokenRoyaltyMarket { function tokenRoyalties(bytes32,address) external view returns(uint256); function withdrawTokenRoyalty(bytes32,address) external returns(uint256); }

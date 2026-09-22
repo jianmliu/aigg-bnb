@@ -20,17 +20,28 @@ function page(reply = { ok: true, matches: true, neurons: 1 }, globals = {}) {
     Worker: class { postMessage(m) { calls.push(m); queueMicrotask(() => this.onmessage({ data: { reqId: m.reqId, ...reply } })); } },
     setInterval: () => {}, keypair: () => ({ priv: new Uint8Array(32) }), hex: () => '0x11', ...globals,
   });
-  vm.runInContext(source + '\nglobalThis.test = {state, startNode, hostOnNode, loop};', context);
-  const { state, startNode, hostOnNode, loop } = context.test;
+  vm.runInContext(source + '\nglobalThis.test = {state, startNode, hostOnNode, loop, prepareEnrollmentBase};', context);
+  const { state, startNode, hostOnNode, loop, prepareEnrollmentBase } = context.test;
   state.delegation = {}; state.deployment = { domains: {}, relay: 'unused' }; state.session = {priv: new Uint8Array(32)};
   const add = (id, neurons, synapses, nTiles) => { const m = { mepId: id, exec: 'int-lif' }; state.meps.push(m); state.hosted.add(id); state.prepared.add(id); state.loaded[id] = { name: id, neurons, synapses, bytes: nTiles * 4096 }; return m; };
-  return { state, startNode, hostOnNode, loop, elements, input, calls, add };
+  return { state, startNode, hostOnNode, loop, prepareEnrollmentBase, elements, input, calls, add };
 }
 let fails = 0;
 async function check(name, fn) { try { await fn(); console.log('ok', name); } catch (e) { fails++; console.error('FAIL', name, e.message); } }
 await check('reject combined 4.48 GiB before worker initialization', async () => {
   const p = page(); p.add('female',139255,2700513,6866); p.add('male',166700,6242118,15566);
   await assert.rejects(p.startNode(), /memory|GiB|GB/i); assert.equal(p.calls.length, 0);
+});
+await check('family mode reserves a separate derivation/execution budget before starting', async () => {
+  const p = page(); p.state.deployment.familyHosting = true;
+  p.add('female',139255,2700513,6866);
+  await assert.rejects(p.startNode(), /memory|GiB|GB/i); assert.equal(p.calls.length,0);
+});
+await check('family hot-add retains the separate task budget', async () => {
+  const p = page(); p.state.deployment.familyHosting = true;
+  p.state.node = { models:new Map(), memoryBytes:0 };
+  await assert.rejects(p.hostOnNode(p.add('female',139255,2700513,6866)), /memory|GiB|GB/i);
+  assert.equal(p.calls.length,0);
 });
 await check('hot-add includes existing capacity even after input changes', async () => {
   const p = page(); const first = p.add('female',139255,2700513,6866); p.state.node = { models: new Map(), memoryBytes: 0 };
@@ -85,5 +96,19 @@ await check('a tick that lands while a pass is in flight joins it instead of run
   assert.equal(p.state.materialized.female[4], true);
   await p.loop(); // and the guard releases: a later tick runs again, with nothing left to do
   assert.equal(p.calls.filter((m) => m.op === 'announce').length, 1); assert.equal(posts.length, 1);
+});
+await check('two child executions share one base claim and materialization', async () => {
+  const posts=[];const fetch=async(url,init)=>{const path=url.replace('http://relayer','');return {json:async()=>path.startsWith('/epoch')?{epoch:5,rolled:true,challenge:'0x00'}:path.startsWith('/proof')?{posted:true}:path==='/tx/materialize'?(posts.push(JSON.parse(init.body)),{ok:true,gasUsed:1}):{}};};
+  const p=page({ok:true,claimHash:'0xabc',slotMs:1},{fetch});
+  p.add('base',100,1000,4);for(const id of ['child1','child2'])p.add(id,100,1000,4).enrollmentMepId='base';
+  p.input('relayer').value='http://relayer';p.input('auto').checked=true;p.state.resolved='0xme';
+  p.state.node={models:new Map(['base','child1','child2'].map(id=>[id,{}])),memoryBytes:0};p.state.claims.base={4:'prior'};
+  await p.loop();assert.deepEqual(p.calls.filter(m=>m.op==='announce').map(m=>m.mepId),['base']);assert.equal(posts.length,1);assert.equal(posts[0].mep,'base');
+});
+await check('preparing a derived model also prepares its base from held bytes',async()=>{
+ const p=page({ok:true,held:true,modelId:'0xbase',neurons:100,synapses:1000,bytes:4096});
+ const base={mepId:'base',modelId:'0xbase'};const child={mepId:'child',enrollmentMepId:'base'};p.state.meps.push(base,child);
+ await p.prepareEnrollmentBase(child);assert(p.state.prepared.has('base'));assert(p.state.hosted.has('base'));assert.equal(p.calls.filter(m=>m.op==='prepare')[0].mepId,'base');
+ await p.prepareEnrollmentBase(child);assert.equal(p.calls.filter(m=>m.op==='prepare').length,1);
 });
 if (fails) process.exitCode=1;

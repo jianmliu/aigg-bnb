@@ -1,6 +1,7 @@
 // Dedicated battery coordinator. Own BNB pays operational gas; job contracts hold all execution fees.
 import fs from 'node:fs';import path from 'node:path';import http from 'node:http';import {fileURLToPath} from 'node:url';
 import {parseAbiItem,keccak256,toHex} from 'viem';
+import {synchronousInbox,readFinalized,assignmentReady,verifyDeployment,normalizeSession,sessionOutcome,sessionExpired,acceptedSession,SynchronousMarketAbi} from '../relayer/synchronous.mjs';
 import {clients} from '../relayer/chain.mjs';import {BatteryQueue,atomic,stringify} from './queue.mjs';
 import {state0Root} from '../gateway/state0.mjs';import {batteryBatch,resolvedRuns,rowOf} from '../flybnb/battery/battery_batch.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -10,11 +11,13 @@ const {PorwNode}=await porw('node.js'),{loadKernelFromBytes}=await porw('porw.js
 const abi=name=>JSON.parse(fs.readFileSync(path.join(root,`contracts/out/${name}.sol/${name}.json`))).abi;
 const need=k=>{if(!process.env[k])throw Error(`${k} required`);return process.env[k];};
 const dep=JSON.parse(fs.readFileSync(need('BATTERY_DEPLOYMENT'))),factory=need('BATTERY_BUDGET'),ch=clients(dep,need('BATTERY_KEY'));
+if(dep.verification?.mode==='synchronous-vrf-v1')throw Error('Battery budgets do not yet escrow VRF admission fees; VRF battery posting is disabled');
+const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion());
 const raw=fs.readFileSync(need('BATTERY_SPEC')),spec=JSON.parse(raw),versionHash=keccak256(raw),batch=batteryBatch(spec),runs=resolvedRuns(batch);
 const dirs=path.resolve(need('BATTERY_STATE')),models=path.resolve(need('BATTERY_MODELS'));
 const tokenMode=process.env.BATTERY_ASSET_MODE==='token';
 if(process.env.BATTERY_ASSET_MODE&&!['native','token'].includes(process.env.BATTERY_ASSET_MODE))throw Error('invalid BATTERY_ASSET_MODE');
-const factoryAbi=abi(tokenMode?'TokenBatteryBudget':'BatteryBudget'),jobAbi=abi(tokenMode?'TokenBatteryJob':'BatteryJob'),collectionAbi=abi('FlyCollection'),marketAbi=abi(tokenMode?'MultiAssetTaskMarket':'TaskMarket');
+const factoryAbi=abi(tokenMode?'TokenBatteryBudget':'BatteryBudget'),jobAbi=abi(tokenMode?'TokenBatteryJob':'BatteryJob'),collectionAbi=abi('FlyCollection'),marketAbi=[...abi(tokenMode?'MultiAssetTaskMarket':'TaskMarket'),...SynchronousMarketAbi];
 const rd=(address,abi,functionName,args=[])=>ch.pub.readContract({address,abi,functionName,args});
 const tx=async(address,abi,functionName,args=[])=>{const {request}=await ch.pub.simulateContract({address,abi,functionName,args,account:ch.account});const hash=await ch.wallet.writeContract(request);const r=await ch.pub.waitForTransactionReceipt({hash});if(r.status!=='success')throw Error(`${functionName} reverted`);return r;};
 const policy=await rd(factory,factoryAbi,'policy'),collection=await rd(factory,factoryAbi,'collection');
@@ -37,20 +40,30 @@ process.on('exit',()=>{if(fs.existsSync(lockPath)&&fs.readFileSync(lockPath,'utf
 const relay=new RelayClient([need('BATTERY_RELAY')],keypair(process.env.BATTERY_KEY));await relay.connect();
 let verifiedModel=null;
 const entries=new Map(); const ZERO='0x'+'0'.repeat(64);const artifactDir=path.join(dirs,'artifacts');
-async function sessions(wallet){const head=await ch.pub.getBlockNumber({cacheTime:0});const event=parseAbiItem('event SessionKeySet(address indexed instance, address indexed session, uint64 expiry)');
+async function sessions(wallet,taskId){if(SYNCHRONOUS)return synchronousInbox(ch,wallet,taskId);const head=await ch.pub.getBlockNumber({cacheTime:0});const event=parseAbiItem('event SessionKeySet(address indexed instance, address indexed session, uint64 expiry)');
  let logs=[];const start=BigInt(process.env.BATTERY_REGISTRY_FROM_BLOCK||0);
  for(let from=start;from<=head;from+=2000n)logs.push(...await ch.pub.getLogs({address:dep.addresses.instances,event,args:{instance:wallet},fromBlock:from,toBlock:from+1999n>head?head:from+1999n}));
  for(const l of logs.reverse())if(l.args.expiry>head&&(await ch.instances.read.resolve([l.args.session])).toLowerCase()===wallet.toLowerCase())return l.args.session;
  throw Error(`no live session for ${wallet}`);
 }
 async function disputeResolved(tid){try{return await rd(dep.addresses.market,[parseAbiItem('function disputeResolved(bytes32) view returns (bool)')],'disputeResolved',[tid]);}catch{return false;}}
+const announcements=new Map();
 const adapter={
  async jobs(){const out=[];const n=Number(await rd(collection,collectionAbi,'totalSupply'));for(let id=1;id<=n;id++){const job=await rd(factory,factoryAbi,'jobOf',[BigInt(id)]);if(BigInt(job)){out.push(job.toLowerCase());entries.set(job.toLowerCase(),id);}}return out;},
- async observe(job){const tokenId=entries.get(job),ind=await rd(collection,collectionAbi,'individuals',[BigInt(tokenId)]),tid=await rd(job,jobAbi,'taskId');
- const block=await ch.pub.getBlock();const closed=await rd(job,jobAbi,'closed'),hash=await rd(job,jobAbi,'artifactHash');
- const state={paymentToken,tokenId,mepId:ind[3],modelId:ind[2],modelReady:ind[3]!==ZERO,taskId:tid,hasTask:tid!==ZERO,closed,delivered:hash!==ZERO,artifactHash:hash,
- expired:block.timestamp>=await rd(job,jobAbi,'expiresAt'),exhausted:await rd(job,jobAbi,'attempt')>=BigInt(policy[6])};
- if(state.hasTask){const t=await rd(dep.addresses.market,marketAbi,'tasks',[tid]);Object.assign(state,{postedAt:String(t[3]),settled:t[6],disputed:t[7]&&!await disputeResolved(tid),repudiated:t[8],final:await rd(job,jobAbi,'settledFinal'),accepted:await rd(job,jobAbi,'accepted')});}return state;},
+ async observe(job){
+  const observeAt=async(options,block)=>{
+   const rd=(address,abi,functionName,args=[])=>ch.pub.readContract({address,abi,functionName,args,...options});
+   const tokenId=entries.get(job),ind=await rd(collection,collectionAbi,'individuals',[BigInt(tokenId)]),tid=await rd(job,jobAbi,'taskId');
+   const closed=await rd(job,jobAbi,'closed'),hash=await rd(job,jobAbi,'artifactHash');
+   const state={paymentToken,tokenId,mepId:ind[3],modelId:ind[2],modelReady:ind[3]!==ZERO,taskId:tid,hasTask:tid!==ZERO,closed,delivered:hash!==ZERO,artifactHash:hash,
+    expired:block.timestamp>=await rd(job,jobAbi,'expiresAt'),exhausted:await rd(job,jobAbi,'attempt')>=BigInt(policy[6])};
+   if(state.hasTask){const t=await rd(dep.addresses.market,marketAbi,'tasks',[tid]);state.postedAt=String(t[3]);
+    if(SYNCHRONOUS){const session=normalizeSession(await ch.market.read.sessionState([tid],options)),outcome=sessionOutcome(session);Object.assign(state,{verification:session,settled:outcome.terminal,disputed:false,repudiated:t[8],final:outcome.terminal,accepted:outcome.accepted,inconclusive:outcome.status==='inconclusive',finalizedBlock:String(block.number),finalizedHash:block.hash});}
+    else Object.assign(state,{settled:t[6],disputed:t[7]&&!await disputeResolved(tid),repudiated:t[8],final:await rd(job,jobAbi,'settledFinal'),accepted:await rd(job,jobAbi,'accepted')});
+   }return state;
+  };
+  return SYNCHRONOUS?readFinalized(ch.pub,observeAt):observeAt({},await ch.pub.getBlock());
+ },
  async validate(job,s){const file=path.join(models,s.modelId+'.bin');if(!fs.existsSync(file)){const e=Error(`Missing reconstructed payload ${s.modelId}.bin`);e.code='MODEL_DATA_MISSING';throw e;}
  const m=await ch.meps.read.getMEP([s.mepId]);if(Number(m.neurons)!==spec.neurons)throw Error('battery neuron layout mismatch');
  if(verifiedModel?.mepId===s.mepId)return;
@@ -62,20 +75,35 @@ const adapter={
  },
  async capacity(job,s){const epoch=await ch.claims.read.currentEpoch();const votes=await ch.instances.read.eligibleVotes([s.mepId,epoch]);
  const unique=[...new Set(votes.map(x=>x.toLowerCase()))];let accepting=0;
- for(const who of unique)if(!tokenMode||await rd(dep.addresses.market,marketAbi,'acceptedToken',[who,paymentToken]))accepting++;
+ for(const who of unique)if((!SYNCHRONOUS||await ch.market.read.ready([who]))&&(!tokenMode||await rd(dep.addresses.market,marketAbi,'acceptedToken',[who,paymentToken])))accepting++;
  return BigInt(await ch.claims.read.beacon([epoch]))!==0n&&accepting>=Number(policy[5]);},
- async post(job){await tx(job,jobAbi,'post',[await ch.pub.getBlockNumber({cacheTime:0})+BigInt(process.env.BATTERY_TASK_BLOCKS||400)]);},
- async execute(job,s){const ex=await ch.market.read.executors([s.taskId]);for(const who of ex){if(await ch.market.read.submitted([s.taskId,who]))continue;
- try{const got=await relay.request(await sessions(who),'batch-announce',s.mepId,{...batch,taskId:s.taskId,initStateRoot:runsRoot},{timeoutMs:Number(process.env.BATTERY_RESULT_TIMEOUT_MS||600000),responseType:'result'});
+ async post(job){await tx(job,jobAbi,'post',[await ch.pub.getBlockNumber({cacheTime:0})+(SYNCHRONOUS?await ch.market.read.TASK_TIMEOUT()+20n:BigInt(process.env.BATTERY_TASK_BLOCKS||400))]);},
+ async execute(job,s){
+ if(SYNCHRONOUS){
+  const session=normalizeSession(await ch.market.read.sessionState([s.taskId]));
+  const [head,finalized]=await Promise.all([ch.pub.getBlockNumber({cacheTime:0}),ch.pub.getBlock({blockTag:'finalized'})]);
+  if(assignmentReady(session,head,finalized.number,s.postedAt)!=='ready')return;
+  const executors=await ch.market.read.executors([s.taskId]);
+  // Start both inbox requests without blocking expiry polling on a silent peer.
+  for(const who of executors){const key=s.taskId+who;if(announcements.has(key))continue;
+   const request=(async()=>{try{await relay.request(await sessions(who,s.taskId),'batch-announce',s.mepId,{...batch,taskId:s.taskId,initStateRoot:runsRoot},{timeoutMs:Number(process.env.BATTERY_RESULT_TIMEOUT_MS||600000),responseType:'result'});}catch(e){atomic(path.join(dirs,job+'.execution.json'),{taskId:s.taskId,executor:who,error:e.message});}finally{announcements.delete(key);}})();
+   announcements.set(key,request);
+  }return;
+ }
+ const ex=await ch.market.read.executors([s.taskId]);for(const who of ex){if(await ch.market.read.submitted([s.taskId,who]))continue;
+ try{const got=await relay.request(await sessions(who,s.taskId),'batch-announce',s.mepId,{...batch,taskId:s.taskId,initStateRoot:runsRoot},{timeoutMs:Number(process.env.BATTERY_RESULT_TIMEOUT_MS||600000),responseType:'result'});
  const p=got.payload;
  if(!await ch.market.read.submitted([s.taskId,who]))await tx(dep.addresses.market,marketAbi,'submitResult',[s.taskId,{execDigest:p.execDigest,execRoot:p.execRoot},p.signature]);
  }catch(e){atomic(path.join(dirs,job+'.execution.json'),{taskId:s.taskId,executor:who,error:e.message});}}
  },
- async settle(job,s){const st=await rd(dep.addresses.market,marketAbi,'tasks',[s.taskId]);if(st[6]||st[7])return;
+ async settle(job,s){
+ if(SYNCHRONOUS){const session=normalizeSession(await ch.market.read.sessionState([s.taskId]));if(sessionExpired(session,await ch.pub.getBlockNumber({cacheTime:0})))await tx(dep.addresses.market,marketAbi,'expire',[s.taskId]);return;}
+ const st=await rd(dep.addresses.market,marketAbi,'tasks',[s.taskId]);if(st[6]||st[7])return;
  const ex=await ch.market.read.executors([s.taskId]);let count=0;for(const who of ex)if(await ch.market.read.submitted([s.taskId,who]))count++;
  if(count===ex.length||await ch.pub.getBlockNumber({cacheTime:0})>st[3]+await ch.market.read.TASK_TIMEOUT())await tx(dep.addresses.market,marketAbi,'settle',[s.taskId]);},
  async archive(job,s){
- const ref=await ch.market.read.settledRef([s.taskId]);const [,settledRoot]=await ch.market.read.resultOf([s.taskId,ref]);
+ const accepted=SYNCHRONOUS?await readFinalized(ch.pub,options=>acceptedSession(ch.market,s.taskId,options)):null;
+ const ref=accepted?null:await ch.market.read.settledRef([s.taskId]);const settledRoot=accepted?accepted.execRoot:(await ch.market.read.resultOf([s.taskId,ref]))[1];
  const {node,st}=verifiedModel;
  const rows=[],leaves=[];
  for(let k=0;k<runs.length;k++){const r=await node.execute(st.mep.mepId,{steps:spec.steps,commitStride:spec.commit_stride,...runs[k]});
@@ -85,7 +113,9 @@ const adapter={
  rows.push({...rowOf(spec,k),execRoot:V.hex(r.result.execRoot),countsDigest:V.hex(r.result.execDigest),descending_spikes_late:late.reduce((a,b)=>a+b,0),descending_counts_late:late,
  spikes:Array.from(r.result.counts).reduce((a,b)=>a+b,0),neurons_reached:Array.from(r.result.counts).filter(x=>x>0).length});}
  if(V.hex(V.merkleRoot(leaves))!==settledRoot)throw Error('independent battery replay disagrees with settled execution');
- const result={paymentToken,chainId:dep.chainId,collection,tokenId:s.tokenId,job,taskId:s.taskId,mepId:s.mepId,modelId:s.modelId,batteryVersion:versionHash,settledRoot,verification:'independent-replay-and-final-settlement',rarityStatus:'reference-cohort-required',rows};
+ if(accepted&&V.hex(B.batchDigest(V.unhex(settledRoot))).toLowerCase()!==accepted.execDigest.toLowerCase())throw Error('accepted batch digest does not bind the independently replayed output');
+ const result={paymentToken,chainId:dep.chainId,collection,tokenId:s.tokenId,job,taskId:s.taskId,mepId:s.mepId,modelId:s.modelId,batteryVersion:versionHash,settledRoot,verification:SYNCHRONOUS?'independent-replay-and-synchronous-completion':'independent-replay-and-final-settlement',rarityStatus:'reference-cohort-required',rows};
+ if(SYNCHRONOUS){const final=await readFinalized(ch.pub,options=>acceptedSession(ch.market,s.taskId,options));if(final.execRoot!==accepted.execRoot||final.execDigest!==accepted.execDigest)throw Error('accepted result changed during independent replay');}
  atomic(path.join(artifactDir,job+'.json'),result);return keccak256(toHex(stringify(result)));
  },
  async deliver(job,s,hash){await tx(job,jobAbi,'deliver',[hash]);}

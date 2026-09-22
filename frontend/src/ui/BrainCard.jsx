@@ -37,7 +37,7 @@ export function BrainCard({ mep, active, hosted, steps, onSelect, onHost, listin
           <div className="foot">
             <label className="check" onClick={(e) => e.stopPropagation()}>
               <input type="checkbox" checked={hosted} onChange={(e) => onHost(e.target.checked)} />
-              host this brain
+              {state.deployment?.familyHosting ? 'host this model family' : 'host this brain'}
             </label>
           </div>
         )}

@@ -16,7 +16,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x08c6dd0fc6ac5a1c177a92d65bb5b1e1623ccf50ad126abe0251e37cfa43fb80",
       "mepId": "0x79af9764440ecfefecac3056fccfa3720c1cbb09600eb0d2facad53da4315f50",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/bases/flywire-783-min2.bin"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/bases/flywire-783-min2.bin",
+      "maxInDegree": 8861
     },
     {
       "sex": 1,
@@ -30,7 +31,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xa506f1271bc376b9bd917e2fa5d12c04765e92f2a216a30ed836f6c06147e5ed",
       "mepId": "0xc17357517fa10c848713812c75543a7e74978bb1f4554dab75bcf7315022d214",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/bases/malecns-v1.0-min2.bin"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/bases/malecns-v1.0-min2.bin",
+      "maxInDegree": 10167
     }
   ],
   "founders": [
@@ -48,7 +50,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x07accdd0c98d5d491a52016177a20d24b78e5e4def9217ff07f40b0030a4524a",
       "mepId": "0xc1574973564f4b2cbe332ca8ba10f0653c1ffab36f6a7abe3ee717871ee6fe4e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe7b3909dc043eab536a5bdba6c4b1f0b4388ee810b5e58576aa1edc12736d90a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe7b3909dc043eab536a5bdba6c4b1f0b4388ee810b5e58576aa1edc12736d90a.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 1,
@@ -64,7 +67,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x3c4aa7576db65d6f94185ce5eff1d2bfe57b66605cd8dd9c53e4d5b3182151b5",
       "mepId": "0x7b8d2e724eb226e7592328549dbb45395eecda4059d515210ef34b60ba52c31c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdf07bcdbf5af121561124779c4f6bfe84782e57c9891a6914c5d0c6c95803b50.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdf07bcdbf5af121561124779c4f6bfe84782e57c9891a6914c5d0c6c95803b50.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 2,
@@ -80,7 +84,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xe44e14e796fefb631d0e75094f4eacc69d2df58e0c806fdb417df9448303acec",
       "mepId": "0x7ac25bedd68ac6bcfb7c5c8a26d5509a5a02426d8129f346d3559e258dd2eeaf",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x956eb63bcae4f4026754cd9aef11ba6774aef1c78a9df42772ab2ba674fd4e2d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x956eb63bcae4f4026754cd9aef11ba6774aef1c78a9df42772ab2ba674fd4e2d.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 3,
@@ -96,7 +101,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x2d16d4cc4b4970522298b4cde4f074963b5f8a2ffdc77282a715563661aa1ca3",
       "mepId": "0x29de94107e20178340bf13359f6f5554355c1ca3c787b855f2dc120106a25844",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x82eda5abe7881ed0c74ff9103c4791712a0a93e46470cf76abd56d94570c8594.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x82eda5abe7881ed0c74ff9103c4791712a0a93e46470cf76abd56d94570c8594.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 4,
@@ -112,7 +118,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xd49eab1803213a3edaa8a5aec0a83ad0339dba816b6b7c86f826deac1dcb12e5",
       "mepId": "0x9e01094eece623b3574859d73c473fb5214590a1370e5e1aa118a6b5dac2359b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x535a9e3b5b26fef9aea042149f629fdb7d62fffd456ac407ac70465be7790248.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x535a9e3b5b26fef9aea042149f629fdb7d62fffd456ac407ac70465be7790248.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 5,
@@ -128,7 +135,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xb18cc79d3d23893b13cf3a8816842fb3008e2a916f652aa2b5ae0894d7cc624b",
       "mepId": "0xc8d618a88074cde3a673a233bad183ad3bc3f1b06bf9dcd3c6a5f19157699870",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1dcf85f1d432b4736a3a557fe9f15952d7db110d4007ffe6e20e7f6c3cdcaf83.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1dcf85f1d432b4736a3a557fe9f15952d7db110d4007ffe6e20e7f6c3cdcaf83.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 6,
@@ -144,7 +152,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x9721ed9396b01b78156eb2b3b13c832255b8b892061f583106bafab86eb9deb3",
       "mepId": "0x0c09b075698266afcc4859006c489491e6b6b8be2246c281a7e9b2789775c52e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5ffaba1ab5e56e3b64f8b9110b22a40d781959a646cdf08ee8ca813dc3e14e2c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5ffaba1ab5e56e3b64f8b9110b22a40d781959a646cdf08ee8ca813dc3e14e2c.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 7,
@@ -160,7 +169,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xecf86909b3df9b71eae520498dbff88196543321033bd9cc901e83bc702de4b9",
       "mepId": "0x408779ec933d0fdb7ecaed8a9512ab5050d7a1615d87e56d4b7871f929e4976f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5d24ebbb65d7bd489f6aeefed596caeed63ea672c16daf9eddd0586b7466f042.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5d24ebbb65d7bd489f6aeefed596caeed63ea672c16daf9eddd0586b7466f042.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 8,
@@ -176,7 +186,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x20b56bb34d3c0d32f645c02d1225b98f1fcdb2191d3b2f4e4bfded1c574506cb",
       "mepId": "0x4878a5436f66c804b9f7ed5698e3ad105a1df709e6bd387d875b89fb72f9bca3",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x20dff22691fa905f4b9a7b2c04791546d25f77de7419f61ec0a1ac6b028968ba.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x20dff22691fa905f4b9a7b2c04791546d25f77de7419f61ec0a1ac6b028968ba.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 9,
@@ -192,7 +203,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x63a92cf8157adca954f0411397de3d8e20f07a171c5214b04608e5e7826d177d",
       "mepId": "0x7ab1f46f586b6031d268b9a302da259d462ee3694169ebf59c029956cfb7ce6a",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x87ca8b3f798e863e1cd18381c6010c5a1e8a52ea689dfe5dc50755979d89a95a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x87ca8b3f798e863e1cd18381c6010c5a1e8a52ea689dfe5dc50755979d89a95a.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 10,
@@ -208,7 +220,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x11dcd76371e07b703f172d88cec6a52003dd46f6ae873dad993c9adc03007e69",
       "mepId": "0xd6c0da4e63fa1580e98443def393512a4854668fa150d174661410a9a11480bf",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8b61b2577a97d7213849f9a3d813ae505461db60e0278b54f920d24aa4a8138b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8b61b2577a97d7213849f9a3d813ae505461db60e0278b54f920d24aa4a8138b.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 11,
@@ -224,7 +237,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x1ca9aab1a41be67565e7ef743cbd1fafec45042a1d5bfaec5140ae0c575913a3",
       "mepId": "0xd8bb29572e706c38dd453b9516c8ba48122fbb02da05e1b63b9bd60bc8f193c6",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7897fc7ad70536e3a3b569828ed4893471d4a9247f0c8a7bed366bfc48a6d14b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7897fc7ad70536e3a3b569828ed4893471d4a9247f0c8a7bed366bfc48a6d14b.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 12,
@@ -240,7 +254,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xe8b6544be8fb9c0c12a9c19c6fe6d91e312ca0211ce5a716d00d1274dbac5748",
       "mepId": "0x14e83acbe4ece5be1414d2ac129a3cce34d354412577175d916305ea840baad1",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1824cca22d81b161b2e07a4a001c9d808f3a70f230c8ed6988b8090c0d931daa.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1824cca22d81b161b2e07a4a001c9d808f3a70f230c8ed6988b8090c0d931daa.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 13,
@@ -256,7 +271,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x1f4efad73df3395c7ba771d23980c92f7a18a72b87a2f81808c36b517937ec86",
       "mepId": "0x97a01ec5469f51cf7da5c173ddfc0e36cb1b9b599c4b810364cd6a7c8951d130",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd80ab4f19e1a974ec5bdad432a6ea01343b6781a3ecdf4705f3c367e8a3fef40.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd80ab4f19e1a974ec5bdad432a6ea01343b6781a3ecdf4705f3c367e8a3fef40.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 14,
@@ -272,7 +288,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xf89e5db48e60ea31ed2bbcd0d365bfc0c17bebb4f7357da0acc2622a4fdf0e7d",
       "mepId": "0x205977ab7d9a17cbb6901a96f232be5b4116c83edbc1a1da0e045e522e2bf5cd",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x152bd23b218e94158af838a0728028f1cca72e9a8d555adc497170c332375da3.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x152bd23b218e94158af838a0728028f1cca72e9a8d555adc497170c332375da3.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 15,
@@ -288,7 +305,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x62997a43e3eec6be1103763cf0a96a1780a189b7bcb16e3e81d3fa6d85e17331",
       "mepId": "0x8510cd968e931cc7220e1fa231d2eef418e6b3284a920ada0f1e3449e2b3ea69",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe2d5f93951c0a88064a830526d1dfef86ce0f44ba1c8fb7a537ef097424d632b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe2d5f93951c0a88064a830526d1dfef86ce0f44ba1c8fb7a537ef097424d632b.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 16,
@@ -304,7 +322,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xd34f530b82297e19476539478897ce005b95922502c7371cde7fe13121174381",
       "mepId": "0xe8120172f821f31d03aac1877a0cc5022711a2155443aad6889c2f3f4a3abe13",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb516cc993c41b704bbdcf27099d9da6e35223ff1c7b261be8154b039fcf1aafe.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb516cc993c41b704bbdcf27099d9da6e35223ff1c7b261be8154b039fcf1aafe.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 17,
@@ -320,7 +339,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x6d44f19fd9cc5e1bd86656e00f85ba3776296588f29a5a1f575abd58fa316f78",
       "mepId": "0xfcf83add0e1eb4c470132faeb0128205e46b65c683658a5724d80c479a6b5e55",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4c9ae9bdc6292bfd944a7abb4edfa7f64c86960e2a705cb897e40d2f874eee27.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4c9ae9bdc6292bfd944a7abb4edfa7f64c86960e2a705cb897e40d2f874eee27.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 18,
@@ -336,7 +356,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x724e0501a14bde84d9692cfbae3f0843ce59c8af115d3864b9abbd91fdb794d6",
       "mepId": "0xf55e8162f63e7e72f0a95e2e654be9e00d8ad4e0c11e2215ba8f8b1b686b3e85",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa168dd7f7e370a1db62ddb22a81d091ec4dd0f774c83a086b1e4b4feffeb5827.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa168dd7f7e370a1db62ddb22a81d091ec4dd0f774c83a086b1e4b4feffeb5827.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 19,
@@ -352,7 +373,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xd740dea63c61b986380dad1eb3cbdaf46d28fa3aa3005334374fa62214f90d35",
       "mepId": "0x7df9e93c005e802a1f66305f3b2bcf7bf7afe6522650f8f7fe32acc1d2b42ed3",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x75e29c08a2d39dc7f1fca4754b7e892e35897042f0fe1cb6b36abaf090862a65.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x75e29c08a2d39dc7f1fca4754b7e892e35897042f0fe1cb6b36abaf090862a65.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 20,
@@ -368,7 +390,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x8e9567a0199e35a9592024847ce2804ded7ee8ac959eecbd9f410a834a0a88cc",
       "mepId": "0xd4f92db41c2f53610ae6f3b8b0675621612af5933a37f36e14b5909784b88839",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x102e38dc7065aced42c9431434836919832355850d3c60019b79b88af4df7535.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x102e38dc7065aced42c9431434836919832355850d3c60019b79b88af4df7535.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 21,
@@ -384,7 +407,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x8ff108022c3370dd6b951728ec31757dc3babc7fec1aa240c27fd5726eab0651",
       "mepId": "0x7b3d235bf9506acf43c1a072c47234e824d2b3e99e71239582e8b77aaad8cc08",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x765f2ad2a7a41c2b3a8b6042f61dd2e2a0f228fb1164b3f5b9cce1c586ac202d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x765f2ad2a7a41c2b3a8b6042f61dd2e2a0f228fb1164b3f5b9cce1c586ac202d.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 22,
@@ -400,7 +424,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x9153ac09de052d98214f99e81b268a7b5e251d2b5590f33d1daa63bf152c3cd3",
       "mepId": "0xacd793e59da1741ee6d4d632e16972d1d5716628aaa057e7ac5014b643b0418d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8b340137e1653a78c4a195882b611465c20334cf056d4e7efd00d5ba9a0404d4.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8b340137e1653a78c4a195882b611465c20334cf056d4e7efd00d5ba9a0404d4.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 23,
@@ -416,7 +441,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x1536323f7f9afb476550e0b24da1eedd984435dfaaed07fa14d749d2f6718a1f",
       "mepId": "0x5cde18aae154ac8263b2c8fd2cba76425edb195b4bb82b2f003dd094a292d13f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x43795e7775d814ae58ac0d75675701b5094c238344890320031c90eda0ad1a0d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x43795e7775d814ae58ac0d75675701b5094c238344890320031c90eda0ad1a0d.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 24,
@@ -432,7 +458,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x3a1d619b0c37961c22c576afa94870db0c0f83bbcd1fc6347255dae0b7d54a29",
       "mepId": "0xaab693b3dc81760bc8518b564dd3ac73b50f8a3ad29f7001b296a0eaf9cda3bc",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x71cdb9903d8e135e027b858420c5ef8264be902978f430f8e8aa01a5f5ecae41.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x71cdb9903d8e135e027b858420c5ef8264be902978f430f8e8aa01a5f5ecae41.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 25,
@@ -448,7 +475,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xec3a79a354cd532f3d234eb006486f583e6e3dca1cf7dd42569b04047a7d0038",
       "mepId": "0x707cb965660cdd7dc70c2c4fce1d5cd2c42771176b91cde694c780508c39741d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb25f9aa5fe5b376317d7c2ad29627dda603320119748b8aa4735dcb11226069e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb25f9aa5fe5b376317d7c2ad29627dda603320119748b8aa4735dcb11226069e.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 26,
@@ -464,7 +492,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xa3e1949cda2df40e2a96d8bfad93165260f513f9e4e56fa94dcde5f4c6de026f",
       "mepId": "0xabcfe253db569ca6fd2945fad734ba48aee2ead72f13c9aa76d6dcefebdc8596",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x742318978d22901e5173b392383a451798621b25ed9d7c71f7ca651e951548aa.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x742318978d22901e5173b392383a451798621b25ed9d7c71f7ca651e951548aa.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 27,
@@ -480,7 +509,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xada560a72ec4fa657631f63878dcc524b3856112289ad6194cb53552669b3b7f",
       "mepId": "0x784cb0fe641e21a1fbb622455185917d5b0ff7904f9d0e21d995b8b12cfe750c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd0c73df70ec1f7b551b26070f27e0957cb455502d08a7478b77a14fed5c497e8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd0c73df70ec1f7b551b26070f27e0957cb455502d08a7478b77a14fed5c497e8.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 28,
@@ -496,7 +526,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xec46d331e45532bc57d90e980b486083873d4ef3396b0e7745c2bfca903d6766",
       "mepId": "0xacb4cf861d32c568f0fd1c3133cf0e2b2254bd578aa64f9db005d343a1e79c20",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x125a5c91c45c04b9e6551049f372b521b3f09a83664e7ca672716d154b517741.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x125a5c91c45c04b9e6551049f372b521b3f09a83664e7ca672716d154b517741.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 29,
@@ -512,7 +543,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x0f994d51d7653f73d5d6db072c6f13421722f8c82ddd277f27f06fe75009f734",
       "mepId": "0x21a37978add0b613c1f87f72c263fe6e74d6494700518ff3701267284653e267",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xafb5df3ec35640af27645e0a4d1132e7ad50385b1bde2d6d12a8c93b805fd65d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xafb5df3ec35640af27645e0a4d1132e7ad50385b1bde2d6d12a8c93b805fd65d.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 30,
@@ -528,7 +560,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xe7ee5b45e1cdcbb533f8597bf879c97a60830c04803414b3b86369251c051945",
       "mepId": "0x4afedb384b131d6297e26f9421c5a1d9b37a47e1acde9d08eb776958ecd52645",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4f46196d6ef7b4da551a269174ff56e1cfb8a165dbbc72a677e92a50f3a1d4fc.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4f46196d6ef7b4da551a269174ff56e1cfb8a165dbbc72a677e92a50f3a1d4fc.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 31,
@@ -544,7 +577,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x9c8795ea67cfb1e9b57e2a8a53087a0ce67a4d6b3c5decb0ffadf99b52fa4f30",
       "mepId": "0xfd349092c8226a5c4e82d8b7abf33d4d1d8173e2078998903a04732365fb40f8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x734799f7543ba4c01262141be60c7ce146da0acd53a187830e29210044ee4f76.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x734799f7543ba4c01262141be60c7ce146da0acd53a187830e29210044ee4f76.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 32,
@@ -560,7 +594,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x0b2b603618cd56f3d03317120bae793d960fb04a44aa329e1d1b49f4388c880e",
       "mepId": "0x7e953388bbabe2359570848ba1874b3e4f5638ab165672aec1869561029a5bfb",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9b6d1b2d7cd73166675bf3ac9f85beda915f8086cae5cbb89664ef36bec08ceb.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9b6d1b2d7cd73166675bf3ac9f85beda915f8086cae5cbb89664ef36bec08ceb.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 33,
@@ -576,7 +611,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x101ed2647247c16f03f11fcf52cb5a43b233ebb20fc0e0abd85fae40058e558b",
       "mepId": "0xacc86b1de2e46a8f9d3661ed58d3bf4bc077bb4a1b6b087c805f5567ed3f9593",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9e756a58c526190d18ec0eaf2cc20a8f8d9f152ce5f5557ba5217f6a923c2430.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9e756a58c526190d18ec0eaf2cc20a8f8d9f152ce5f5557ba5217f6a923c2430.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 34,
@@ -592,7 +628,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x7f9ec0eb1b8b31e24a176d2e8750de4a2309be6e61d94cb004214aeeaca1d44c",
       "mepId": "0x3e5e6cd387dd890297de1b28b589630f000eb2e6f0a07823f2709a699d4be620",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8c61030e4c2856c6d2e8e3d174157b5089b22cee0b23daa273b9d40c4669b011.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8c61030e4c2856c6d2e8e3d174157b5089b22cee0b23daa273b9d40c4669b011.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 35,
@@ -608,7 +645,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x5d75a7a47b98596e20579c64a7e7209c2ab18df53bc3e9aab7e60b33f1e12986",
       "mepId": "0x249136da831688381775e702555f7c2e30b1c95a361b046899b2e500b2a17d4d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x11379747c020803d50824e0b2763446048845bba13b90967e3b5408cb936945e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x11379747c020803d50824e0b2763446048845bba13b90967e3b5408cb936945e.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 36,
@@ -624,7 +662,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xab29b9b6fe56d70fa9fc67af41607af89301ae3caabf878fe8d263ea30eea444",
       "mepId": "0xba1dfac315b79417b8e3c7c982e3b167f4cd7a519d776c2ce2c1446b3217ecd7",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5b44b46c821a9c740b8204aa194a54c56e75742a72d257fab08a350baf54e47a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5b44b46c821a9c740b8204aa194a54c56e75742a72d257fab08a350baf54e47a.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 37,
@@ -640,7 +679,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x9415304b3f6d79e993a692ff6addd66936bcab14b9efbb84ff4ee57de40817f6",
       "mepId": "0xe526d9e5c31b76b2811cfc7e4086ca5c5f57dda4d26f23be813d22bc9b354cef",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x298c714f983f6be62b67dd5b39da1c29eddee1caecdb0183173132194ef951bc.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x298c714f983f6be62b67dd5b39da1c29eddee1caecdb0183173132194ef951bc.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 38,
@@ -656,7 +696,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xc86326c56a9640ca8af3a63860ae0f5ad50373586bde6809d1e5fb425c180f52",
       "mepId": "0x980c343a2f517a4dc64e37931d5bfb7035938ede410ed92968a1c8358ede02d6",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1c30c96663cbc8e5f0cc5d0c66f5cf7fe021c446e35d9125ff9b92eca1e91d0e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1c30c96663cbc8e5f0cc5d0c66f5cf7fe021c446e35d9125ff9b92eca1e91d0e.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 39,
@@ -672,7 +713,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x86c9a92d2fcbe3f3a0da2d37a804c338bd18ad5f36af4cbd38c022766544eaca",
       "mepId": "0x7318a8fa0b1d1184da48a58548d6df48218d320b995a2a6faf4e812516d0fdee",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x181bbfd53be8e9ffa37c40afcc3f3c731d7079b698c96998ba8a4dce3318ca35.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x181bbfd53be8e9ffa37c40afcc3f3c731d7079b698c96998ba8a4dce3318ca35.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 40,
@@ -688,7 +730,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x289c41992f6c8da2824fd2e898d06df08303c3e2ed229ab856b73fdcd45149ee",
       "mepId": "0x36f8ab2af7ec0320dd52da2047ff0a591df343de8ee700e37079ed781baa6d31",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdc4a4e2253dfc3352ca1f8123e70d7c2abea2fb471055a3ee4ef2543f33375d9.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdc4a4e2253dfc3352ca1f8123e70d7c2abea2fb471055a3ee4ef2543f33375d9.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 41,
@@ -704,7 +747,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x5dfa179ef8ce9f35294e077cd5ac0cf202d25954b071fd98c277393c3eadd1b3",
       "mepId": "0x628660ccd8bcc3bd544ceea65e4501970d86d521d68957b122f29e5931fd2548",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc7e735596df6ac77cd17078c336939b0948f221b91a2b0daeec73dc3e5ebf1f5.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc7e735596df6ac77cd17078c336939b0948f221b91a2b0daeec73dc3e5ebf1f5.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 42,
@@ -720,7 +764,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x8f88caa1543be8c9a6b23ede0811261859aee9b9cdee10ff356aec28872d60de",
       "mepId": "0x41a5b3883b73839479fca98443d0a5065c83a6c1ab0fcc4bb21d4b36cdc223ff",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5e368ba0818aa950f9b654e47736bcfe70f8989475cc6cf988b663569d744768.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5e368ba0818aa950f9b654e47736bcfe70f8989475cc6cf988b663569d744768.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 43,
@@ -736,7 +781,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x1425b0abe0746a92baac5189538c5443205ce6c89ecec19bb6419875b77fef2e",
       "mepId": "0x7d2090ca8947d422949b69ea9092b2c7cd35220a23e1716ed9c7f66baac1abab",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc1437cf7e481e6b67b8f642ca70a2d3236f2644b7676f16671bb98b036e6cb1f.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc1437cf7e481e6b67b8f642ca70a2d3236f2644b7676f16671bb98b036e6cb1f.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 44,
@@ -752,7 +798,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xf8406119b8e5fc9cddc139bc1621c501277f4ef97f8361babec8145cf0ddc04e",
       "mepId": "0xee55878002dec9d11fcbfb9a52e88f54d7786fed2daf0b4d0759fecab4c8f120",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd061b355e79130f7775a10e75bff17840190ca1fbe487cd3f51f98195327ca21.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd061b355e79130f7775a10e75bff17840190ca1fbe487cd3f51f98195327ca21.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 45,
@@ -768,7 +815,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x96456f7c62f3760426907310a9d106ca5753949f29ec88bb1955ab49b349d19f",
       "mepId": "0x4d97bd8da0a8c0bdb945b15619fbbfc01bfa15199a2ca1afb8a20e4b10b13c9a",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa1694a7c9889d49fc2a79791c70a14bafec6f23a8642364fe587979ef96c9813.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa1694a7c9889d49fc2a79791c70a14bafec6f23a8642364fe587979ef96c9813.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 46,
@@ -784,7 +832,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xd48ae041779d7f63d9afa4c845723d8a800d261a17866ad6538399e78423496e",
       "mepId": "0xeb84ddf30eb648378eafae8723ac3e9f4aa3f7c91a5cf3d3768ae00f66f3c4cd",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4afdda5f90cc581052a7f86782f2fc65b18d9390685ecd51a6adbaed0741df03.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4afdda5f90cc581052a7f86782f2fc65b18d9390685ecd51a6adbaed0741df03.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 47,
@@ -800,7 +849,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x44582a0706e0aab8a5d7157c7d02a4de95444c8c586b0ba4876aedef75c3bc54",
       "mepId": "0x10b54985243c6e96231535e24e6f6397de0eb180aea3149710429c1165a05640",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9807da6f2764519a3d43e2dffe28eaa67b453201845b310641e1c1dc100b0405.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9807da6f2764519a3d43e2dffe28eaa67b453201845b310641e1c1dc100b0405.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 48,
@@ -816,7 +866,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x974144f091fb75c5c6bb0aa958a8f1e9ecca003302f57203871539a8f70b2eb2",
       "mepId": "0x2ac4290c7cd14dda7875226f1e4ab323b24cc160245baad2699945cf442e0fb5",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd81e3882350759e35dded15d37068ad581d9e811fa4744e42cdd41e0b87a23c9.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd81e3882350759e35dded15d37068ad581d9e811fa4744e42cdd41e0b87a23c9.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 49,
@@ -832,7 +883,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xa130e135c3e23914fb50004b38545937803a30e5ff8e1dc9b14ac46b6301c2e6",
       "mepId": "0xe92850f133900a0799f176909415ca426ed964eb5607e2d20df0b265c2e8f9de",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x785dc4b8fa53e4ac368d22588c69ee2babaaa86c46ba3dbed951a5b0a29e7f6c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x785dc4b8fa53e4ac368d22588c69ee2babaaa86c46ba3dbed951a5b0a29e7f6c.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 50,
@@ -848,7 +900,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x5cd558fcf30d6307538199230950c31b6d4a88ccc74c216cda88f63ff6c4e5c8",
       "mepId": "0x712576b5e56b5a89422c5046d1ec87f3ae337953b0eb266bce9893b79fcc5357",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4791855a3f0748c6921d6bcf88a14236128d1a74674dc08701ae566d9d955305.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4791855a3f0748c6921d6bcf88a14236128d1a74674dc08701ae566d9d955305.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 51,
@@ -864,7 +917,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x6996d1b44a3aae90a53e837c477cb97b0ef0d828daafcdb76636aa54230f1922",
       "mepId": "0x3c7afc6e4f4be4dba57f6929dbb467e5eaabba425674734c66007e89c88a20b3",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xcba194054f4636939c7878e295555fc30af6ef0a0e87075353cc4b50ae53c695.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xcba194054f4636939c7878e295555fc30af6ef0a0e87075353cc4b50ae53c695.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 52,
@@ -880,7 +934,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xcb51bc67903d6be22077a7ffd3b0bc6af79ba400e1e64ecb17ade6f3c932e73a",
       "mepId": "0x11534ede4cc49c219396951e0321872f119d0b863daf0429f5db68596d8435d8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x81cb13b0c9441c88a5f5a41275a24799bd62fa81b035d0ff9d1fd1c699ca4d2a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x81cb13b0c9441c88a5f5a41275a24799bd62fa81b035d0ff9d1fd1c699ca4d2a.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 53,
@@ -896,7 +951,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x95c6851e23c0d6fb588c0d8e1b389b6383822fde4edba7b49b617cbd7d297f08",
       "mepId": "0x3ed91d4296fffafc0263329d20762f2236ed0a7b3787b0092b365a1da529815a",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa637117fb4b02c72159d4a3d676c97c5555c3049680a700e4821ce6e283d0e82.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa637117fb4b02c72159d4a3d676c97c5555c3049680a700e4821ce6e283d0e82.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 54,
@@ -912,7 +968,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xbcaa1100295f394bcc06fc623fcca60d0838544080c80d44b1173c9653aeb5b8",
       "mepId": "0xbc3fb66d66f3b5ce0f16613662dfffd9dc7295d819c3c7277aa15fad2a81c488",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2f7db511c6741c08ca1ea84b12ff5d6340e3838b98fa83ac9f89d99ccf671364.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2f7db511c6741c08ca1ea84b12ff5d6340e3838b98fa83ac9f89d99ccf671364.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 55,
@@ -928,7 +985,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x55490410fce66c27cb188979fa2da4eb397c1e34318511ae136993597cb43bfd",
       "mepId": "0x438ef6314e6189787542f5fdab28828a9ee76435188f6979bc457034a31be5d5",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x817d20f97a1e22e369e241ca560e01247ff3e3b9494124ca51aa6ad6709abd53.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x817d20f97a1e22e369e241ca560e01247ff3e3b9494124ca51aa6ad6709abd53.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 56,
@@ -944,7 +1002,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x6265b9e956846cdf31f41bc4ec834f58c7cdc3cebd159666559b68af229ae0c2",
       "mepId": "0x895d5a8e6d1e53acf24e4fd33aeb771a37c2cadf084d43e84cbb79523886bb7a",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x3185e5636f1015d45d780dbd81f624725faaa37e0a199bddaecf130ace674b02.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x3185e5636f1015d45d780dbd81f624725faaa37e0a199bddaecf130ace674b02.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 57,
@@ -960,7 +1019,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x701d15e33b0406f27a38c72cc0d59146894cef843040d963a97e09205dfa8c74",
       "mepId": "0x09e9ba882a0ce563c61c00f3435229259ee69ade76d46bfb968b0f55d0bafb35",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xbbc02e7cc8108a6d9a6cdc8348458aa65be6da3b6a1a7e265f3280603eefade3.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xbbc02e7cc8108a6d9a6cdc8348458aa65be6da3b6a1a7e265f3280603eefade3.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 58,
@@ -976,7 +1036,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xab6f9617b52673b8649e52fdf260282aa7ee7cc06d58bfd310880ca16895d50d",
       "mepId": "0x8ac43761403f147a1f9e4b1bf13bee033f1e14b733322f9e89e0ce63ee590d5c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd1c94ff672771f657d74571c9b0e88508d79c893273156aeca80ca231456e5a1.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd1c94ff672771f657d74571c9b0e88508d79c893273156aeca80ca231456e5a1.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 59,
@@ -992,7 +1053,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xe639bf386b4a088cf763e32c8f285c00115c34cc443bf8c15d301825b43f8f30",
       "mepId": "0xfc62bc0f2b80d573c66cf4fe2b121f3c9caca9af90e7e852fc772721d1f3ed98",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc3d03c1401640d216a81f547e31acfa4aafeb63c7d2e9a18647fc9882ab56acd.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc3d03c1401640d216a81f547e31acfa4aafeb63c7d2e9a18647fc9882ab56acd.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 60,
@@ -1008,7 +1070,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x3667bb2da20e22264db1662e5f81401d6b991830daa80e372498cdb9a122a43a",
       "mepId": "0x612a190f2f07ca1616f0fddb83bcd4c266d7eb517b278828f61ebbf5e659beb1",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe57d0e1912c689a109b0a1487be80a5bb3be2e4abea75f2a415c37bf4a50b14b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe57d0e1912c689a109b0a1487be80a5bb3be2e4abea75f2a415c37bf4a50b14b.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 61,
@@ -1024,7 +1087,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x6a781f5a7491ec504380f471babf18092038bbf316bcf146da506a1334903deb",
       "mepId": "0x147b712f9fcaa9b02b623eaa28a5a83b4f6148387516d2c41c7a80c1c79e7823",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd753576effb97d5e3ab030970b19eef451fddc391121975e05f35d88aaeb9dd7.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd753576effb97d5e3ab030970b19eef451fddc391121975e05f35d88aaeb9dd7.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 62,
@@ -1040,7 +1104,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x4bd151184d3fd926c2aedbf080ab169b741af13980d6fbeab1d8fdbb5c52a212",
       "mepId": "0x9a5b13bed69c18b2900f3fa243569dfdb6868286ef32ff86098eb982f37924a1",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xfc2f7f14bd1e02c42c349bb00cb90754b8ca75da710ab7768a45ed250f3fd7c2.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xfc2f7f14bd1e02c42c349bb00cb90754b8ca75da710ab7768a45ed250f3fd7c2.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 63,
@@ -1056,7 +1121,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xda19a71bdde785d7ad65aa96b7d5fb3232235dc16b96a1f69d74c8c8e4afaf5b",
       "mepId": "0x42466ea83d18eabfc7dfcf80ec0b2114983d22fa2ff71c0d61b4cd391db4014b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x78f5117efe92d6d935bedca2e808c58a895baf3af5debfadbac6fef4456479a9.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x78f5117efe92d6d935bedca2e808c58a895baf3af5debfadbac6fef4456479a9.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 64,
@@ -1072,7 +1138,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xc796f30f0ceb69bc4cccd2db8a1dba68f48c984e8e28ae7d70733704810c149f",
       "mepId": "0x7f968fcb00fcb4fcf3f8fbbd17bf65b9fbb9516b68af7c7424565eed7938c1d7",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc682ad15749b6428fd3ee4686f5cda11eb906520891000d9a111b706151400b4.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc682ad15749b6428fd3ee4686f5cda11eb906520891000d9a111b706151400b4.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 65,
@@ -1088,7 +1155,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x45570ec227cb3ba0fe5a5779fe22f574ba9e0e37da34146e99043a8d6434ebbb",
       "mepId": "0x766f7b06d263788ee22f5e85bc4c5c4fcc1aaaf8f00c85545815c6dd24d23a09",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6f7d2f578eb6cb8824b547c03c787b3fdac1df24a9237348e8a911ddb97a7b5b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6f7d2f578eb6cb8824b547c03c787b3fdac1df24a9237348e8a911ddb97a7b5b.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 66,
@@ -1104,7 +1172,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x6787f1b669002d83c12a3e707180f85b60888974067f65674f04cdf9a88a0bd4",
       "mepId": "0xb9d4b50359dc2a81d9ed9d2f4da64e2284fffc44a1d195fcf988caa1459b1bd7",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x43713014dbeba6db51137da91203b7865c50677ed7e37031ab9f496605bb27c8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x43713014dbeba6db51137da91203b7865c50677ed7e37031ab9f496605bb27c8.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 67,
@@ -1120,7 +1189,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xc3f8e9900ddf78cf68597a43cb629207834bffb94a3862e30bae2b0b36c52495",
       "mepId": "0x989410d9e60ddfa3a59ebb3fe408d95c156e880cd6f12c2ade26bee42a389eaa",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf741ba3c0fb07e5f169d9719613622c60480f09e1f8dfd830f2c9e68f96c33c6.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf741ba3c0fb07e5f169d9719613622c60480f09e1f8dfd830f2c9e68f96c33c6.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 68,
@@ -1136,7 +1206,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xf07a409a2a0bd2ebb2e4df4a903a78540bc3e3f90310e121af70bb9972dbe8a1",
       "mepId": "0x901aecc386fe4e69c494e69a22f2f4704a6c73d1fcbb54481afe9e3789d94e88",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x09d803483301c1e314c809a7476cd2b5166f8bbf695cf6e2f99df2e398b2e419.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x09d803483301c1e314c809a7476cd2b5166f8bbf695cf6e2f99df2e398b2e419.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 69,
@@ -1152,7 +1223,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x9f8ec63a0d9c3d7d4f8e7e1d8663baedf3437063af67f2fb414fe973a57ec542",
       "mepId": "0x42cf306fbc6600392757801f4a5082a776f381c132faa72f40992925f05c6d52",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdc42ecfacd37af836d4992ab28486482d42156c7e59f0de9f40fec7289d079d8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdc42ecfacd37af836d4992ab28486482d42156c7e59f0de9f40fec7289d079d8.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 70,
@@ -1168,7 +1240,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x9fc24585def33f1d81220dbc1cf6f714caac29fa0295d16bd392ef6dfcdcbb09",
       "mepId": "0x0589e7b26e1665a219d756edb9cce6c29e5bf5bc312597462ec3a9a3ba9da26f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x72fd5681be4822cef4e31efa066ed408f92916ccfc249a46ce03a0eadd9dc4c9.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x72fd5681be4822cef4e31efa066ed408f92916ccfc249a46ce03a0eadd9dc4c9.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 71,
@@ -1184,7 +1257,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xbf5ab132952c3d722b90f4603e447d4cfbb438a0d33744760849ad665900d53c",
       "mepId": "0xa1ce2e1dbf69ae310207badb6cc91a27cd47e2fdb889b1bdc17e007e4c082a96",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdaf7771e71ea98f3f982c09f83057440e868a0b9a429ca5d3ca6c1aa6ed5d007.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdaf7771e71ea98f3f982c09f83057440e868a0b9a429ca5d3ca6c1aa6ed5d007.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 72,
@@ -1200,7 +1274,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xc4955446415b5d8d157d185d2514197bb33bbe0a7c7f6007f3b6a87ef7635a88",
       "mepId": "0xcf90f67c5646f2224c47b68c94eb7677b6b1f156bf2596fbe9c69d5cc4fd1950",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x48da04316bd30d50cc61674716a58d7902a9059f271cc6dc2b9d34131bbe249f.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x48da04316bd30d50cc61674716a58d7902a9059f271cc6dc2b9d34131bbe249f.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 73,
@@ -1216,7 +1291,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x124ca3594658db186ea88e7db79df58968e9a7dc42d66a2c919dddaa8b1cb832",
       "mepId": "0xcd7d411f6c3dff563c735f01ac99cb30dd2350b9916ec1519e40569045e49db4",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7a1175e47d3d3473c7bf0d2c2e3ae8d9bcf3cbcb16c6d6ebef9f63ef64cca092.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7a1175e47d3d3473c7bf0d2c2e3ae8d9bcf3cbcb16c6d6ebef9f63ef64cca092.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 74,
@@ -1232,7 +1308,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xe701b3b413e843f76c654f7ce9ab8aa4798483a303c2cda02502cb88b7bef23e",
       "mepId": "0x0ccf51e76912fbe54df853f3442880df981bba89de4c854b8c3252f52466311d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe51224efb546ecae20f9e92d5d1a76b4fffe9a41afbe5f3224bbc15242207255.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe51224efb546ecae20f9e92d5d1a76b4fffe9a41afbe5f3224bbc15242207255.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 75,
@@ -1248,7 +1325,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x0c0a0b7be2f0a3c0f0337c68b08810c1a3a534c61254b0bbd6d19f18def0f702",
       "mepId": "0xdfd8c0698d1d0f5980acab387c90c80aaa3c0a62713f0579c63567e46449127b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf597d7ec1b5b6c736219b4c304bd7aa26527c572b7a8c56b6ade94beb801f992.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf597d7ec1b5b6c736219b4c304bd7aa26527c572b7a8c56b6ade94beb801f992.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 76,
@@ -1264,7 +1342,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x229561229cbd168507f3564c10ef9e1c0ad4b3d20839eabff9f5d61a6405179e",
       "mepId": "0x92a0b32c95cadec7896feafdd67b85f28a8e1247f30cf277125f79675841ce21",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8ac27612114ad3ecdff05340bcad18ab4335ed2ebef53c66e4e002ff450f41a1.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8ac27612114ad3ecdff05340bcad18ab4335ed2ebef53c66e4e002ff450f41a1.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 77,
@@ -1280,7 +1359,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x4f995137a25c9e9afe5559562c01970790776a839615bae7ebff26d245a213fb",
       "mepId": "0x3f254b1b16dffdf731ae05d0f989fde194ecb8347edc694cc11ebaa62f791e25",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x40d7c5dde70a83e177ebb5b3a37786450788199ca826ae1dfeb671c53c065f28.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x40d7c5dde70a83e177ebb5b3a37786450788199ca826ae1dfeb671c53c065f28.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 78,
@@ -1296,7 +1376,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x502f21a33bdafebdc67ded77ac4cb12d8363e3f54042354519f2699a8b92cf29",
       "mepId": "0x9b4da4677922775939c2a856a06adc48451a1c59e1edc5a9a764993ec96f8bc7",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x3c6b6bc90c454ce766e73701469519928285f8ba41afdcbcfb84adb6ba044c76.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x3c6b6bc90c454ce766e73701469519928285f8ba41afdcbcfb84adb6ba044c76.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 79,
@@ -1312,7 +1393,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xcb305ea1e5607006d739453cbc0744d12193dfd64c8efcd6da61d80ee86843ce",
       "mepId": "0x3051bc9ba862b627a315033614dc7d1e3473d08af90ba721eec33ff725d79668",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xeb34252332f89cb343b494279b0b06286f1b0824575828a62702c56d45aa012a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xeb34252332f89cb343b494279b0b06286f1b0824575828a62702c56d45aa012a.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 80,
@@ -1328,7 +1410,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x01844748994201342a2dd85396c06b60c5001b01d4e2eb95789ed646a997ce3e",
       "mepId": "0x21314d2c5f538e92370321699f3ebc19a6991cb2dc8ad3b8a998da0975be755f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xaeb9a82537e5691998a891e2aabe176d4f463ee760f10495365cc6e60961d057.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xaeb9a82537e5691998a891e2aabe176d4f463ee760f10495365cc6e60961d057.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 81,
@@ -1344,7 +1427,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x5c0d06132cbd60b0b8a23fb024da266ff8fe96da571157f76b4146879ba78c6b",
       "mepId": "0x170bcd2b909d19933b242ccf66a5c62f6207fe8ced3a724f58648f5754bab67e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4d82e0a6dce75e41c03d8239ef1bebbabc6c2d9d1c2cf8023e22a9348f281fe2.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4d82e0a6dce75e41c03d8239ef1bebbabc6c2d9d1c2cf8023e22a9348f281fe2.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 82,
@@ -1360,7 +1444,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xec5b0be944ae863d65beb6eb6fc322899bcfa10744e0eb4000c72a72a90080c9",
       "mepId": "0xf6d92bc4e839a4ad1654fbfe91c6cc9973151591a72f1b20fa6215d8ffb9dd16",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5268f4f45c9bc015040d309e11d27c46f47be696234922ca9949438e9a0c9586.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5268f4f45c9bc015040d309e11d27c46f47be696234922ca9949438e9a0c9586.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 83,
@@ -1376,7 +1461,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x84362763e186b1bbf7c7e87a20e2ce34c2702258e88205bc01eaa74bcbf83a98",
       "mepId": "0x5488dfc4dead55cf5d35df345335e68a51c2d2d3cea84b8282bda8c74c9f9ba1",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x667f8b229a46ac9738bd67e112fa29c009d822e150486f2202807f52db754856.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x667f8b229a46ac9738bd67e112fa29c009d822e150486f2202807f52db754856.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 84,
@@ -1392,7 +1478,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x56ccbef31a0adb15e9d263577379159e1dc3c4704a73605895be0b0bafbd63aa",
       "mepId": "0x25c28ed66a6e4305befb3316bff1a38c5e681b6fbe7a6b46404a66a7ea97f2f7",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8c00143c92a9ebd0c568646282c655f4236b288e4c2de927f56ed85acf3f319b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8c00143c92a9ebd0c568646282c655f4236b288e4c2de927f56ed85acf3f319b.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 85,
@@ -1408,7 +1495,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xe5a9aef3703849a3581047cb5144eb3c9e86ab8cef6e0b3ab27f08e81c75fea4",
       "mepId": "0xd3bc079954f4453fe708e4dc77ce393c056256d00bf95cc2a5fa1ccc49fd03cd",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe72f63b0a258ac10e8e9c057158b603cbae011a11e47653f69728c277e6e6e5d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe72f63b0a258ac10e8e9c057158b603cbae011a11e47653f69728c277e6e6e5d.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 86,
@@ -1424,7 +1512,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xc083e230a1e856905c047b75e637064992da3ee908da68c6bfa14d685af6c5c5",
       "mepId": "0xcfd8612f5ff3ef6ac4144ffb48ce29863827bc01a751d0365fa48b402730b36f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x0bd27062fde8b1ad756f37df11d8e7d23727ebd4a263e3ede12046b03719f9f4.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x0bd27062fde8b1ad756f37df11d8e7d23727ebd4a263e3ede12046b03719f9f4.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 87,
@@ -1440,7 +1529,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xce204021959ee05d212e8478e8a26e6a39ccc639356ef832c32dc2de580a5336",
       "mepId": "0x192c7f294945d3bc3f05766ede2a5e50677608e7724492d860f9a49be84f3a66",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x81ae9b46ac09f4efd35703918d3cea813243f81196922d4b462c0f4911c8c8ba.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x81ae9b46ac09f4efd35703918d3cea813243f81196922d4b462c0f4911c8c8ba.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 88,
@@ -1456,7 +1546,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x0b3db4006182dd275efba67c864d544b8d1cdc6c3fe268716ac954f4ff0b90ec",
       "mepId": "0x000285c59f29a0f3c71fcc5caf9aa5646dc4b193b242c332766651c226099130",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd2851d750c16940bb606423b6166e1963f3bb1661876555ef4cf8b16c10b1602.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd2851d750c16940bb606423b6166e1963f3bb1661876555ef4cf8b16c10b1602.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 89,
@@ -1472,7 +1563,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x68ec64a35e67da27b52efcbc6bb691826d246d0ca44a00d0d3327f1ea9a1aa23",
       "mepId": "0x037d126c5d1e72fff0c17fd6180a3704f84d66e791f12c763a986eb0339d040b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6ce50dbdbdefc609c4fad22bb41bced259982a7a8f77260c8560a7248dfcf886.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6ce50dbdbdefc609c4fad22bb41bced259982a7a8f77260c8560a7248dfcf886.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 90,
@@ -1488,7 +1580,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x86532cf51a7aa38c706bf535007cb92af8c28531b3598d1505cc30f70e93a727",
       "mepId": "0x85a40194b724310f3e40f0c187e7551fdaf29e787b71f4f6857340cab925b3fc",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x17783fafa2b2512502c3028a3a2699a96bdec8b71152932fc665110b3363fd05.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x17783fafa2b2512502c3028a3a2699a96bdec8b71152932fc665110b3363fd05.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 91,
@@ -1504,7 +1597,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xd701149c3f5153d13bb4ab367ee0b8ae880d9150b78519b32412b99ce38de378",
       "mepId": "0x7eb7918d10512aedbd3aca251554747e81a6b793811ced1ccb6bbcd1d56bf62f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4002b55f51f6d13494d8dd9a236d04554cee90d4056d68a3fcdde56657b1dc22.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4002b55f51f6d13494d8dd9a236d04554cee90d4056d68a3fcdde56657b1dc22.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 92,
@@ -1520,7 +1614,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xe1eb1fc3cf547ec4fa0b4b17ba1005cf8fd615f2e054753038a1f1b47cfbe011",
       "mepId": "0x44f623327218015c5cb8064c39d8d28959c2ed3dd28728a96c351f8aa923009d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xecd787edba335e196ffe6d4906cc81666a679c87dcf0a983feb1159ba9c3ab58.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xecd787edba335e196ffe6d4906cc81666a679c87dcf0a983feb1159ba9c3ab58.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 93,
@@ -1536,7 +1631,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x611cfd1fa4cee380fe582720c09cd6a87ab399fe0c2ab86584a50d3d4be7b7c5",
       "mepId": "0x2e531ba56bf0649db94c7c88579897996739a41cdeee0e935aecd4901aa33044",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x82614c77898154d774f6dbe7aa707edfed4778c97b0dd3ce6addfaec404f8a1d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x82614c77898154d774f6dbe7aa707edfed4778c97b0dd3ce6addfaec404f8a1d.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 94,
@@ -1552,7 +1648,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x1211b769db469cdfda0d3541301af062693565335edb601ee26a369b1ed491b5",
       "mepId": "0x50bdb013a6dbabcab720cfd106bc0c054f6d926ac0af544a326a7f8167df6e7f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x069cde96e83c285152bfc213c07d0ac27f9d48214855b8a2c461aa90aa3360ac.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x069cde96e83c285152bfc213c07d0ac27f9d48214855b8a2c461aa90aa3360ac.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 95,
@@ -1568,7 +1665,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x56b91ab66bcabcb3c96e7cf12c952f2913664091e8f4c0831ae105b30be23828",
       "mepId": "0x87fedea693df14ac7d695350a28427571e4cd835dd65ad4478e5ae3090801bc4",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8ed850e94501e175aa209a91e6b96e391b2d6f211b86c9e927983d13d12be0b3.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8ed850e94501e175aa209a91e6b96e391b2d6f211b86c9e927983d13d12be0b3.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 96,
@@ -1584,7 +1682,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xc28b835d94c63cde6e79058a85d4ecb6d2bee1d7418162becc250e511811568b",
       "mepId": "0x4d88e261a245300b4ddc909dbb0e4e742b1895e34448bb336f6321aa31ec5a0c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd19776145c490b882b3a6dedc751deb9dd7451d9944e865440da05e5f60ef24d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd19776145c490b882b3a6dedc751deb9dd7451d9944e865440da05e5f60ef24d.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 97,
@@ -1600,7 +1699,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xbdc42c57d47c1e94141cf4656272304bdd7d6648a2e1a4097a2c799346e937f8",
       "mepId": "0x34841583ee90d27fce561d5b950c19a0d4545be72a60b16bd67b30bb9430fec3",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x719d96242b74ff7a0bb2c42f36a4eb1eff8633da49893fac3bb56821e0816906.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x719d96242b74ff7a0bb2c42f36a4eb1eff8633da49893fac3bb56821e0816906.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 98,
@@ -1616,7 +1716,8 @@
       "synapses": 7595967,
       "synapseRoot": "0x769b22da5667c3647fc606e15f0bb850b9a3d18b156321709e11a6259f911e61",
       "mepId": "0xca340724d6a26a608eaac457aa05ac9878927c0ce852918f37bd3a03e52ac729",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x83a9b852e2822e582e7c40b786d5c78787f3d5bec87799dcacdf3f58c0399501.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x83a9b852e2822e582e7c40b786d5c78787f3d5bec87799dcacdf3f58c0399501.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 99,
@@ -1632,7 +1733,8 @@
       "synapses": 7595967,
       "synapseRoot": "0xf14117f3358801eb3a6e904410a0e54b7d1ef97d071ca978fa5ad6d031635a44",
       "mepId": "0x607478d79915f600fdec38624c8805f390c847b8d93319bc891e4c62fe6dc49d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4bdfe6b853d04ea91a0a7ea853d09bb2801860b505c4333b190833fe66b1e885.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4bdfe6b853d04ea91a0a7ea853d09bb2801860b505c4333b190833fe66b1e885.delta",
+      "maxInDegree": 8861
     },
     {
       "index": 100,
@@ -1648,7 +1750,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x67b32815598405c8bdbbe3217118e1fa7c1723bd15a885f09032f137d55ed844",
       "mepId": "0xbf2836c78fbad1bc82310ee43ce6ac3d4a998c1a7299559afdbc87b471b6eae8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x68ac445c99252b618b2f70958bff1a271c613081eee008ccb0e88af197db6bbd.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x68ac445c99252b618b2f70958bff1a271c613081eee008ccb0e88af197db6bbd.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 101,
@@ -1664,7 +1767,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xac5adbdc5492e9ca05e430cd827519b7434adc5dfd3cebd828e0d25b53e81c36",
       "mepId": "0xc8e2b9f9ca50419af1ffff61ece6a9f77c488d95f7df7bf5566bbfd8ef8daccb",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x180a12420040f838e9a1a559865b275dc19e8e19b9f4659326ad438c98a4c0c1.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x180a12420040f838e9a1a559865b275dc19e8e19b9f4659326ad438c98a4c0c1.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 102,
@@ -1680,7 +1784,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xbed870cf847f8462e4e43fe16201476c0b90f312f1ff12689bd6c2228f68b14b",
       "mepId": "0x7d6ef73c61bb8cac01c7f91265fb3bed3967d6af8a57164a3ac75f841d575249",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x0f300a381a31bd6e1cea0cc226b6b4e6c851954bedc31f28c27f8f3785fa6794.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x0f300a381a31bd6e1cea0cc226b6b4e6c851954bedc31f28c27f8f3785fa6794.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 103,
@@ -1696,7 +1801,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xf8407e7250276cea8d136978a68b18fa08b9c82f1b77b5c1605ec2ecdc4cf7b5",
       "mepId": "0x0a620a1017a48586eea7f154a20afab21a8d6b03613822cba1473d120f619cb8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xde1ceb726aa49bac10168966a08bcfbc3de5ee982a7bbf78dfb2241c4f201b0c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xde1ceb726aa49bac10168966a08bcfbc3de5ee982a7bbf78dfb2241c4f201b0c.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 104,
@@ -1712,7 +1818,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xd59819255dcce4f4d5a9976119a23af67b99dba424703b05927ab846775f1b40",
       "mepId": "0xda6a45fe719270a6bee220b3b93fc5610cfdc54a1f5885b4856898bed30692b0",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf68f3ae5095c4e849ff6a55d4eeee9204ac540e987e339c63cdbead25d9fe815.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf68f3ae5095c4e849ff6a55d4eeee9204ac540e987e339c63cdbead25d9fe815.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 105,
@@ -1728,7 +1835,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xf529b5b904865c95b2ad87909885a80abb21524fccb09082d31bf9df4bbd7f41",
       "mepId": "0x7bb22d7ea1f8dad74e9a1bc2a71ce9526ec7fc4427334bf84f4dc027730b48ac",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc5b958e006568bfc2516d0ea6d5e982fdcf52433648a2f34cf53c86786e31655.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc5b958e006568bfc2516d0ea6d5e982fdcf52433648a2f34cf53c86786e31655.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 106,
@@ -1744,7 +1852,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xfeb06e35cea0996151f2c2bd7683a68821255d68144646b247b77c8cbce402ff",
       "mepId": "0xa9abcc0d79d33c07a94261f56c09b8de7c9b87ba42ef6a84c8019048cf89626c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb4884ae8394076c582f01bfbc1d5c1f98232f3ac0a7823ab1e79dcdea14458fc.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb4884ae8394076c582f01bfbc1d5c1f98232f3ac0a7823ab1e79dcdea14458fc.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 107,
@@ -1760,7 +1869,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xfb0621c676d59be6910d519f1e8f229d9e5cac64301482fd27e427ade6288d74",
       "mepId": "0xea199e3e82b4753a083f4b0c385f2cc5a306fb29c2d0df3589b1da6a2bf538cb",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x82b4e5079da10ac19e3c01fa993851b70366eb665f17493f8eaea20ce9898031.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x82b4e5079da10ac19e3c01fa993851b70366eb665f17493f8eaea20ce9898031.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 108,
@@ -1776,7 +1886,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xbe9cc661dac95d24df802428211982e552eb3c1e3d019ae3c37fe8249f940537",
       "mepId": "0x42927523bd34561e9cb9e00859689c3339164f6aa7a991a96e0ea703150d5dab",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x291fdd12860fbae1addb8e06e74b7f598e87c6ab2b9be0ff1c1542712d5ab298.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x291fdd12860fbae1addb8e06e74b7f598e87c6ab2b9be0ff1c1542712d5ab298.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 109,
@@ -1792,7 +1903,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xa8401ef94d8a879ed4f6725879d654133f93718a91d5f0ad8148f86e49118260",
       "mepId": "0xab700863d3ad670b1e9285db3be828bb44ff8c7b81202bea04ccfc2c9e124c3b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x77ada0d47c2d786dbf7e774dea51b463e26025c66def328ef1e131d23132628b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x77ada0d47c2d786dbf7e774dea51b463e26025c66def328ef1e131d23132628b.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 110,
@@ -1808,7 +1920,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xd0da45750210be1d93c31d4d759b9dacf4cefaff74416f7d48ef82500e4c98ac",
       "mepId": "0xa3930380ba03506737589fecd1cacef61d9cef81404e55877e63a41d4554de93",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd1e8c82dcce605ab882f7c2af07ab293e1676a0292b218507d9cd9420436d780.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd1e8c82dcce605ab882f7c2af07ab293e1676a0292b218507d9cd9420436d780.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 111,
@@ -1824,7 +1937,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x4ffdea8b44fd6cbffe3d14ec5b52397decc97a7fae647dcfc5b0e438c84b1e42",
       "mepId": "0x06afb342e8bd4f40dc67f31dac41b9d08782c06abb36a9f80dea82c6e3180393",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x05e1f7e923da497b22add9b806d1b80fe70f54756394b3135d4659c6f5e47f1a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x05e1f7e923da497b22add9b806d1b80fe70f54756394b3135d4659c6f5e47f1a.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 112,
@@ -1840,7 +1954,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x7c864fbf5eb309377c78c8ac3b4ec79c6c0e4fe7363012956d8fa70142dd598f",
       "mepId": "0x6a5405374f9055749ec1f8d3cab850a7a43122290b0c6fcac10230a35048c7cd",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x78d50fbd5c5553e21092cc69317bcbfab46b5289efcf23a782de7c511aa9dec6.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x78d50fbd5c5553e21092cc69317bcbfab46b5289efcf23a782de7c511aa9dec6.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 113,
@@ -1856,7 +1971,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x39a52b8764a5a5ed9f48c4aa395c4421b40f5b485b983feeccc2ad033431bc58",
       "mepId": "0xb9639d63032edd3245e39009acfdf6217d8440eae58b164726d3f296c248441a",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x397432f2a62cbb3826e7e2b46b192325cf17581787137a7001270e7088bc204a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x397432f2a62cbb3826e7e2b46b192325cf17581787137a7001270e7088bc204a.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 114,
@@ -1872,7 +1988,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xbd3d1b37f0c47af30a512532cf95bb7932110c859d7bff0b997fdd82f31f7305",
       "mepId": "0x593e6130adddf2da13501a9742750ea00519ac4c8f7ce01802a9d219968ea448",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x67c565003c226f85c8384760f806839b1f61c99bd1c923a75f4b444a05d1043e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x67c565003c226f85c8384760f806839b1f61c99bd1c923a75f4b444a05d1043e.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 115,
@@ -1888,7 +2005,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x7c91c5ac01d832b2a08389491e1d043af91a7eebf30ca6d065ae3d47db7e866a",
       "mepId": "0x3a8d8b402aaeea7fe577d4cf076d058b2789bdaed3b8a84fc599d91eb7130008",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf5f5fde4da57db537612626c5cc39ba24f2c576eb70b40ebf7e1146bdf50a1e8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf5f5fde4da57db537612626c5cc39ba24f2c576eb70b40ebf7e1146bdf50a1e8.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 116,
@@ -1904,7 +2022,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xe0cf3e0d59db5302d493ab5b95160bc8284feab42bc3059177f582453c0ec022",
       "mepId": "0x23fac16b423a047cc90558a2098e9a94c1727cbef3aa4b8b01f0604af9e37ebe",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdacfef2c00372089ccd0e52b62572b45e86682c420acf01aa475dbef8681fc93.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdacfef2c00372089ccd0e52b62572b45e86682c420acf01aa475dbef8681fc93.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 117,
@@ -1920,7 +2039,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x61079b2224f5ebffecd4db8a46192cc3ee9f434dc889905e6ae1f7b7cfffcc11",
       "mepId": "0x24be5b6f1427feaf55750449c805ae80d19e51f80994029390e28218fc7b7e6d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe5f3dc99a1a4deae0e5e25bbf58b6421780852ef9af472c1f62ed77def232ac8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xe5f3dc99a1a4deae0e5e25bbf58b6421780852ef9af472c1f62ed77def232ac8.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 118,
@@ -1936,7 +2056,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x0ca014f7fd1909d29ae043c4887823a02465000f0bb62b0105ae9cc651721f32",
       "mepId": "0x063499ee01b67dd80297ee609b635522c5943efcaea075fa8d7091215933111e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x26f5ccf3714ac7967969c35fc108d3302147dfec254995223c62ad52ebf56ed5.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x26f5ccf3714ac7967969c35fc108d3302147dfec254995223c62ad52ebf56ed5.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 119,
@@ -1952,7 +2073,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x6a18d93ccb09ad3e9b84bcaeccdc4f4bc87e86b709d692621e8b48b4a70ccf17",
       "mepId": "0x3557407d081cf384646196a8a99fba51eb45dc7cb242f7215b95f69835ef7f37",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2c51773fbc8da691648b7fb2e296e77ecdfabdc8474fa60cf613a7fd8ecbc737.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2c51773fbc8da691648b7fb2e296e77ecdfabdc8474fa60cf613a7fd8ecbc737.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 120,
@@ -1968,7 +2090,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x780beaae01995bd23f33ee576aef578d96f190e1fea36de70c231926862653d5",
       "mepId": "0x7ecd5be751c4ff4cc4a51790ff6adeee2025fe6ff09043e020ca2654e3e24133",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xda82682d7bd6f7ddea1549d88cb1230ef1de4169ef7dbbdcd20bad5b7bb21951.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xda82682d7bd6f7ddea1549d88cb1230ef1de4169ef7dbbdcd20bad5b7bb21951.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 121,
@@ -1984,7 +2107,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xa76d2d0fa9ea1e6b9770072bcb29a745903f970bdcf2cb15c2770e3c2edbb72c",
       "mepId": "0x63179dfce77245b4bfe9b8dcfaabfe52db11a78327f6708d365016d890d256fb",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5827224df3cdc4a0d563dfde066ae976167e0dda5d5489319222a2bdaa710ce1.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5827224df3cdc4a0d563dfde066ae976167e0dda5d5489319222a2bdaa710ce1.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 122,
@@ -2000,7 +2124,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x739daccfc5e50d6d780a38ebb1bc5525fbdd39f806152798c2a9d156b2f6a26d",
       "mepId": "0x388c7f4c1c60d425064eb41b10c135afcfd7ebe00480ed42cb5612bad0de9a16",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x37573fdc56e3f49c6a444cbfce0eab1d5d7a34126f8cf3ddd2224dae0debd58e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x37573fdc56e3f49c6a444cbfce0eab1d5d7a34126f8cf3ddd2224dae0debd58e.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 123,
@@ -2016,7 +2141,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x6e72d787ceafb7a2fc5cf2bfa4758af3d981f508b835d2863887a767bef32242",
       "mepId": "0xc79a4699104e88837f6122c6de370c106884294b2530698e047dca03e99be834",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x125b923cb095571d781d2f79e6a96ac8718c55a8ac71b8d87615b44c4df013c0.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x125b923cb095571d781d2f79e6a96ac8718c55a8ac71b8d87615b44c4df013c0.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 124,
@@ -2032,7 +2158,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x7e1737b26b8520d644a9bd8b3a386f079c824d374e9bea6eaa18d1d5b1ea7333",
       "mepId": "0x1880120d4ec5c396d3b4a547ca587027970d7f125ad2725674132c8b7e903231",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1a67b67d80ea3909e0536d3cf1307da5dd3931316a4843278a048c4e8561cb59.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1a67b67d80ea3909e0536d3cf1307da5dd3931316a4843278a048c4e8561cb59.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 125,
@@ -2048,7 +2175,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x65cc6a7a91c395d69a94eee65fcaa5efb58c4c7def3322e66f966a16ca3c0b59",
       "mepId": "0xd0650388a5f98ae621c0a2f37baf7d784fe4525ab97c97d0f5cfb42e456409f7",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x424cf7b00a5030065938437ac61f782a05913e19c06e0f3b9549af070fa0ee75.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x424cf7b00a5030065938437ac61f782a05913e19c06e0f3b9549af070fa0ee75.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 126,
@@ -2064,7 +2192,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xb48df2888ab812b28a13cd82efb05a5961b2dc844ec5b715813fb056bef62501",
       "mepId": "0xf7f98828e217e0f9d6bfc05aac9afeca56485a82f38e2aa2b6f783f225ffd9e8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf40eb9c971372060f63a2c1887298bd406e6234f25dbed39b2181329f8d10a3a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf40eb9c971372060f63a2c1887298bd406e6234f25dbed39b2181329f8d10a3a.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 127,
@@ -2080,7 +2209,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x4e7635362ab3869966a263dfc6359568375772fc4f3e12cc50c36cb6ad719c84",
       "mepId": "0xb3b2e47c2a87609694dfb47e2d096e25a26b9ab2595fdd5fe1b2547bd1b7c0d0",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdddac29719d1e6958915506c1612609c7016e263b645baa6f09a2b6242975685.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdddac29719d1e6958915506c1612609c7016e263b645baa6f09a2b6242975685.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 128,
@@ -2096,7 +2226,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xa1fc4b2918feb1f8d70493d81dffe40b17ee91a701617019b3a23b131684438e",
       "mepId": "0xc138a7d110fbb2648cfa9247bc87a80533568ebec704e6123082b7d60d6d660c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1fe5f0df6f0b121572cd23289b3b51ccbebfc8ed7e98f953762b51d00b62d436.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1fe5f0df6f0b121572cd23289b3b51ccbebfc8ed7e98f953762b51d00b62d436.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 129,
@@ -2112,7 +2243,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x9d94a552a811c44dd99e84eff3ad40a8312b6fe26522547b960680caa44aacf8",
       "mepId": "0x42f72ad5872c31ba9b1c79ee8f484ccef83b570079612ab0d2c1c7b615bbe207",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xfe0562517ee69f22ef51406e75d06d9a799196ae4cf2eec7cc5f57f9b6299ec3.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xfe0562517ee69f22ef51406e75d06d9a799196ae4cf2eec7cc5f57f9b6299ec3.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 130,
@@ -2128,7 +2260,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x2bcf3648a9fc15431d7910b26626d29b3cdef962e29e4b735c19af94dcdd8dff",
       "mepId": "0xf49dc43a11a4a36fa8929ffa4b92a561ea722ebef7fb74dcae6fcba7da43971b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x73251c9671a0e06bd9c036f8576cd021a631646897cb433c0add0eacf80ac642.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x73251c9671a0e06bd9c036f8576cd021a631646897cb433c0add0eacf80ac642.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 131,
@@ -2144,7 +2277,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x8413c3e27ca89edebd6e98cc72299d64a849b04b09172667e0ea161c06e09309",
       "mepId": "0xd2edec43c0613527db089117f92c17f8f0c711708c73036496ff088e6bd1fa06",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6791b6ad2fc280eb6399c1e5f1b664894be96446c3636fccaa567784a30f39aa.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6791b6ad2fc280eb6399c1e5f1b664894be96446c3636fccaa567784a30f39aa.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 132,
@@ -2160,7 +2294,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x85a27e4f3e3d73b3ad5dabc8c079d2e66bf6305c8eb64f088f8357fb8ac4e807",
       "mepId": "0x512b6b98d98ef826b5ee364b78fb205b51d1447b452863fb631a73f7622f5a67",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6e68fb508364811fc7533d7a969edd7a54c865f7409a0e52fe449cfe30d2a70e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6e68fb508364811fc7533d7a969edd7a54c865f7409a0e52fe449cfe30d2a70e.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 133,
@@ -2176,7 +2311,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x5dceee54f769a993146ea3b9c6ac87aca3c17287933ac5af14a0630daff98248",
       "mepId": "0x51d36bfddc3b9a0ef642db55ef66cd4cee29e62ff5de3438dead0fbabeaa05c8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x12951f7a27cd7820faeea04753c3e7645fee5dd45377f751b754f265fc0c67ea.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x12951f7a27cd7820faeea04753c3e7645fee5dd45377f751b754f265fc0c67ea.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 134,
@@ -2192,7 +2328,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x5e50d6c1517738a9c57bdacb12a030cbda4d1d1eb1ca50de41f4f51b4573db24",
       "mepId": "0xd2ee29718697d8d1cc6b1257366ea2331c1cbd662517180df2f82edd4885ed03",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1467a18092ceeff85bb5d48cff67335e0b56a33cf9f3cd6ad02b8d4b17a182a2.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1467a18092ceeff85bb5d48cff67335e0b56a33cf9f3cd6ad02b8d4b17a182a2.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 135,
@@ -2208,7 +2345,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x29c3c2aa61267d84a56358f7e41f03e2814ac4a1a4d5dcfa2650b3538b03edc5",
       "mepId": "0x5fcad913edddc42a65f847d1ec435b6a9a914fed277bb48a4fb18b8f61321e45",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xad535c18ddde94b31d1cfb8cf6a22a5bf14b7d849dd360b5038a80ea4c464e6e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xad535c18ddde94b31d1cfb8cf6a22a5bf14b7d849dd360b5038a80ea4c464e6e.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 136,
@@ -2224,7 +2362,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xc3ab685e124ecb882037d1619d3d14ab12ba490f154ffb2749a3297644c80151",
       "mepId": "0xaf73020884b9f2d2c13e3fab6161b0366e5ab69f27aa2600709869960b0720ec",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xccee213ec4984dd8c4442a98552397bb85fc90d7bf4438b75a46822ff0c09126.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xccee213ec4984dd8c4442a98552397bb85fc90d7bf4438b75a46822ff0c09126.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 137,
@@ -2240,7 +2379,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xf04cf6bde4e3b619852f4778f7b1bf6ff93653094312aecae50a2d44b0a16fb3",
       "mepId": "0x052f5e74960352d3823e3086bcde12f7b981c4b1724ef5b7f92d03d3ec847212",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa1a38baf7a1386cbe99eeb919cee748bf9e77565e970bc7540e06f4906bce3c2.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa1a38baf7a1386cbe99eeb919cee748bf9e77565e970bc7540e06f4906bce3c2.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 138,
@@ -2256,7 +2396,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x3b47a584094cce29167787b366f8cb677b7ed23b3bb458c812da4ec0ad72663d",
       "mepId": "0xc559a63edbe23864ac13b1c80b4e1af1a39d68ebaf7b046e7db4b4c3c5dad6ce",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4304e61fac9a28e7e31c3890d3ca25ec9b2a8850d5a553fbf6b5bde25143971f.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4304e61fac9a28e7e31c3890d3ca25ec9b2a8850d5a553fbf6b5bde25143971f.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 139,
@@ -2272,7 +2413,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x97157938eb51faf2de190756f9709557cd6dd4fe459c6e08f186ca70bfcd232e",
       "mepId": "0xed377d9ab2b82f41a45de28be4a29b8bb751bd494a2693b0715d664127700412",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb36bcd5f334df29231f3c33b1c65f493134688bfb6efab45d3dc4db9cb6aa3c6.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb36bcd5f334df29231f3c33b1c65f493134688bfb6efab45d3dc4db9cb6aa3c6.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 140,
@@ -2288,7 +2430,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x319866b5ebfc0a0f3ba19223e26bf0df3a3485aef18e65dedf097b0bb7667bf3",
       "mepId": "0xf28dff269c88e224c3f0244ec3dcb9e762425b0905fa72e19d72661bebfa98ad",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc9f65b3c594d866489da6c9cd52a841d511415e6f09bca7bea94de7de175f989.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc9f65b3c594d866489da6c9cd52a841d511415e6f09bca7bea94de7de175f989.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 141,
@@ -2304,7 +2447,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x176f4e982c5175b47251ef0f2e36f04e77a2632fc7658038c6c055088db31f18",
       "mepId": "0xf6b0736b50db33f552a5026dff3394e0ffea1042c387c92e537af9de2cd2988a",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x0d17f42ed8634dc3af23669eea2e5fc3bddefd7f18e4a406e38bb4a890367ba8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x0d17f42ed8634dc3af23669eea2e5fc3bddefd7f18e4a406e38bb4a890367ba8.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 142,
@@ -2320,7 +2464,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x77ff3339edb7a71dcb93a5b553a72318ee938c7083af77d26e39cfcc33de2f49",
       "mepId": "0x6b08557f178fc472cb09212a76f4e91d78488abc66bf5a29023e4f0416adc925",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xfb0655289087a97f37be5dd2261d8b338b45d9c8102f11ece8d5ed938aad0357.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xfb0655289087a97f37be5dd2261d8b338b45d9c8102f11ece8d5ed938aad0357.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 143,
@@ -2336,7 +2481,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x142fdef2dcde05570583c22d676e30496b7d3e4050791842d0be575898a1d51f",
       "mepId": "0x50272c9de235ce0b729b8fd4fdbc1bd9f92f9a3521134c226cc6a07bbe5a2125",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xccd63970190e03d7c5063d9d7541ccb11e4c1e8e3a2a55db79610d0be03e6800.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xccd63970190e03d7c5063d9d7541ccb11e4c1e8e3a2a55db79610d0be03e6800.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 144,
@@ -2352,7 +2498,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xacdacd23f32e018c64e94992b588c70135ec00e746ae42ec77837aa9f032743e",
       "mepId": "0x53899b34a89fcbafa3e66549347f76399d4cc90b9e1a07ebb2a013e1c187919c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8351876edcada16854c7bd7e0e99c255c32e91bf1cc9a83f4158d515dfbc21ca.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8351876edcada16854c7bd7e0e99c255c32e91bf1cc9a83f4158d515dfbc21ca.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 145,
@@ -2368,7 +2515,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x311acf28072f6a857352d88264c014e18febe663d85b06a9e36813a517b7286e",
       "mepId": "0x871bd10b495761e4b0b510438438e26f4a60ee1139dd73f708b27363286b5367",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdd39d4363811009794637d49fe6601e70bcf1756b1d53ee31e0f2a5022ae9902.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdd39d4363811009794637d49fe6601e70bcf1756b1d53ee31e0f2a5022ae9902.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 146,
@@ -2384,7 +2532,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xd4c724b279d5f1927ade1e4e8494ded1d438d2d64c4b4c6eecab3f5d97932c71",
       "mepId": "0x7ab5d242817e13f9bd2ba228e492d71badcded27d6dcbabf20a9187e88eb998b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x347ff16d778a64fa67fa18dacf6117af63e9c41dc40fbee42e1cae8c9e4d773c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x347ff16d778a64fa67fa18dacf6117af63e9c41dc40fbee42e1cae8c9e4d773c.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 147,
@@ -2400,7 +2549,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x434698fb5542bb4c3d23e7a1651cc644558c86f9b377ea37ab751050bb3d39bb",
       "mepId": "0xe775922786d96f95b70f8b31538884fd4191830521b0d33eb0737a3dee4022d4",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa0017c0ae750c5d1cb93c001a16a04b9862ee6e493b7387a77ed85c133af3788.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xa0017c0ae750c5d1cb93c001a16a04b9862ee6e493b7387a77ed85c133af3788.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 148,
@@ -2416,7 +2566,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xca8cd4529cb40ebba5849c7e181cb63806bd13193e7a9ab63920aa8c2686b1bc",
       "mepId": "0x29adde3b0224ba5020b204b8f817450591bfd5af7682f31ec0ebaa84dda11abf",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7c0d0e7ce566be2ccd62516ee15d7131a1943a687e6fa23d5b55fbd97a49a5f9.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7c0d0e7ce566be2ccd62516ee15d7131a1943a687e6fa23d5b55fbd97a49a5f9.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 149,
@@ -2432,7 +2583,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x59659fdcf279a0e82d90435e67a67ef8705e52ed7874dd7142bd18875de3eead",
       "mepId": "0xd2620f63385c9b91a9551e611f8949419420c492b1e1a14f83f206bf010619de",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9f18d5c8e78c51179f8fdaac66a318778e0aaf9dc75b9447440661269a49498b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9f18d5c8e78c51179f8fdaac66a318778e0aaf9dc75b9447440661269a49498b.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 150,
@@ -2448,7 +2600,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x90d150b6249fab927b10d6f21d2f9c6fa42f63bbf95920eb6abd8b54c53154e2",
       "mepId": "0x6a2996014c3a254d67c817d488865cd9166cea14554d0ed169ead9c508ce9fca",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9f0c546a93dd9c7059eb1f26f8887fd785c1dec3016a57cde8869f2c167d17ee.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9f0c546a93dd9c7059eb1f26f8887fd785c1dec3016a57cde8869f2c167d17ee.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 151,
@@ -2464,7 +2617,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xf323b402b7c285eb9baced7df1e0c3a4ccd164b4dd41448d32030dbbb594661c",
       "mepId": "0x09101e7bfafbea8c490f949f2724bb4169922290b74b0eb5d663c6dd13cc0aab",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x38b043d0dd4cb838522df6cf0156b70f8fe12ab17c2e947ae25c05935584d00d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x38b043d0dd4cb838522df6cf0156b70f8fe12ab17c2e947ae25c05935584d00d.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 152,
@@ -2480,7 +2634,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x0c52860847dd2fccf653f18e1287fc1cfac65f5b2b96f5b472f2a30c44108319",
       "mepId": "0x4394294a6c091b32e34decb44b0beaf3d552323b18b8f077722c01efd17a680b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd704657e81607d0bf173efa0016bffe15fcd20cf87a710bd8b523bd8c5cb4654.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xd704657e81607d0bf173efa0016bffe15fcd20cf87a710bd8b523bd8c5cb4654.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 153,
@@ -2496,7 +2651,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xdad287af8fc962ee008e270b05a3581f92493c4e322dcec8a48183578ac39832",
       "mepId": "0x86163b0be01c9078875953b4f0b8bbae42e11696369f887715ff2ac572c5b2e4",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x15925f47337937d2c71847cee80b6452f1e5e4617c4d5044bc4ffa92570a2d3e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x15925f47337937d2c71847cee80b6452f1e5e4617c4d5044bc4ffa92570a2d3e.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 154,
@@ -2512,7 +2668,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xe4e6c47a6d9917ab2f2335174db259fe43b80d86584ca036739539f7e8624d10",
       "mepId": "0x425ad79aa33cbc236df45568fe2278474987f12ba50c07869c2cb2a10da30f0e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xae0d1ce071e25ff371b2c83bb0b0ccbf0e3a81bc9c23c25466e1b6c5d21e578c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xae0d1ce071e25ff371b2c83bb0b0ccbf0e3a81bc9c23c25466e1b6c5d21e578c.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 155,
@@ -2528,7 +2685,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x3bc9ed6c7a15b5a858e3d0f5d2abbabb7afda02a28ad28259f8e594c4105922a",
       "mepId": "0x11d013c301c1a5be7bf65b4422ecf88d8703cb822ec9133a0212f71d975842ef",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x929db8ab9216b059e32d5e8db05c8d5e4ebac972194227151c72d43b28a80479.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x929db8ab9216b059e32d5e8db05c8d5e4ebac972194227151c72d43b28a80479.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 156,
@@ -2544,7 +2702,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x68fb5ad2177f8244209a311d7356e0f023a524ac10297d2b87f4115b761fc141",
       "mepId": "0xfc00aebefb294c1ee4975719ba33742985c1e42397fcbe7c00dd787abad72fde",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2642c6a73eefbb5ea1400dfaf0db36362d6c587ae1266a65c87608a1c3360e70.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2642c6a73eefbb5ea1400dfaf0db36362d6c587ae1266a65c87608a1c3360e70.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 157,
@@ -2560,7 +2719,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x1561e14040de2d1327392653028caae865a97589c510a87b8cc39ba70a938452",
       "mepId": "0xaf1cc5b51164df1c1845f17ab6c778f63e82d1788af274878712b7629c0df4bb",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7e39d4dbf90ff5460b25f918a8b409ca9d0e31d0ebb79a89d81a89ab27514d1a.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7e39d4dbf90ff5460b25f918a8b409ca9d0e31d0ebb79a89d81a89ab27514d1a.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 158,
@@ -2576,7 +2736,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xab61007793caff6e6fc307065f6af9592cba15c933203d03100b3ed69d7f38c5",
       "mepId": "0x62d163c6d01982903c7774de73c9d3b92edf5c0bc7c8a8cf8341a7d21bb362bf",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf11e529c7e6bc2f278fefb19db1fb3bd5f9b8bd80e6229b58ad0b1139a98921c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf11e529c7e6bc2f278fefb19db1fb3bd5f9b8bd80e6229b58ad0b1139a98921c.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 159,
@@ -2592,7 +2753,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x0a2a4605649d06618c96b196ead79c5ace6243c47af64761539a23c5a6680096",
       "mepId": "0x78cbb849e7c4624aebea57e2b995a9b9db454bf599179d86483b3e3a79a6ebf3",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x285ca6dabf83b21fa56ebd7bd735b10afeff7d2577e1a36845f663b9b6f47ad7.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x285ca6dabf83b21fa56ebd7bd735b10afeff7d2577e1a36845f663b9b6f47ad7.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 160,
@@ -2608,7 +2770,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x11b11fa43284e6a9c9d3bee8ffde698407decf8dddb85bbdcc2cf38923b42ec0",
       "mepId": "0x28153ca8fd8707fc9504e70de0241874aa500e2b0b74f4ddf0c66c1fc32ef3b2",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1b1af137215d1d9a707bb79d2258589b5724e9cfdae12b7d5f0ae9f88ac12ad9.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1b1af137215d1d9a707bb79d2258589b5724e9cfdae12b7d5f0ae9f88ac12ad9.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 161,
@@ -2624,7 +2787,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x7384ec427c6e29a4f398dbb2b52a43cadae2bdb6038c8e2d3c16c7b7ebe4293b",
       "mepId": "0x8c4a269d02e8eda3220ae34d34545a787ebd92e12f92aeb034a15b0e914090bb",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6ad751952d03c6cc3a5f1c4d18421e16b7f923798675c736f448fe264243b6b5.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6ad751952d03c6cc3a5f1c4d18421e16b7f923798675c736f448fe264243b6b5.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 162,
@@ -2640,7 +2804,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x9e8d91f31352d1b98565ff20648c912015e049af678ff057f4b3a2d74784d9b8",
       "mepId": "0x0cf27217549c9d5e6ba0255897ceb37d545a24958cfc19463fbb120b7d836fff",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9be30f0b3e856cc622ca43a80e2e8dd8de287748cefcf298e676dfb2f5c52414.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9be30f0b3e856cc622ca43a80e2e8dd8de287748cefcf298e676dfb2f5c52414.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 163,
@@ -2656,7 +2821,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xbdb3cb5e7c5bff895b8027b5f14aaae5a8fd4c39b15e0e729b368e3a1f90d864",
       "mepId": "0xe06613981c9b517129b83726f56f0a82cc2fdeb64f80c757236c7897f3563ef8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4d31e345177b301bb7ce432039c7825e7ec5961e6080d3bb324d4ea7059ffb2d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4d31e345177b301bb7ce432039c7825e7ec5961e6080d3bb324d4ea7059ffb2d.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 164,
@@ -2672,7 +2838,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xa099f8ef99561c818d3996f56bc454620be79b87f22151dbc5863f905343bcc2",
       "mepId": "0xe58b0eb142c524993c33a7e0fbb5be77a97b5ee0c2e3814417e58910b279b328",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8b536a4e4ea88b955e2007e84201e52c5eb3cc62c91c2f62301ffc6202b6d271.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x8b536a4e4ea88b955e2007e84201e52c5eb3cc62c91c2f62301ffc6202b6d271.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 165,
@@ -2688,7 +2855,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x54918fde4e502f455ab89a99c5523f2cfb851c2116a4ebf11a985b87d44f21e2",
       "mepId": "0x1f8a782bd0d1cade610eb7fbad046d408750a851c469073fda32a8973bb9ad4b",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x98c18f333f5752cff01e5d7ece20f56561dc1dee9bd36f5ed9c214edc06dea42.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x98c18f333f5752cff01e5d7ece20f56561dc1dee9bd36f5ed9c214edc06dea42.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 166,
@@ -2704,7 +2872,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xf1ae50faf10e450f8afad8585e6d75f467bb6383f691e9b7db63746a6c737775",
       "mepId": "0x4ac7a36f6f14911a467a8255f0d8f4f11124fc674d0980ce94d2f899fa6ebf64",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6ec0350f7c224cdab09027982c7aa9bbd507eee8fab907c4bc99251d591ec79c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x6ec0350f7c224cdab09027982c7aa9bbd507eee8fab907c4bc99251d591ec79c.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 167,
@@ -2720,7 +2889,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x55f8b5b65a2d7c79f948dc75a7f6b176a9055c58a62c0f6d20a7c4447248610c",
       "mepId": "0xabb5d958367a491fd56fdb1ca78df40f465c107c59859b2134d2e1dceb50f5f6",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xda48959ce689b42746a374850bd347f87b167376af5b39764c65324454b26065.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xda48959ce689b42746a374850bd347f87b167376af5b39764c65324454b26065.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 168,
@@ -2736,7 +2906,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x8db76aff908c66b5b9f5a2b97371691e4e2c7b74ac83179885b90eae0ccfd01a",
       "mepId": "0x1bb07d9e5f0700d896b902a47d760174c6c2f323f035f2197a85dc23f72e9340",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2b117d001325d82eca259c59f4fe3dddc8bf01a8c2d3124cb7ee149ededfd250.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2b117d001325d82eca259c59f4fe3dddc8bf01a8c2d3124cb7ee149ededfd250.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 169,
@@ -2752,7 +2923,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x5b4d924e4b662720bd8e200dedfb886e3c369e2b7c07d215a4331d53277e8db1",
       "mepId": "0x2cb2f8ad57f75e716001c4ba71e3ae4e35e7acfedcc0e3dd4adaa9de05ec932f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xea5aff271cac8ec120426e9965e1443ac2fcc214d44db9321e8bc4b868254c01.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xea5aff271cac8ec120426e9965e1443ac2fcc214d44db9321e8bc4b868254c01.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 170,
@@ -2768,7 +2940,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x09e2d00071725ff2bd6016399612cb82941e73b558038cb3795b13aff84d348e",
       "mepId": "0x1c01ff8333463fe8e8c3ac67e7d12b810bfdb7a4a3a9a8c3073d640af1bb1ec9",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1dbe1c1a52336760fac51277b26c20481f82c027eaa79949a1659b9ca69e97cf.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x1dbe1c1a52336760fac51277b26c20481f82c027eaa79949a1659b9ca69e97cf.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 171,
@@ -2784,7 +2957,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xb432e02f7fa6902acc9623a86b0fda076fc0fc820d92e45878437e93cdedbdb7",
       "mepId": "0x9cd528bfc9741cfdee153f8ef845e873ad0fd05a475740611c9ed208806a81dc",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc1f7421a9d4780d523af8893db59dea957daf619517d96b5bbe660319e38ba2e.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc1f7421a9d4780d523af8893db59dea957daf619517d96b5bbe660319e38ba2e.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 172,
@@ -2800,7 +2974,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xec9c24bbf81ec7fd264ef7f88d2f4c29d6c8e5519e7790bc7088bb013538be42",
       "mepId": "0x37895d47153e79b12861c19650a84174b04ffafabac9966e137220b2e0c96a7f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc1820c5d9db9c792fe6f8c3fabba49643fe5b67789d078ed2fa11729118d29af.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xc1820c5d9db9c792fe6f8c3fabba49643fe5b67789d078ed2fa11729118d29af.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 173,
@@ -2816,7 +2991,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x225c85c28bb29c56fc792a32b2f19779b20fa257d7ed67fca20bdf8caba28cf7",
       "mepId": "0x32ea140142b57f2efd1869437663d3c20a68a80549a35c11da9256de73b876e8",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x162093bbe3a94a7f5b203fc6b3a33f2edb9d3ece83fccfe69afe0f4e0a04fe44.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x162093bbe3a94a7f5b203fc6b3a33f2edb9d3ece83fccfe69afe0f4e0a04fe44.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 174,
@@ -2832,7 +3008,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x16026c0d497e3e31094501dcc5eb75ff307c99e16fec5bbbfffffbb689275197",
       "mepId": "0x76720888594d2ef4c3bc046b1a27371e9d0b6c7d0e58960e7453a17eb6c64260",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x95ff09d728a8aa2574f70f9246f0ec0b30edc87b5f3917a4ebb73a9485957245.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x95ff09d728a8aa2574f70f9246f0ec0b30edc87b5f3917a4ebb73a9485957245.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 175,
@@ -2848,7 +3025,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xac139d8ac3e2f20efaa4792813326db956e6d33fd80090d7ea4a56f9474af7fe",
       "mepId": "0x5d086d1eaddd3f0cc8c3ffcc262e0589151cfdcaf9c1e88c12a9fdfa778e626e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x05a2182da09de219345a5330d2c5378644d99b9e18fea06d6f28047763675aa5.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x05a2182da09de219345a5330d2c5378644d99b9e18fea06d6f28047763675aa5.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 176,
@@ -2864,7 +3042,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x964ef44d77d033e4f1c1987afa520381201d74da1369b4c2aa69c4e92d7f9eb0",
       "mepId": "0xca6b12cadec5fef8fbbd7759def1b418577cb35cb9fd860067a6a2740164ed64",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2099ab893285b81d3349005d8d57e6aca8b33343b1a77e4c454f8b9c1a41f01b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2099ab893285b81d3349005d8d57e6aca8b33343b1a77e4c454f8b9c1a41f01b.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 177,
@@ -2880,7 +3059,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xe8508625cb08f5096f7973868e8238cbebb3983d1d455ab95726942a60aa851f",
       "mepId": "0x1decdca11b1b62bfaffd9cd7d309a3b6a5329dcfadde9adedf7218868d38d6f6",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7ac32f6fa4ccc7169456fc5681bb3ff6684bf17baa0e4f5277259d61143f8f97.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7ac32f6fa4ccc7169456fc5681bb3ff6684bf17baa0e4f5277259d61143f8f97.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 178,
@@ -2896,7 +3076,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x9a1c797301daa7ef99f0b5df9c86ed643e88f53e3bf8788412ce8ad9d17740c2",
       "mepId": "0x9304ad9fc6da012da874308abec1ea1877df178fecd69a99d07826250dd65da9",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7874f56cc322b198995f02aaa3e299a1852f30f67446da6e1042d20c52411353.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x7874f56cc322b198995f02aaa3e299a1852f30f67446da6e1042d20c52411353.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 179,
@@ -2912,7 +3093,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xdd8145f940ec20758082bf9bbbf1bbaf80865a29f0dd844873972b184b666fe8",
       "mepId": "0xb833354ed83b7a95fa456f485a63ee368baa3b0a750b8c18bba3af6ae7366601",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2eb8a273ea4aa79f41ac85075627bdae367767b106d35224cc539e1b4dd85e09.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2eb8a273ea4aa79f41ac85075627bdae367767b106d35224cc539e1b4dd85e09.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 180,
@@ -2928,7 +3110,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x39a78aa68461882856f0a47ed1c6ab136ab32d3ff9958b750d008308f04c0a1e",
       "mepId": "0x310436a38a3a38ec4eccb37030a9a981e7b9d00b8837b188040d04cede41ca16",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf3e2b4fb456677575590b382caa88e481b5f76c20ea198729c45c4d98319222c.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf3e2b4fb456677575590b382caa88e481b5f76c20ea198729c45c4d98319222c.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 181,
@@ -2944,7 +3127,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x9a47ec31079ac251ffb5724f264cf3d3484232ec052b94a160ffa424ba0cc607",
       "mepId": "0x80149be70d982e3b1bcaf6db84b5aa2632f376cdff770412f6a6580d5eb9de71",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4a4a99fa251b1c3e8a6cf7e35417447a01f7dcc84035642d3568fefd2a99819b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x4a4a99fa251b1c3e8a6cf7e35417447a01f7dcc84035642d3568fefd2a99819b.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 182,
@@ -2960,7 +3144,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x976e186c2a2ced76558fc65b29df2a1dd6d32281f2eece762775e03822feddf5",
       "mepId": "0xa1726663c238c2520e608fab46b137e5ae7d1ddd345c00a3a632460b45f48ff9",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdf2288e9494a957145fc74f5aedd7e6094a843c285eba020f7e8bb33833961d3.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdf2288e9494a957145fc74f5aedd7e6094a843c285eba020f7e8bb33833961d3.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 183,
@@ -2976,7 +3161,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xff420364cc47eff7ab1435803901b226da525e3e59a09c16f48841df3e56105d",
       "mepId": "0x9efb801737b54894ee8a420e8e1adbff8e025e9ad70c31aa8bc3bda314a21b84",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2fc4e421d4f7a097613b665c9ebb70ef58dc95515bb60e90cd34f0887933c48d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x2fc4e421d4f7a097613b665c9ebb70ef58dc95515bb60e90cd34f0887933c48d.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 184,
@@ -2992,7 +3178,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xf8aff83381d6c9f1907d08bc3b3ed7cdffb18e741743853a4ce0fc4cdef3e07e",
       "mepId": "0xefef0e341ca17fa32a618d2df5ac1d5748aafa4d005c5f2c43f283aef296e51e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x168f83ecc433588c4c9decda503859d6ecde0d15443c394c6411bfba5e2e2b23.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x168f83ecc433588c4c9decda503859d6ecde0d15443c394c6411bfba5e2e2b23.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 185,
@@ -3008,7 +3195,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xd119f96a5a4c8933b9659100f5155ec2390c541742f3a264b649bcb64c883f66",
       "mepId": "0x20d8912031e98f183c2542cadb5b57ba19041ea063b98db856ceec4c5424e5a6",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x901d445556bbe9a3a81142a8b4c4ed2dd29a2703eb842674fd557db105969c8b.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x901d445556bbe9a3a81142a8b4c4ed2dd29a2703eb842674fd557db105969c8b.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 186,
@@ -3024,7 +3212,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x462724a8c8680e1d1dfaca1cf7855abe554cecf2b195edb6c2a9a612d54ffa56",
       "mepId": "0xb3bb88258d7f54b18726367e371cca0710c33e8e7995ce2162b12f8ee8057c92",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9348577f6d73353aeeb8bcbe7536d2d9a974655b4c7fafe1b69512e6b926f597.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9348577f6d73353aeeb8bcbe7536d2d9a974655b4c7fafe1b69512e6b926f597.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 187,
@@ -3040,7 +3229,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x69bef4c00851874b4d475596b1403e94f9e8be2ad25c78b2ecf93b6b658ef64d",
       "mepId": "0x5639b85b4899b61829160cb4f35e88009f19cb7c583a578f0c3fdfba7608dfa2",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x61f6cd6c122a98b3beac018b3ade5ed65481d9ac3859ba819a106ac5868dbb02.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x61f6cd6c122a98b3beac018b3ade5ed65481d9ac3859ba819a106ac5868dbb02.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 188,
@@ -3056,7 +3246,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xdbee545ef2402e2ca1bc7e58b42ad511fa77c20d9215f2fe312edf9df4d95178",
       "mepId": "0xda2471ed576f673850222328a9769147393864447a03d1429d47b519c38aebd3",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x071a7deb5723a1fd45608b0113b6d65f9709842f685af500d90beb9d17f75745.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x071a7deb5723a1fd45608b0113b6d65f9709842f685af500d90beb9d17f75745.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 189,
@@ -3072,7 +3263,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x61143a6c6aab282b84fdaff10e7cacba1fa6921f2b58b9b75b341d933c213577",
       "mepId": "0xf72bbe436b2aa194b44d13d183a9a8385839b477ee4e5ed37f77f5e8b1f20a7a",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x162aabc17325c6aec0a25f44282afc43adf0f5104c70002a7ad7e5320cbbb6a8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x162aabc17325c6aec0a25f44282afc43adf0f5104c70002a7ad7e5320cbbb6a8.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 190,
@@ -3088,7 +3280,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x1acf4c78e92c3221a7bd474e1c0bbf7784096d9b76f4d390ad87543375169431",
       "mepId": "0x46a5f7dc46d249444be126071413077440cfc1a514202ebc8b52c7597cce0fbd",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x3902c6fcdfb8bada75fe21057db776ee2868132d6dee1c5449ade0cec4457ea8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x3902c6fcdfb8bada75fe21057db776ee2868132d6dee1c5449ade0cec4457ea8.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 191,
@@ -3104,7 +3297,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x2818e4ea3e000e8867b9d1d17ffd73cbfcd523f9d6d7e56ca47173e5b754dcaa",
       "mepId": "0x79defb8300260bc6267a5c3ca49609dcc06511adec8a7e2fac1e9cd093b6e3b0",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5705cdf7199c33edb270114c4a3a87b98abed9b0486034e232e2dce6d6acbd05.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x5705cdf7199c33edb270114c4a3a87b98abed9b0486034e232e2dce6d6acbd05.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 192,
@@ -3120,7 +3314,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x80cb4fcd1ab67072be12f965a0d315ddc4ee1d828581d0a40571fdf721bfe78b",
       "mepId": "0x8f2450b6ae6f696a6bc7887c3ae959fd33fad0e51ac725115219b78a3f63e103",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x337953ff5b091bb34346e6baf622cb4e4ed7de6ede92ad3182be5e31d421fd0d.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x337953ff5b091bb34346e6baf622cb4e4ed7de6ede92ad3182be5e31d421fd0d.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 193,
@@ -3136,7 +3331,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x000a27250135833f4462b666d872f81aefce5813ba2facf5ba2c9d89474b43aa",
       "mepId": "0x84a071f1304b322dccf2b3b8c73e69d73968c6cbd735c1fb4c6f55d292d1d44e",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf9a88532d6523c4918b66838f54f1a9ed9f52e151c0adb95f3e035c742406c0f.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xf9a88532d6523c4918b66838f54f1a9ed9f52e151c0adb95f3e035c742406c0f.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 194,
@@ -3152,7 +3348,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x8d1937fc6e13e108cf451f25f980ada9f4e21fd9720aaa4f22693597ec78e8f3",
       "mepId": "0xceda679280250889740bbf994156f5b3ec01c87b13d9e696e221d1879475642d",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x61fc987ec9499ce49c2eca61012ca5014933b00090667fd31e2fa1049c401290.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x61fc987ec9499ce49c2eca61012ca5014933b00090667fd31e2fa1049c401290.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 195,
@@ -3168,7 +3365,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x3752bed055f2c509433a067414a94587e9d9e3aa053c67377e4a2676b09a7d5b",
       "mepId": "0x811a6aa626b679fe62c5eaf6c085e53176cc0cfe4c094039114120d80d29b572",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdfc6e09886a79239aff833ff89a47c7cfb8591f950439efa07f2152eb88735b2.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xdfc6e09886a79239aff833ff89a47c7cfb8591f950439efa07f2152eb88735b2.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 196,
@@ -3184,7 +3382,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xf827d0fe4e59d503d3cac27a40f9cd01a373f2a7e0155a78a874771c15b21c14",
       "mepId": "0xb84d6870800f62f602c26516b2a1f18a00b83561a8d3c12ec40ea855e20fcdb1",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x46e90e915f6df1f10a8c27d2d600cd6152fe51c9a0ba8986005ee2d54a500ad9.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x46e90e915f6df1f10a8c27d2d600cd6152fe51c9a0ba8986005ee2d54a500ad9.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 197,
@@ -3200,7 +3399,8 @@
       "synapses": 15283237,
       "synapseRoot": "0xeb3411c0464de1c49addd6c93967f820097e2667f8577dcce4457afa0550dda5",
       "mepId": "0x27780db90cfc2838246551e48cf34890d40fc9e8954b49125617841f966d2a1f",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9c21e3dfed4c6b38a0a78c7fa0acbac0cbe5b1f9d726ab0921a45705b8c34ea5.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9c21e3dfed4c6b38a0a78c7fa0acbac0cbe5b1f9d726ab0921a45705b8c34ea5.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 198,
@@ -3216,7 +3416,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x429d649b33bede3951ddcb21beb19fa7c312e30bad3f83747d16291bf3b51a22",
       "mepId": "0x35b5f24db120c84418184e9da594999ac8d310a638ac26987f36c474f13d543c",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb7c33fe2dd1471e7de2c161561ee0470d93cb6bee702470048c28da5d57e2c10.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0xb7c33fe2dd1471e7de2c161561ee0470d93cb6bee702470048c28da5d57e2c10.delta",
+      "maxInDegree": 10167
     },
     {
       "index": 199,
@@ -3232,7 +3433,8 @@
       "synapses": 15283237,
       "synapseRoot": "0x8eb11b3ad9ee62201b8e7df9a972e66e809f824b6aa66241e01c32b9420ca324",
       "mepId": "0x6f9f8a3e0b1f67cfdd75fccdc6036e757ac9533217737533e0d8db6b6b49e210",
-      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9a6e71d076ecda4670bcead10bae4916a22c5e71f1290cfafb7cf37ea6d6fcb8.delta"
+      "weightsDA": "https://aigg-founder-assets.pages.dev/deltas/0x9a6e71d076ecda4670bcead10bae4916a22c5e71f1290cfafb7cf37ea6d6fcb8.delta",
+      "maxInDegree": 10167
     }
   ]
 }

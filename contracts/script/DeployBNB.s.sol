@@ -7,6 +7,7 @@ import "aigg-porw/mesh/MEPRegistry.sol";
 import "aigg-porw/mesh/InstanceRegistry.sol";
 import "aigg-porw/mesh/PoRWClaimManager.sol";
 import "aigg-porw/mesh/TaskMarket.sol";
+import "aigg-porw/mesh/HostCapacity.sol";
 import "aigg-porw/mesh/ExecutionDisputes.sol";
 import "aigg-porw/mesh/RelayRegistry.sol";
 import "../src/CommitRevealBeacon.sol";
@@ -16,7 +17,7 @@ import "../src/MultiAssetTaskMarket.sol";
 /// Deploys the mesh with BNB-chain parameters (env-overridable; defaults = docs/DESIGN.md §4 at ~1 s blocks).
 ///   forge script script/DeployBNB.s.sol --rpc-url $RPC --broadcast --private-key $PK
 contract DeployBNB is Script {
-    struct Deployed { address verifier; address meps; address instances; address beacon; address claims; address market; address disputes; address relays; address whitelist; }
+    struct Deployed { address verifier; address meps; address instances; address beacon; address claims; address market; address disputes; address relays; address whitelist; address hostCapacity; }
     function run() external returns (Deployed memory d) {
         uint64 epochBlocks = uint64(vm.envOr("EPOCH_BLOCKS", uint256(600)));
         uint64 commitBlocks = uint64(vm.envOr("COMMIT_BLOCKS", uint256(120)));
@@ -62,8 +63,18 @@ contract DeployBNB is Script {
         // these registries, and the curator lists them. The curator decides only what is listed -- it holds no funds and
         // no protocol role -- and defaults to the deployer; hand it to a multisig with proposeCurator / acceptCurator.
         CollectionWhitelist whitelist = new CollectionWhitelist(vm.envOr("CURATOR", msg.sender));
+        if(vm.envOr("BASE_ENROLMENT",false)) inst.setMEPRegistry(address(meps));
+        address capacityAddress = vm.envOr("HOST_CAPACITY_REGISTRY", address(0));
+        if (vm.envOr("HOST_CAPACITY", false) || capacityAddress != address(0)) {
+            HostCapacity capacity = capacityAddress == address(0) ? new HostCapacity() : HostCapacity(capacityAddress);
+            // Reuse one registry for every market sharing the same host hardware. The broadcaster must own it
+            // unless this market was pre-authorized. A failed authorization reverts deployment simulation.
+            if (!capacity.authorizedMarkets(address(market))) capacity.setMarket(address(market), true);
+            market.setHostCapacity(address(capacity));
+            capacityAddress = address(capacity);
+        }
         vm.stopBroadcast();
-        d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays), address(whitelist));
+        d = Deployed(address(verifier), address(meps), address(inst), address(beacon), address(claims), address(market), address(disputes), address(relays), address(whitelist), capacityAddress);
         console.log("verifier", d.verifier); console.log("meps", d.meps); console.log("instances", d.instances); console.log("beacon", d.beacon);
         console.log("claims", d.claims); console.log("market", d.market); console.log("disputes", d.disputes); console.log("relays", d.relays); console.log("whitelist", d.whitelist);
         // deployments/<chainId>.json consumed by the relayer and the frontend
@@ -72,6 +83,7 @@ contract DeployBNB is Script {
         vm.serializeAddress(j, "verifier", d.verifier); vm.serializeAddress(j, "meps", d.meps); vm.serializeAddress(j, "instances", d.instances); vm.serializeAddress(j, "beacon", d.beacon);
         vm.serializeAddress(j, "claims", d.claims); vm.serializeAddress(j, "market", d.market); vm.serializeAddress(j, "disputes", d.disputes);
         vm.serializeAddress(j, "relays", d.relays);
+        if (d.hostCapacity != address(0)) vm.serializeAddress(j, "hostCapacity", d.hostCapacity);
         string memory addrs = vm.serializeAddress(j, "whitelist", d.whitelist);
         string memory root = "r"; vm.serializeUint(root, "chainId", block.chainid); vm.serializeUint(root, "epochBlocks", epochBlocks); vm.serializeUint(root, "claimValidityEpochs", claimValidity);
         vm.serializeUint(root, "challengeWindow", challengeWindow); vm.serializeUint(root, "challengeDeposit", challengeWindow == 0 ? 0 : challengeDeposit);

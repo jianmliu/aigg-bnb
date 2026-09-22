@@ -4,6 +4,8 @@ contracts/cache/
 contracts/broadcast/
 # deployment addresses and keys live in environment files, never in git
 deployments/*.json
+deployments/*.json.tmp
+deployments/*.json.lock
 .env
 .env.*
 relayer/config.json

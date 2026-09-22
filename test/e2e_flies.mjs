@@ -40,7 +40,7 @@ try {
       case "eth_getBalance": return "0x" + (await W.pub.getBalance({ address: params[0] })).toString(16);
       case "eth_blockNumber": return "0x" + (await W.pub.getBlockNumber()).toString(16);
       case "eth_getBlockByNumber": return W.pub.request({method,params});
-      case "eth_getTransactionReceipt": { try { const r = await W.pub.getTransactionReceipt({ hash: params[0] }); return { status: r.status === "success" ? "0x1" : "0x0" }; } catch { return null; } }
+      case "eth_getTransactionReceipt": { try { const r = await W.pub.getTransactionReceipt({ hash: params[0] }); return { status: r.status === "success" ? "0x1" : "0x0", blockNumber: "0x"+r.blockNumber.toString(16) }; } catch { return null; } }
       case "eth_sendTransaction": { const t = params[0]; prompts.push("tx"); return W.wallet.sendTransaction({ to: t.to, data: t.data, value: t.value ? BigInt(t.value) : 0n }); }
       default: throw new Error("unsupported " + method);
     }
@@ -57,12 +57,10 @@ try {
 
   check("on a mesh that names no task clients (a local one) the booking card is open", (await page.locator("#btnPostTask").count()) === 1 && (await page.locator("#bookingClosed").count()) === 0);
   // ---- the colony ----
-  await page.click("#navFlies"); await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies && window.app.state.flies.all.length === 2);
+  await page.click("#navFlies"); await page.click("#tabMyFlies"); await page.click("#btnFlies"); await page.waitForFunction(() => window.app.state.flies && window.app.state.flies?.all.length === 2);
   check("the node console is hidden, not gone: the controller still has its #log", await page.evaluate(() => !!document.getElementById("log") && document.getElementById("log").offsetParent === null));
-  check("the colony shows both adopted flies as this wallet's, one of each sex", await page.evaluate(() => { const a = window.app.state.flies.all; return a.every((f) => f.mine) && a[0].sex === 0 && a[1].sex === 1; }));
+  check("the colony shows both adopted flies as this wallet's, one of each sex", await page.evaluate(() => { const a = window.app.state.flies?.all; return a.every((f) => f.mine) && a[0].sex === 0 && a[1].sex === 1; }));
   check("the pairing starts empty and says what it needs", (await page.textContent("#breedProblem")) === "choose one female and one male" && await page.isDisabled("#btnBreed"));
-  await page.click("#btnGenesis");
-  check("without a configured treasury sale no adoption is offered", await waitFor(() => page.evaluate(() => !!window.app.state.flies?.sale?.unavailable)) && (await page.locator("#adoptable .listing").count()) === 0);
   const pair = async () => { await page.click("#fly-1"); await page.click("#fly-2"); };
   await pair();
   check("clicking a fly puts it in the slot for its sex", /#1 ♀/.test(await page.textContent("#slotDam")) && /#2 ♂/.test(await page.textContent("#slotSire")) && (await page.textContent("#breedProblem")) === "ready");
@@ -70,14 +68,20 @@ try {
   const fee = await page.textContent("#breedFee");
   check("the fee is shown as what it buys: 0.01 = 0.002 bounty + 0.008 treasury", /breed fee\s*0\.01 BNB/.test(fee) && /hatch bounty\s*0\.002 BNB/.test(fee) && /treasury\s*0\.008 BNB/.test(fee));
 
+  await page.selectOption('#fliesSex','female');
+  await page.waitForFunction(()=>window.app.state.flies?.page.sex==='female' && !window.app.state.flies.loading);
+  check('selection survives when the sire is outside this filtered page',await page.locator('#fly-2').count()===0 && (await page.textContent('#slotSire')).includes('#2') && !await page.isDisabled('#btnBreed'));
+  await page.selectOption('#fliesSex','all');
+  await page.waitForFunction(()=>window.app.state.flies?.page.sex==='all' && !window.app.state.flies.loading);
+
   // ---- an egg the page hatches itself ----
-  const eggOf = (id) => page.evaluate((i) => { const f = window.app.state.flies.all.find((x) => x.id === i); return f ? { seed: f.seed, sex: f.sex, seedBlock: f.seedBlock, preview: f.preview } : null; }, id);
-  await page.click("#btnBreed"); await page.waitForFunction(() => window.app.state.flies.all.length === 3, null, { timeout: 60000 });
+  const eggOf = (id) => page.evaluate((i) => { const f = window.app.state.flies?.all.find((x) => x.id === i); return f ? { seed: f.seed, sex: f.sex, seedBlock: f.seedBlock, preview: f.preview } : null; }, id);
+  await page.click("#btnBreed"); await page.waitForFunction(() => window.app.state.flies?.all.length === 3, null, { timeout: 60000 });
   const escrow=await H.readFrom(W,factory,"BatteryBudget","jobOf",[3n]);
   check("breed locks its separate battery budget",await W.pub.getBalance({address:escrow})===parseEther("0.02"));
   let egg = await eggOf(3);
   check("breeding produced an egg: no seed, no sex, a seed block", egg.seed === ZERO32 && egg.sex === 2 && egg.seedBlock === (await onChain(3)).seedBlock && egg.preview === null);
-  await page.waitForFunction(()=>document.getElementById("slotDam").textContent.includes("—"));
+  await page.waitForFunction(()=>document.getElementById("slotDam")?.textContent.includes("—"));
   check("the slots empty again, and an egg cannot be picked for the pairing", /—/.test(await page.textContent("#slotDam")) && await page.evaluate(() => document.getElementById("fly-3").getAttribute("role") === null));
   check("the Hatch button waits for the seed block", await page.isDisabled("#btnHatch-3"));
   await anvil.mine(2);
@@ -85,42 +89,55 @@ try {
   egg = await eggOf(3); const h3 = (await W.pub.getBlock({ blockNumber: BigInt(egg.seedBlock) })).hash;
   check("and its arithmetic is the contract's: keccak(recipe, blockhash(seedBlock))", egg.preview.seed === H.flySeed(3, h3) && egg.preview.sex === Number(BigInt(egg.preview.seed) & 1n));
   check("nothing is on-chain yet: nobody is running a keeper", (await onChain(3)).seed === ZERO32);
-  await page.click("#btnHatch-3"); await page.waitForFunction(() => window.app.state.flies.all.find((x) => x.id === 3).seed !== "0x" + "0".repeat(64), null, { timeout: 60000 });
+  await page.click("#btnHatch-3"); await page.waitForFunction(() => window.app.state.flies?.all.find((x) => x.id === 3).seed !== "0x" + "0".repeat(64), null, { timeout: 60000 });
   const c3 = await onChain(3);
   check("hatched from the page: the chain agrees with the preview, seed and sex", c3.seed === egg.preview.seed && c3.sex === egg.preview.sex);
   check("the hatched child is unborn, and still cannot breed", await waitFor(async () => /unborn/.test(await page.textContent("#fly-3")) && await page.evaluate(() => document.getElementById("fly-3").getAttribute("role") === null)));
 
   // ---- an egg the keeper hatches: the page sends nothing and notices ----
   const K = await H.startRelayer(dep, H.KEYS[2], [mepId], { env: { PORW_BEACON_LAZY: "1", PORW_COLLECTION: C } }); stop.push(() => K.stop());
-  await pair(); await page.click("#btnBreed"); await page.waitForFunction(() => window.app.state.flies.all.length === 4, null, { timeout: 60000 });
+  await pair(); await page.click("#btnBreed"); await page.waitForFunction(() => window.app.state.flies?.all.length === 4, null, { timeout: 60000 });
   const sent = prompts.length; await anvil.mine(2);
   check("the keeper hatched it and the page saw it happen", await waitFor(async () => (await eggOf(4)).seed !== ZERO32));
   check("without a wallet prompt, and as the chain has it", prompts.length === sent && (await eggOf(4)).seed === (await onChain(4)).seed && (await eggOf(4)).sex === (await onChain(4)).sex);
   K.stop(); await H.sleep(500);
 
   // ---- an egg nobody hatches: 256 blocks later it needs re-arming, and a new block is a new draw ----
-  await pair(); await page.click("#btnBreed"); await page.waitForFunction(() => window.app.state.flies.all.length === 5, null, { timeout: 60000 });
+  await pair(); await page.click("#btnBreed"); await page.waitForFunction(() => window.app.state.flies?.all.length === 5, null, { timeout: 60000 });
   const first = (await eggOf(5)).seedBlock; await anvil.mine(260);
   check("after the window the page offers Re-arm instead of Hatch", await waitFor(async () => (await page.$("#btnRearm-5")) !== null) && (await page.$("#btnHatch-5")) === null);
   const treasuryBefore = await W.pub.getBalance({ address: H.FLY_TREASURY });
-  await page.click("#btnRearm-5"); await page.waitForFunction((b) => window.app.state.flies.all.find((x) => x.id === 5).seedBlock > b, first, { timeout: 60000 });
+  await page.click("#btnRearm-5"); await page.waitForFunction((b) => window.app.state.flies?.all.find((x) => x.id === 5).seedBlock > b, first, { timeout: 60000 });
   check("re-arming cost a whole breed fee, all of it to the treasury", (await W.pub.getBalance({ address: H.FLY_TREASURY })) - treasuryBefore === H.FLY_BREED_FEE);
   await anvil.mine(2);
   check("the re-armed egg gets a fresh preview from its new seed block", await waitFor(async () => { const e = await eggOf(5); return e.preview !== null && e.seedBlock > first; }));
   egg = await eggOf(5); const h5 = (await W.pub.getBlock({ blockNumber: BigInt(egg.seedBlock) })).hash;
   check("which is again the contract's arithmetic", egg.preview.seed === H.flySeed(5, h5));
-  await page.click("#btnHatch-5"); await page.waitForFunction(() => window.app.state.flies.all.find((x) => x.id === 5).seed !== "0x" + "0".repeat(64), null, { timeout: 60000 });
+  await page.click("#btnHatch-5"); await page.waitForFunction(() => window.app.state.flies?.all.find((x) => x.id === 5).seed !== "0x" + "0".repeat(64), null, { timeout: 60000 });
   check("and hatches to it", (await onChain(5)).seed === egg.preview.seed);
   check(`the wallet was prompted for exactly: 3 breeds, 2 hatches, 1 re-arm (${prompts.length})`, prompts.length === 8);
   await page.selectOption('#batteryRoute','token');await page.waitForFunction(()=>window.app.state.flies.battery?.tokenMode===true);
   await pair();check('token route requires a reviewed BNB quote',await page.isDisabled('#btnBreed'));
   await page.click('#btnBatteryQuote');await page.waitForFunction(()=>!!window.app.state.flies.battery?.quote);
-  await page.click('#btnBreed');await page.waitForFunction(()=>window.app.state.flies.all.length===6,null,{timeout:60000});
+  await page.click('#btnBreed');await page.waitForFunction(()=>window.app.state.flies?.all.length===6,null,{timeout:60000});
   const tokenJob=await H.readFrom(W,tokenFactory,'TokenBatteryBudget','jobOf',[6n]);
   check('BNB checkout creates token-funded child',await H.readFrom(W,token,'TestToken','balanceOf',[tokenJob])===parseEther('0.02'));
   check('token refund denomination is visible',/AIGG/.test(await page.textContent('#batteryQuote')));
   await page.selectOption('#batteryRoute','native');await page.waitForFunction(()=>window.app.state.flies.battery?.tokenMode===false);
   check('native route and its existing jobs remain available',await page.evaluate(()=>!!window.app.state.flies.battery.jobs[3]));
+  // The configured branch is what every assertion above exercises. What ships on BSC testnet is the OTHER one --
+  // no battery budget at all -- and it used to render "not funded" once per fly beneath a line saying funding was
+  // unavailable. Drive the page into that state and check it says whose state it is.
+  { check('with a queue, a fly without a job is told so per fly', /not funded/.test(await page.textContent('body')));
+    // take the queue away the way a deployment without one has it: no address, then re-read
+    await page.evaluate(async () => { window.__bb = window.app.state.deployment.addresses.batteryBudget; window.app.state.deployment.addresses.batteryBudget = null; await window.appActions.loadBattery(); });
+    await page.waitForSelector('#batteryQueueState', { timeout: 30000 });
+    const text = await page.textContent('body');
+    check('without one, the page stops claiming it about every fly', !/not funded/.test(text));
+    check('  and says it is the deployment that has no queue', /no experiment can be funded here yet/i.test(text) && /not a state of any individual fly/i.test(text));
+    await page.evaluate(async () => { window.app.state.deployment.addresses.batteryBudget = window.__bb; await window.appActions.loadBattery(); });
+    await page.waitForFunction(() => !!window.app.state.flies.battery?.address, null, { timeout: 30000 });
+    check('  and it comes back when the queue is read again', /not funded/.test(await page.textContent('body'))); }
   await page.click('#navHost');await page.getByRole('button',{name:'Accept AIGG tasks',exact:true}).click();
   check('host explicitly opts in to AIGG',await waitFor(async()=>await H.readFrom(W,dep.addresses.market,'MultiAssetTaskMarket','acceptedToken',[W.account.address,token])));
   await page.getByRole('button',{name:'Stop accepting new AIGG tasks',exact:true}).click();

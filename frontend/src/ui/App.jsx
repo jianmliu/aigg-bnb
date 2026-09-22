@@ -20,7 +20,7 @@ import * as C from "../core/controller.js";
 import { useNodeState } from "../core/store.js";
 import { hex } from "../core/abi.js";
 import { Panel, Field, Button, Chip, Pill } from "./primitives.jsx";
-import { BrainCard } from "./BrainCard.jsx";
+import { BrainCatalog } from "./BrainCatalog.jsx";
 import HostDashboard from "./HostDashboard.jsx";
 import FliesView from "./FliesView.jsx";
 import { BAKED_RELAYER, SOLO } from "./mode.js";
@@ -106,6 +106,7 @@ export default function App() {
   const [entered, setEntered] = useState(false);
   useEffect(() => { const t = setTimeout(() => setEntered(true), 1500); return () => clearTimeout(t); }, []);
 
+  useEffect(() => { if (view === "host" && s.deployment?.familyHosting && s.active) C.selectHostFamily(s.active); }, [view, s.deployment?.familyHosting, s.active]);
   const e = s.epochInfo;
   const st = status(s);
   const hostedIds = [...s.hosted];
@@ -246,12 +247,7 @@ export default function App() {
         <section className="shelf">
           <header><h2>Brains on this mesh</h2><span className="note">{s.meps.length ? `${s.meps.length} listed` : "no mesh loaded"}</span></header>
           {s.meps.length === 0 && <p className="hint empty-shelf">{SOLO ? "Connecting to the network… the listings come from the chain, through the relayer." : <>Put a relayer’s address in the <b>Mesh</b> capsule above and press the arrow. The listings come from the chain it points at.</>}</p>}
-          <div className="listings">
-            {s.meps.map((m, i) => (
-              <BrainCard key={m.mepId} listing index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
-                         steps={stepsNum} onSelect={() => C.setActive(m.mepId)} onHost={(v) => C.host(m.mepId, v)} />
-            ))}
-          </div>
+          <BrainCatalog visible={view === "stay"} listing steps={stepsNum} />
         </section>
 
         {active && (
@@ -373,16 +369,12 @@ export default function App() {
         </div>
 
         <div className="col">
-          <Panel step={3} title="Move a brain in" note={`${s.meps.length} on this mesh`}>
+          <Panel step={3} title={s.deployment?.familyHosting ? "Host a model family" : "Move a brain in"} note={`${C.hostingModels().length} on this mesh`}>
             {s.meps.length === 0 && <p className="hint">{SOLO ? "Connecting to the network…" : "Load a mesh in the capsule above to see the brains it lists."}</p>}
-            <div className="brains">
-              {s.meps.map((m, i) => (
-                <BrainCard key={m.mepId} index={i} mep={m} active={m.mepId === s.active} hosted={s.hosted.has(m.mepId)}
-                           steps={stepsNum} onSelect={() => C.setActive(m.mepId)} onHost={(v) => C.host(m.mepId, v)} />
-              ))}
-            </div>
+            <BrainCatalog visible={view === "host"} steps={stepsNum} />
 
-            <div className="legend">Bytes for the selected brain</div>
+            <div className="legend">{s.deployment?.familyHosting ? "Keep the base model resident" : "Bytes for the selected brain"}</div>
+            {s.deployment?.familyHosting && <p className="hint">Load the base once. Assigned descendant tasks fetch their delta recipes automatically, including individuals registered after this tab starts. No per-fly selection or deposit is needed.</p>}
             <Field label="Greenfield SP endpoint (optional)" htmlFor="sp">
               <input id="sp" type="text" onInput={() => C.autofillUrl()}
                      placeholder="https://gnfd-testnet-sp1.bnbchain.org — fills the URL from the MEP's gnfd:// pointer" />
@@ -397,7 +389,7 @@ export default function App() {
                        title="Capacity for each brain when it starts hosting; higher values use more memory"
                        onChange={(ev) => setSteps(ev.target.value)} />
               </Field>
-              <Button id="btnModel" tone="chain" onClick={on(C.loadModel)} disabled={!active}>Load for this brain</Button>
+              <Button id="btnModel" tone="chain" onClick={on(C.loadModel)} disabled={!active}>{s.deployment?.familyHosting ? "Load family base" : "Load for this brain"}</Button>
             </div>
             <div id="model" className={`kv ${loaded ? "strong" : "empty"}`}>{modelText}</div>
             <p className="hint">The bytes go straight to the worker, which recomputes the model_id over every 4 KiB tile: a wrong or hostile source can only waste the download.</p>

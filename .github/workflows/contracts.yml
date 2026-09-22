@@ -49,6 +49,8 @@ jobs:
 
       - run: npm ci
 
+      - run: node --test test/rpc_budget.mjs test/base_relayer.mjs test/family_task.mjs test/host_capacity.mjs test/host_capacity_ui.mjs
+      - run: node --test test/synchronous_*.mjs test/witness_profile.mjs
       - run: node test/env_mapping.mjs
       # the gateway's registration with ai.gg, against a stand-in for its admin API: no chain, no network
       - run: node test/aigg_src_sync.mjs
@@ -70,6 +72,9 @@ jobs:
       # is held against the code it describes, because an agent follows a stale instruction without checking
       - run: node test/skill_flybnb.mjs
 
+      # "not funded" is a claim about one fly; on a deployment with no queue it was being made about all of them
+      - run: node test/battery_queue_panel.mjs
+
       # DESIGN §4b distinguishes optional multi-asset contracts from the legacy native gateway
       - run: node test/settlement_assets.mjs
 
@@ -82,6 +87,9 @@ jobs:
 
       - run: node test/frontend_wallet.mjs
       - run: node test/frontend_memory.mjs
+      - run: node contracts/lib/aigg-porw/web/porw-browser/test_mep_base.mjs
+      - run: node contracts/lib/aigg-porw/web/porw-browser/test_node_base.mjs
+      - run: node contracts/lib/aigg-porw/web/porw-browser/test_family_service.mjs
 
       # chain-free: the FlyBnB battery file is well formed and its batch form is order-preserving; the paper build never touches prose
       - run: node test/flybnb_battery.mjs

@@ -8,6 +8,7 @@ contract TokenBatteryJob {
     address public immutable paymentToken;
     FlyCollection public immutable collection;
     MultiAssetTaskMarket public immutable market;
+    bool public immutable synchronous;
     address public immutable operator;
     address public immutable payer;
     uint256 public immutable tokenId;
@@ -24,6 +25,7 @@ contract TokenBatteryJob {
     modifier guard() { require(!busy, "reentrant"); busy = true; _; busy = false; }
     modifier worker() { require(msg.sender == operator, "operator"); _; }
     constructor(FlyCollection c, MultiAssetTaskMarket m, address op, address who, uint256 id, BatteryPolicy memory p,address token) {
+        synchronous=BatterySettlement.isSynchronous(address(m));
         paymentToken=token;
         collection=c; market=m; operator=op; payer=who; tokenId=id; policy=p; expiresAt=block.timestamp+p.lifetime;
 
@@ -31,11 +33,13 @@ contract TokenBatteryJob {
 
     function settledFinal() public view returns (bool) {
         if (taskId == bytes32(0)) return true;
+        if(synchronous){uint8 phase=BatterySettlement.phase(address(market),taskId);return phase==4||phase==5;}
         (,,,, uint64 at, bool exists, bool settled, bool disputed,) = market.tasks(taskId);
         return exists && settled && (!disputed || market.disputeResolved(taskId)) && block.number > uint256(at) + market.challengeWindow();
     }
     function accepted() public view returns (bool) {
         if (taskId == bytes32(0) || !settledFinal()) return false;
+        if(synchronous)return BatterySettlement.phase(address(market),taskId)==4;
         (,,,,,,,, bool repudiated) = market.tasks(taskId);
         if (repudiated) return false;
         address ref = market.settledRef(taskId); if (ref == address(0)) return false;
@@ -49,6 +53,7 @@ contract TokenBatteryJob {
     function post(uint64 deadline) external worker guard returns(bytes32 id) {
         require(!closed && block.timestamp < expiresAt && attempt < policy.attempts, "job closed/exhausted");
         require(settledFinal() && !accepted(), "active/accepted task");
+        if(synchronous)BatterySettlement.pull(address(market),paymentToken);
         require(IERC20Budget(paymentToken).balanceOf(address(this))>=policy.fee && deadline>block.number, "funds/deadline");
         (,,,bytes32 mepId,,,,,,)=collection.individuals(tokenId); require(mepId!=bytes32(0), "waiting model");
         ITaskMarket.Task memory t=ITaskMarket.Task(mepId,0,policy.steps,policy.stride,policy.runsRoot,policy.fee,deadline,policy.redundancy);
@@ -63,6 +68,7 @@ contract TokenBatteryJob {
     }
     function refund() external guard {
         require(msg.sender==payer && (closed || block.timestamp>=expiresAt) && settledFinal(), "refund unavailable");
+        if(synchronous)BatterySettlement.pull(address(market),paymentToken);
         closed=true; uint256 amount=IERC20Budget(paymentToken).balanceOf(address(this)); require(amount>0,"empty");
         TokenTransfer.send(paymentToken,payer,amount); emit Refunded(payer,amount);
     }

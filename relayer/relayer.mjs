@@ -1,3 +1,8 @@
+import {admissionCapability} from './vrf-admission.mjs';
+import { capacityReader } from './capacity.mjs';
+import {ReadCache,UnboundBackoff,ensureAggregator,mapBounded} from './rpc-budget.mjs';
+import { servesTaskMep, enrollmentMetadata, reconcileEnrollmentBases, familyHostingEnabled } from './enrollment.mjs';
+import { fliesPageReader } from './flies-page.mjs';
 // The BNB relayer: one process = (1) the stage-1 WebSocket relay hub, (2) the epoch aggregator for the MEPs it
 // serves (collects claims over the relay, posts one root per epoch), (3) a commit-reveal beacon participant and
 // epoch roller, (4) a gas-sponsoring transaction submitter for bonded instances (delegateBySig, materializeClaim,
@@ -17,9 +22,10 @@ import fs from "node:fs"; import http from "node:http"; import path from "node:p
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { clients, eip712Domains } from "./chain.mjs";
 import { FlyCollectionAbi } from "./abi.mjs";
+import {sponsorAdmission,syncSponsorReady,verifyDeployment,verificationSupportReader,syncReader,prepareSyncMutation,prepareSyncFinalize} from "./synchronous.mjs";
 import { loadEnv, deploymentFromEnv, relayerFromEnv } from "./env.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url)); const porw = (f) => import(path.join(here, "../contracts/lib/aigg-porw/web/porw-browser/", f));
-const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, withTerms, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
+const { startRelay } = await porw("relay.js"); const { RelayClient } = await porw("relay_client.js"); const { Aggregator, EpochTree } = await porw("aggregator.js"); const { keypair, recoverAddress } = await porw("claim.js"); const { resultDigest } = await porw("eip712.js"); const V = await porw("verify.js"); const { makeMep, withBase, withTerms, EXEC_INT_SPMV_Q16 } = await porw("mep.js"); const { lifExecKind } = await porw("lif.js");
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => { if (v.startsWith("--")) a.push([v.slice(2), arr[i + 1]]); return a; }, []));
 loadEnv(args.env || process.env.PORW_ENV_FILE);
@@ -31,6 +37,11 @@ if (!dep) throw new Error("no deployment: source the .env.<network> from deploy.
 dep.rpc = process.env.PORW_RPC || cfg.rpc || dep.rpc; if (!dep.rpc) throw new Error("PORW_RPC (or config.rpc) required");
 if (!cfg.privateKey) throw new Error("PORW_RELAYER_KEY (or config.privateKey) required"); if (!(cfg.meps && cfg.meps.length) && !dep.addresses.whitelist) throw new Error("nothing to serve: PORW_MEP_IDS (or config.meps) and/or PORW_WHITELIST required");
 const ch = clients(dep, cfg.privateKey); const domains = eip712Domains(dep);
+const SYNCHRONOUS = await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion());
+if(SYNCHRONOUS&&!ch.disputes)throw Error("synchronous deployment requires disputes address");
+const SYNC_WINDOWS=SYNCHRONOUS?{commitBlocks:String(await ch.market.read.COMMIT_BLOCKS()),revealBlocks:String(await ch.market.read.REVEAL_BLOCKS()),disputeBlocks:String(await ch.market.read.DISPUTE_BLOCKS()),totalBlocks:String(await ch.market.read.TASK_TIMEOUT())}:{};
+const VRF_CAPABILITY=await admissionCapability(ch);
+const FAMILY_HOSTING = await familyHostingEnabled(ch, dep.addresses.meps);
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
 
@@ -58,21 +69,24 @@ let CHALLENGE = { windowBlocks: 0, depositWei: "0" }; try { CHALLENGE = { window
 const ZERO_ADDR = "0x" + "0".repeat(40);
 async function loadMep(id, { name = null, collection = null, token = null, pinned = false } = {}) {
   id = id.toLowerCase(); const m = await ch.meps.read.getMEP([id]);
+  const routing = await enrollmentMetadata(ch, id);
   // int-lif is a FAMILY of kinds, one per weight unit (a connectome counted on another scale pins another unit); the
   // chain knows which digests are int-lif and under what unit. Older deployments have no such getter: the default kind only.
   let wUnitQ16 = 0; try { wUnitQ16 = Number(await ch.meps.read.lifWeightUnit([m.execKind])); } catch { wUnitQ16 = m.execKind.toLowerCase() === hex(lifExecKind()).toLowerCase() ? 18022 : 0; }
   const isLif = wUnitQ16 !== 0;
   let terms = null; try { const [beneficiary, royaltyBps] = await ch.meps.read.termsOf([id]); if (beneficiary !== ZERO_ADDR) terms = { beneficiary, royaltyBps: Number(royaltyBps) }; } catch {} // a registry older than terms
-  const info = { mepId: id, modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", wUnitQ16: isLif ? wUnitQ16 : null, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
+  const info = { mepId: id, ...routing, modelId: m.modelId, execKind: m.execKind, exec: isLif ? "int-lif" : "int-spmv-q16", wUnitQ16: isLif ? wUnitQ16 : null, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: m.synapseRoot,
     weightsDA: (() => { try { return new TextDecoder().decode(unhex(m.weightsDA)); } catch { return m.weightsDA; } })(), name: (cfg.mepNames || {})[id] || name,
     collection, token, beneficiary: terms ? terms.beneficiary : null, royaltyBps: terms ? terms.royaltyBps : 0 };
   let mep = makeMep({ name: id.slice(0, 10), modelId: unhex(m.modelId), execKind: isLif ? lifExecKind(wUnitQ16) : EXEC_INT_SPMV_Q16 /* recomputed from the unit, so a kind the chain mis-stated would not reproduce the id below */, neurons: Number(m.neurons), synapses: Number(m.synapses), synapseRoot: unhex(m.synapseRoot) });
+  if (routing.baseMepId) mep = withBase(mep, routing.baseMepId);
   if (terms) mep = withTerms(mep, terms.beneficiary, terms.royaltyBps);
   if (hex(mep.mepId).toLowerCase() !== id) throw new Error(`MEP ${id}: cannot reproduce mep_id (scheme/exec kind/terms mismatch)`);
   return { mep, info, aggregators: new Map(), posted: new Set(), pinned };
 }
 // PORW_MEP_IDS: brains this relayer serves whatever any list says. A mismatch here is a misconfiguration: refuse to start.
 for (const id of cfg.meps || []) meps.set(id.toLowerCase(), await loadMep(id, { pinned: true }));
+await reconcileEnrollmentBases(meps, new Set(), loadMep);
 const EPOCH_BLOCKS = Number(await ch.claims.read.EPOCH_BLOCKS());
 const beaconOn = ch.beacon && (await ch.claims.read.beaconProvider()).toLowerCase() === dep.addresses.beacon.toLowerCase();
 const bcfg = beaconOn ? { commit: Number(await ch.beacon.read.COMMIT_BLOCKS()), reveal: Number(await ch.beacon.read.REVEAL_BLOCKS()), deposit: await ch.beacon.read.DEPOSIT() } : null;
@@ -129,6 +143,9 @@ function aggregatorFor(id, epoch, challenge) {
   const M = meps.get(id); if (!M.aggregators.has(epoch)) { const A = new Aggregator(rc, M.mep, unhex(challenge), { epoch, domain: domains.claimManager, blockNumber: Number(lastBlock) }); A.stop = A.watch(); M.aggregators.set(epoch, A); }
   return M.aggregators.get(epoch);
 }
+const epochReads = new ReadCache({ttl:1000,max:4});
+const challengeReads = new ReadCache({ttl:86400000,max:2048});
+const readChallenge = (epoch,id) => challengeReads.get(`${epoch}:${id}`,()=>ch.claims.read.epochChallenge([BigInt(epoch),id]));
 let lastBlock = 0n, lastEpoch = -1;
 async function tick() {
   const bn = await ch.pub.getBlockNumber(); lastBlock = bn; const e = Number(bn / BigInt(EPOCH_BLOCKS)); const start = BigInt(e) * BigInt(EPOCH_BLOCKS);
@@ -159,7 +176,7 @@ async function tick() {
   // (2) aggregation: collect this epoch's claims once it is rolled -- but post the previous epoch's root either
   // way. An epoch with no beacon (nobody revealed, or a cold epoch under PORW_BEACON_LAZY) must not strand the
   // claims collected in the epoch before it: without that root nobody can materialize them.
-  if (rolled) for (const [id] of meps) { const chal = await ch.claims.read.epochChallenge([BigInt(e), id]); aggregatorFor(id, e, chal); }
+  if (rolled) for (const [id, M] of meps) if (M.info.enrollmentMepId === id) await ensureAggregator(M, e, () => readChallenge(e,id), (epoch, chal) => aggregatorFor(id, epoch, chal));
   // ONE root for the previous epoch over the claims of every MEP served here (the leaf carries its mepId), so the
   // cost of the root does not grow with the number of brains. Proofs are served from this shared tree.
   const prev = e - 1;
@@ -190,6 +207,7 @@ async function tick() {
 const note = (list, entry) => { list.push(entry); if (list.length > 50) list.shift(); };
 const WL_EVERY = BigInt(cfg.whitelistEvery || 20), WL_MAX = 5000;
 const wl = ch.whitelist ? { walked: null, bound: new Map() /* collection -> Map(token -> mepId) */ } : null;
+const unboundBackoff = new UnboundBackoff(WL_EVERY);
 status.whitelist = wl ? { address: dep.addresses.whitelist, collections: [], served: 0, walkedAt: null, skipped: [] } : null;
 async function follow(bn) {
   if (wl.walked !== null && bn < wl.walked + WL_EVERY) return;
@@ -200,17 +218,18 @@ async function follow(bn) {
     if (!wl.bound.has(c)) wl.bound.set(c, new Map()); const bound = wl.bound.get(c);
     const n = Math.min(Number(await rd("totalSupply")), WL_MAX);
     for (let t = 1; t <= n; t++) {
-      if (!bound.has(t)) { const mepId = String((await rd("individuals", [BigInt(t)]))[3]).toLowerCase(); if (mepId !== ZERO32) bound.set(t, mepId); }
+      const scanKey = `${c}:${t}`;
+      if (!bound.has(t) && unboundBackoff.due(scanKey, bn)) { const mepId = String((await rd("individuals", [BigInt(t)]))[3]).toLowerCase(); if (mepId !== ZERO32) {bound.set(t, mepId);unboundBackoff.clear(scanKey);} else unboundBackoff.miss(scanKey, bn); }
       const id = bound.get(t); if (id && !want.has(id)) want.set(id, { collection: c, token: t, name: `fly #${t}` });
     }
   }
-  for (const c of [...wl.bound.keys()]) if (!listed.includes(c)) wl.bound.delete(c);
+  for (const c of [...wl.bound.keys()]) if (!listed.includes(c)) {wl.bound.delete(c);for(const key of unboundBackoff.entries.keys())if(key.startsWith(c+":"))unboundBackoff.clear(key);}
   for (const [id, from] of want) { const M = meps.get(id);
     if (M) { if (!M.info.collection) Object.assign(M.info, { collection: from.collection, token: from.token, name: M.info.name || from.name }); continue; }
     try { meps.set(id, await loadMep(id, from)); log(`whitelist: now serving ${id.slice(0, 12)}… (${from.name}, collection ${from.collection.slice(0, 10)}…)`); }
     catch (err) { const why = String(err.shortMessage || err.message).slice(0, 160); if (!status.whitelist.skipped.some((x) => x.mepId === id)) { note(status.whitelist.skipped, { mepId: id, ...from, why }); log(`whitelist: NOT serving ${id.slice(0, 12)}…: ${why}`); } } }
   // what is no longer listed is no longer served -- except what PORW_MEP_IDS pins
-  for (const [id, M] of [...meps]) if (!M.pinned && !want.has(id)) { for (const A of M.aggregators.values()) A.stop && A.stop(); meps.delete(id); log(`whitelist: no longer serving ${id.slice(0, 12)}… (its collection left the list)`); }
+  await reconcileEnrollmentBases(meps, new Set(want.keys()), loadMep);
   wl.walked = bn; Object.assign(status.whitelist, { collections: listed, served: [...meps.values()].filter((M) => !M.pinned).length, walkedAt: Number(bn) });
 }
 
@@ -274,7 +293,7 @@ async function holders() {
 }
 // ---- (4) HTTP API ----
 const json = (res, code, body) => { res.writeHead(code, { "content-type": "application/json", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type" }); res.end(JSON.stringify(body, (k, v) => (typeof v === "bigint" ? v.toString() : v))); };
-const body = (req) => new Promise((r) => { let s = ""; req.on("data", (c) => (s += c)); req.on("end", () => r(s ? JSON.parse(s) : {})); });
+const body = (req) => new Promise((resolve,reject) => { let s="",bytes=0;req.on("data",c=>{bytes+=c.length;if(bytes>600000){reject(Error("request body too large"));return;}s+=c;});req.on("end",()=>{try{resolve(s?JSON.parse(s):{});}catch(e){reject(e);}});req.on("error",reject); });
 // A participating instance is one with at least one sortition vote. `bonded() > 0` is not that: bond() takes any
 // msg.value > 0, so a single wei passes it -- which would make the per-instance budget below worth nothing, since
 // a Sybil could mint one budget per wei. weightOf() is bonded/UNIT (capped), i.e. what the mesh itself means by an
@@ -290,6 +309,8 @@ const hasWeight = async (addr) => (await ch.instances.read.weightOf([addr])) > 0
 const TASK_CLIENTS = cfg.taskClients && cfg.taskClients.length ? new Set(cfg.taskClients) : null; // null: anybody's tasks
 const SPONSOR_EPOCH_GAS = Number(cfg.sponsorEpochGas || 1_500_000);
 const SPONSOR_DAY_GAS = Number(cfg.sponsorDayGas || 50_000_000);
+if(!Number.isSafeInteger(SPONSOR_EPOCH_GAS)||SPONSOR_EPOCH_GAS<=0||!Number.isSafeInteger(SPONSOR_DAY_GAS)||SPONSOR_DAY_GAS<=0)throw Error('sponsorship limits must be finite positive safe integers');
+const SYNC_SPONSOR_CONFIGURED=syncSponsorReady(SPONSOR_EPOCH_GAS,SPONSOR_DAY_GAS,0n,0n);
 const DAY_MS = 24 * 3600 * 1000;
 const spend = new Map(); // instance -> { epoch, gas }
 const day = { since: Date.now(), gas: 0 };
@@ -302,7 +323,7 @@ function budget(instance) {
   spend.set(instance, s);
   if (day.gas >= SPONSOR_DAY_GAS) return { ok: false, why: `relayer daily sponsorship budget spent (${day.gas}/${SPONSOR_DAY_GAS} gas)` };
   if (s.gas >= SPONSOR_EPOCH_GAS) return { ok: false, why: `sponsorship budget for epoch ${e} spent by this instance (${s.gas}/${SPONSOR_EPOCH_GAS} gas)` };
-  return { ok: true, charge: (g) => { s.gas += g; day.gas += g; status.sponsor.dayGas = day.gas; } };
+  return { ok: true, epochRemaining:SPONSOR_EPOCH_GAS-s.gas,dayRemaining:SPONSOR_DAY_GAS-day.gas, charge: (g) => { s.gas += g; day.gas += g; status.sponsor.dayGas = day.gas; } };
 }
 const refuse = (res, code, label, why) => { status.sponsor.refused.push({ label, why, at: new Date().toISOString() }); if (status.sponsor.refused.length > 50) status.sponsor.refused.shift(); log(`${label} refused: ${why}`); return json(res, code, { error: why }); };
 /** bonded instance -> budget -> simulation -> only then sign and send. Nothing is broadcast before all three pass. */
@@ -321,40 +342,71 @@ function sponsored(res, instance, label, simulate, send, taskId = null) {
     // And, while PORW_TASK_CLIENTS is set, only for the tasks of those clients. Third-party tasks are not open yet:
     // every task on this network is one the FlyBnB dataset needs, posted by the project. The market is permissionless
     // and cannot refuse anybody's task; what is withheld is this relayer's gas, and a session key holds none of its own.
-    if (taskId) { let m = ZERO32, client = null; try { const t = await ch.market.read.taskInfo([taskId]); m = String(t[0]).toLowerCase(); client = String(t[2]).toLowerCase(); } catch {}
-      if (m !== ZERO32 && !meps.has(m)) return refuse(res, 403, label, "the task's MEP is not one this relayer serves (not pinned, not on the whitelist)");
+    if (taskId) { let m = ZERO32, client = null; try { const t = await ch.market.read.taskInfo([taskId]); m = String(t[0]).toLowerCase(); client = String(t[2]).toLowerCase(); } catch(e) {if(SYNCHRONOUS)throw e;}
+      if (m !== ZERO32 && !(await servesTaskMep(ch,meps,m,FAMILY_HOSTING))) return refuse(res, 403, label, "the task's MEP is not one this relayer serves (not pinned, not on the whitelist)");
       if (m !== ZERO32 && TASK_CLIENTS && !TASK_CLIENTS.has(client)) return refuse(res, 403, label, "tasks are not open to third parties yet: this relayer sponsors only the dataset's own (PORW_TASK_CLIENTS)"); }
-    try { await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
-    const r = await tx(label, send);
+    let simulation;try { simulation=await simulate(); } catch (e) { return refuse(res, 400, label, "would revert: " + String(e.shortMessage || e.message).split("\n")[0].slice(0, 200)); }
+    let gas;try{gas=(await ch.pub.estimateContractGas(simulation.request))*120n/100n;}catch(e){return refuse(res,400,label,'gas estimate failed: '+String(e.shortMessage||e.message).slice(0,160));}
+    const admission=sponsorAdmission(gas,bud.epochRemaining,bud.dayRemaining);if(!admission.ok)return refuse(res,429,label,admission.why);
+    const r = await tx(label,o=>send({...o,gas}));
     if (r.gasUsed) bud.charge(r.gasUsed); // a revert that still got mined is charged too: it cost the relayer gas
     return json(res, 200, r);
   };
   const p = sponsorChain.then(run, run); sponsorChain = p.catch(() => {}); return p;
 }
+const readSync = SYNCHRONOUS ? syncReader(ch,{confirmations:Number(process.env.PORW_SYNC_CONFIRMATIONS||2)}) : null;
+const readFliesPage = fliesPageReader(ch, dep.addresses);
 const readHostStats = hostStats(ch, dep.addresses.market);
-const readProviderModels = providerModelReader(ch, meps);
+const readCapacity = capacityReader(ch.pub, dep.addresses.market);
+const hostEligibility = new ReadCache({ttl:5000,max:128});
+const readProviderModels = providerModelReader(ch, meps,{verificationSupport:SYNCHRONOUS?verificationSupportReader(ch):null});
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, verification: {mode:dep.verification?.mode??"legacy",...(SYNCHRONOUS?{...SYNC_WINDOWS,...VRF_CAPABILITY,totalBlocks:String(BigInt(SYNC_WINDOWS.totalBlocks)+BigInt(VRF_CAPABILITY.randomnessWaitBlocks||0)+BigInt(VRF_CAPABILITY.activationBlocks||0)),sponsorship:{configured:SYNC_SPONSOR_CONFIGURED,minimumEpochGas:160000000,minimumDayGas:350000000,reserveGas:350000000,epochGasLimit:SPONSOR_EPOCH_GAS,dayGasLimit:SPONSOR_DAY_GAS},sessionEndpoint:"/sync/session",pendingEndpoint:"/sync/pending",confirmations:Number(process.env.PORW_SYNC_CONFIRMATIONS||2)}:{})}, familyHosting: FAMILY_HOSTING, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
+    if(req.method==="GET"&&u.pathname.startsWith("/sync/")) {
+      if(!readSync)return json(res,409,{error:"synchronous verification is not enabled"});
+      try{if(u.pathname==="/sync/session")return json(res,200,await readSync.session(u.searchParams.get("taskId")));
+       if(u.pathname==="/sync/pending")return json(res,200,await readSync.pending(u.searchParams.get("instance")));
+      }catch(e){return json(res,400,{error:String(e.shortMessage||e.message).slice(0,200)});}
+    }
     if (u.pathname === "/flybnb/holders") return ch.collection ? json(res, 200, await holders()) : json(res, 404, { error: "no collection configured (PORW_COLLECTION)" });
+    if (req.method === "GET" && u.pathname === "/flies/page") {
+      try { return json(res, 200, await readFliesPage(u.searchParams)); }
+      catch(e) { return json(res, e.statusCode || 503, {error:e.message}); }
+    }
     if (u.pathname === "/meps") return json(res, 200, await readProviderModels());
+    if (req.method === "GET" && u.pathname === "/capacity") {
+      try { return json(res, 200, await readCapacity(u.searchParams.get("instance") || "")); }
+      catch (e) { return json(res, e.statusCode || 503, { error: e.statusCode === 400 ? e.message : "Capacity unavailable; retry later" }); }
+    }
     if (u.pathname === "/hosts") {
       const instance = u.searchParams.get("instance") || "";
       if (!/^0x[0-9a-fA-F]{40}$/.test(instance)) return json(res, 400, { error: "instance must be an address" });
       const epoch = await ch.claims.read.currentEpoch();
-      const ids = [...meps.keys()];
-      const eligible = await Promise.all(ids.map((id) => ch.instances.read.isEligible([instance, id, epoch])));
+      const ids = [...new Set([...meps.values()].map(M => M.info.enrollmentMepId))];
+      const eligible = await hostEligibility.get(`${instance.toLowerCase()}:${epoch}:${ids.join(",")}`, () => mapBounded(ids, id => ch.instances.read.isEligible([instance, id, epoch])));
       return json(res, 200, { ...await readHostStats(instance), epoch: Number(epoch),
-        beacon: (await ch.claims.read.beacon([epoch])) !== ZERO32, eligibleModels: ids.filter((_, i) => eligible[i]) });
+        beacon: (await ch.claims.read.beacon([epoch])) !== ZERO32, eligibleModels: [...meps.values()].filter(M => eligible[ids.indexOf(M.info.enrollmentMepId)]).map(M => M.info.mepId) });
     }
-    if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
-    if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const e = Number(await ch.claims.read.currentEpoch()); const b = await ch.claims.read.beacon([BigInt(e)]);
-      return json(res, 200, { epoch: e, block: await ch.pub.getBlockNumber(), beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? await ch.claims.read.epochChallenge([BigInt(e), id]) : null }); }
+    if (u.pathname === "/status") return json(res, 200, { block: lastBlock, epoch: lastEpoch, relay: relay.stats, nonce: nonceState, ...status, rpcCache: {hostEligibility: {hits:hostEligibility.hits,misses:hostEligibility.misses,entries:hostEligibility.size}}, aggregators: [...meps].map(([id, M]) => ({ mep: id, epochs: [...M.aggregators].map(([ep, A]) => ({ epoch: ep, claims: A.claims.size, rejected: A.rejected.length, posted: M.posted.has(ep) })) })) });
+    if (u.pathname === "/epoch") { const id = (u.searchParams.get("mep") || "").toLowerCase(); const {e,b,block} = await epochReads.get('head',async()=>{const e=Number(await ch.claims.read.currentEpoch());return {e,b:await ch.claims.read.beacon([BigInt(e)]),block:await ch.pub.getBlockNumber()};});
+      return json(res, 200, { mepId: id || null, enrollmentMepId: meps.get(id)?.info.enrollmentMepId || id || null, epoch: e, block, beacon: b, rolled: b !== ZERO32, lazy: LAZY, warm: status.beacon.warm, challenge: id ? (b !== ZERO32 ? await readChallenge(e,id) : await ch.claims.read.epochChallenge([BigInt(e), id])) : null }); }
     if (u.pathname === "/proof") { const id = (u.searchParams.get("mep") || "").toLowerCase(), e = Number(u.searchParams.get("epoch")), inst = u.searchParams.get("instance"); const M = meps.get(id); const T = epochTrees.get(e); const p = M && T && T.proofFor(id, inst);
       return p ? json(res, 200, { ...p.payload, aggregator: ch.account.address, posted: M.posted.has(e) }) : json(res, 404, { error: "no proof (not included, unknown epoch, or root not built)" }); }
     if (req.method !== "POST") return json(res, 404, { error: "not found" });
     const b = await body(req);
+    if(u.pathname.startsWith("/tx/sync/")) {
+      if(!SYNCHRONOUS)return json(res,409,{error:"synchronous verification is not enabled"});
+      let action;try{const kind=u.pathname.slice("/tx/sync/".length);action=["finalize","allocate"].includes(kind)?await prepareSyncFinalize(dep,b,ch,kind):await prepareSyncMutation(kind,b,ch);}catch(e){return json(res,400,{error:String(e.shortMessage||e.message).slice(0,200)});}
+      const {instance,contract,functionName,args,taskId}=action;
+      if(functionName==='setReadyBySig'&&b.ready===true){
+        const [balance,gasPrice]=await Promise.all([ch.pub.getBalance({address:ch.account.address}),ch.pub.getGasPrice()]);
+        if(!syncSponsorReady(SPONSOR_EPOCH_GAS,SPONSOR_DAY_GAS,balance,gasPrice))return refuse(res,503,'sync.readiness','synchronous sponsorship unavailable: configure at least 160M gas per instance/epoch, 350M per day and fund the 350M-gas session reserve');
+      }
+      return await sponsored(res,instance,`sync.${functionName}`,()=>contract.simulate[functionName](args,{account:ch.account}),o=>contract.write[functionName](args,o),taskId);
+    }
+    if(SYNCHRONOUS&&["/tx/result","/tx/settle"].includes(u.pathname))return json(res,409,{error:"synchronous verification requires authenticated commit/reveal sessions"});
     // a bonded instance saying it is here, so the lazy beacon keeps producing (see warmth()). The bonded check is
     // skipped while we are already warm through that epoch, so a tab polling once an epoch costs no RPC at all.
     if (u.pathname === "/wake") {

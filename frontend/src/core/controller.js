@@ -12,7 +12,10 @@
 // The UI observes by subscribing (`setOnChange`) and reading `state`; it never owns any of it. The page never
 // holds a payload either: the bytes are transferred to node_worker.js and the model_id is recomputed there.
 import { encode, decodeUint, decodeAddress, hex, keccakWords } from "./abi.js";
-import { keypair } from "/porw/claim.js";
+import { createFamilyResolver } from "./family-task.js";
+import { SynchronousHost } from "./synchronous-host.js";
+import { unhex } from "./abi.js";
+import { keypair, signHash } from "/porw/claim.js";
 import * as E from "/porw/eip712.js";
 import { modelMemoryBytes, maxStepsWithin, WASM32_MAX_BYTES } from "/porw/mem.js";
 
@@ -34,17 +37,32 @@ export const log = (m) => {
 export const state = { deployment: null, unit: null /* wei per vote, read from this deployment */, meps: [], hosted: new Set(), active: null, wallet: null, chainId: null, chainOk: false,
   walletConnecting: false, walletError: null, walletName: null,
   balance: 0n, bonded: 0n, weight: 0n, exitAt: 0n, inMep: [], session: null, delegation: null, resolved: null, epochInfo: null,
-  prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null,
+  synchronousSession: null, familyTasks: [], prepared: new Set(), loaded: {}, node: null, claims: {}, materialized: {}, results: [], errors: [], tasks: [], lastLog: null,
   flies: null, // the collection, as flies.js reads it: null until a deployment that names one is loaded
   flyTerms: null }; // its terms alone -- what a fly costs and how a fee is split. The docs page needs these and no individual
 
 // ---- the worker that actually runs the node ----
+let familyResolver = null, runningRelayer = null, synchronousHost = null;
+const runningFamilies = new Map();
 let worker = null, nextReq = 1; const waiting = new Map();
 function ensureWorker() {
   if (worker) return worker;
   worker = new Worker("/node_worker.js", { type: "module" });
   worker.onmessage = (ev) => {
     const m = ev.data;
+    if (m.op === "synchronous-assignment") {
+      if (synchronousHost) synchronousHost.assignment(m.env).catch(e=>{state.synchronousSession={...state.synchronousSession,safeToClose:false,error:e.message};onChange();ask('syncRefuse',{taskId:m.env.payload.taskId,reason:e.message}).catch(()=>{});});
+      return;
+    }
+    if (m.op === "family-resolve") {
+      const respond = (data) => worker.postMessage({ op: "familyResolved", resolveId: m.resolveId, ...data });
+      if (!familyResolver) { respond({error:"Family hosting is not enabled"}); return; }
+      familyResolver(m.env).then(manifest=>respond({manifest}),e=>respond({error:e.message})); return;
+    }
+    if (m.op === "family-status") {
+      state.familyTasks = [m, ...state.familyTasks.filter(t=>t.taskId!==m.taskId)].slice(0,16);
+      onChange(); return;
+    }
     if (m.op === "log") return log(m.msg);
     if (m.op === "result") return onTaskResult(m.res);
     const w = waiting.get(m.reqId); if (!w) return;
@@ -56,7 +74,8 @@ function ensureWorker() {
 const ask = (op, data = {}, transfer = []) => new Promise((res, rej) => { const reqId = nextReq++; waiting.set(reqId, { res, rej }); ensureWorker().postMessage({ op, reqId, ...data }, transfer); });
 /** a task the node answered over the relay: the page is what talks to the relayer's API */
 async function onTaskResult(res) {
-  const r = await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
+  if (["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) throw new Error("legacy result delivery is forbidden for synchronous sessions");
+  const r = runningRelayer ? await (await fetch(runningRelayer + "/tx/result", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(res)})).json() : await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
   log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
 }
 // EIP-6963 avoids the last-installed extension winning window.ethereum. Keep the
@@ -88,7 +107,7 @@ export const read = async (method, params = []) => {
   const r = await (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) })).json();
   if (r.error) throw new Error(r.error.message || "RPC error"); return r.result;
 };
-export const call = async (to, sig, args = []) => read("eth_call", [{ to, data: encode(sig, args) }, "latest"]);
+export const call = async (to, sig, args = [], block = "latest") => read("eth_call", [{ to, data: encode(sig, args) }, block]);
 export const send = async (to, sig, args = [], value = 0n) => {
   const expectedChain=state.deployment?.chainId, from=state.wallet;
   if(!expectedChain||!from)throw new Error("Connect your wallet on the deployment chain first.");
@@ -102,7 +121,7 @@ export const send = async (to, sig, args = [], value = 0n) => {
 // The relayer URL is read from the DOM rather than from React state on purpose: the field is uncontrolled, so a
 // test (or a paste) that sets `#relayer.value` directly is what the next request uses.
 export const relayer = () => $("relayer").value.replace(/\/$/, "");
-const api = async (p, body) => (await fetch(relayer() + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
+export const api = async (p, body) => (await fetch(relayer() + p, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {})).json();
 
 export const mepById = (id) => state.meps.find((m) => m.mepId === id);
 export const mepName = (m) => m.name || m.mepId.slice(0, 10);
@@ -111,7 +130,7 @@ export const label = (m) => `${m.name || m.mepId.slice(0, 12) + "…"} · ${m.ex
 export async function loadDeployment() {
   const [deployment, meps] = await Promise.all([api("/deployment"), api("/meps")]);
   state.deployment = deployment; state.meps = meps;
-  if (!state.active) state.active = state.meps[0]?.mepId || null;
+  if (!state.active) state.active = hostingModels()[0]?.mepId || null;
   if (!state.hosted.size && state.active) state.hosted.add(state.active);
   onChange(); log(`deployment loaded: ${state.meps.length} MEP(s)`); refreshEpoch();
   // what one vote costs is a parameter of THIS deployment (0.05 BNB is the mainnet intent; a testnet's is smaller)
@@ -149,12 +168,12 @@ export async function refreshBond() {
   state.weight = decodeUint(await call(a, "weightOf(address)", [state.wallet]));
   state.exitAt = decodeUint(await call(a, "exitAt(address)", [state.wallet]));
   state.balance = BigInt(await eth().request({ method: "eth_getBalance", params: [state.wallet, "latest"] }));
-  const inMep = []; for (const m of state.meps) if (decodeUint(await call(a, "inMep(bytes32,address)", [m.mepId, state.wallet])) !== 0n) inMep.push(mepName(m));
+  const inMep = []; for (const m of hostingModels()) if (decodeUint(await call(a, "inMep(bytes32,address)", [m.mepId, state.wallet])) !== 0n) inMep.push(mepName(m));
   state.inMep = inMep; onChange();
 }
 /** bond for every hosted MEP (a top-up adds MEPs to an existing bond) */
 export async function bond() {
-  const ids = [...state.hosted]; if (!ids.length) throw new Error("choose at least one MEP to host");
+  const ids = [...new Set([...state.hosted].map(id => mepById(id)?.enrollmentMepId || id))]; if (!ids.length) throw new Error("choose at least one MEP to host");
   const v = BigInt(Math.round(parseFloat($("amount").value) * 1e6)) * 10n ** 12n;
   if (v <= 0n) throw new Error("the registry needs a positive amount (a small top-up adds MEPs to an existing bond)");
   await send(state.deployment.addresses.instances, "bond(bytes32[])", [ids], v); await refreshBond();
@@ -259,6 +278,7 @@ const sourcesFor = (da, sp) => {
 const servedBaseFor = (modelId) => state.meps.find((x) => x.modelId?.toLowerCase() === modelId.toLowerCase());
 
 export async function loadModel() {
+  if (state.deployment?.familyHosting) selectHostFamily(state.active);
   const m = mepById(state.active); let bytes; const f = $("file").files[0];
   if (f) bytes = new Uint8Array(await f.arrayBuffer());
   else { const url = $("url").value; if (!url) throw new Error("choose a file or a URL"); bytes = await fetchBrain([{ url, where: "the link given" }], mepName(m)); }
@@ -287,12 +307,28 @@ export async function loadModel() {
     [bytes?.buffer, delta?.buffer].filter(Boolean)); // transferred, not copied
   const ok = r.modelId.toLowerCase() === m.modelId.toLowerCase();
   state.prepared.add(m.mepId); state.loaded[m.mepId] = { name: r.name, neurons: r.neurons, synapses: r.synapses, bytes: r.bytes, modelId: r.modelId, ok };
+  if (ok) await prepareEnrollmentBase(m);
   if (state.node) await hostOnNode(m); // hot-add to a running node
   onChange(); log(`${mepName(m)}: model_id ${r.modelId.slice(0, 14)}… ${ok ? "matches the MEP" : "DOES NOT MATCH the MEP (claims would be rejected)"}`);
   $("file").value = ""; $("url").value = "";
 }
+// A derived execution profile claims residency against its authoritative base pool.
+async function prepareEnrollmentBase(m) {
+  const id=m.enrollmentMepId;if(!id||id===m.mepId)return;
+  const base=mepById(id);if(!base)throw Error("Enrollment base missing from the catalog; refresh before hosting.");
+  state.hosted.add(id);
+  if(!state.prepared.has(id)){
+    const held=await ask("hasBase",{modelId:base.modelId});
+    const bytes=held.held?null:await fetchBrain(sourcesFor(base.weightsDA, $("sp")?.value),mepName(base));
+    const r=await ask("prepare",{mepId:id,baseModelId:base.modelId,...(bytes?{bytes:bytes.buffer}:{})},bytes?[bytes.buffer]:[]);
+    if(r.modelId.toLowerCase()!==base.modelId.toLowerCase())throw Error("Enrollment base model mismatch.");
+    state.prepared.add(id);state.loaded[id]={...r,ok:true};
+  }
+  if(state.node)await hostOnNode(base);
+}
 // Leave room for the kernel heap, alignment, and execution/dispute scratch.
 const HOST_MEMORY_BUDGET = WASM32_MAX_BYTES - 64 * 1024 ** 2;
+const FAMILY_WORKING_BYTES = 2 * 1024 ** 3;
 const reservedBytes = (bytes) => Math.ceil(bytes * 1.01);
 function requireMemory(bytes) {
   if (bytes > HOST_MEMORY_BUDGET) throw new Error(`Hosting these brains needs about ${MB(bytes)} of memory; the shared wasm heap must stay below 4 GB with room for execution. Reduce Max task steps or host fewer brains.`);
@@ -322,30 +358,60 @@ export function taskCapacity(m) {
 export async function hostOnNode(m) {
   if (!state.hosted.has(m.mepId) || !state.prepared.has(m.mepId) || state.node.models.has(m.mepId)) return;
   const maxSteps = taskCapacity(m), bytes = reservedBytes(brainBytes(m, maxSteps));
-  requireMemory(state.node.memoryBytes + bytes);
+  const familyMode = state.node.identity?.familyHosting ?? !!state.deployment?.familyHosting;
+  if (state.node.identity && (state.node.identity.chainId !== state.deployment.chainId || state.node.identity.market !== state.deployment.addresses.market)) throw new Error("Reload the page before hosting on another deployment");
+  requireMemory(state.node.memoryBytes + bytes + (familyMode ? FAMILY_WORKING_BYTES : 0));
   // Reserve before awaiting: concurrent hot-adds, mismatched MEPs and failed loads still consume heap.
   state.node.memoryBytes += bytes;
   // The TERMS, when the brain is an individual of a collection: its mep id is keccak(profile, beneficiary, bps) and
   // the terms are nowhere in the bytes, so a host that is not told them serves an id the chain never draws.
   const terms = m.royaltyBps > 0 && m.beneficiary ? { beneficiary: m.beneficiary, royaltyBps: m.royaltyBps } : null;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, terms }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, baseMepId: m.baseMepId || null, terms, family: (familyMode || ["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
   if (!r.matches) { log(`WARNING ${mepName(m)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
+  if ((familyMode || ["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId) runningFamilies.set(m.mepId, { ...m, maxSteps,
+    nameBytes: new TextEncoder().encode(state.loaded[m.mepId].name).length });
   log(`${mepName(m)}: resident on the node, serving audits and tasks`);
 }
+function startSynchronousPolling(){if(synchronousHost?.initialized&&!synchronousHost.pollTimer)synchronousHost.pollTimer=setInterval(()=>synchronousHost.tick().catch(e=>log('verification: '+e.message)),3000);}
+async function configureSynchronousHost(identity,k) {
+    const deployment=structuredClone(state.deployment);
+    synchronousHost=new SynchronousHost({deployment,instance:identity.instance,delegation:state.delegation,ask,
+      sign:hash=>hex(signHash(unhex(hash),k.priv)),
+      resolve:async env=>{
+        const resolver=createFamilyResolver({deployment,instance:identity.instance,families:runningFamilies,sp:$("sp")?.value||"",
+          client:{getChainId:()=>synchronousHost.chain.client.getChainId(),getBlockNumber:async()=>(await synchronousHost.chain.client.getBlock({blockTag:'finalized'})).number,
+            readContract:args=>synchronousHost.chain.client.readContract(args)}});
+        const manifest=await resolver(env),base=runningFamilies.get(manifest.baseMepId);
+        manifest.baseTerms=base?.royaltyBps>0?{beneficiary:base.beneficiary,royaltyBps:base.royaltyBps}:null;return manifest;
+      },
+      transport:async(kind,payload)=>{const response=await fetch(runningRelayer+'/tx/sync/'+kind,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload,(_,v)=>typeof v==='bigint'?String(v):v)});const result=await response.json();if(!response.ok||result.error||result.ok===false)throw Error(result.error||'synchronous transport failed');return result;},
+      onChange:session=>{state.synchronousSession=session;onChange();}});
+    try{await synchronousHost.start();}finally{startSynchronousPolling();}
+}
 export async function startNode() {
+  const verificationMode=state.deployment?.verification?.mode || 'legacy';
+  if (!['legacy','synchronous-v1','synchronous-vrf-v1'].includes(verificationMode)) throw new Error('Unsupported verification capability');
+  if (state.node) throw new Error('The node is already running');
+  const synchronous=['synchronous-v1','synchronous-vrf-v1'].includes(verificationMode);
+  if(synchronous) {state.synchronousSession={phase:'reconciling',safeToClose:false};onChange();}
   if (!state.delegation) throw new Error("delegate first");
   const ready = [...state.hosted].filter((id) => state.prepared.has(id));
   if (!ready.length) throw new Error("load a model for at least one hosted MEP");
   for (const id of ready) taskCapacity(mepById(id)); // validate before creating a worker or relay connection
   { const total = ready.reduce((s, id) => s + reservedBytes(brainBytes(mepById(id), taskCapacity(mepById(id)))), 0);
-    requireMemory(total);
+    requireMemory(total + (state.deployment.familyHosting ? FAMILY_WORKING_BYTES : 0));
     if (total) log(`hosting ${ready.length} brain(s) will hold about ${MB(total)} of wasm memory resident${total > 1024 ** 3 ? " — over a gigabyte; a laptop tab may not survive it" : ""}`); }
+  const identity = Object.freeze({ instance: state.delegation.instance, chainId: state.deployment.chainId, market: state.deployment.addresses.market, familyHosting: !!state.deployment.familyHosting });
   const k = sessionKey();
   await ask("init", { privHex: hex(k.priv), domains: state.deployment.domains, delegation: state.delegation });
-  await ask("relay", { url: state.deployment.relay });
-  state.node = { models: new Map(), memoryBytes: 0 }; // the page's view of what the worker holds resident
+  runningRelayer = relayer(); runningFamilies.clear();
+  familyResolver = state.deployment.familyHosting ? createFamilyResolver({deployment:structuredClone(state.deployment),instance:identity.instance,
+    families:runningFamilies,sp:$("sp")?.value || ""}) : null;
+  await ask("relay", { url: state.deployment.relay, familyMode: !!state.deployment.familyHosting, maxWorkingBytes: FAMILY_WORKING_BYTES, synchronous });
+  state.node = { models: new Map(), memoryBytes: 0, identity }; // the page's view of what the worker holds resident
   for (const id of ready) await hostOnNode(mepById(id));
+  if (synchronous) await configureSynchronousHost(identity,k);
   // Nothing is prepared from here on, so the base kept for applying deltas is dead weight in the worker's heap.
   { const f = await ask("releaseBase"); if (f.freed) log(`released the ${MB(f.freed)} base the individuals were applied over`); }
   log(`node running for ${state.node.models.size} MEP(s)`);
@@ -367,7 +433,7 @@ async function runPass() {
   const me = state.resolved || state.wallet;
   if (me && state.wokeEpoch !== e.epoch) { state.wokeEpoch = e.epoch; api("/wake", { instance: me }).catch(() => {}); }
   if (!e.rolled) return;
-  for (const id of state.hosted) {
+  for (const id of new Set([...state.hosted].map(id => mepById(id)?.enrollmentMepId || id))) {
     const m = mepById(id); if (!state.node || !state.node.models.has(id)) continue;
     state.claims[id] ||= {}; state.materialized[id] ||= {};
     if (!state.claims[id][e.epoch]) { const info = await api("/epoch?mep=" + id); const r = await ask("announce", { mepId: id, challenge: info.challenge }); state.claims[id][e.epoch] = r.claimHash; log(`${mepName(m)} epoch ${e.epoch}: claim announced (slot ${r.slotMs} ms)`); }
@@ -381,7 +447,10 @@ async function runPass() {
   onChange();
 }
 export function setActive(id) { state.active = id; onChange(); }
-export function host(id, on) { on ? state.hosted.add(id) : state.hosted.delete(id); onChange(); }
+export function hostingModels() { return state.deployment?.familyHosting ? state.meps.filter(m=>!m.baseMepId && (!m.enrollmentMepId || m.enrollmentMepId===m.mepId)) : state.meps; }
+export function selectHostFamily(id) { const m=mepById(id); setActive(state.deployment?.familyHosting ? (m?.enrollmentMepId || id) : id); }
+export function host(id, on) { if(state.deployment?.familyHosting) id=mepById(id)?.enrollmentMepId || id; on ? state.hosted.add(id) : state.hosted.delete(id); onChange(); }
+export const replayFamilyTask = taskId => ask("taskReplay", {taskId});
 /** the MEP's gnfd:// pointer plus an SP endpoint is a fetchable URL; filling the box beats making anyone paste it */
 export function autofillUrl() {
   const m = mepById(state.active); const url = $("url"), sp = $("sp"); if (!m || !url || !sp) return;
@@ -440,3 +509,19 @@ export async function postTask({ seed, steps, commitStride, redundancy, feeBnb, 
   onChange(); log(`task ${taskId.slice(0, 12)}… posted; sortition picks its executors from this epoch's eligible votes`);
   return taskId;
 }
+
+// One-shot readiness is an explicit user action; stopping always revokes its nonce.
+export const armSynchronousSession = async () => {if(!synchronousHost)throw Error('Start the synchronous host first');if(!state.node?.models.size)throw Error('Load a resident model before accepting another task');const identity=state.node.identity;if(identity.chainId!==state.deployment?.chainId||identity.market.toLowerCase()!==state.deployment?.addresses.market.toLowerCase()||identity.instance.toLowerCase()!==state.wallet?.toLowerCase())throw Error('Return to the running host wallet and deployment before arming');await synchronousHost.readiness(true);};
+export const drainSynchronousSession = async () => {if(!synchronousHost)throw Error('Start the synchronous host first');await synchronousHost.readiness(false);};
+export const resumeSynchronousSession = async () => {
+  if(synchronousHost){try{if(!synchronousHost.initialized)await synchronousHost.start();else await synchronousHost.tick();}finally{startSynchronousPolling();}return;}
+  if(!['synchronous-v1','synchronous-vrf-v1'].includes(state.deployment?.verification?.mode)||!state.delegation)throw Error('Connect and delegate the saved session key before recovery');
+  const identity=Object.freeze({instance:state.delegation.instance,chainId:state.deployment.chainId,market:state.deployment.addresses.market,familyHosting:!!state.deployment.familyHosting});
+  const k=sessionKey();runningRelayer=relayer();
+  await ask('init',{privHex:hex(k.priv),domains:state.deployment.domains,delegation:state.delegation});
+  await ask('relay',{url:state.deployment.relay,familyMode:!!state.deployment.familyHosting,synchronous:true,maxWorkingBytes:FAMILY_WORKING_BYTES});
+  state.node={models:new Map(),memoryBytes:0,identity};
+  await configureSynchronousHost(identity,k);
+  setInterval(()=>loop().catch(e=>log('loop error: '+e.message)),3000);onChange();
+};
+window.addEventListener?.('beforeunload',event=>{if(['synchronous-v1','synchronous-vrf-v1'].includes(state.deployment?.verification?.mode)&&state.node&&!state.synchronousSession?.safeToClose){event.preventDefault();event.returnValue='Verification is still pending.';}});
