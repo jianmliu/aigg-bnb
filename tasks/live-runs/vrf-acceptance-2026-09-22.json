@@ -1,0 +1,261 @@
+{
+  "chainId": 97,
+  "market": "0x15380e14f63a6188196ee98e05ff951b66582152",
+  "subscriptionId": "16827904030502239886684173102318092411495140734875771880973600016057278287621",
+  "consumer": "0x311B256d75F3B37fAc0F49158D8f40517094Ac18",
+  "taskId": "0xdae53ab189788391eaf346955cd6c1d2152de76704f36545d95dd102460c845a",
+  "mepId": "0x312dda12d308ba13796472e6ba444be4a94a5b04ce9e5ef3ada3649034443f8a",
+  "task": {
+    "initStateRoot": "0xaf3822bb9a2850c28b793778b2edcac5e21947b10dad7a1a4fab6520f38bd656",
+    "steps": 4,
+    "commitStride": 1,
+    "stimulusSeed": 7,
+    "executionFeeWei": "1000000000000000",
+    "admissionFeeWei": "1000000000000000"
+  },
+  "candidatePool": [
+    {
+      "host": "0x1887EEA87daAD0D02D86D20bdB415c44571A03E5",
+      "signer": "0x1887EEA87daAD0D02D86D20bdB415c44571A03E5",
+      "weight": "1"
+    },
+    {
+      "host": "0x893a6396E4d59B0E36BCd4F40378c26dAa06e100",
+      "signer": "0x893a6396E4d59B0E36BCd4F40378c26dAa06e100",
+      "weight": "1"
+    },
+    {
+      "host": "0x57782D1d8786914e974A9e5cF916873b13fBC7Cf",
+      "signer": "0x57782D1d8786914e974A9e5cF916873b13fBC7Cf",
+      "weight": "1"
+    }
+  ],
+  "executors": [
+    "0x1887EEA87daAD0D02D86D20bdB415c44571A03E5",
+    "0x893a6396E4d59B0E36BCd4F40378c26dAa06e100"
+  ],
+  "requestId": "25258632672840702128372811072239769363449159537615789600965046948677451433345",
+  "callback": {
+    "hash": "0xec0a581ad6f7258865008ed15a4c6ff5af3ae78d9d881957e12fd9334132f04c",
+    "blockNumber": "132547396",
+    "from": "0xa0858d59b5a3ed73ee483a27f37e200072332b77",
+    "to": "0x3dc9c20d77e079cb7f0de8a629b41948e93077a1"
+  },
+  "result": {
+    "execDigest": "0x94db57db837ce3243758aefed110cb141310f7dd2a87cabafdb7066cb24d106e",
+    "execRoot": "0x58cc04fe11b606153d034819c6cf13a3ecb900c7319aafde9a096bdf6a75c9a0"
+  },
+  "subscriptionBeforeWei": "10000000000000000",
+  "subscriptionAfterWei": "29762817600000000",
+  "subscriptionTopupWei": "20000000000000000",
+  "vrfChargeWei": "237182400000000",
+  "finalizedBlock": "132548006",
+  "status": "completed",
+  "temporaryHosts": [
+    {
+      "address": "0x1887EEA87daAD0D02D86D20bdB415c44571A03E5",
+      "creditWei": "500000000000000",
+      "bondWithdrawn": true,
+      "finalizedCleanupVerified": true
+    },
+    {
+      "address": "0x893a6396E4d59B0E36BCd4F40378c26dAa06e100",
+      "creditWei": "500000000000000",
+      "bondWithdrawn": true,
+      "finalizedCleanupVerified": true
+    },
+    {
+      "address": "0x57782D1d8786914e974A9e5cF916873b13fBC7Cf",
+      "creditWei": "0",
+      "bondWithdrawn": true,
+      "finalizedCleanupVerified": true
+    }
+  ],
+  "transactions": {
+    "fund-host-0": {
+      "hash": "0x4ccca1507184e94846e0542024abddb8c17122904da5bb6b7e9d77b3d58a5333",
+      "blockNumber": "132546395",
+      "gasUsed": "21000"
+    },
+    "bond-0": {
+      "hash": "0xe0409ef51851da5a0e8fd1de518bd94fbcee60412b24ed58960135aceba5c4b4",
+      "blockNumber": "132546406",
+      "gasUsed": "154079"
+    },
+    "capacity-0": {
+      "hash": "0x770b3e8e8c0e4785dd28b81b4ad37b8ce1d30c00ce9749cc47ebccc8f6da041a",
+      "blockNumber": "132546415",
+      "gasUsed": "45191"
+    },
+    "fund-host-1": {
+      "hash": "0x91d94dde8025da62d0d987333e18353eaac1340dea1bdf3ba31c4b24a9a835de",
+      "blockNumber": "132546425",
+      "gasUsed": "21000"
+    },
+    "bond-1": {
+      "hash": "0x7389d0ef90421cc92ba9603c01c5dc348d1a6ba31f2a051ef6dd448122367399",
+      "blockNumber": "132546435",
+      "gasUsed": "114099"
+    },
+    "capacity-1": {
+      "hash": "0xa1af27935a09e65737526a714c1e964e145545fb9cc560b51ced93080797afcf",
+      "blockNumber": "132546445",
+      "gasUsed": "45191"
+    },
+    "fund-host-2": {
+      "hash": "0x7fa17ef644b191ed9213282874d1817823ca7ccf3372b8bc03e8382ac08d4a5e",
+      "blockNumber": "132546456",
+      "gasUsed": "21000"
+    },
+    "bond-2": {
+      "hash": "0xc7b489b761913fb1e4c4cf55e4bfb55ee968ab9b840812bca634cd0662aecfa0",
+      "blockNumber": "132546464",
+      "gasUsed": "114099"
+    },
+    "capacity-2": {
+      "hash": "0x850666efeb41c4ae6b80423fcf0902156a48607009c432b813fb662e42d88a9f",
+      "blockNumber": "132546475",
+      "gasUsed": "45191"
+    },
+    "beacon-commit": {
+      "hash": "0xcef05602a412f5dcb8facb29f0eabc3ff2ae3d43406fadc045176dd0c0281d30",
+      "blockNumber": "132546565",
+      "gasUsed": "115235"
+    },
+    "beacon-reveal": {
+      "hash": "0x3d34fbf8d6151856c0ee05f5272b7f7cc4d9b59f86192a436ae43d82948a53b8",
+      "blockNumber": "132546606",
+      "gasUsed": "100408"
+    },
+    "roll-epoch": {
+      "hash": "0x45f9956f866ba990516a7e2429b001b2e5db4243fbbf2773746b9ac399518c51",
+      "blockNumber": "132546646",
+      "gasUsed": "52342"
+    },
+    "claim-0": {
+      "hash": "0xb3fcaa67e2836fea3b39457e229d05910ebcfa1830f6714f5f9f93a00b5577c8",
+      "blockNumber": "132546656",
+      "gasUsed": "106749"
+    },
+    "ready-0": {
+      "hash": "0xc0d00cec99dee87d713a02bfc6baac170f7a218db3a89878532edacf64098ba9",
+      "blockNumber": "132546672",
+      "gasUsed": "238350"
+    },
+    "claim-1": {
+      "hash": "0x6102aebea29231840499b65c06ed4556f8e5345a7890ccbf4ea945f978a7522a",
+      "blockNumber": "132546770",
+      "gasUsed": "106773"
+    },
+    "ready-1": {
+      "hash": "0x9277776f28f94e1f630cfeea557ec60db4f01df794d5e6386d8dc956e1548017",
+      "blockNumber": "132546780",
+      "gasUsed": "255250"
+    },
+    "claim-2": {
+      "hash": "0x4c718762cf6202a183585fc23bb3731c09b03cedb8985ccaa25739c4d730df37",
+      "blockNumber": "132546791",
+      "gasUsed": "106773"
+    },
+    "ready-2": {
+      "hash": "0xc8e5c8886a50504598131a9749fc1853ec2a0ad091b5ac62920d1696bfc883cb",
+      "blockNumber": "132546800",
+      "gasUsed": "272150"
+    },
+    "post-task": {
+      "hash": "0x901bfa6dd6f4149f4034ee5c3f5d1e1f68a6c7481256ffb0a4d521218c47fa66",
+      "blockNumber": "132546816",
+      "gasUsed": "1343130"
+    },
+    "allocate": {
+      "hash": "0x854fb34705f9b7c3082046a93263a14b6af517513e791e64b63c2100bf1fe869",
+      "blockNumber": "132547420",
+      "gasUsed": "154459"
+    },
+    "commit-result-0": {
+      "hash": "0xf51d7c53b3965cc64b74928166ebf8ed1bbcee4c0a96f69d900ce07b1ac6be74",
+      "blockNumber": "132547431",
+      "gasUsed": "77513"
+    },
+    "commit-result-1": {
+      "hash": "0x3b06012c1eb36be40d7017b9f3e963f8e6a87af759246ba3ec4020cdaf63f883",
+      "blockNumber": "132547442",
+      "gasUsed": "80521"
+    },
+    "reveal-result-0": {
+      "hash": "0x6c7f2ea87d3823d06b58645f58fa68dec935a4318d6057a690f2b7c75b9da699",
+      "blockNumber": "132547452",
+      "gasUsed": "130307"
+    },
+    "reveal-result-1": {
+      "hash": "0x02bed818ec2aa985cf934a8e0b9478f74c876fd88436a9291a17a693cdea91ce",
+      "blockNumber": "132547464",
+      "gasUsed": "324147"
+    },
+    "withdraw-0": {
+      "hash": "0xe47954e50a2290aa188ce954dd0bcef23b2a09ec79f1a043deb68033e46c94f1",
+      "blockNumber": "132547692",
+      "gasUsed": "34949"
+    },
+    "exit-0": {
+      "hash": "0x77546d3793ca21ccbdec9657aeb66dc302c98243076afd09d4feda3ad0e22c9b",
+      "blockNumber": "132547703",
+      "gasUsed": "47872"
+    },
+    "withdraw-1": {
+      "hash": "0x9c2dbdd4f51337706f85bc9349ee44fc2a647bf50a6d48b8bcb428df195123e1",
+      "blockNumber": "132547713",
+      "gasUsed": "34949"
+    },
+    "exit-1": {
+      "hash": "0x099e646e6c8997ec9772fc8c13b9d2858c815fa49009d028731f990755f5b3b1",
+      "blockNumber": "132547723",
+      "gasUsed": "47872"
+    },
+    "exit-2": {
+      "hash": "0xd260fb3dac5bcb687612cffd6400f178c74aa5084575603d9e3590fc33890402",
+      "blockNumber": "132547734",
+      "gasUsed": "47872"
+    },
+    "finalize-exit-0": {
+      "hash": "0x8144f227b1cb3b83994a0df45ac188f8fc89438a530a85f1df44106e2882aeef",
+      "blockNumber": "132547937",
+      "gasUsed": "32757"
+    },
+    "sweep-0": {
+      "hash": "0x6143be45bee3d507b9cb6f1d5f2b5e85f7cc9e39d55d16b8146e718743cc798d",
+      "blockNumber": "132547947",
+      "gasUsed": "21000"
+    },
+    "finalize-exit-1": {
+      "hash": "0x160cb4d354eb49b10d608ae63c8ce981f478e20e7e4ed7cc85f48667ba2e5718",
+      "blockNumber": "132547957",
+      "gasUsed": "32757"
+    },
+    "sweep-1": {
+      "hash": "0xe9c3a0b3a1bbdb66a85af685d9a78aedd63015e7fad120a6d3b97b4cb0cbb592",
+      "blockNumber": "132547968",
+      "gasUsed": "21000"
+    },
+    "finalize-exit-2": {
+      "hash": "0x9305b973301373d972fa5846c54936291d2ab0475700ce5fe8095bf442e4c408",
+      "blockNumber": "132547978",
+      "gasUsed": "32757"
+    },
+    "sweep-2": {
+      "hash": "0x6623f62c3f068def70207bbc6b36e647f0ac7421cfc50d6c28e894ac7adad145",
+      "blockNumber": "132547987",
+      "gasUsed": "21000"
+    }
+  },
+  "liveProofVerified": true,
+  "scope": "Real Chainlink callback and direct on-chain task with three local test hosts; not independent operators or browser/gateway acceptance",
+  "verifiedAt": "2026-09-22T16:12:09.668Z",
+  "model": {
+    "name": "flywire-fafb-v783-min5",
+    "neurons": 139255,
+    "synapses": 2700513
+  },
+  "subscriptionTopupTransaction": "0x57a061c2c9de4f6d95eed4b2825ee3c2d3a101f5929b477cb62a22da57e2818e",
+  "finalizedCleanupBlock": "132548122"
+}
