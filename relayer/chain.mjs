@@ -15,7 +15,7 @@ export function clients(dep, privateKey = null) {
   const wallet = account ? createWalletClient({ chain, transport: http(dep.rpc), account }) : null;
   const c = (address, abi) => getContract({ address, abi, client: { public: pub, wallet } });
   const a = dep.addresses;
-  return { chain, pub, wallet, account, instances: c(a.instances, InstanceRegistryAbi), claims: c(a.claims, ClaimManagerAbi), market: c(a.market, [...TaskMarketAbi,...SynchronousMarketAbi]), disputes: a.disputes ? c(a.disputes,SynchronousDisputeAbi) : null, meps: c(a.meps, MEPRegistryAbi), beacon: a.beacon ? c(a.beacon, BeaconAbi) : null, relays: c(a.relays, RelayRegistryAbi), collection: a.collection ? c(a.collection, FlyCollectionAbi) : null, whitelist: a.whitelist ? c(a.whitelist, CollectionWhitelistAbi) : null };
+  return { verificationMode:dep.verification?.mode??'legacy', chain, pub, wallet, account, instances: c(a.instances, InstanceRegistryAbi), claims: c(a.claims, ClaimManagerAbi), market: c(a.market, [...TaskMarketAbi,...SynchronousMarketAbi]), disputes: a.disputes ? c(a.disputes,SynchronousDisputeAbi) : null, meps: c(a.meps, MEPRegistryAbi), beacon: a.beacon ? c(a.beacon, BeaconAbi) : null, relays: c(a.relays, RelayRegistryAbi), collection: a.collection ? c(a.collection, FlyCollectionAbi) : null, whitelist: a.whitelist ? c(a.whitelist, CollectionWhitelistAbi) : null };
 }
 export const eip712Domains = (dep) => ({
   claimManager: { name: "PoRW Mesh", version: "1", chainId: dep.chainId, verifyingContract: dep.addresses.claims },

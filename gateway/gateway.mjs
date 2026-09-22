@@ -1,3 +1,6 @@
+import {recoverPost,admissionExpense,persistVrfPost,broadcastVrfPost} from './vrf-post.mjs';
+import {AdmissionBudget} from './admission-budget.mjs';
+import {VRF_MODE,advanceAdmission,readAdmission} from '../relayer/vrf-admission.mjs';
 // The gateway (docs/GATEWAY.md), milestones 0-1 and 3: a brain behind an OpenAI-compatible inference API.
 //
 // A request names a model (a MEP), a seed, a number of steps and an experiment; the gateway is the on-chain client
@@ -72,7 +75,7 @@ const published = await relayerApi("/deployment"); const dep = deploymentFromEnv
 if (dep.addresses.market.toLowerCase() !== published.addresses.market.toLowerCase() || Number(dep.chainId) !== Number(published.chainId)) throw new Error(`the relayer at ${cfg.relayer} serves another deployment (market ${published.addresses.market} on chain ${published.chainId}) than PORW_* names`);
 if(verificationMode(dep)!==verificationMode(published))throw Error("relayer verification capability mismatch");
 const ch = clients(dep, cfg.key);
-const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion()); const ME = ch.account.address.toLowerCase();
+const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion()); const VRF=verificationMode(dep)===VRF_MODE; const ME = ch.account.address.toLowerCase();
 // what the gateway reads that the relayer does not: the stored task (for finality), the timeout, and a dispute opening at settle
 const MarketExtra = parseAbi(["function TASK_TIMEOUT() view returns (uint64)", "event DisputeOpened(bytes32 indexed taskId, address a, address b)",
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",
@@ -85,6 +88,7 @@ if (published.taskClients && !published.taskClients.includes(ME)) log(`WARNING: 
 const relay = new RelayClient([published.relay], keypair(cfg.key)); await relay.connect();
 
 // ---- the calls, on disk ----
+const admissionBudget=VRF?new AdmissionBudget(cfg.state+".admission.json",e.GATEWAY_VRF_ADMISSION_BUDGET_WEI||0):null;
 const calls = new Map(); const bus = new Map(); // id -> call; id -> EventEmitter (only while somebody is listening or it is running)
 const save = () => { const tmp = cfg.state + ".tmp"; fs.writeFileSync(tmp, JSON.stringify([...calls.values()], null, 1), { mode: 0o600 }); fs.renameSync(tmp, cfg.state); };
 if (fs.existsSync(cfg.state)) for (const c of JSON.parse(fs.readFileSync(cfg.state, "utf8"))) calls.set(c.id, c);
@@ -114,7 +118,7 @@ function priceOf(m, setName) {
 const tokensFor = (steps, redundancy, price) => Math.max(1, Math.round(steps * redundancy * price.model_factor * price.set_factor));
 async function capacity(mepId) { const epoch = await ch.claims.read.currentEpoch(); const votes = (await ch.instances.read.eligibleVotes([mepId, epoch])).map((a) => a.toLowerCase());
   let providers=new Set(votes);if(SYNCHRONOUS){const ready=await Promise.all([...providers].map(async a=>await ch.market.read.ready([a])?a:null));providers=new Set(ready.filter(Boolean));}
-  return { epoch: Number(epoch), votes: votes.length, providers: providers.size, beacon: BigInt(await ch.claims.read.beacon([epoch])) !== 0n }; }
+  return { epoch: Number(epoch), votes: votes.length, providers: providers.size, beacon: VRF || BigInt(await ch.claims.read.beacon([epoch])) !== 0n }; }
 
 // ---- a request -> a task ----
 class Refusal extends Error { constructor(status, type, message, extra = {}) { super(message); this.status = status; this.type = type; this.extra = extra; } }
@@ -177,8 +181,9 @@ async function plan(body, { signal, onCold, onCapacity } = {}) {
   let init = null; if (lif) try { init = state0Root(m.neurons, seed, stimulate, silence); } catch (err) { if (err instanceof RangeError) throw new Refusal(400, "invalid_request_error", err.message); throw err; }
   const price = priceOf(m, x.stimulate?.set ?? null); price.output_tokens = tokensFor(steps, redundancy, price);
   const fee = BigInt(price.output_tokens) * cfg.weiPerStep;
+  const admissionFee=VRF?await ch.market.read.admissionFee(["0x"+"00".repeat(20)]):0n;
   // the float ran dry: say so before the chain does, and in a way the operator's alerting can tell from a cold model
-  const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + await gasHeadroom(redundancy)) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
+  const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + admissionFee + await gasHeadroom(redundancy)) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
   // what to read out: named neurons, or (asked for nothing) the ten that fired most. Checked now, while refusing is free
   let readout = null; if (x.readout != null) { if (!lif) throw new Refusal(400, "invalid_request_error", `${m.exec} has no spike counts to read out`);
     if (x.readout.top != null) { if (!Number.isInteger(x.readout.top) || x.readout.top < 1 || x.readout.top > 1000) throw new Refusal(400, "invalid_request_error", "readout.top is 1 … 1000"); readout = { top: x.readout.top }; }
@@ -191,7 +196,7 @@ async function plan(body, { signal, onCold, onCapacity } = {}) {
   signal?.throwIfAborted();
   const block = await blockNumber();
   const task = { mepId: m.mepId, stimulusSeed: seed, steps, commitStride, initStateRoot: init ? V.hex(init.root) : "0x" + "00".repeat(32), fee, deadline: SYNCHRONOUS?0n:block + BigInt(TASK_TIMEOUT), redundancy };
-  return { m, task, stimulate, silence, stimulated: init?.stimulated ?? null, readout, price };
+  return { m, task, admissionFee:String(admissionFee), stimulate, silence, stimulated: init?.stimulated ?? null, readout, price };
 }
 
 // ---- the life of a call (docs/GATEWAY.md §2) ----
@@ -199,7 +204,7 @@ async function plan(body, { signal, onCold, onCapacity } = {}) {
 // and anvil: postTask ~197k gas at redundancy 1, settle ~126k at 1 and ~152k at 2 -- both grow with the executors drawn.
 // (It was a constant, 2M gas at 5 gwei = 0.01 BNB: some three hundred times what a call costs at 0.1 gwei.)
 const callGas = (redundancy) => 200_000n + 40_000n * BigInt(redundancy) + 100_000n + 30_000n * BigInt(redundancy);
-const gasHeadroom = async (redundancy) => 2n * callGas(redundancy) * await ch.pub.getGasPrice();
+const gasHeadroom = async (redundancy) => 2n * (VRF?16777216n:callGas(redundancy)) * await ch.pub.getGasPrice();
 let sending = Promise.resolve(); // one wallet, one nonce sequence: sends are serialised
 const send = (fn) => { const p = sending.then(fn); sending = p.catch(() => {}); return p; };
 const TASK_TUPLE = [{ type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" }, { name: "initStateRoot", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] }, { type: "bytes32" }];
@@ -249,13 +254,18 @@ const wire = (t) => ({ ...t, fee: String(t.fee), deadline: String(t.deadline) })
 async function create(p, body) {
   const nonce = "0x" + crypto.randomBytes(32).toString("hex"); const id = SYNCHRONOUS?await ch.market.read.taskId([p.task,"0x"+"00".repeat(20),nonce,0,ch.account.address]):taskIdOf(p.task, nonce);
   const c = { id, created_at: Math.floor(Date.now() / 1000), status: "queued", model: body.model, mepId: p.m.mepId, exec: p.m.exec, task: wire(p.task), nonce,
-    stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, price: p.price || null, executors: [], results: {}, events: [], error: null, receipt: null };
+    stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, price: p.price || null, admission_fee_wei:p.admissionFee||"0", admission_txs:[], executors: [], results: {}, events: [], error: null, receipt: null };
   calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order
   save(); return c; // the INTENT is on disk before a wei moves: the id is the task's, so a restart can tell whether it was posted
 }
 async function drive(c, signal) {
   try {
     const task = unwire(c.task); let ex = await executorsOf(c.id);
+    if(VRF&&!c.post_tx){const original=await recoverPost(ch,c.id,task,c.nonce);if(original){c.post_tx=original;c.post_confirmed=true;save();}else if(Object.hasOwn(admissionBudget.entries,c.id))throw Error('Uncertain admission reservation without persisted transaction; refusing a new broadcast');}
+    if(VRF&&c.post_tx){
+      if(c.post_raw)await send(()=>broadcastVrfPost(ch,c));
+      const receipt=await ch.pub.waitForTransactionReceipt({hash:c.post_tx});if(receipt.status!=='success')throw Error('postTask reverted');c.post_confirmed=true;save();
+    }
     if (!ex.length) { // not on the chain yet: post it -- or, after a restart, wait for the transaction that was already sent
       if (!c.post_tx) { c.post_tx = await send(async () => {
         signal?.throwIfAborted();
@@ -263,10 +273,27 @@ async function drive(c, signal) {
         const k = await capacity(task.mepId);
         signal?.throwIfAborted();
         if (!k.beacon || k.providers < task.redundancy) throw new CapacityError(k.beacon ? "model_cold" : "epoch_cold", k);
-        return ch.market.write.postTask([task, c.nonce], { value: task.fee });
+        if(VRF){
+          admissionBudget.reserve(c.id,BigInt(c.admission_fee_wei));
+          await persistVrfPost(ch,c,task,save);return broadcastVrfPost(ch,c);
+        }
+        return ch.market.write.postTask([task, c.nonce], { value: task.fee+BigInt(c.admission_fee_wei||0) });
       }); save(); }
-      const rc = await ch.pub.waitForTransactionReceipt({ hash: c.post_tx }); if (rc.status !== "success") throw new Error("postTask reverted");
+      const rc = await ch.pub.waitForTransactionReceipt({ hash: c.post_tx }); if (rc.status !== "success") throw new Error("postTask reverted");c.post_confirmed=true;save();
       ex = await executorsOf(c.id);
+    }
+    if(VRF){
+      // A posted phase-6 task has no executors yet. Keep its original id/nonce across
+      // restarts; never post a replacement to obtain another random draw.
+      for(;;){
+        const phase=await readFinalized(ch.pub,async options=>Number((await ch.market.read.sessionState([c.id],options))[0]));
+        if(phase!==6&&phase!==0)break;
+        c.verification={phase:6,admission:await readAdmission(ch,c.id)};save();
+        const hash=await advanceAdmission(ch,c.id,send);
+        if(hash){(c.admission_txs||=[]).push(hash);save();await ch.pub.waitForTransactionReceipt({hash});}
+        await sleep(cfg.pollMs);
+      }
+      ex=await executorsOf(c.id);
     }
     c.executors = ex; c.status = "in_progress"; const stored = await readMarket("tasks", [c.id]); c.posted_at = Number(stored[3]);
     emit(c, "response.created", { executors: ex }); log(`task ${c.id.slice(0, 12)}… ${c.model}: ${task.steps} steps, fee ${task.fee} wei, executors ${ex.map((a) => a.slice(0, 8)).join(", ")}`);
@@ -312,12 +339,13 @@ async function drive(c, signal) {
     // The gas of the call's two transactions, as spent -- from their receipts, not an estimate. It is billed as the call's
     // INPUT tokens: gas wei / wei per step, rounded up, so a token of either kind is worth the same. A call that fails
     // (refunded, disputed) is not billed at all; its gas is the gateway's.
-    const post = await ch.pub.getTransactionReceipt({ hash: c.post_tx }); const gasWei = post.gasUsed * post.effectiveGasPrice + rc.gasUsed * rc.effectiveGasPrice;
-    const gas = { post_task: Number(post.gasUsed), settle: Number(rc.gasUsed), wei: String(gasWei), tokens: Number((gasWei + cfg.weiPerStep - 1n) / cfg.weiPerStep) };
-    const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, gas, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
+    const post = await ch.pub.getTransactionReceipt({ hash: c.post_tx }); let gasWei = post.gasUsed * post.effectiveGasPrice + rc.gasUsed * rc.effectiveGasPrice;
+    let admissionGas=0n;for(const hash of c.admission_txs||[]){const r=await ch.pub.getTransactionReceipt({hash});admissionGas+=r.gasUsed;gasWei+=r.gasUsed*r.effectiveGasPrice;}
+    const gas = { post_task: Number(post.gasUsed), settle: Number(rc.gasUsed), admission:Number(admissionGas), wei: String(gasWei), tokens: Number((gasWei + cfg.weiPerStep - 1n) / cfg.weiPerStep) };
+    const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, admission_fee_wei:c.admission_fee_wei||"0", admission_fee_refundable:false, total_escrow_wei:String(task.fee+BigInt(c.admission_fee_wei||0)), gas, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
       stimulate_ids: c.stimulate, silence_ids: c.silence, stimulated: c.stimulated, price: c.price, results: c.results };
     if (dispute) { c.receipt = { ...base, executors: ex, disputed: [dispute.args.a, dispute.args.b].map((a) => a.toLowerCase()) }; return fail(c, 502, "disputed", "the executors disagreed and the task is in dispute: nothing is billed, and the fee is held until the dispute resolves"); }
-    if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, SYNCHRONOUS?"inconclusive":"no_result", SYNCHRONOUS?"verification ended inconclusively: fee refund credited to the client; nothing is billed":"no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
+    if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, SYNCHRONOUS?"inconclusive":"no_result", SYNCHRONOUS?"verification ended inconclusively: execution fee refund credited to the client; admission fee remains spent":"no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
     const at = Number((await readMarket("tasks", [c.id]))[4]);
     // The output. A provider replies after it has submitted, so the task may have settled first: wait a little for a vector
     // that hashes to the SETTLED digest. One is enough, whoever sent it -- the digest is what the providers agreed on.
@@ -329,7 +357,7 @@ async function drive(c, signal) {
       : { status: BigInt(digest) === 0n ? "unavailable: the providers agreed on the root and split on the digest, so there is no digest to check counts against" : "unavailable: no provider returned counts that hash to the settled digest" };
     c.receipt = { ...base, executors: settled.args.executors.map((a) => a.toLowerCase()), exec_digest: settled.args.execDigest, exec_root: SYNCHRONOUS ? settled.args.execRoot : (c.results[settled.args.executors[0].toLowerCase()]?.execRoot ?? (await ch.market.read.resultOf([c.id, settled.args.executors[0]]))[1]),
       settled_at: at, finality: CHALLENGE_WINDOW ? "settled" : "final", final_after_block: at + CHALLENGE_WINDOW,
-      ...(SYNCHRONOUS?{verification:"synchronous-v1",assumption:"independently administered executors; local adjudication assumes an honest executor"}:{}),counts: c.counts, ...(got ? { counts_url: `/v1/tasks/${c.id}/counts` } : {}) };
+      ...(SYNCHRONOUS?{verification:verificationMode(dep),assumption:"independently administered executors; local adjudication assumes an honest executor"}:{}),counts: c.counts, ...(got ? { counts_url: `/v1/tasks/${c.id}/counts` } : {}) };
     c.status = "completed"; emit(c, "response.completed"); log(`task ${c.id.slice(0, 12)}… settled: ${c.receipt.executors.length} paid, digest ${c.receipt.exec_digest.slice(0, 12)}…`);
   } catch (err) { fail(c, err.status || 500, err.type || "gateway_error", String(err?.shortMessage || err?.message || err).slice(0, 300)); }
   finally { setTimeout(() => bus.delete(c.id), 1000); }
@@ -364,12 +392,13 @@ function view(c) {
     // Both are in the SAME unit (GATEWAY_WEI_PER_STEP a token), so one price per token bills a call at exactly what it
     // cost: fee = output_tokens x wei_per_token, gas = input_tokens x wei_per_token, and nothing is left behind.
     // Nothing is billed for a call that did not complete (ai.gg drops all-zero usage).
-    usage: { input_tokens: done ? gasTokensOf(c) : 0, output_tokens: done ? tokensOf(c) : 0, total_tokens: done ? gasTokensOf(c) + tokensOf(c) : 0, input_tokens_details: { cached_tokens: 0 } }, error: c.error, receipt: c.receipt, executors: c.executors };
+    usage: { input_tokens: done ? gasTokensOf(c) : 0, output_tokens: done ? tokensOf(c) : 0, total_tokens: done ? gasTokensOf(c) + tokensOf(c) : 0, input_tokens_details: { cached_tokens: 0 } }, protocol_expenses:{admission_fee_wei:admissionExpense(c),admission_refundable:false,failed_call_payer:"gateway"}, error: c.error, receipt: c.receipt, executors: c.executors };
 }
 // the work, in tokens: steps x redundancy x the brain's factor x the stimulus set's. A call whose fee carries a factor
 // its token count does not is a call the gateway pays for out of its own pocket.
 const tokensOf = (c) => c.price?.output_tokens ?? c.task.steps * c.task.redundancy;
-const gasTokensOf = (c) => c.receipt?.gas?.tokens ?? 0;
+const admissionTokensOf=c=>Number((BigInt(c.admission_fee_wei||0)+cfg.weiPerStep-1n)/cfg.weiPerStep);
+const gasTokensOf = (c) => (c.receipt?.gas?.tokens ?? 0)+admissionTokensOf(c);
 const done = (c) => new Promise((res) => { if (TERMINAL.has(c.status)) return res(); const b = bus.get(c.id); if (!b) return res(); const on = (ev) => { if (ev.type === "response.completed" || ev.type === "response.failed") { b.off("event", on); res(); } }; b.on("event", on); });
 
 // ---- HTTP ----
@@ -470,7 +499,7 @@ const server = http.createServer(async (req, res) => {
       const abort = new AbortController(); res.on("close", () => abort.abort(new Refusal(499, "request_cancelled", "caller disconnected before posting")));
       const c = await create(await prepare({ ...b, input: b.messages, background: false }, { signal: abort.signal }), b); start(c, abort.signal); await done(c); if (c.status !== "completed") return json(res, c.error.status, { error: c.error, receipt: c.receipt, id: c.id });
       const v = view(c); return json(res, 200, { id: c.id, object: "chat.completion", created: c.created_at, model: c.model, system_fingerprint: v.system_fingerprint, choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: v.output[0].content[0].text } }],
-        usage: { prompt_tokens: 0, completion_tokens: v.usage.output_tokens, total_tokens: v.usage.output_tokens }, receipt: c.receipt });
+        usage: { prompt_tokens: v.usage.input_tokens, completion_tokens: v.usage.output_tokens, total_tokens: v.usage.total_tokens }, receipt: c.receipt });
     }
     json(res, 404, { error: { type: "not_found", message: "not found" } });
   } catch (err) { if (res.headersSent) return res.end(); if (err instanceof Refusal || err instanceof CapacityError) return refuse(res, err); log("error:", err); json(res, 500, { error: { type: "gateway_error", message: String(err?.message || err).slice(0, 300) } }); }
@@ -479,7 +508,7 @@ server.listen(cfg.port, cfg.host, () => {
   const url = `http://${cfg.host}:${server.address().port}`; log(`gateway on ${url} · wallet ${ME} · chain ${dep.chainId} market ${market} · min redundancy ${cfg.minRedundancy} · ${cfg.weiPerStep} wei/step`);
   // a call that was cut off by a restart: a posted one is driven on (its fee is spent), an unposted one cost nothing and is dropped
   (async () => { for (const c of calls.values()) if (!TERMINAL.has(c.status)) {
-    const posted = c.post_tx || (await executorsOf(c.id)).length > 0; // the id is the task's: the chain knows, whatever the file had time to record
+    const posted = c.post_tx || (VRF ? (await readMarket("tasks",[c.id]))[5] : (await executorsOf(c.id)).length > 0); // the id is the task's: the chain knows, whatever the file had time to record
     if (!posted) fail(c, 500, "gateway_restarted", "the gateway restarted before the task was posted: nothing was spent"); else { log(`resuming ${c.id.slice(0, 12)}…`); start(c); } } })();
   if (process.send) process.send({ url, wallet: ME });
 });

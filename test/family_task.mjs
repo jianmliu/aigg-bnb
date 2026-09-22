@@ -38,3 +38,9 @@ test('batch family limit is 64 before recipe download',async()=>{
  await assert.rejects(createFamilyResolver(f.opts)(f.env),/batch/);assert.equal(f.downloads(),0);
  f.values.batchRuns=64;f.env.payload.runs.pop();await createFamilyResolver(f.opts)(f.env);assert.equal(f.downloads(),1);
 });
+test('delayed VRF assignment uses session commit deadline instead of posting-time lease',async()=>{
+ const f=fixture();f.opts.deployment.verification={mode:'synchronous-vrf-v1'};f.opts.client.getBlockNumber=async()=>200n;f.values.sessionState=[1,210n,220n,300n];
+ assert.equal((await createFamilyResolver(f.opts)(f.env)).mep.mepId,child);
+ f.values.sessionState=[6,0n,0n,300n];await assert.rejects(createFamilyResolver(f.opts)(f.env),/committing/);
+ f.values.sessionState=[1,199n,220n,300n];await assert.rejects(createFamilyResolver(f.opts)(f.env),/expired/);
+});

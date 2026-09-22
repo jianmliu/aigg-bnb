@@ -74,7 +74,7 @@ function ensureWorker() {
 const ask = (op, data = {}, transfer = []) => new Promise((res, rej) => { const reqId = nextReq++; waiting.set(reqId, { res, rej }); ensureWorker().postMessage({ op, reqId, ...data }, transfer); });
 /** a task the node answered over the relay: the page is what talks to the relayer's API */
 async function onTaskResult(res) {
-  if (state.deployment?.verification?.mode === "synchronous-v1") throw new Error("legacy result delivery is forbidden for synchronous sessions");
+  if (["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) throw new Error("legacy result delivery is forbidden for synchronous sessions");
   const r = runningRelayer ? await (await fetch(runningRelayer + "/tx/result", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(res)})).json() : await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
   log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
 }
@@ -366,10 +366,10 @@ export async function hostOnNode(m) {
   // The TERMS, when the brain is an individual of a collection: its mep id is keccak(profile, beneficiary, bps) and
   // the terms are nowhere in the bytes, so a host that is not told them serves an id the chain never draws.
   const terms = m.royaltyBps > 0 && m.beneficiary ? { beneficiary: m.beneficiary, royaltyBps: m.royaltyBps } : null;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, baseMepId: m.baseMepId || null, terms, family: (familyMode || state.deployment?.verification?.mode === "synchronous-v1") && !m.baseMepId }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, baseMepId: m.baseMepId || null, terms, family: (familyMode || ["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
   if (!r.matches) { log(`WARNING ${mepName(m)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
-  if ((familyMode || state.deployment?.verification?.mode === "synchronous-v1") && !m.baseMepId) runningFamilies.set(m.mepId, { ...m, maxSteps,
+  if ((familyMode || ["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId) runningFamilies.set(m.mepId, { ...m, maxSteps,
     nameBytes: new TextEncoder().encode(state.loaded[m.mepId].name).length });
   log(`${mepName(m)}: resident on the node, serving audits and tasks`);
 }
@@ -391,9 +391,9 @@ async function configureSynchronousHost(identity,k) {
 }
 export async function startNode() {
   const verificationMode=state.deployment?.verification?.mode || 'legacy';
-  if (!['legacy','synchronous-v1'].includes(verificationMode)) throw new Error('Unsupported verification capability');
+  if (!['legacy','synchronous-v1','synchronous-vrf-v1'].includes(verificationMode)) throw new Error('Unsupported verification capability');
   if (state.node) throw new Error('The node is already running');
-  const synchronous=verificationMode==='synchronous-v1';
+  const synchronous=['synchronous-v1','synchronous-vrf-v1'].includes(verificationMode);
   if(synchronous) {state.synchronousSession={phase:'reconciling',safeToClose:false};onChange();}
   if (!state.delegation) throw new Error("delegate first");
   const ready = [...state.hosted].filter((id) => state.prepared.has(id));
@@ -515,7 +515,7 @@ export const armSynchronousSession = async () => {if(!synchronousHost)throw Erro
 export const drainSynchronousSession = async () => {if(!synchronousHost)throw Error('Start the synchronous host first');await synchronousHost.readiness(false);};
 export const resumeSynchronousSession = async () => {
   if(synchronousHost){try{if(!synchronousHost.initialized)await synchronousHost.start();else await synchronousHost.tick();}finally{startSynchronousPolling();}return;}
-  if(state.deployment?.verification?.mode!=='synchronous-v1'||!state.delegation)throw Error('Connect and delegate the saved session key before recovery');
+  if(!['synchronous-v1','synchronous-vrf-v1'].includes(state.deployment?.verification?.mode)||!state.delegation)throw Error('Connect and delegate the saved session key before recovery');
   const identity=Object.freeze({instance:state.delegation.instance,chainId:state.deployment.chainId,market:state.deployment.addresses.market,familyHosting:!!state.deployment.familyHosting});
   const k=sessionKey();runningRelayer=relayer();
   await ask('init',{privHex:hex(k.priv),domains:state.deployment.domains,delegation:state.delegation});
@@ -524,4 +524,4 @@ export const resumeSynchronousSession = async () => {
   await configureSynchronousHost(identity,k);
   setInterval(()=>loop().catch(e=>log('loop error: '+e.message)),3000);onChange();
 };
-window.addEventListener?.('beforeunload',event=>{if(state.deployment?.verification?.mode==='synchronous-v1'&&state.node&&!state.synchronousSession?.safeToClose){event.preventDefault();event.returnValue='Verification is still pending.';}});
+window.addEventListener?.('beforeunload',event=>{if(['synchronous-v1','synchronous-vrf-v1'].includes(state.deployment?.verification?.mode)&&state.node&&!state.synchronousSession?.safeToClose){event.preventDefault();event.returnValue='Verification is still pending.';}});

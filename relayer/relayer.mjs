@@ -1,3 +1,4 @@
+import {admissionCapability} from './vrf-admission.mjs';
 import { capacityReader } from './capacity.mjs';
 import {ReadCache,UnboundBackoff,ensureAggregator,mapBounded} from './rpc-budget.mjs';
 import { servesTaskMep, enrollmentMetadata, reconcileEnrollmentBases, familyHostingEnabled } from './enrollment.mjs';
@@ -36,9 +37,10 @@ if (!dep) throw new Error("no deployment: source the .env.<network> from deploy.
 dep.rpc = process.env.PORW_RPC || cfg.rpc || dep.rpc; if (!dep.rpc) throw new Error("PORW_RPC (or config.rpc) required");
 if (!cfg.privateKey) throw new Error("PORW_RELAYER_KEY (or config.privateKey) required"); if (!(cfg.meps && cfg.meps.length) && !dep.addresses.whitelist) throw new Error("nothing to serve: PORW_MEP_IDS (or config.meps) and/or PORW_WHITELIST required");
 const ch = clients(dep, cfg.privateKey); const domains = eip712Domains(dep);
-const SYNCHRONOUS = await verifyDeployment(dep,()=>ch.market.read.protocolVersion());
+const SYNCHRONOUS = await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion());
 if(SYNCHRONOUS&&!ch.disputes)throw Error("synchronous deployment requires disputes address");
 const SYNC_WINDOWS=SYNCHRONOUS?{commitBlocks:String(await ch.market.read.COMMIT_BLOCKS()),revealBlocks:String(await ch.market.read.REVEAL_BLOCKS()),disputeBlocks:String(await ch.market.read.DISPUTE_BLOCKS()),totalBlocks:String(await ch.market.read.TASK_TIMEOUT())}:{};
+const VRF_CAPABILITY=await admissionCapability(ch);
 const FAMILY_HOSTING = await familyHostingEnabled(ch, dep.addresses.meps);
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const hex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""); const unhex = (s) => Uint8Array.from(s.slice(2).match(/../g).map((h) => parseInt(h, 16)));
@@ -361,7 +363,7 @@ const readProviderModels = providerModelReader(ch, meps,{verificationSupport:SYN
 api.on("request", async (req, res) => {
   try {
     const u = new URL(req.url, "http://x"); if (req.method === "OPTIONS") return json(res, 204, {});
-    if (u.pathname === "/deployment") return json(res, 200, { ...dep, verification: {mode:SYNCHRONOUS?"synchronous-v1":"legacy",...(SYNCHRONOUS?{...SYNC_WINDOWS,sponsorship:{configured:SYNC_SPONSOR_CONFIGURED,minimumEpochGas:160000000,minimumDayGas:350000000,reserveGas:350000000,epochGasLimit:SPONSOR_EPOCH_GAS,dayGasLimit:SPONSOR_DAY_GAS},sessionEndpoint:"/sync/session",pendingEndpoint:"/sync/pending",confirmations:Number(process.env.PORW_SYNC_CONFIRMATIONS||2)}:{})}, familyHosting: FAMILY_HOSTING, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
+    if (u.pathname === "/deployment") return json(res, 200, { ...dep, verification: {mode:dep.verification?.mode??"legacy",...(SYNCHRONOUS?{...SYNC_WINDOWS,...VRF_CAPABILITY,totalBlocks:String(BigInt(SYNC_WINDOWS.totalBlocks)+BigInt(VRF_CAPABILITY.randomnessWaitBlocks||0)+BigInt(VRF_CAPABILITY.activationBlocks||0)),sponsorship:{configured:SYNC_SPONSOR_CONFIGURED,minimumEpochGas:160000000,minimumDayGas:350000000,reserveGas:350000000,epochGasLimit:SPONSOR_EPOCH_GAS,dayGasLimit:SPONSOR_DAY_GAS},sessionEndpoint:"/sync/session",pendingEndpoint:"/sync/pending",confirmations:Number(process.env.PORW_SYNC_CONFIRMATIONS||2)}:{})}, familyHosting: FAMILY_HOSTING, capacity: { endpoint: "/capacity", browserSlots: 1 }, taskClients: TASK_CLIENTS ? [...TASK_CLIENTS] : null, relay: publicRelayUrl, relayer: ch.account.address, domains, epochBlocks: EPOCH_BLOCKS, claimValidityEpochs: CLAIM_VALIDITY, challenge: CHALLENGE, brainMirrors: cfg.brainMirrors || [], meps: [...meps.keys()] });
     if(req.method==="GET"&&u.pathname.startsWith("/sync/")) {
       if(!readSync)return json(res,409,{error:"synchronous verification is not enabled"});
       try{if(u.pathname==="/sync/session")return json(res,200,await readSync.session(u.searchParams.get("taskId")));
@@ -396,7 +398,7 @@ api.on("request", async (req, res) => {
     const b = await body(req);
     if(u.pathname.startsWith("/tx/sync/")) {
       if(!SYNCHRONOUS)return json(res,409,{error:"synchronous verification is not enabled"});
-      let action;try{const kind=u.pathname.slice("/tx/sync/".length);action=kind==="finalize"?await prepareSyncFinalize(dep,b,ch):await prepareSyncMutation(kind,b,ch);}catch(e){return json(res,400,{error:String(e.shortMessage||e.message).slice(0,200)});}
+      let action;try{const kind=u.pathname.slice("/tx/sync/".length);action=["finalize","allocate"].includes(kind)?await prepareSyncFinalize(dep,b,ch,kind):await prepareSyncMutation(kind,b,ch);}catch(e){return json(res,400,{error:String(e.shortMessage||e.message).slice(0,200)});}
       const {instance,contract,functionName,args,taskId}=action;
       if(functionName==='setReadyBySig'&&b.ready===true){
         const [balance,gasPrice]=await Promise.all([ch.pub.getBalance({address:ch.account.address}),ch.pub.getGasPrice()]);

@@ -2,6 +2,8 @@
 
 Implementation: `SynchronousTaskMarket` / `SynchronousExecutionDisputes`, capability `verification.mode = synchronous-v1`. These are separate contracts, not upgrades of legacy task markets. Deployment activation must be recorded separately; source code alone does not change a live host's obligations.
 
+The optional [`synchronous-vrf-v1` admission mode](VRF_ASSIGNMENT.md) locks the task and admitted candidate pool before requesting fresh VRF randomness. It adds a bounded waiting phase and a separate nonrefundable admission fee. It requires a new market and funded subscription; it does not change the existing live deployment automatically.
+
 ## What completion means
 
 A host explicitly accepts **one** assignment. Assignment consumes readiness. Two assigned hosts independently execute, privately persist their results and random salts, and submit commitments before either result can be revealed. Matching roots and digests complete the task. Different roots immediately start the proof game inside the same session. Equal roots with conflicting digests end inconclusively. Agreement and adjudication rely on an independently administered honest executor; two wallets alone do not provide that independence or a standalone validity proof.

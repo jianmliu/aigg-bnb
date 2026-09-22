@@ -81,7 +81,8 @@ contract SynchronousTaskMarket {
         Revealing,
         Disputing,
         Completed,
-        Inconclusive
+        Inconclusive,
+        AwaitingRandomness
     }
 
     struct StoredTask {
@@ -103,12 +104,24 @@ contract SynchronousTaskMarket {
         uint64 totalDeadline;
     }
     mapping(bytes32 => StoredTask) public tasks;
-    mapping(bytes32 => Session) private sessions;
-    mapping(bytes32 => address[]) private chosen;
-    mapping(address => bool) public ready;
+    mapping(bytes32 => Session) internal sessions;
+    mapping(bytes32 => address[]) internal chosen;
+    mapping(address => bool) internal _readyValues;
+
+    function ready(address host) public view virtual returns (bool) {
+        return _readyValues[host];
+    }
     mapping(address => address) public readinessSigner;
-    mapping(address => uint256) public readinessNonce;
-    mapping(address => bytes32) public pendingTask;
+    mapping(address => uint256) internal _readinessNonce;
+
+    function readinessNonce(address host) public view virtual returns (uint256) {
+        return _readinessNonce[host];
+    }
+    mapping(address => bytes32) internal _pendingTask;
+
+    function pendingTask(address host) public view virtual returns (bytes32) {
+        return _pendingTask[host];
+    }
     mapping(bytes32 => mapping(address => bytes32)) public commitments;
     mapping(bytes32 => mapping(address => bool)) public submitted;
     mapping(bytes32 => mapping(address => ITaskMarket.Result)) private results;
@@ -208,24 +221,24 @@ contract SynchronousTaskMarket {
 
     function setReady(bool value) external {
         address host = instances.resolve(msg.sender);
-        _authorize(host, msg.sender, value ? uint64(block.number) + TASK_TIMEOUT : uint64(block.number));
+        _authorize(host, msg.sender, value ? uint64(block.number) + _sessionWindow() : uint64(block.number));
         readinessSigner[host] = msg.sender;
         _ready(host, value);
     }
 
     function setReadyBySig(address host, bool value, uint64 expiry, uint256 nonce, bytes calldata signature) external {
-        require(block.number <= expiry && nonce == readinessNonce[host], InvalidSession());
+        require(block.number <= expiry && nonce == readinessNonce(host), InvalidSession());
         address signer = PorwEIP712.recover(readinessDigest(host, value, expiry, nonce), signature);
-        _authorize(host, signer, value ? uint64(block.number) + TASK_TIMEOUT : uint64(block.number));
+        _authorize(host, signer, value ? uint64(block.number) + _sessionWindow() : uint64(block.number));
         readinessSigner[host] = signer;
         _ready(host, value);
     }
 
-    function _ready(address host, bool value) private {
-        require(!value || pendingTask[host] == bytes32(0), InvalidSession());
-        ready[host] = value;
-        readinessNonce[host]++;
-        emit ReadinessChanged(host, value, readinessNonce[host]);
+    function _ready(address host, bool value) internal virtual {
+        require(!value || pendingTask(host) == bytes32(0), InvalidSession());
+        _readyValues[host] = value;
+        _readinessNonce[host]++;
+        emit ReadinessChanged(host, value, readinessNonce(host));
     }
 
     function _authorize(address host, address signer, uint64 through) private view {
@@ -312,7 +325,8 @@ contract SynchronousTaskMarket {
             (address beneficiary, uint16 bps) = meps.termsOf(t.mepId);
             require(bps == 0 || beneficiary.code.length == 0 || tokenBeneficiaryAllowed[beneficiary], InvalidSession());
         }
-        require(msg.value == (token == address(0) ? t.fee : 0), InvalidSession());
+        uint256 charged = _charge(token, t.fee);
+        require(msg.value == (token == address(0) ? charged : 0), InvalidSession());
         require(t.steps > 0 && t.commitStride > 0 && t.commitStride <= t.steps, InvalidSession());
         IMEPRegistry.MEP memory m = meps.getMEP(t.mepId);
         bool lif = meps.lifWeightUnit(m.execKind) != 0;
@@ -327,29 +341,48 @@ contract SynchronousTaskMarket {
         );
         require(runs == 0 || (lif && runs <= MAX_RUNS && t.stimulusSeed == 0), InvalidSession());
         require(DISPUTE_BLOCKS >= minimumDisputeBlocks(m.neurons, runs, lif), InvalidSession());
-        uint64 total = uint64(block.number) + TASK_TIMEOUT;
+        uint64 total = uint64(block.number) + _sessionWindow();
         require(t.deadline == 0 || t.deadline >= total, InvalidSession());
         id = taskId(t, token, nonce, runs, client);
         require(!tasks[id].exists, InvalidSession());
         uint64 epoch = claimManager.currentEpoch();
+        tasks[id] = StoredTask(t, client, epoch, uint64(block.number), 0, true, false, false, false);
+        paymentToken[id] = token;
+        batchRuns[id] = runs;
+        hasPostedTask = true;
+        _admit(id, token, epoch, total);
+        if (token != address(0)) TokenTransfer.pull(token, client, address(this), charged);
+        emit TaskPosted(id, t.mepId, 2);
+        emit TaskAsset(id, token, t.fee);
+        if (runs > 0) emit BatchPosted(id, runs, t.initStateRoot);
+        emit SessionDeadlines(id, sessions[id].commitDeadline, sessions[id].revealDeadline, total);
+    }
+
+    function _sessionWindow() internal view virtual returns (uint64) {
+        return TASK_TIMEOUT;
+    }
+
+    function _charge(address, uint256 fee) internal virtual returns (uint256) {
+        return fee;
+    }
+
+    function _admit(bytes32 id, address token, uint64 epoch, uint64 total) internal virtual {
         bytes32 beacon = claimManager.beacon(epoch);
         require(beacon != bytes32(0), InvalidSession());
-        tasks[id] = StoredTask(t, client, epoch, uint64(block.number), 0, true, false, false, false);
         sessions[id] = Session(
             Status.Committing,
             uint64(block.number) + COMMIT_BLOCKS,
             uint64(block.number) + COMMIT_BLOCKS + REVEAL_BLOCKS,
             total
         );
-        paymentToken[id] = token;
-        batchRuns[id] = runs;
-        hasPostedTask = true;
-        uint256 len = instances.enrolled(t.mepId);
+        uint256 len = instances.enrolled(tasks[id].t.mepId);
         require(len > 0, InvalidSession());
         for (uint32 j; j < 128 && chosen[id].length < 2; j++) {
-            address h = instances.sortitionPick(t.mepId, epoch, len, PorwMeshHash.sortition(beacon, t.mepId, id, j));
+            address h = instances.sortitionPick(
+                tasks[id].t.mepId, epoch, len, PorwMeshHash.sortition(beacon, tasks[id].t.mepId, id, j)
+            );
             if (
-                h == address(0) || !ready[h] || pendingTask[h] != bytes32(0)
+                h == address(0) || !ready(h) || pendingTask(h) != bytes32(0)
                     || (token != address(0) && !acceptedToken[h][token])
             ) {
                 continue;
@@ -361,19 +394,14 @@ contract SynchronousTaskMarket {
                 if (end < total) continue;
             }
             if (!hostCapacity.reserve(id, h, total)) continue;
-            ready[h] = false;
-            readinessNonce[h]++;
-            pendingTask[h] = id;
+            _readyValues[h] = false;
+            _readinessNonce[h]++;
+            _pendingTask[h] = id;
             chosen[id].push(h);
             instances.hold(h);
-            emit ReadinessChanged(h, false, readinessNonce[h]);
+            emit ReadinessChanged(h, false, _readinessNonce[h]);
         }
         require(chosen[id].length == 2, InvalidSession());
-        if (token != address(0)) TokenTransfer.pull(token, client, address(this), t.fee);
-        emit TaskPosted(id, t.mepId, 2);
-        emit TaskAsset(id, token, t.fee);
-        if (runs > 0) emit BatchPosted(id, runs, t.initStateRoot);
-        emit SessionDeadlines(id, sessions[id].commitDeadline, sessions[id].revealDeadline, total);
     }
 
     function sessionState(bytes32 id) external view returns (uint8, uint64, uint64, uint64) {
@@ -447,7 +475,7 @@ contract SynchronousTaskMarket {
         Session storage s = sessions[id];
         require(s.state == Status.Committing && block.number <= s.commitDeadline, InvalidSession());
         require(
-            pendingTask[host] == id && id != bytes32(0) && commitment != bytes32(0)
+            pendingTask(host) == id && id != bytes32(0) && commitment != bytes32(0)
                 && commitments[id][host] == bytes32(0),
             InvalidSession()
         );
@@ -468,7 +496,7 @@ contract SynchronousTaskMarket {
     ) external guard {
         Session storage s = sessions[id];
         require(s.state == Status.Revealing && block.number <= s.revealDeadline, InvalidSession());
-        require(pendingTask[host] == id && id != bytes32(0) && !submitted[id][host], InvalidSession());
+        require(pendingTask(host) == id && id != bytes32(0) && !submitted[id][host], InvalidSession());
         require(commitments[id][host] == resultCommitment(id, host, r.execDigest, r.execRoot, salt), InvalidSession());
         _authorize(
             host, PorwEIP712.recover(resultDigest(id, host, r.execDigest, r.execRoot), signature), s.totalDeadline
@@ -492,7 +520,7 @@ contract SynchronousTaskMarket {
         }
     }
 
-    function expire(bytes32 id) external {
+    function expire(bytes32 id) public virtual {
         Session storage s = sessions[id];
         if (s.state == Status.Disputing) {
             ISynchronousDisputes(disputes).timeout(id);
@@ -510,15 +538,15 @@ contract SynchronousTaskMarket {
         require(msg.sender == disputes && sessions[id].state == Status.Disputing, InvalidSession());
         if (winner != address(0)) {
             require(
-                block.number <= sessions[id].totalDeadline && winner != loser && pendingTask[winner] == id
-                    && pendingTask[loser] == id,
+                block.number <= sessions[id].totalDeadline && winner != loser && pendingTask(winner) == id
+                    && pendingTask(loser) == id,
                 InvalidSession()
             );
         }
         _close(id, winner, true);
     }
 
-    function _close(bytes32 id, address winner, bool adjudicated) private {
+    function _close(bytes32 id, address winner, bool adjudicated) internal {
         StoredTask storage t = tasks[id];
         Session storage s = sessions[id];
         require(!t.settled && t.exists, InvalidSession());
@@ -551,14 +579,18 @@ contract SynchronousTaskMarket {
             settledRef[id] = winner;
             paidExecutors[id] = uint8(n);
         }
+        _release(id);
+        emit TaskSettled(id, settledDigest[id], paid);
+        emit SessionClosed(id, uint8(s.state), settledDigest[id]);
+    }
+
+    function _release(bytes32 id) internal virtual {
         for (uint256 j; j < 2; j++) {
             address h = chosen[id][j];
-            delete pendingTask[h];
+            delete _pendingTask[h];
             instances.release(h);
             hostCapacity.release(id, h);
         }
-        emit TaskSettled(id, settledDigest[id], paid);
-        emit SessionClosed(id, uint8(s.state), settledDigest[id]);
     }
 
     function _creditRoyalty(bytes32 mepId, address token, address beneficiary, uint256 amount) private returns (bool) {

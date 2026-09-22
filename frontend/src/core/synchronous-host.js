@@ -1,3 +1,4 @@
+import {admissionAction} from '../../../relayer/vrf-admission.mjs';
 import {hashMessage} from 'viem';
 import {SynchronousSession,SynchronousJournal} from './synchronous-session.js';
 import {createSynchronousChain,encodeSynchronousProof} from './synchronous-chain.js';
@@ -27,9 +28,9 @@ export class SynchronousHost {
  }
  async send(kind,payload){
   if(kind==='reveal')payload={taskId:payload.taskId,instance:payload.instance,...payload.result,salt:payload.salt,signature:payload.resultSignature};
-  if(kind==='finalize'){
+  if(kind==='finalize'||kind==='allocate'){
    const head=await this.chain.client.getBlockNumber({cacheTime:0});payload={...payload,instance:this.instance,expiry:String(head+128n)};
-   const message=`PoRW synchronous expiry\nchain:${this.deployment.chainId}\nmarket:${this.deployment.addresses.market.toLowerCase()}\ntask:${payload.taskId.toLowerCase()}\ninstance:${this.instance.toLowerCase()}\nexpiry:${payload.expiry}`;
+   const message=`PoRW synchronous ${kind==='allocate'?'allocation':'expiry'}\nchain:${this.deployment.chainId}\nmarket:${this.deployment.addresses.market.toLowerCase()}\ntask:${payload.taskId.toLowerCase()}\ninstance:${this.instance.toLowerCase()}\nexpiry:${payload.expiry}`;
    payload.signature=await this.sign(hashMessage(message));
   }
   return this.transport(kind,payload);
@@ -78,8 +79,9 @@ export class SynchronousHost {
     if(this.session.snapshot?.revealed){const r=this.session.record;await this.ask('syncExecute',{taskId:r.taskId,manifest:r.manifest,expectedResult:r.result});await this.ask('syncPublish',{taskId:r.taskId,signature:r.resultSignature,confirmedReveal:true});}
    }
    else{
-    const p=await this.chain.pending(),pendingAuthorization=(this.idleRecord?.readiness||[]).some(r=>BigInt(r.nonce)>=p.nonce);this.session.update(nonzero(p.taskId)?'waiting for task manifest':p.ready?'waiting for assignment':'idle',{
-     ready:p.ready,pendingTask:p.taskId,confirmedBlock:p.blockNumber,safeToClose:!pendingAuthorization&&!p.ready&&!nonzero(p.taskId),error:null});
+    const p=await this.chain.pending(),pendingAuthorization=(this.idleRecord?.readiness||[]).some(r=>BigInt(r.nonce)>=p.nonce);this.session.update(p.phase===6?'awaiting randomness':nonzero(p.taskId)?'waiting for task manifest':p.ready?'waiting for assignment':'idle',{
+     ready:p.ready,pendingTask:p.taskId,taskId:nonzero(p.taskId)?p.taskId:undefined,admission:p.admission,totalDeadline:p.admission?.maxSessionEnd,confirmedBlock:p.blockNumber,safeToClose:!pendingAuthorization&&!p.ready&&!nonzero(p.taskId),error:null});
+    if(p.phase===6&&p.admission){const action=admissionAction(p.admission,p.blockNumber);if(action)await this.send(action==='expire'?'finalize':'allocate',{taskId:p.taskId});}
    }
   }catch(error){this.session.update('reconciling',{error:error.message,safeToClose:false});throw error;}
  }

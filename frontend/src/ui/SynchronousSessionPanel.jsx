@@ -13,6 +13,8 @@ export default function SynchronousSessionPanel() {
     <p className="hint">{view.detail}</p>
     {session?.taskId && <p className="hint">Task {session.taskId.slice(0,18)}…</p>}
     {session?.totalDeadline && <p className="hint">Final deadline: block {String(session.totalDeadline)}. Network block times vary.</p>}
+    {session?.admission && <p className="hint">Randomness deadline: block {session.admission.randomnessDeadline}. Candidates: {session.admission.candidateCount}. {session.admission.fulfilledAt!=='0' && `Allocation deadline: block ${session.admission.allocationDeadline}.`}</p>}
+    {s.deployment?.verification?.mode==='synchronous-vrf-v1' && <p className="hint">Readiness lasts up to {s.deployment.verification.readyTtlBlocks} blocks. Each draw reserves the eligible ready pool; hosts not selected must explicitly accept another task. Clients pay a separate nonrefundable admission fee.</p>}
     <p id="synchronous-close-status">{view.safe?'No pending session or new assignment permission. You can close this page.':'Do not close yet: task or readiness reconciliation is still pending.'}</p>
     <div className="row tight center">
       <Button id="sync-arm" disabled={!connected || !s.node || !session || !!session.error || pending || session.ready || session.draining} onClick={C.wrap(C.armSynchronousSession)}>Accept one task</Button>

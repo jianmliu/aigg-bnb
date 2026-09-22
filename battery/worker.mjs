@@ -11,7 +11,8 @@ const {PorwNode}=await porw('node.js'),{loadKernelFromBytes}=await porw('porw.js
 const abi=name=>JSON.parse(fs.readFileSync(path.join(root,`contracts/out/${name}.sol/${name}.json`))).abi;
 const need=k=>{if(!process.env[k])throw Error(`${k} required`);return process.env[k];};
 const dep=JSON.parse(fs.readFileSync(need('BATTERY_DEPLOYMENT'))),factory=need('BATTERY_BUDGET'),ch=clients(dep,need('BATTERY_KEY'));
-const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion());
+if(dep.verification?.mode==='synchronous-vrf-v1')throw Error('Battery budgets do not yet escrow VRF admission fees; VRF battery posting is disabled');
+const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion());
 const raw=fs.readFileSync(need('BATTERY_SPEC')),spec=JSON.parse(raw),versionHash=keccak256(raw),batch=batteryBatch(spec),runs=resolvedRuns(batch);
 const dirs=path.resolve(need('BATTERY_STATE')),models=path.resolve(need('BATTERY_MODELS'));
 const tokenMode=process.env.BATTERY_ASSET_MODE==='token';
