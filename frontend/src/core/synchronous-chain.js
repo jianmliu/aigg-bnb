@@ -1,9 +1,13 @@
+import {VrfAdmissionAbi,normalizeAdmission} from '../../../relayer/vrf-admission.mjs';
+import {unsupportedGetter} from '../../../relayer/enrollment.mjs';
 import {createPublicClient,http,parseAbi,encodeFunctionData,keccak256} from 'viem';
 export const SynchronousMarketAbi=parseAbi([
  'struct Result { bytes32 execDigest; bytes32 execRoot; }',
  'function executors(bytes32) view returns (address[])',
  'function submitted(bytes32,address) view returns (bool)',
  'function protocolVersion() view returns (uint256)',
+ 'function admissionVersion() view returns (uint256)',
+ 'function admission() view returns (address)',
  'function sessionState(bytes32) view returns (uint8 state,uint64 commitDeadline,uint64 revealDeadline,uint64 totalDeadline)',
  'function setReadyBySig(address host,bool ready,uint64 expiry,uint256 nonce,bytes sig)',
  'function readinessDigest(address host,bool ready,uint64 expiry,uint256 nonce) view returns (bytes32)',
@@ -36,7 +40,8 @@ export const SynchronousDisputeAbi=parseAbi([
 
 // Finalized snapshots are read from the configured RPC, never the sponsored transport.
 export function createSynchronousChain({deployment,instance,client}) {
- if(deployment.verification?.mode!=='synchronous-v1')throw Error('unsupported synchronous capability');
+ if(!['synchronous-v1','synchronous-vrf-v1'].includes(deployment.verification?.mode))throw Error('unsupported synchronous capability');
+ const vrf=deployment.verification.mode==='synchronous-vrf-v1';
  client ||= createPublicClient({transport:http(deployment.rpc,{retryCount:1,timeout:15000})});
  const market=deployment.addresses.market,disputes=deployment.addresses.disputes;
  const read=(functionName,args=[],blockNumber,address=market,abi=SynchronousMarketAbi)=>client.readContract({address,abi,functionName,args,...(blockNumber!==undefined?{blockNumber}:{})});
@@ -45,9 +50,18 @@ export function createSynchronousChain({deployment,instance,client}) {
   const block=await client.getBlock({blockTag:'finalized'});
   if(block.number===null||!block.hash)throw Error('finalized chain snapshot unavailable');
   if(Number(await read('protocolVersion',[],block.number))!==1)throw Error('synchronous protocol version mismatch');
+  let version=1;try{const v=await read('admissionVersion',[],block.number);if(v!==undefined)version=Number(v);}catch(error){if(!unsupportedGetter(error))throw error;}
+  if(version!==(vrf?2:1))throw Error('synchronous admission version mismatch');
   return block;
  };
- const pending=async()=>{const block=await finalized();const [taskId,ready,nonce]=await Promise.all([read('pendingTask',[instance],block.number),read('ready',[instance],block.number),read('readinessNonce',[instance],block.number)]);return {taskId,ready,nonce,blockNumber:block.number,confirmed:true};};
+ const pending=async()=>{const block=await finalized();const [taskId,ready,nonce]=await Promise.all([read('pendingTask',[instance],block.number),read('ready',[instance],block.number),read('readinessNonce',[instance],block.number)]);let phase,admission;
+  if(vrf&&!/^0x0{64}$/.test(taskId)){
+   phase=Number((await read('sessionState',[taskId],block.number))[0]);
+   const controller=await read('admission',[],block.number);
+   admission=normalizeAdmission(await read('requestInfo',[taskId],block.number,controller,VrfAdmissionAbi));
+  }
+  const check=await client.getBlock({blockNumber:block.number});if(check.hash!==block.hash)throw Error('chain reorganized during pending reconciliation');
+  return {taskId,ready,nonce,phase,admission,blockNumber:block.number,confirmed:true};};
  const snapshot=async record=>{
   const block=await finalized(),b=block.number,id=record.taskId;
   const [session,pendingTask,ready,commitment,revealed,executors,readinessNonce]=await Promise.all([read('sessionState',[id],b),read('pendingTask',[instance],b),read('ready',[instance],b),read('commitments',[id,instance],b),read('submitted',[id,instance],b),read('executors',[id],b),read('readinessNonce',[instance],b)]);

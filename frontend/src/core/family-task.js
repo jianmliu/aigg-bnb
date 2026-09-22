@@ -7,6 +7,7 @@ const abi = parseAbi([
  'function tasks(bytes32) view returns (Task,address,uint64,uint64,uint64,bool,bool,bool,bool)',
  'function executors(bytes32) view returns (address[])', 'function submitted(bytes32,address) view returns (bool)',
  'function batchRuns(bytes32) view returns (uint32)', 'function TASK_TIMEOUT() view returns (uint64)',
+ 'function sessionState(bytes32) view returns (uint8,uint64,uint64,uint64)',
  'function enrollmentMep(bytes32) view returns (bytes32)', 'function baseOf(bytes32) view returns (bytes32)',
  'function getMEP(bytes32) view returns (MEP)', 'function termsOf(bytes32) view returns (address,uint16)',
  'function lifWeightUnit(bytes32) view returns (uint32)',
@@ -86,7 +87,9 @@ export function createFamilyResolver({ deployment, instance, families, sp='', cl
    ]);
    const [task,,,postedAt,,exists,settled,disputed]=stored;
    assert(exists && !settled && !disputed && !submitted,'task is not open for execution');
-   assert(blockNumber<=postedAt+timeout,'task execution lease expired');
+   if(['synchronous-v1','synchronous-vrf-v1'].includes(deployment.verification?.mode)){
+    const state=await read(market,'sessionState',[p.taskId]);assert(Number(state[0])===1,'task is not committing');assert(blockNumber<=BigInt(state[1]),'task execution lease expired');
+   }else assert(blockNumber<=postedAt+timeout,'task execution lease expired');
    assert(executors.some(x=>same(x,instance)),'host was not assigned this task');
    assert(same(task.mepId,env.mepId),'task MEP mismatch');
    for(const key of ['steps','commitStride','stimulusSeed'])assert(p[key]===undefined || (uint(p[key]) && Number(task[key])===p[key]),'task '+key+' mismatch');

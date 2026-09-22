@@ -125,7 +125,7 @@ try {
     check(`settled, and challengeable for ${dep.challengeWindow} blocks`, v.receipt.finality === "settled" && v.receipt.final_after_block === v.receipt.settled_at + dep.challengeWindow);
     await anvil.mine(dep.challengeWindow + 1); check("after the window: final", (await (await call("/v1/responses/" + q.id)).json()).receipt.finality === "final"); }
   { const r = await call("/v1/chat/completions", { model: "warm", seed: 10, max_tokens: STEPS, messages: [{ role: "user", content: "{}" }] }); const j = await r.json();
-    check("the chat-completions alias answers in its own shape, with the same receipt", r.status === 200 && j.object === "chat.completion" && j.usage.completion_tokens === STEPS * 2 * 2 && j.receipt.executors.length === 2); }
+    check("the chat-completions alias answers in its own shape, with the same receipt", r.status === 200 && j.object === "chat.completion" && j.usage.completion_tokens === STEPS * 2 * 2 && j.usage.prompt_tokens > 0 && j.usage.total_tokens === j.usage.prompt_tokens + j.usage.completion_tokens && j.receipt.executors.length === 2); }
 
   // ---- behind ai.gg (aigg-src, a sub2api fork): the wire as its OpenAI relay makes it, read from its source ----
   { // what a caller of ai.gg's /v1/chat/completions turns into: always stream:true, store:false, an `include`, injected instructions, the

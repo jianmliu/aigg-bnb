@@ -1,13 +1,14 @@
+import {VRF_MODE,readAdmission} from './vrf-admission.mjs';
 // Synchronous sessions are an explicit deployment capability. Unknown versions never fall back.
 export function verificationMode(dep) {
  const mode=dep.verification?.mode ?? 'legacy';
- if(!['legacy','synchronous-v1'].includes(mode))throw Error(`unsupported verification mode: ${mode}`);
+ if(!['legacy','synchronous-v1','synchronous-vrf-v1'].includes(mode))throw Error(`unsupported verification mode: ${mode}`);
  return mode;
 }
 export function sessionOutcome(state) {
  const phase=Number(state.phase);
- if(!Number.isInteger(phase)||phase<0||phase>5)throw Error('invalid synchronous phase');
- return {terminal:phase>=4,accepted:phase===4,status:['unassigned','committing','revealing','disputing','completed','inconclusive'][phase]};
+ if(!Number.isInteger(phase)||phase<0||phase>6)throw Error('invalid synchronous phase');
+ return {terminal:phase===4||phase===5,accepted:phase===4,status:['unassigned','committing','revealing','disputing','completed','inconclusive','awaiting randomness'][phase]};
 }
 export function sessionExpired(state,block) {
  const phase=Number(state.phase);
@@ -26,6 +27,7 @@ import {unsupportedGetter} from './enrollment.mjs';
 import {parseAbi,recoverAddress,keccak256} from 'viem';
 export const SynchronousMarketAbi=parseAbi([
  'struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStride; bytes32 initStateRoot; uint256 fee; uint64 deadline; uint8 redundancy; }',
+ 'function tasks(bytes32) view returns (Task,address,uint64,uint64,uint64,bool,bool,bool,bool)',
  'function taskId(Task t,address token,bytes32 nonce,uint32 runs,address client) view returns (bytes32)',
  'function TASK_TIMEOUT() view returns (uint64)',
  'function COMMIT_BLOCKS() view returns (uint64)',
@@ -33,6 +35,11 @@ export const SynchronousMarketAbi=parseAbi([
  'function DISPUTE_BLOCKS() view returns (uint64)',
  'struct Result { bytes32 execDigest; bytes32 execRoot; }',
  'function protocolVersion() view returns (uint256)',
+ 'function admissionVersion() view returns (uint256)',
+ 'function admission() view returns (address)',
+ 'function admissionFee(address token) view returns (uint256)',
+ 'function taskSigner(bytes32,address) view returns (address)',
+ 'function allocate(bytes32)',
  'function profileMaxInDegree(bytes32) view returns (uint32)',
  'function sessionState(bytes32) view returns (uint8 state,uint64 commitDeadline,uint64 revealDeadline,uint64 totalDeadline)',
  'function setReadyBySig(address host,bool ready,uint64 expiry,uint256 nonce,bytes sig)',
@@ -63,10 +70,13 @@ export const SynchronousDisputeAbi=parseAbi([
  'function roundNonce(bytes32 id) view returns (uint256)',
  'function moveNonce(bytes32 id,address host) view returns (uint256)',
 ]);
-export async function verifyDeployment(dep,probe) {
+export async function verifyDeployment(dep,probe,admissionProbe) {
  const mode=verificationMode(dep);let version;
  try{version=await probe();}catch(error){if(mode!=='legacy'||!unsupportedGetter(error))throw Error('synchronous capability unavailable',{cause:error});return false;}
- if(mode!=='synchronous-v1'||Number(version)!==1)throw Error('deployment verification capability does not match the market');
+ if(mode==='legacy'||Number(version)!==1)throw Error('deployment verification capability does not match the market');
+ let admissionVersion=1;
+ if(admissionProbe){try{admissionVersion=Number(await admissionProbe());}catch(error){if(!unsupportedGetter(error))throw Error('admission capability unavailable',{cause:error});}}
+ if((mode==='synchronous-vrf-v1'?2:1)!==admissionVersion)throw Error('deployment admission capability does not match the market');
  return true;
 }
 export function normalizeSession(raw) {
@@ -123,8 +133,9 @@ export function syncReader(ch,{ttl=2000,max=256}={}) {
     const executors=await ch.market.read.executors([id],options);
     if(executors.length>2)throw Error('synchronous assignment exceeds bounded pair');
     const commitments=await Promise.all(executors.map(a=>ch.market.read.commitments([id,a],options)));
-    const result={...state,...sessionOutcome(state),block:String(options.blockNumber),blockHash:block.hash,executors,commitments};
-    if(state.phase>=2){result.results=await Promise.all(executors.map(async a=>await ch.market.read.submitted([id,a],options)?await ch.market.read.resultOf([id,a],options):null));}
+    const admission=ch.verificationMode===VRF_MODE?await readAdmission(ch,id,options):undefined;
+    const result={...state,...(admission?{admission}:{}),...sessionOutcome(state),block:String(options.blockNumber),blockHash:block.hash,executors,commitments};
+    if(state.phase>=2&&state.phase<=5){result.results=await Promise.all(executors.map(async a=>await ch.market.read.submitted([id,a],options)?await ch.market.read.resultOf([id,a],options):null));}
     if(state.phase===3){const d=ch.disputes.read;result.dispute={state:await d.disputes([id],options),lif:await d.lifs([id],options),batch:await d.batches([id],options),round:String(await d.roundNonce([id],options)),parties:await Promise.all(executors.map(async a=>({instance:a,party:await d.partyState([id,a],options),lif:await d.lifPartyState([id,a],options),nonce:String(await d.moveNonce([id,a],options))})))};}
     return result;
    }));
@@ -138,14 +149,15 @@ export function syncReader(ch,{ttl=2000,max=256}={}) {
 
 import {recoverMessageAddress} from 'viem';
 export const finalizeMessage=(dep,b)=>`PoRW synchronous expiry\nchain:${dep.chainId}\nmarket:${dep.addresses.market.toLowerCase()}\ntask:${b.taskId.toLowerCase()}\ninstance:${b.instance.toLowerCase()}\nexpiry:${b.expiry}`;
-export async function prepareSyncFinalize(dep,b,ch) {
+export async function prepareSyncFinalize(dep,b,ch,kind='finalize') {
+ if(!['finalize','allocate'].includes(kind)||(kind==='allocate'&&verificationMode(dep)!==VRF_MODE))throw Error('unsupported admission action');
  if(!bytes32(b.taskId)||!address(b.instance))throw Error('invalid task or instance');
  const expiry=uint(b.expiry),head=await ch.pub.getBlockNumber({cacheTime:0});
  if(head>expiry||expiry>head+256n)throw Error('expired or excessive authorization lifetime');
- const signer=await recoverMessageAddress({message:finalizeMessage(dep,b),signature:b.signature});
+ const signer=await recoverMessageAddress({message:kind==='allocate'?finalizeMessage(dep,b).replace('synchronous expiry','synchronous allocation'):finalizeMessage(dep,b),signature:b.signature});
  const instance=await ch.instances.read.resolve([signer]);
  if(instance.toLowerCase()!==b.instance.toLowerCase())throw Error('signature does not authorize instance');
- return {instance,contract:ch.market,functionName:'expire',args:[b.taskId],taskId:b.taskId};
+ return {instance,contract:ch.market,functionName:kind==='allocate'?'allocate':'expire',args:[b.taskId],taskId:b.taskId};
 }
 
 export async function acceptedSession(market,id,options={}) {
@@ -170,6 +182,7 @@ export function verificationSupportReader(ch,options={}) {
 }
 
 export function assignmentReady(state,head,finalized,postedAt) {
+ if(Number(state.phase)===6)return 'wait';
  if(Number(state.phase)!==1 || BigInt(head)>BigInt(state.commitDeadline))return 'closed';
  return BigInt(finalized)>=BigInt(postedAt)?'ready':'wait';
 }
@@ -189,7 +202,7 @@ export function syncSponsorReady(epoch,day,balance,gasPrice) {
 // Revalidate the pending task and key lifetime rather than infer a key from logs.
 export async function synchronousInbox(ch,host,taskId){
  return readFinalized(ch.pub,async (options,block)=>{
-  const [signer,pending,state]=await Promise.all([ch.market.read.readinessSigner([host],options),ch.market.read.pendingTask([host],options),ch.market.read.sessionState([taskId],options)]);
+  const [signer,pending,state]=await Promise.all([ch.verificationMode==='synchronous-vrf-v1'?ch.market.read.taskSigner([taskId,host],options):ch.market.read.readinessSigner([host],options),ch.market.read.pendingTask([host],options),ch.market.read.sessionState([taskId],options)]);
   if(pending.toLowerCase()!==taskId.toLowerCase()||Number(state[0])!==1||block.number>BigInt(state[1]))throw Error('synchronous assignment is not committing');
   if(!address(signer)||BigInt(signer)===0n||(await ch.instances.read.resolve([signer],options)).toLowerCase()!==host.toLowerCase())throw Error('invalid readiness signer');
   if(signer.toLowerCase()!==host.toLowerCase()){
