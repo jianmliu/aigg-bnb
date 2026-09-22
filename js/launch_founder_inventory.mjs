@@ -22,10 +22,11 @@ const terms=(p,collection,baseEnrollment)=>{
 export async function launchInventory({c,cfg,journal,activate=true,smoke=true}) {
  assert([97,31337].includes(cfg.chainId)); assert.equal(await c.pub.getChainId(),cfg.chainId);
  same(c.account.address,cfg.owner);
- assert(cfg.protocol===undefined||cfg.protocol==='synchronous-v1','unknown protocol');
- const synchronous=cfg.protocol==='synchronous-v1';
+ assert(cfg.protocol===undefined||['synchronous-v1','synchronous-vrf-v1'].includes(cfg.protocol),'unknown protocol');
+ const vrf=cfg.protocol==='synchronous-vrf-v1',synchronous=vrf||cfg.protocol==='synchronous-v1';
  assert.equal(g.size,200); assert.equal(profiles.founders.length,200); same(g.root,profiles.genesisRoot);
  const read=(address,name,functionName,args=[])=>c.pub.readContract({address,abi:artifact(name).abi,functionName,args});
+ if(vrf)assert.equal(await read(cfg.market,'VrfSynchronousTaskMarket','admissionVersion'),2n);
  if(synchronous){assert.equal(await read(cfg.market,'SynchronousTaskMarket','protocolVersion'),1n);for(const p of profiles.founders)assert(Number.isInteger(p.maxInDegree)&&p.maxInDegree>0&&p.maxInDegree<=16384,'missing measured Founder witness bound');}
  for(const key of ['treasury','whitelist','meps','instances','market'])assert((await c.pub.getCode({address:cfg[key]}))?.length>2,`missing ${key} code`);
  same(await read(cfg.treasury,'TreasuryRouter','owner'),cfg.owner);
@@ -146,7 +147,7 @@ export async function launchInventory({c,cfg,journal,activate=true,smoke=true}) 
    await call(`certify-founders-${i}`,cfg.market,'SynchronousTaskMarket','setProfileSupports',[batch.map(p=>terms(p,collection,cfg.baseEnrollment)),batch.map(p=>p.maxInDegree)]);
   }
   for(const p of profiles.founders)assert.equal(await read(cfg.market,'SynchronousTaskMarket','profileMaxInDegree',[terms(p,collection,cfg.baseEnrollment)]),p.maxInDegree);
-  state.verification={mode:'synchronous-v1',certifiedFounders:profiles.founders.length,maxInDegree:Math.max(...profiles.founders.map(p=>p.maxInDegree))};
+  state.verification={mode:cfg.protocol,certifiedFounders:profiles.founders.length,maxInDegree:Math.max(...profiles.founders.map(p=>p.maxInDegree))};
  }
  await call('whitelist',cfg.whitelist,'CollectionWhitelist','add',[collection,'FlyBnB genesis v2: 100 female + 100 male; treasury inventory; verified published deltas']);
  assert(await read(cfg.whitelist,'CollectionWhitelist','isWhitelisted',[collection]));
@@ -205,5 +206,6 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  const cfg={chainId:97,owner:account.address,treasury:e.PORW_TREASURY,whitelist:e.PORW_WHITELIST,meps:e.PORW_MEP_REGISTRY,instances:e.PORW_INSTANCES,market:e.PORW_MARKET};
  if(baseEnrollment)cfg.baseEnrollment=true;
  if(process.argv.includes('--synchronous'))cfg.protocol='synchronous-v1';
+ if(process.argv.includes('--vrf')){assert(baseEnrollment,'VRF inventory requires --base-enrollment');assert(journal!==legacyJournal,'VRF inventory requires a separate journal');cfg.protocol='synchronous-vrf-v1';}
  await launchInventory({c,cfg,journal,activate:!process.argv.includes('--no-activate'),smoke:!process.argv.includes('--no-smoke')});
 }

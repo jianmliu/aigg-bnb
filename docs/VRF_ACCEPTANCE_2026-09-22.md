@@ -30,4 +30,4 @@ The public [acceptance record](../tasks/live-runs/vrf-acceptance-2026-09-22.json
 
 Run harness: `test/live_vrf_acceptance.mjs --broadcast` with owner key and real payload path provided securely via `VRF_SMOKE_OWNER_KEY` / `VRF_SMOKE_PAYLOAD`. Preserve the private journal. Its `--cleanup` path refuses hosts still reserved or held; it does not bypass a live task. Only remove a stale lock after confirming the recorded process is no longer running.
 
-Render and the active NFT inventory still use the previous market. This acceptance does not switch either deployment.
+At the time of this acceptance, Render and the active NFT inventory still used the previous market. The subsequent service and inventory migration is tracked in [VRF cutover](VRF_CUTOVER_2026-09-22.md).
