@@ -100,6 +100,7 @@ try {
   check('restart did not submit another paid attempt',await H.readFrom(payer,job,jobName,'attempt')===1n);
   const file=path.join(tmp,'state','artifacts',job.toLowerCase()+'.json');
   check('all battery rows are published with execution evidence',fs.existsSync(file)&&JSON.parse(fs.readFileSync(file)).rows.length===rr.length);
+  { const art=JSON.parse(fs.readFileSync(file)); check('the artifact names the recipe by content address, so an audit can rebuild the payload (battery/audit.mjs)',art.deltaHash?.toLowerCase()===H.GENESIS.DF.toLowerCase()&&/^0x[0-9a-f]{64}$/.test(art.baseModelId)&&art.modelId.toLowerCase()===H.hex(mep.modelId).toLowerCase()); }
   const before=await balance(job);await H.sendTo(payer,job,jobName,'refund');
   check('unused retry reserve is recoverable',before===parseEther('0.01')&&await balance(job)===0n);
   if(TOKEN){

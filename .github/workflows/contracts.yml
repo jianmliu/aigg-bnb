@@ -94,4 +94,8 @@ jobs:
       # chain-free: the FlyBnB battery file is well formed and its batch form is order-preserving; the paper build never touches prose
       - run: node test/flybnb_battery.mjs
 
+      # chain-free: archived battery results against the second implementation, on the committed live evidence
+      # (the numpy half is SKIPPED without Python >= 3.10, numpy and pycryptodome)
+      - run: node test/battery_audit.mjs
+
       - run: node test/flybnb_build.mjs

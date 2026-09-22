@@ -55,7 +55,7 @@ const adapter={
    const rd=(address,abi,functionName,args=[])=>ch.pub.readContract({address,abi,functionName,args,...options});
    const tokenId=entries.get(job),ind=await rd(collection,collectionAbi,'individuals',[BigInt(tokenId)]),tid=await rd(job,jobAbi,'taskId');
    const closed=await rd(job,jobAbi,'closed'),hash=await rd(job,jobAbi,'artifactHash');
-   const state={paymentToken,tokenId,mepId:ind[3],modelId:ind[2],modelReady:ind[3]!==ZERO,taskId:tid,hasTask:tid!==ZERO,closed,delivered:hash!==ZERO,artifactHash:hash,
+   const state={paymentToken,tokenId,mepId:ind[3],modelId:ind[2],baseModelId:ind[0],deltaHash:ind[1],modelReady:ind[3]!==ZERO,taskId:tid,hasTask:tid!==ZERO,closed,delivered:hash!==ZERO,artifactHash:hash,
     expired:block.timestamp>=await rd(job,jobAbi,'expiresAt'),exhausted:await rd(job,jobAbi,'attempt')>=BigInt(policy[6])};
    if(state.hasTask){const t=await rd(dep.addresses.market,marketAbi,'tasks',[tid]);state.postedAt=String(t[3]);
     if(SYNCHRONOUS){const session=normalizeSession(await ch.market.read.sessionState([tid],options)),outcome=sessionOutcome(session);Object.assign(state,{verification:session,settled:outcome.terminal,disputed:false,repudiated:t[8],final:outcome.terminal,accepted:outcome.accepted,inconclusive:outcome.status==='inconclusive',finalizedBlock:String(block.number),finalizedHash:block.hash});}
@@ -114,7 +114,7 @@ const adapter={
  spikes:Array.from(r.result.counts).reduce((a,b)=>a+b,0),neurons_reached:Array.from(r.result.counts).filter(x=>x>0).length});}
  if(V.hex(V.merkleRoot(leaves))!==settledRoot)throw Error('independent battery replay disagrees with settled execution');
  if(accepted&&V.hex(B.batchDigest(V.unhex(settledRoot))).toLowerCase()!==accepted.execDigest.toLowerCase())throw Error('accepted batch digest does not bind the independently replayed output');
- const result={paymentToken,chainId:dep.chainId,collection,tokenId:s.tokenId,job,taskId:s.taskId,mepId:s.mepId,modelId:s.modelId,batteryVersion:versionHash,settledRoot,verification:SYNCHRONOUS?'independent-replay-and-synchronous-completion':'independent-replay-and-final-settlement',rarityStatus:'reference-cohort-required',rows};
+ const result={paymentToken,chainId:dep.chainId,collection,tokenId:s.tokenId,job,taskId:s.taskId,mepId:s.mepId,modelId:s.modelId,baseModelId:s.baseModelId,deltaHash:s.deltaHash,batteryVersion:versionHash,settledRoot,verification:SYNCHRONOUS?'independent-replay-and-synchronous-completion':'independent-replay-and-final-settlement',rarityStatus:'reference-cohort-required',rows};
  if(SYNCHRONOUS){const final=await readFinalized(ch.pub,options=>acceptedSession(ch.market,s.taskId,options));if(final.execRoot!==accepted.execRoot||final.execDigest!==accepted.execDigest)throw Error('accepted result changed during independent replay');}
  atomic(path.join(artifactDir,job+'.json'),result);return keccak256(toHex(stringify(result)));
  },
