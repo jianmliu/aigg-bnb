@@ -24,3 +24,13 @@ Both Render services must use the same new mesh addresses in `render.yaml`. Envi
 The Chainlink subscription is separately funded and the consumer already authorized. Admission revenue does not automatically fund that subscription. The real acceptance record documents its callback and balances. Operators must monitor both the subscription reserve and gateway admission budget.
 
 Cutover order: finish and verify paused inventory; merge reviewed configuration; activate and test Adopt; update/deploy the relayer, then the gateway; publish the frontend from the merged commit. Final public receipts and service deployment evidence are recorded separately after verification. The legacy battery worker remains unavailable for VRF mode; this cutover does not imply that it has been adapted.
+
+## Completed deployment
+
+[PR #97](https://github.com/jianmliu/aigg-bnb/pull/97) merged as `8c143c41e87542ba1735cc8580c47ab6afdbcbb3`; both Render services are live on that commit. The gateway readiness endpoint reports the new market and a connected relay. The relayer serves all 204 profiles. The [frontend deployment](https://0a228078.aigg-fly.pages.dev) is published at [fly.ai.gg](https://fly.ai.gg); its public index matches the build from that commit.
+
+At finalized block 132555857, both old and new collections had supply 200 and all 200 tokens in their respective vaults; the old sale was paused and the new sale was open. A real [0.01 tBNB Adopt transaction](https://testnet.bscscan.com/tx/0xde3c7ddfa48e463301290930a6128ec5e3a52873501a99f71f7318ec3c275b90) increased the treasury balance by exactly its price. Token #1 was returned and relisted, leaving all 200 available. The live page automatically loads 12 listings per page (17 pages), with no missing-configuration warning.
+
+A read-only Breed simulation for female #1 and male #101 returned child #201 at the unchanged 0.005 tBNB fee. The simulation overrides only the vault's native balance because the inventory vault has no spending balance; no child was actually minted and no storage or authorization was overridden. This is a contract simulation, not a browser-wallet Breed transaction or a completed battery.
+
+See the [public cutover record](../tasks/live-runs/vrf-cutover-2026-09-22.json) for operation hashes, finalized inventory evidence, service deployment IDs and UI checks. Earlier real VRF execution acceptance remains linked above; service cutover did not submit a second paid gateway task.
