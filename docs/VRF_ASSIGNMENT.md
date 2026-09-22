@@ -68,3 +68,28 @@ node js/check_vrf_deployment.mjs --rpc "$PORW_RPC" --market "$PORW_MARKET" --cha
 The tool checks a finalized, hash-rechecked snapshot: chain, code existence, controller/market/dispute/registry bindings, capacity and slasher authorization, the known BSC testnet coordinator/key hash, confirmations 3–200, callback gas 100,000–2,500,000, nonzero subscription identifier, windows and native fee. `configurationValid` is only this configuration result. It deliberately returns `liveProofVerified: false`; subscription funding, consumer enrollment, request pricing and actual callback delivery remain separate required checks.
 
 Run local tests with `npm run test:vrf` (Foundry must be on PATH; set `FOUNDRY_BIN` for the Anvil harness). The full Foundry suite also checks v1 compatibility. Browser tests cover three-candidate release/rearm and a batch disagreement through reload, proof and slash.
+
+## Scripted subscription bootstrap
+
+`js/deploy_vrf_subscription.mjs` creates one BSC testnet subscription, funds it in native tBNB, deploys a fresh VRF mesh and enrolls the constructor-created admission controller. It does not switch Render, migrate NFT inventory or post a task. The initial mesh contains only the configured base profiles; Founder profiles and collection integration remain part of the later inventory migration.
+
+```sh
+# PORW_DEPLOYER_KEY must already be provided securely in the environment.
+node js/deploy_vrf_subscription.mjs --broadcast \
+  --config deployments/vrf-subscription-config-97.json \
+  --journal deployments/vrf-subscription-97.json
+```
+
+The configuration follows the existing mesh deployment configuration, with `protocol: "synchronous-vrf-v1"`, `fundingWei`, `admissionFeeWei`, and `vrf` containing coordinator, keyHash, requestConfirmations, callbackGasLimit, nativePayment (true), waitBlocks, activationBlocks, readyTTL and feeRecipient. The script derives subId from the authenticated coordinator receipt rather than accepting a fabricated ID. Use the official network settings above.
+
+Preserve both the private subscription journal and its `.mesh.json` companion. Signed transactions are persisted before sending, and reruns replay the same transactions instead of creating another subscription or depositing again. A completed run does not automatically top up spent funds. The CLI creates an exclusive `.lock` file; after an unclean process exit, confirm that no deployment process is running before removing that stale lock. Do not run another deployment from the same sending wallet concurrently, or choose a new journal to recover an interrupted run.
+
+Funding is explicitly capped at 0.05 native tokens per bootstrap, with a 0.02 tBNB wallet reserve and a 3 gwei transaction gas-price ceiling. These are deployment safeguards, not a guarantee that the subscription can pay any number of requests. Admission pricing and actual VRF costs must be measured before service activation. Subscription existence/funding/consumer enrollment do not establish real callback delivery.
+
+Validation: `FOUNDRY_BIN=/path/to/foundry/bin node test/e2e_vrf_subscription.mjs` (build contracts first). Covers response loss during creation, interrupted funding recovery, exact single funding, consumer enrollment, idempotent reruns, parameter bounds and configuration/chain rejection.
+
+### BSC testnet staged deployment — 2026-09-22
+
+The bootstrap completed on chain 97. Subscription `16827904030502239886684173102318092411495140734875771880973600016057278287621` has **0.01 tBNB** and enrolled controller `0x311B256d75F3B37fAc0F49158D8f40517094Ac18`. Its market is `0x15380e14f63a6188196ee98e05ff951b66582152`. Owner remains `0xFE560Af8f5cFC209794b3Df7DC7E281D4Ef81EDa`.
+
+Configuration preflight and separate finalized-block subscription ownership/balance/consumer checks passed. Deployment gas cost was 0.0024249949 tBNB, excluding the 0.01 tBNB subscription deposit. See [public receipts and addresses](../tasks/live-runs/vrf-subscription-2026-09-22.json). This is a staged fresh mesh with four certified bases, not the active NFT collection deployment. Render remains on the previous market. No actual VRF request/callback has yet been verified. The immutable 0.001 tBNB admission fee is provisional for testnet validation and is not a production cost guarantee.
