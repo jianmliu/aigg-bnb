@@ -189,7 +189,8 @@ contract RoundVrfAdmissionTest is Test {
         assertEq(ins.disputeHolds(a), 0);
         assertEq(vrf.pendingTasks(a).length, 0);
         assertEq(vrf.credits(address(0), a), 90);
-        assertEq(vrf.credits(address(0), address(0xFEE)), 14);
+        assertEq(vrf.credits(address(0), address(this)), 10);
+        assertEq(vrf.credits(address(0), address(0xFEE)), 6);
     }
 
     function test_capacityRefusalAndCollectingTimeoutRefund() public {
@@ -206,11 +207,36 @@ contract RoundVrfAdmissionTest is Test {
         assertEq(coordinator.count(), 0);
         assertEq(cap.activeSlots(a), 0);
         assertEq(ins.disputeHolds(a), 0);
-        assertEq(vrf.credits(address(0), address(this)), 101);
-        assertEq(vrf.credits(address(0), address(0xFEE)), 7);
+        assertEq(vrf.credits(address(0), address(this)), 108);
+        assertEq(vrf.credits(address(0), address(0xFEE)), 0);
         uint256 rid = controller.taskRound(x);
         vm.expectRevert();
         vrf.sealRound(rid);
+    }
+
+    function test_oneTaskRoundKeepsFullFeeAfterVrfRequest() public {
+        bytes32 x = post();
+        assertEq(vrf.credits(address(0), address(0xFEE)), 0);
+        seal(x);
+        (, uint64 deadline,,,,,) = controller.requestInfo(x);
+        vm.roll(deadline + 1);
+        market.expire(x);
+        assertEq(vrf.credits(address(0), address(this)), 101);
+        assertEq(vrf.credits(address(0), address(0xFEE)), 7);
+    }
+
+    function test_batchShareMatchesRoundSizeEvenIfTasksFinishOutOfOrder() public {
+        bytes32 x = post();
+        bytes32 y = second();
+        bytes32 z = market.postTask{value: 108}(task(), bytes32(uint256(3)));
+        seal(x);
+        (, uint64 deadline,,,,,) = controller.requestInfo(x);
+        vm.roll(deadline + 1);
+        market.expire(z);
+        market.expire(x);
+        market.expire(y);
+        assertEq(vrf.credits(address(0), address(this)), 318);
+        assertEq(vrf.credits(address(0), address(0xFEE)), 6);
     }
 
     function test_duplicateCallbackCannotRerollAndClockFixed() public {
@@ -269,8 +295,8 @@ contract RoundVrfAdmissionTest is Test {
         market.expire(y);
         market.expire(x);
         assertEq(token.balanceOf(address(vrf)), 220);
-        assertEq(vrf.credits(address(token), address(this)), 202);
-        assertEq(vrf.credits(address(token), address(0xFEE)), 18);
+        assertEq(vrf.credits(address(token), address(this)), 212);
+        assertEq(vrf.credits(address(token), address(0xFEE)), 8);
         fulfill(x, 44);
         (,,,,, uint8 state,) = controller.requestInfo(x);
         assertEq(state, 4);

@@ -40,6 +40,7 @@ test('only confirmed admission is expense; reverted hash is only reserved budget
  const {admissionExpense}=await import('../gateway/vrf-post.mjs');
  assert.equal(admissionExpense({post_tx:'0xaa',admission_fee_wei:'7'}),'0');
  assert.equal(admissionExpense({post_confirmed:true,admission_fee_wei:'7'}),'7');
+ assert.equal(admissionExpense({post_confirmed:true,admission_fee_wei:'7',receipt:{admission_fee_wei:'3'}}),'3');
 });
 test('VRF post persists the signed transaction before broadcast and replays identical bytes',async()=>{
  const {persistVrfPost,broadcastVrfPost}=await import('../gateway/vrf-post.mjs');const {parseAbi}=await import('viem');let saved=false,prepared=0;const sent=[];

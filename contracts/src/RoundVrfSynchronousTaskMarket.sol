@@ -2,14 +2,13 @@
 pragma solidity ^0.8.20;
 import "./SynchronousTaskMarket.sol";
 import "./RoundVrfAdmission.sol";
+import "./RoundFeeAccounting.sol";
 
 /// @notice The v1 execution protocol with task-and-pool locking before unknown VRF randomness.
 contract RoundVrfSynchronousTaskMarket is SynchronousTaskMarket {
     uint256 public constant admissionVersion = 3;
     RoundVrfAdmission public immutable admission;
     uint64 private immutable sessionWindow;
-    mapping(address => uint256) public admissionFeesAccrued;
-    event AdmissionFeeAccrued(address indexed token, address indexed recipient, uint256 fee);
 
     constructor(
         IMEPRegistry m,
@@ -61,10 +60,6 @@ contract RoundVrfSynchronousTaskMarket is SynchronousTaskMarket {
         return admission.taskSigner(id, host);
     }
 
-    function admissionFee(address token) external view returns (uint256) {
-        return admission.admissionFee(token);
-    }
-
     function _ready(address host, bool value) internal override {
         admission.setReady(host, value);
         emit ReadinessChanged(host, value, readinessNonce(host));
@@ -77,10 +72,6 @@ contract RoundVrfSynchronousTaskMarket is SynchronousTaskMarket {
     function _charge(address token, uint256 fee) internal override returns (uint256) {
         uint256 cost = admission.admissionFee(token);
         require(cost > 0, InvalidSession());
-        address recipient = admission.feeRecipient();
-        credits[token][recipient] += cost;
-        admissionFeesAccrued[token] += cost;
-        emit AdmissionFeeAccrued(token, recipient, cost);
         return fee + cost;
     }
 
@@ -113,6 +104,7 @@ contract RoundVrfSynchronousTaskMarket is SynchronousTaskMarket {
     }
 
     function _release(bytes32 id) internal override {
+        RoundFeeAccounting.settle(credits, admission, id, paymentToken[id], tasks[id].client);
         admission.release(id);
     }
 }

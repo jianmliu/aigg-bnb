@@ -15,6 +15,8 @@ export const VrfAdmissionAbi=parseAbi([
  'function MAX_CANDIDATES() view returns (uint256)',
  'function readyUntil(address) view returns (uint64)',
  'function requestInfo(bytes32) view returns (uint256 requestId,uint64 randomnessDeadline,uint64 fulfilledAt,uint64 allocationDeadline,uint64 maxSessionEnd,uint8 state,uint8 candidateCount)',
+ 'function admissionCharge(bytes32,address) view returns (uint256)',
+ 'function admissionFee(address) view returns (uint256)',
 ]);
 export function normalizeAdmission(raw){
  return {requestId:String(raw[0]),randomnessDeadline:String(raw[1]),fulfilledAt:String(raw[2]),allocationDeadline:String(raw[3]),maxSessionEnd:String(raw[4]),state:Number(raw[5]),candidateCount:Number(raw[6])};
@@ -38,10 +40,10 @@ export async function admissionCapability(ch){
  if(!isVrfMode(ch.verificationMode))return {};
  const address=await ch.market.read.admission();
  const read=functionName=>ch.pub.readContract({address,abi:VrfAdmissionAbi,functionName});
- const [market,wait,activation,ttl,max,fee]=await Promise.all([read('MARKET'),read('WAIT_BLOCKS'),read('ACTIVATION_BLOCKS'),read('READY_TTL'),read('MAX_CANDIDATES'),ch.market.read.admissionFee(['0x'+'00'.repeat(20)])]);
+ const [market,wait,activation,ttl,max,fee]=await Promise.all([read('MARKET'),read('WAIT_BLOCKS'),read('ACTIVATION_BLOCKS'),read('READY_TTL'),read('MAX_CANDIDATES'),ch.verificationMode===ROUND_VRF_MODE?ch.pub.readContract({address,abi:VrfAdmissionAbi,functionName:'admissionFee',args:['0x'+'00'.repeat(20)]}):ch.market.read.admissionFee(['0x'+'00'.repeat(20)])]);
  if(market.toLowerCase()!==ch.market.address.toLowerCase())throw Error('VRF controller market mismatch');
  const rounds=ch.verificationMode===ROUND_VRF_MODE?{roundBlocks:String(await read('ROUND_BLOCKS')),maxRoundTasks:Number(await read('MAX_ROUND_TASKS'))}:{};
- return {...rounds,admissionVersion:ch.verificationMode===ROUND_VRF_MODE?3:2,admission:address,randomnessWaitBlocks:String(wait),activationBlocks:String(activation),readyTtlBlocks:String(ttl),maxCandidates:Number(max),nativeAdmissionFeeWei:String(fee),admissionFeeRefundable:false};
+ return {...rounds,admissionVersion:ch.verificationMode===ROUND_VRF_MODE?3:2,admission:address,randomnessWaitBlocks:String(wait),activationBlocks:String(activation),readyTtlBlocks:String(ttl),maxCandidates:Number(max),nativeAdmissionFeeWei:String(fee),admissionFeeRefundable:ch.verificationMode===ROUND_VRF_MODE};
 }
 // Observe finalized randomness before spending gas. Recheck at head under the wallet's
 // normal nonce queue; another caller may have advanced the same request meanwhile.

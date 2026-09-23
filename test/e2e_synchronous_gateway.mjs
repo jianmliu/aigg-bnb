@@ -19,9 +19,10 @@ try {
  a.relays=await H.create(deployer,'RelayRegistry',[parseEther('1'),5n]);a.whitelist=await H.create(deployer,'CollectionWhitelist',[deployer.account.address]);
  await H.sendTo(deployer,a.instances,'InstanceRegistry','setClaimManager',[a.claims,3n]);
  const owner=H.clientsFor(dep,H.KEYS[0]);
+ const feeLibrary=ROUNDS?await H.create(owner,'RoundFeeAccounting'):null;
  let coordinator,admission;
  if(VRF){const artifact=JSON.parse(fs.readFileSync(path.join(H.root,'contracts/out/VrfAdmission.t.sol/MockVrfCoordinator.json')));coordinator=(await owner.pub.waitForTransactionReceipt({hash:await owner.wallet.deployContract({abi:artifact.abi,bytecode:artifact.bytecode.object})})).contractAddress;}
- dep.addresses.market=await H.create(owner,VRF?MARKET:'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,120n,40n,300n,...(VRF?[{coordinator,keyHash:'0x'+'11'.repeat(32),subId:1n,requestConfirmations:3,callbackGasLimit:200000,nativePayment:true,waitBlocks:500n,activationBlocks:200n,readyTTL:10000n,feeRecipient:owner.account.address},['0x'+'00'.repeat(20)],[ADMISSION],...(ROUNDS?[128n,64]:[])]:[])]);
+ dep.addresses.market=await H.create(owner,VRF?MARKET:'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,120n,40n,300n,...(VRF?[{coordinator,keyHash:'0x'+'11'.repeat(32),subId:1n,requestConfirmations:3,callbackGasLimit:200000,nativePayment:true,waitBlocks:500n,activationBlocks:200n,readyTTL:10000n,feeRecipient:owner.account.address},['0x'+'00'.repeat(20)],[ADMISSION],...(ROUNDS?[128n,64]:[])]:[])],ROUNDS?{RoundFeeAccounting:feeLibrary}:{});
  if(VRF)admission=await H.readFrom(owner,dep.addresses.market,MARKET,'admission');
  const fulfill=async id=>{const info=await H.readFrom(owner,admission,CONTROLLER,'requestInfo',[id]);const abi=parseAbi(['function fulfill(address,uint256,uint256)']);await owner.pub.waitForTransactionReceipt({hash:await owner.wallet.writeContract({address:coordinator,abi,functionName:'fulfill',args:[admission,info[0],42n]})});};
  dep.addresses.disputes=await H.create(owner,'SynchronousExecutionDisputes',[dep.addresses.meps,dep.addresses.instances,dep.addresses.market,5n,parseEther('0.01')]);
@@ -77,7 +78,7 @@ try {
  await enter(2);console.log('epoch 2 ready');await wait(async()=>(await R.api('/status')).rootsPosted.some(r=>r.epoch===1&&r.count===2));
  for(const h of hosts){const r=await R.api('/tx/materialize',{mep:mepId,epoch:1,instance:h.c.account.address});assert.equal(r.ok,true,JSON.stringify(r));await h.arm();}
  console.log('signed hosts ready and eligible');
- const gatewayEnv={GATEWAY_BEARER:'test',GATEWAY_VRF_ADMISSION_BUDGET_WEI:'1000000',GATEWAY_MODELS:`sync=${mepId}`,GATEWAY_STATE:path.join(tmp,'state.json'),GATEWAY_POLL_MS:'100',GATEWAY_RESULT_TIMEOUT_MS:'60000'};let G=await H.startGateway(R,H.KEYS[4],gatewayEnv);cleanup.push(()=>G.stop());
+ const gatewayEnv={GATEWAY_BEARER:'test',GATEWAY_VRF_ADMISSION_BUDGET_WEI:'1000000',...(ROUNDS?{GATEWAY_ROUND_CREDIT_SWEEP_MIN_WEI:'1'}:{}),GATEWAY_MODELS:`sync=${mepId}`,GATEWAY_STATE:path.join(tmp,'state.json'),GATEWAY_POLL_MS:'100',GATEWAY_RESULT_TIMEOUT_MS:'60000'};let G=await H.startGateway(R,H.KEYS[4],gatewayEnv);cleanup.push(()=>G.stop());
  const call=async body=>{const r=await fetch(G.url+'/v1/responses',{method:'POST',headers:{authorization:'Bearer test','content-type':'application/json'},body:JSON.stringify(body)});return {status:r.status,body:await r.json()};};
  console.log('gateway ready');
  const responseFinished=async r=>{const id=r.body.id;const until=Date.now()+120000;while(!shuttingDown&&Date.now()<until){try{const response=await fetch(G.url+'/v1/responses/'+id,{headers:{authorization:'Bearer test'}});const body=await response.json();if(['completed','failed'].includes(body.status))return {status:response.status,body};}catch{}await H.sleep(100);}return {status:503,body:{status:'failed',error:'response polling stopped'}};};
@@ -107,9 +108,24 @@ try {
  await anvil.mine(64);
  console.log('agreement tasks completed on chain');
  const agreed=await agreement;if(agreed.status!==200)console.log(JSON.stringify(agreed),G.log(),failures);
- if(VRF){assert.equal(agreed.body.receipt.admission_fee_wei,String(ADMISSION));assert.equal(agreed.body.receipt.total_escrow_wei,String(BigInt(agreed.body.receipt.fee_wei)+ADMISSION));}
+ if(VRF){assert.equal(agreed.body.receipt.admission_fee_wei,String(ROUNDS?ADMISSION/2n:ADMISSION));assert.equal(agreed.body.receipt.admission_deposit_wei,String(ADMISSION));assert.equal(agreed.body.receipt.admission_refund_wei,String(ROUNDS?ADMISSION/2n:0n));assert.equal(agreed.body.receipt.total_escrow_wei,String(BigInt(agreed.body.receipt.fee_wei)+ADMISSION));}
  assert.equal(agreed.status,200);assert.equal(agreed.body.status,'completed');assert.equal(agreed.body.receipt.exec_root,(await gateway.market.read.resultOf([agreed.body.id,agreed.body.receipt.executors[0]]))[1]);assert.equal(agreed.body.receipt.finality,'final');assert.equal(agreed.body.receipt.verification,MODE);assert.equal(agreed.body.receipt.counts.status,'verified');assert.equal(agreed.body.receipt.executors.length,2);assert.equal(failures.length,0);
- if(ROUNDS){const second=await secondAgreement;assert.equal(second.status,200);assert.equal(second.body.status,'completed');assert.equal(second.body.receipt.verification,MODE);for(const h of hosts){assert.equal((await H.readFrom(owner,admission,CONTROLLER,'pendingTasks',[h.c.account.address])).length,0);assert.equal(await H.readFrom(owner,cap,'HostCapacity','activeSlots',[h.c.account.address]),0);}}
+ if(ROUNDS){const second=await secondAgreement;assert.equal(second.status,200);assert.equal(second.body.status,'completed');assert.equal(second.body.receipt.verification,MODE);assert.equal(second.body.receipt.admission_fee_wei,String(ADMISSION/2n));assert.equal(second.body.receipt.admission_refund_wei,String(ADMISSION/2n));
+  const ledger=JSON.parse(fs.readFileSync(gatewayEnv.GATEWAY_STATE+'.admission.json'));assert.equal(ledger[agreedId].net,String(ADMISSION/2n));assert.equal(ledger[secondId].net,String(ADMISSION/2n));
+  await wait(async()=>await gateway.pub.readContract({address:a.market,abi:parseAbi(['function credits(address,address) view returns(uint256)']),functionName:'credits',args:['0x'+'00'.repeat(20),gateway.account.address]})===0n);
+  // A finalized-charge RPC failure after on-chain settlement can mark a call failed.
+  // Simulate that crash state: the next gateway must repair the lifetime budget
+  // and the visible expense even though the call is already terminal.
+  await G.stop();const budgetFile=gatewayEnv.GATEWAY_STATE+'.admission.json';const damaged=JSON.parse(fs.readFileSync(budgetFile));damaged[agreedId]=String(ADMISSION);fs.writeFileSync(budgetFile,JSON.stringify(damaged));
+  const savedCalls=JSON.parse(fs.readFileSync(gatewayEnv.GATEWAY_STATE));const damagedCall=savedCalls.find(c=>c.id===agreedId);damagedCall.status='failed';damagedCall.error={status:500,type:'gateway_error',message:'finalized RPC unavailable'};damagedCall.receipt.admission_fee_wei=String(ADMISSION);damagedCall.receipt.admission_refund_wei='0';
+  const damagedAfterLedger=savedCalls.find(c=>c.id===secondId);damagedAfterLedger.post_confirmed=false;damagedAfterLedger.admission_fee_net_wei=undefined;damagedAfterLedger.receipt.admission_fee_wei=String(ADMISSION);damagedAfterLedger.receipt.admission_refund_wei='0';
+  fs.writeFileSync(gatewayEnv.GATEWAY_STATE,JSON.stringify(savedCalls));
+  G=await H.startGateway(R,H.KEYS[4],gatewayEnv);
+  await wait(async()=>JSON.parse(fs.readFileSync(budgetFile))[agreedId]?.net===String(ADMISSION/2n));
+  const repaired=await(await fetch(G.url+'/v1/responses/'+agreedId,{headers:{authorization:'Bearer test'}})).json();assert.equal(repaired.status,'failed');assert.equal(repaired.protocol_expenses.admission_fee_wei,String(ADMISSION/2n));assert.equal(repaired.receipt.admission_refund_wei,String(ADMISSION/2n));
+  await wait(async()=>JSON.parse(fs.readFileSync(gatewayEnv.GATEWAY_STATE)).find(c=>c.id===secondId)?.post_confirmed===true);
+  const repairedAfterLedger=await(await fetch(G.url+'/v1/responses/'+secondId,{headers:{authorization:'Bearer test'}})).json();assert.equal(repairedAfterLedger.status,'completed');assert.equal(repairedAfterLedger.protocol_expenses.admission_fee_wei,String(ADMISSION/2n));assert.equal(repairedAfterLedger.receipt.admission_refund_wei,String(ADMISSION/2n));
+  for(const h of hosts){assert.equal((await H.readFrom(owner,admission,CONTROLLER,'pendingTasks',[h.c.account.address])).length,0);assert.equal(await H.readFrom(owner,cap,'HostCapacity','activeSlots',[h.c.account.address]),0);}}
  for(const h of hosts){assert.equal(await h.c.market.read.ready([h.c.account.address]),false);await h.arm();h.stopTask();}
  const pending=await call({model:'sync',seed:8,max_output_tokens:4,background:true});assert.equal(pending.status,200);
  const taskId=pending.body.id;

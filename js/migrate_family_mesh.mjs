@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
 import {createPublicClient,createWalletClient,http,defineChain,encodeDeployData,encodeFunctionData,keccak256,stringToHex} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
+import {linkLibraries} from './link_bytecode.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const artifact=n=>JSON.parse(fs.readFileSync(path.join(root,`contracts/out/${n}.sol/${n}.json`)));
 const json=x=>JSON.stringify(x,(_,v)=>typeof v==='bigint'?v.toString():v,2)+'\n';
@@ -15,8 +16,8 @@ export async function deployFamilyMesh({c,cfg,journal}) {
  const rounds=cfg.protocol==='synchronous-vrf-rounds-v1',vrf=rounds||cfg.protocol==='synchronous-vrf-v1',synchronous=vrf||cfg.protocol==='synchronous-v1';
  if(rounds){assert(Number.isSafeInteger(cfg.rounds?.roundBlocks)&&cfg.rounds.roundBlocks>0,'round blocks');assert(Number.isInteger(cfg.rounds?.maxRoundTasks)&&cfg.rounds.maxRoundTasks>0&&cfg.rounds.maxRoundTasks<=64,'round task bound');}
  const type=n=>synchronous?({MultiAssetTaskMarket:rounds?'RoundVrfSynchronousTaskMarket':vrf?'VrfSynchronousTaskMarket':'SynchronousTaskMarket',ExecutionDisputes:'SynchronousExecutionDisputes'}[n]||n):n;
- const names=['PorwVerifierKeccak','MEPRegistry','InstanceRegistry','CommitRevealBeacon','PoRWClaimManager','MultiAssetTaskMarket','ExecutionDisputes','RelayRegistry','CollectionWhitelist','HostCapacity'].map(type);
- const configHash=keccak256(stringToHex(json({cfg,artifacts:names.map(n=>keccak256(artifact(n).bytecode.object))})));
+ const names=['PorwVerifierKeccak','MEPRegistry','InstanceRegistry','CommitRevealBeacon',...(rounds?['RoundFeeAccounting']:[]),'PoRWClaimManager','MultiAssetTaskMarket','ExecutionDisputes','RelayRegistry','CollectionWhitelist','HostCapacity'].map(type);
+ const configHash=keccak256(stringToHex(json({cfg,artifacts:names.map(n=>{const code=artifact(n).bytecode.object;return code.includes('_')?keccak256(stringToHex(code)):keccak256(code);})})));
  const state=fs.existsSync(journal)?JSON.parse(fs.readFileSync(journal)):{version:1,configHash,chainId:cfg.chainId,owner:cfg.owner,addresses:{},transactions:{}};
  assert.equal(state.configHash,configHash,'migration journal mismatch');
  const save=()=>{fs.mkdirSync(path.dirname(journal),{recursive:true});fs.writeFileSync(journal+'.tmp',json(state),{mode:0o600});fs.renameSync(journal+'.tmp',journal);};save();
@@ -44,12 +45,13 @@ export async function deployFamilyMesh({c,cfg,journal}) {
   assert.equal(receipt.status,'success',label+' reverted');
   Object.assign(row,{status:'success',blockNumber:String(receipt.blockNumber),gasUsed:String(receipt.gasUsed),contractAddress:receipt.contractAddress});save();console.log(label,row.hash);return receipt;
  }
- const deploy=async(key,name,args=[])=>{const a=artifact(type(name)),r=await tx(key,undefined,encodeDeployData({abi:a.abi,bytecode:a.bytecode.object,args}));state.addresses[key]=r.contractAddress;save();return r.contractAddress;};
+ const deploy=async(key,name,args=[])=>{const a=artifact(type(name)),bytecode=linkLibraries(a,rounds?{RoundFeeAccounting:state.addresses.feeAccounting}:{}),r=await tx(key,undefined,encodeDeployData({abi:a.abi,bytecode,args}));state.addresses[key]=r.contractAddress;save();return r.contractAddress;};
  const call=(label,key,name,fn,args)=>tx(label,state.addresses[key],encodeFunctionData({abi:artifact(type(name)).abi,functionName:fn,args}));
  const p=cfg.params,d=state.addresses;
  await deploy('verifier','PorwVerifierKeccak');await deploy('meps','MEPRegistry');
  await deploy('instances','InstanceRegistry',[BigInt(p.unit),p.exitDelay]);
  await deploy('beacon','CommitRevealBeacon',[p.epochBlocks,p.commitBlocks,p.revealBlocks,BigInt(p.beaconDeposit)]);
+ if(rounds)await deploy('feeAccounting','RoundFeeAccounting');
  await deploy('claims','PoRWClaimManager',[d.meps,d.instances,d.verifier,p.epochBlocks,p.openingWindow,BigInt(p.openingDeposit),BigInt(p.slashAmount),d.beacon]);
  await deploy('market','MultiAssetTaskMarket',synchronous?[d.meps,d.instances,d.claims,p.sessionCommitBlocks,p.sessionRevealBlocks,p.sessionDisputeBlocks,...(vrf?[{...cfg.vrf,subId:BigInt(cfg.vrf.subId)},['0x0000000000000000000000000000000000000000'],[BigInt(cfg.admissionFeeWei)],...(rounds?[cfg.rounds.roundBlocks,cfg.rounds.maxRoundTasks]:[])]:[])]:[d.meps,d.instances,d.claims,p.taskTimeout]);
  if(vrf){d.admission=await read(d.market,'MultiAssetTaskMarket','admission');save();}

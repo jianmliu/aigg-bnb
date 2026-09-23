@@ -5,6 +5,7 @@ import { createPublicClient, createWalletClient, http, defineChain, getContract,
 import { privateKeyToAccount } from "viem/accounts";
 import { MEPRegistryAbi, InstanceRegistryAbi, ClaimManagerAbi, TaskMarketAbi } from "../relayer/abi.mjs";
 import { eip712Domains } from "../relayer/chain.mjs";
+import {linkLibraries} from '../js/link_bytecode.mjs';
 export const here = path.dirname(fileURLToPath(import.meta.url)); export const root = path.join(here, "..");
 export const porwDir = path.join(root, "contracts/lib/aigg-porw/web/porw-browser"); export const porw = (f) => import(path.join(porwDir, f));
 export const FOUNDRY = process.env.FOUNDRY_BIN || "/root/.foundry171";
@@ -78,7 +79,7 @@ export async function startGateway(R, key, env = {}) {
 const ZERO_ADDR = "0x" + "0".repeat(40), ZERO_WORD = "0x" + "0".repeat(64);
 export function forgeBuild() { const r = spawnSync(path.join(FOUNDRY, "forge"), ["build"], { cwd: path.join(root, "contracts"), env: { ...process.env, PATH: `${FOUNDRY}:${process.env.PATH}` }, encoding: "utf8" }); if (r.status !== 0) throw new Error("forge build failed: " + (r.stderr || r.stdout).slice(-600)); }
 export const artifact = (name) => JSON.parse(fs.readFileSync(path.join(root, `contracts/out/${name}.sol/${name}.json`), "utf8"));
-export async function create(c, name, args = []) { const a = artifact(name); const hash = await c.wallet.deployContract({ abi: a.abi, bytecode: a.bytecode.object, args }); return (await c.pub.waitForTransactionReceipt({ hash })).contractAddress; }
+export async function create(c, name, args = [], libraries = {}) { const a = artifact(name); const hash = await c.wallet.deployContract({ abi: a.abi, bytecode: linkLibraries(a,libraries), args }); return (await c.pub.waitForTransactionReceipt({ hash })).contractAddress; }
 export async function sendTo(c, address, name, functionName, args = [], value = 0n) { const hash = await c.wallet.writeContract({ address, abi: artifact(name).abi, functionName, args, value }); return c.pub.waitForTransactionReceipt({ hash }); }
 export const readFrom = (c, address, name, functionName, args = []) => c.pub.readContract({ address, abi: artifact(name).abi, functionName, args });
 export async function deployMesh(rpc, key = KEYS[0], marketContract = "TaskMarket") {

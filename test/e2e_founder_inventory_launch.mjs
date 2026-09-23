@@ -18,8 +18,9 @@ const anvil=await H.startAnvil(Number(process.env.TEST_INVENTORY_PORT||(synchron
 try {
  fs.rmSync(journal,{force:true});
  const dep=await H.deployMesh(anvil.rpc),c=H.clientsFor(dep,H.KEYS[0]);
+ const feeLibrary=rounds?await H.create(c,'RoundFeeAccounting'):null;
  let coordinator;if(vrf)coordinator=await H.create(c,'SubscriptionCoordinator');
- if(synchronous)dep.addresses.market=await H.create(c,rounds?'RoundVrfSynchronousTaskMarket':vrf?'VrfSynchronousTaskMarket':'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,40n,40n,3000n,...(vrf?[{coordinator,keyHash:'0x'+'11'.repeat(32),subId:1n,requestConfirmations:3,callbackGasLimit:200000,nativePayment:true,waitBlocks:200n,activationBlocks:100n,readyTTL:400n,feeRecipient:c.account.address},['0x'+'00'.repeat(20)],[1000n],...(rounds?[20n,8]:[])]:[])]);
+ if(synchronous)dep.addresses.market=await H.create(c,rounds?'RoundVrfSynchronousTaskMarket':vrf?'VrfSynchronousTaskMarket':'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,40n,40n,3000n,...(vrf?[{coordinator,keyHash:'0x'+'11'.repeat(32),subId:1n,requestConfirmations:3,callbackGasLimit:200000,nativePayment:true,waitBlocks:200n,activationBlocks:100n,readyTTL:400n,feeRecipient:c.account.address},['0x'+'00'.repeat(20)],[1000n],...(rounds?[20n,8]:[])]:[])],rounds?{RoundFeeAccounting:feeLibrary}:{});
  for(const unit of [7209,18022])await H.sendTo(c,dep.addresses.meps,'MEPRegistry','declareLifKind',[unit]);
  const treasury=await H.create(c,'TreasuryRouter',[c.account.address,c.account.address]);
  const whitelist=await H.create(c,'CollectionWhitelist',[c.account.address]);

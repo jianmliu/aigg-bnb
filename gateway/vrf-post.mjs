@@ -1,5 +1,5 @@
 import {encodeFunctionData,keccak256} from 'viem';
-export const admissionExpense=c=>c.post_confirmed?String(c.admission_fee_wei||0):'0';
+export const admissionExpense=c=>c.post_confirmed?String(c.receipt?.admission_fee_wei??c.admission_fee_net_wei??c.admission_fee_wei??0):'0';
 // A phase-6 task exists before it has executors. Recover a broadcast/save crash from
 // its exact posting block, without public-RPC range logs or buying another draw.
 export async function recoverPost(ch,id,task,nonce){

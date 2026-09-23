@@ -276,6 +276,14 @@ contract RoundVrfAdmission {
         );
     }
 
+    /// @notice Net admission charge after the round's VRF request; the remainder of the prepaid cap is refundable.
+    function admissionCharge(bytes32 id, address token) external view returns (uint256) {
+        uint256 roundId = taskRound[id];
+        if (roundId == 0) return 0;
+        Round storage r = rounds[roundId];
+        return r.requestId == 0 ? 0 : admissionFee[token] / r.taskCount;
+    }
+
     function canExpire(bytes32 id) external view returns (bool) {
         Request storage t = requests[id];
         Round storage r = rounds[taskRound[id]];
