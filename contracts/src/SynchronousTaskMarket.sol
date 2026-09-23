@@ -122,6 +122,15 @@ contract SynchronousTaskMarket {
     function pendingTask(address host) public view virtual returns (bytes32) {
         return _pendingTask[host];
     }
+
+    function hasPendingTask(bytes32 id, address host) public view virtual returns (bool) {
+        return pendingTask(host) == id;
+    }
+
+    function _setReadinessSigner(address host, address signer) internal virtual {
+        readinessSigner[host] = signer;
+    }
+
     mapping(bytes32 => mapping(address => bytes32)) public commitments;
     mapping(bytes32 => mapping(address => bool)) public submitted;
     mapping(bytes32 => mapping(address => ITaskMarket.Result)) private results;
@@ -222,7 +231,7 @@ contract SynchronousTaskMarket {
     function setReady(bool value) external {
         address host = instances.resolve(msg.sender);
         _authorize(host, msg.sender, value ? uint64(block.number) + _sessionWindow() : uint64(block.number));
-        readinessSigner[host] = msg.sender;
+        _setReadinessSigner(host, msg.sender);
         _ready(host, value);
     }
 
@@ -230,7 +239,7 @@ contract SynchronousTaskMarket {
         require(block.number <= expiry && nonce == readinessNonce(host), InvalidSession());
         address signer = PorwEIP712.recover(readinessDigest(host, value, expiry, nonce), signature);
         _authorize(host, signer, value ? uint64(block.number) + _sessionWindow() : uint64(block.number));
-        readinessSigner[host] = signer;
+        _setReadinessSigner(host, signer);
         _ready(host, value);
     }
 
@@ -475,7 +484,7 @@ contract SynchronousTaskMarket {
         Session storage s = sessions[id];
         require(s.state == Status.Committing && block.number <= s.commitDeadline, InvalidSession());
         require(
-            pendingTask(host) == id && id != bytes32(0) && commitment != bytes32(0)
+            hasPendingTask(id, host) && id != bytes32(0) && commitment != bytes32(0)
                 && commitments[id][host] == bytes32(0),
             InvalidSession()
         );
@@ -496,7 +505,7 @@ contract SynchronousTaskMarket {
     ) external guard {
         Session storage s = sessions[id];
         require(s.state == Status.Revealing && block.number <= s.revealDeadline, InvalidSession());
-        require(pendingTask(host) == id && id != bytes32(0) && !submitted[id][host], InvalidSession());
+        require(hasPendingTask(id, host) && id != bytes32(0) && !submitted[id][host], InvalidSession());
         require(commitments[id][host] == resultCommitment(id, host, r.execDigest, r.execRoot, salt), InvalidSession());
         _authorize(
             host, PorwEIP712.recover(resultDigest(id, host, r.execDigest, r.execRoot), signature), s.totalDeadline
@@ -538,8 +547,8 @@ contract SynchronousTaskMarket {
         require(msg.sender == disputes && sessions[id].state == Status.Disputing, InvalidSession());
         if (winner != address(0)) {
             require(
-                block.number <= sessions[id].totalDeadline && winner != loser && pendingTask(winner) == id
-                    && pendingTask(loser) == id,
+                block.number <= sessions[id].totalDeadline && winner != loser && hasPendingTask(id, winner)
+                    && hasPendingTask(id, loser),
                 InvalidSession()
             );
         }

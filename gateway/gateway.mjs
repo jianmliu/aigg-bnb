@@ -1,6 +1,6 @@
 import {recoverPost,admissionExpense,persistVrfPost,broadcastVrfPost} from './vrf-post.mjs';
 import {AdmissionBudget} from './admission-budget.mjs';
-import {VRF_MODE,advanceAdmission,readAdmission} from '../relayer/vrf-admission.mjs';
+import {VRF_MODE,isVrfMode,advanceAdmission,readAdmission} from '../relayer/vrf-admission.mjs';
 // The gateway (docs/GATEWAY.md), milestones 0-1 and 3: a brain behind an OpenAI-compatible inference API.
 //
 // A request names a model (a MEP), a seed, a number of steps and an experiment; the gateway is the on-chain client
@@ -75,7 +75,7 @@ const published = await relayerApi("/deployment"); const dep = deploymentFromEnv
 if (dep.addresses.market.toLowerCase() !== published.addresses.market.toLowerCase() || Number(dep.chainId) !== Number(published.chainId)) throw new Error(`the relayer at ${cfg.relayer} serves another deployment (market ${published.addresses.market} on chain ${published.chainId}) than PORW_* names`);
 if(verificationMode(dep)!==verificationMode(published))throw Error("relayer verification capability mismatch");
 const ch = clients(dep, cfg.key);
-const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion()); const VRF=verificationMode(dep)===VRF_MODE; const ME = ch.account.address.toLowerCase();
+const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion()); const VRF=isVrfMode(verificationMode(dep)); const ME = ch.account.address.toLowerCase();
 // what the gateway reads that the relayer does not: the stored task (for finality), the timeout, and a dispute opening at settle
 const MarketExtra = parseAbi(["function TASK_TIMEOUT() view returns (uint64)", "event DisputeOpened(bytes32 indexed taskId, address a, address b)",
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",

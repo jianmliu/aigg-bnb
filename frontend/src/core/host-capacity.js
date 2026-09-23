@@ -6,7 +6,9 @@ export function matchingHost(node, snapshot) {
 }
 
 export async function saveBrowserCapacity(C, snapshot, slots) {
-  if (slots !== 0 && slots !== 1) throw Error('This browser has one serial executor; use 0 or 1 slot.');
+  const rounds=C.state.deployment?.verification?.mode==='synchronous-vrf-rounds-v1';
+  const limit=rounds?Math.min(64,Number(C.state.deployment.verification.maxRoundTasks)||1):1;
+  if (!Number.isInteger(slots)||slots<0||slots>limit) throw Error(rounds?'Round capacity exceeds the advertised task limit.':'This browser has one serial executor; use 0 or 1 slot.');
   const valid = () => {
     const s = C.state;
     if (!snapshot?.enabled || !s.chainOk || snapshot.instance?.toLowerCase() !== s.wallet?.toLowerCase() ||

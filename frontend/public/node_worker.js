@@ -25,6 +25,8 @@ const say = (op, data) => self.postMessage({ op, ...data });
 
 let node = null, rc = null, svc = null, familySvc = null, identity = null, familyMode = false;
 let synchronousMode = false, synchronousTask = null;
+let synchronousRounds = false, roundTaskLimit = 1;
+const synchronousPins = new Set();
 let nextResolveId = 0;
 const familyResolvers = new Map();
 const resolveFamily = (env) => new Promise((resolve, reject) => {
@@ -137,9 +139,10 @@ const ops = {
     }
     return { localMepId: local, matches: local === mepId, neurons: st.hdr.neurons };
   },
-  async relay({ url, familyMode: enabled = false, maxWorkingBytes = 2 * 1024 ** 3, synchronous = false }) {
+  async relay({ url, familyMode: enabled = false, maxWorkingBytes = 2 * 1024 ** 3, synchronous = false, roundMode = false, maxRoundTasks = 1 }) {
     familySvc?.stop(); svc?.stop(); rc?.close();
     familyMode = enabled === true; synchronousMode = synchronous === true;
+    synchronousRounds = synchronousMode && roundMode === true; roundTaskLimit = Math.max(1, Math.min(64, Number(maxRoundTasks)||1));
     rc = new RelayClient([url], node.key, { onLog: (m) => say("log", { msg: m }) }); const n = await rc.connect();
     svc = new NodeService(node, rc, { onResult: (res) => say("result", { res }) });
     if (familyMode && !synchronousMode) {
@@ -156,7 +159,7 @@ const ops = {
       // Never publish the root/digest via the legacy request/reply path before commit/reveal.
       if (synchronousExecution?.taskId === env.payload.taskId && synchronousExecution.published) return synchronousExecution.published;
       const taskId=env.payload.taskId;
-      if(synchronousReplies.size>=16&&!synchronousReplies.has(taskId))return {type:'result-refused',payload:{taskId,reason:'verification request capacity reached'}};
+      if(synchronousReplies.size>=(synchronousRounds?roundTaskLimit:16)&&!synchronousReplies.has(taskId))return {type:'result-refused',payload:{taskId,reason:'verification request capacity reached'}};
       const replies=synchronousReplies.get(taskId)||[];
       if(replies.length>=8)return {type:'result-refused',payload:{taskId,reason:'verification request capacity reached'}};
       const answer=new Promise(resolve=>replies.push(resolve));synchronousReplies.set(taskId,replies);
@@ -180,7 +183,11 @@ const ops = {
   },
   async syncExecute({ taskId, manifest, expectedResult = null }) {
     await ops.syncPin({taskId});
-    if (synchronousExecution?.taskId === taskId) return { result: synchronousExecution.result };
+    if (synchronousExecution?.taskId === taskId) {
+      const result=synchronousExecution.result;
+      if(synchronousRounds && expectedResult && (result.execRoot!==expectedResult.execRoot || result.execDigest!==expectedResult.execDigest))throw new Error('synchronous replay does not reproduce the signed result');
+      return {result};
+    }
     if (manifest.mep.exec !== 'int-lif') throw new Error("synchronous responder currently requires int-lif");
     let baseNode = node;
     if (!baseNode.models.has(manifest.baseMepId.toLowerCase())) {
@@ -248,9 +255,9 @@ const ops = {
     return {};
   },
   async syncRefuse({taskId,reason}) {for(const resolve of synchronousReplies.get(taskId)||[])resolve({type:'result-refused',payload:{taskId,reason}});synchronousReplies.delete(taskId);return {};},
-  async syncPin({ taskId }) { if (synchronousTask && synchronousTask !== taskId) throw new Error("another active synchronous task owns the worker"); synchronousTask = taskId; return {}; },
-  async syncRelease({ taskId, confirmedTerminal = false }) { if (taskId !== synchronousTask || !confirmedTerminal) throw new Error("confirmed terminal reconciliation required"); synchronousTask = null; synchronousExecution = null; return {}; },
-  async close() { if (synchronousTask) throw new Error("synchronous session pending; retain evidence and finish verification"); familySvc?.stop(); svc?.stop(); for (const p of familyResolvers.values()) { clearTimeout(p.timer); p.reject(new Error("worker closed")); } familyResolvers.clear(); try { rc && rc.close(); } catch {} return {}; },
+  async syncPin({ taskId }) { if(synchronousRounds){if(!synchronousPins.has(taskId)&&synchronousPins.size>=roundTaskLimit)throw new Error("round task capacity reached");synchronousPins.add(taskId);synchronousTask=taskId;return {};} if (synchronousTask && synchronousTask !== taskId) throw new Error("another active synchronous task owns the worker"); synchronousTask = taskId; return {}; },
+  async syncRelease({ taskId, confirmedTerminal = false }) { if(synchronousRounds){if(!confirmedTerminal||!synchronousPins.has(taskId))throw new Error("confirmed terminal reconciliation required");synchronousPins.delete(taskId);if(synchronousExecution?.taskId===taskId)synchronousExecution=null;if(synchronousTask===taskId)synchronousTask=null;return {};} if (taskId !== synchronousTask || !confirmedTerminal) throw new Error("confirmed terminal reconciliation required"); synchronousTask = null; synchronousExecution = null; return {}; },
+  async close() { if (synchronousTask || synchronousPins.size) throw new Error("synchronous session pending; retain evidence and finish verification"); familySvc?.stop(); svc?.stop(); for (const p of familyResolvers.values()) { clearTimeout(p.timer); p.reject(new Error("worker closed")); } familyResolvers.clear(); try { rc && rc.close(); } catch {} return {}; },
 };
 
 self.onmessage = async (ev) => {

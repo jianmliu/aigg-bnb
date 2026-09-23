@@ -4,7 +4,7 @@ import {createPublicClient,createWalletClient,http,defineChain,stringToHex,parse
 import {privateKeyToAccount} from 'viem/accounts';
 import * as H from './harness.mjs';
 import {deployVrfSubscription} from '../js/deploy_vrf_subscription.mjs';
-const synchronous=true;
+const synchronous=true,rounds=process.env.TEST_VRF_ROUNDS==='1';
 const anvil=await H.startAnvil(8597),journal='/tmp/aigg-vrf-subscription-test.json';
 try {
  fs.rmSync(journal,{force:true});fs.rmSync(journal+'.mesh.json',{force:true});
@@ -16,7 +16,8 @@ try {
  const a=JSON.parse(fs.readFileSync('contracts/out/SubscriptionCoordinator.sol/SubscriptionCoordinator.json'));
  const hash=await c.wallet.deployContract({abi:a.abi,bytecode:a.bytecode.object});
  const coordinator=(await c.pub.waitForTransactionReceipt({hash})).contractAddress;
- cfg.protocol='synchronous-vrf-v1';
+ cfg.protocol=rounds?'synchronous-vrf-rounds-v1':'synchronous-vrf-v1';
+ if(rounds)cfg.rounds={roundBlocks:20,maxRoundTasks:8};
  cfg.vrf={coordinator,keyHash:'0x'+'11'.repeat(32),requestConfirmations:3,callbackGasLimit:200000,nativePayment:true,waitBlocks:200,activationBlocks:100,readyTTL:400,feeRecipient:account.address};
  cfg.fundingWei='10000000000000000';cfg.admissionFeeWei='1000000000000000';
  await assert.rejects(deployVrfSubscription({c,cfg:{...cfg,vrf:{...cfg.vrf,requestConfirmations:1}},journal}),/confirmations/);

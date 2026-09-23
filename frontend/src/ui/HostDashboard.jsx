@@ -13,7 +13,7 @@ const bnb = (wei) => {
 };
 export default function HostDashboard({ active }) {
   const s = C.state, instance = s.wallet, deployment = s.deployment;
-  const synchronous=['synchronous-v1','synchronous-vrf-v1'].includes(deployment?.verification?.mode);
+  const synchronous=['synchronous-v1','synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(deployment?.verification?.mode);
   const base = deployment ? C.relayer() : null;
   const key = `${base}:${deployment?.chainId}:${deployment?.addresses?.market}:${instance}`;
   const [snapshot, setSnapshot] = useState(null);

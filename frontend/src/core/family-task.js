@@ -87,7 +87,7 @@ export function createFamilyResolver({ deployment, instance, families, sp='', cl
    ]);
    const [task,,,postedAt,,exists,settled,disputed]=stored;
    assert(exists && !settled && !disputed && !submitted,'task is not open for execution');
-   if(['synchronous-v1','synchronous-vrf-v1'].includes(deployment.verification?.mode)){
+   if(['synchronous-v1','synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(deployment.verification?.mode)){
     const state=await read(market,'sessionState',[p.taskId]);assert(Number(state[0])===1,'task is not committing');assert(blockNumber<=BigInt(state[1]),'task execution lease expired');
    }else assert(blockNumber<=postedAt+timeout,'task execution lease expired');
    assert(executors.some(x=>same(x,instance)),'host was not assigned this task');

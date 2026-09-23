@@ -13,7 +13,7 @@
 // holds a payload either: the bytes are transferred to node_worker.js and the model_id is recomputed there.
 import { encode, decodeUint, decodeAddress, hex, keccakWords } from "./abi.js";
 import { createFamilyResolver } from "./family-task.js";
-import { SynchronousHost } from "./synchronous-host.js";
+import { SynchronousHost, RoundSynchronousHost } from "./synchronous-host.js";
 import { unhex } from "./abi.js";
 import { keypair, signHash } from "/porw/claim.js";
 import * as E from "/porw/eip712.js";
@@ -74,7 +74,7 @@ function ensureWorker() {
 const ask = (op, data = {}, transfer = []) => new Promise((res, rej) => { const reqId = nextReq++; waiting.set(reqId, { res, rej }); ensureWorker().postMessage({ op, reqId, ...data }, transfer); });
 /** a task the node answered over the relay: the page is what talks to the relayer's API */
 async function onTaskResult(res) {
-  if (["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) throw new Error("legacy result delivery is forbidden for synchronous sessions");
+  if (["synchronous-v1","synchronous-vrf-v1","synchronous-vrf-rounds-v1"].includes(state.deployment?.verification?.mode)) throw new Error("legacy result delivery is forbidden for synchronous sessions");
   const r = runningRelayer ? await (await fetch(runningRelayer + "/tx/result", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(res)})).json() : await api("/tx/result", res); res.submitted = r.ok; state.results.push(res);
   log(`task ${res.taskId.slice(0, 12)}… executed; relayer submitResult ${r.ok ? "ok" : "FAILED " + r.error}`);
 }
@@ -366,17 +366,17 @@ export async function hostOnNode(m) {
   // The TERMS, when the brain is an individual of a collection: its mep id is keccak(profile, beneficiary, bps) and
   // the terms are nowhere in the bytes, so a host that is not told them serves an id the chain never draws.
   const terms = m.royaltyBps > 0 && m.beneficiary ? { beneficiary: m.beneficiary, royaltyBps: m.royaltyBps } : null;
-  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, baseMepId: m.baseMepId || null, terms, family: (familyMode || ["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
+  const r = await ask("host", { mepId: m.mepId, name: state.loaded[m.mepId].name, maxSteps, exec: m.exec === "int-lif" ? "lif" : "spmv", wUnitQ16: m.wUnitQ16 || 0, baseMepId: m.baseMepId || null, terms, family: (familyMode || ["synchronous-v1","synchronous-vrf-v1","synchronous-vrf-rounds-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId }); // the brain's kind's weight unit, from the relayer's /meps (0: the default)
   if (!r.matches) { log(`WARNING ${mepName(m)}: local MEP id ${r.localMepId.slice(0, 12)}… ≠ registered ${m.mepId.slice(0, 12)}… (model bytes or exec kind mismatch)`); return; }
   state.node.models.set(m.mepId, { neurons: r.neurons, maxSteps, memoryBytes: bytes });
-  if ((familyMode || ["synchronous-v1","synchronous-vrf-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId) runningFamilies.set(m.mepId, { ...m, maxSteps,
+  if ((familyMode || ["synchronous-v1","synchronous-vrf-v1","synchronous-vrf-rounds-v1"].includes(state.deployment?.verification?.mode)) && !m.baseMepId) runningFamilies.set(m.mepId, { ...m, maxSteps,
     nameBytes: new TextEncoder().encode(state.loaded[m.mepId].name).length });
   log(`${mepName(m)}: resident on the node, serving audits and tasks`);
 }
 function startSynchronousPolling(){if(synchronousHost?.initialized&&!synchronousHost.pollTimer)synchronousHost.pollTimer=setInterval(()=>synchronousHost.tick().catch(e=>log('verification: '+e.message)),3000);}
 async function configureSynchronousHost(identity,k) {
     const deployment=structuredClone(state.deployment);
-    synchronousHost=new SynchronousHost({deployment,instance:identity.instance,delegation:state.delegation,ask,
+    synchronousHost=new (deployment.verification?.mode==='synchronous-vrf-rounds-v1'?RoundSynchronousHost:SynchronousHost)({deployment,instance:identity.instance,delegation:state.delegation,ask,
       sign:hash=>hex(signHash(unhex(hash),k.priv)),
       resolve:async env=>{
         const resolver=createFamilyResolver({deployment,instance:identity.instance,families:runningFamilies,sp:$("sp")?.value||"",
@@ -391,9 +391,9 @@ async function configureSynchronousHost(identity,k) {
 }
 export async function startNode() {
   const verificationMode=state.deployment?.verification?.mode || 'legacy';
-  if (!['legacy','synchronous-v1','synchronous-vrf-v1'].includes(verificationMode)) throw new Error('Unsupported verification capability');
+  if (!['legacy','synchronous-v1','synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(verificationMode)) throw new Error('Unsupported verification capability');
   if (state.node) throw new Error('The node is already running');
-  const synchronous=['synchronous-v1','synchronous-vrf-v1'].includes(verificationMode);
+  const synchronous=['synchronous-v1','synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(verificationMode);
   if(synchronous) {state.synchronousSession={phase:'reconciling',safeToClose:false};onChange();}
   if (!state.delegation) throw new Error("delegate first");
   const ready = [...state.hosted].filter((id) => state.prepared.has(id));
@@ -408,7 +408,7 @@ export async function startNode() {
   runningRelayer = relayer(); runningFamilies.clear();
   familyResolver = state.deployment.familyHosting ? createFamilyResolver({deployment:structuredClone(state.deployment),instance:identity.instance,
     families:runningFamilies,sp:$("sp")?.value || ""}) : null;
-  await ask("relay", { url: state.deployment.relay, familyMode: !!state.deployment.familyHosting, maxWorkingBytes: FAMILY_WORKING_BYTES, synchronous });
+  await ask("relay", { url: state.deployment.relay, familyMode: !!state.deployment.familyHosting, maxWorkingBytes: FAMILY_WORKING_BYTES, synchronous, roundMode:verificationMode==='synchronous-vrf-rounds-v1',maxRoundTasks:state.deployment.verification?.maxRoundTasks });
   state.node = { models: new Map(), memoryBytes: 0, identity }; // the page's view of what the worker holds resident
   for (const id of ready) await hostOnNode(mepById(id));
   if (synchronous) await configureSynchronousHost(identity,k);
@@ -515,13 +515,13 @@ export const armSynchronousSession = async () => {if(!synchronousHost)throw Erro
 export const drainSynchronousSession = async () => {if(!synchronousHost)throw Error('Start the synchronous host first');await synchronousHost.readiness(false);};
 export const resumeSynchronousSession = async () => {
   if(synchronousHost){try{if(!synchronousHost.initialized)await synchronousHost.start();else await synchronousHost.tick();}finally{startSynchronousPolling();}return;}
-  if(!['synchronous-v1','synchronous-vrf-v1'].includes(state.deployment?.verification?.mode)||!state.delegation)throw Error('Connect and delegate the saved session key before recovery');
+  if(!['synchronous-v1','synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(state.deployment?.verification?.mode)||!state.delegation)throw Error('Connect and delegate the saved session key before recovery');
   const identity=Object.freeze({instance:state.delegation.instance,chainId:state.deployment.chainId,market:state.deployment.addresses.market,familyHosting:!!state.deployment.familyHosting});
   const k=sessionKey();runningRelayer=relayer();
   await ask('init',{privHex:hex(k.priv),domains:state.deployment.domains,delegation:state.delegation});
-  await ask('relay',{url:state.deployment.relay,familyMode:!!state.deployment.familyHosting,synchronous:true,maxWorkingBytes:FAMILY_WORKING_BYTES});
+  await ask('relay',{url:state.deployment.relay,familyMode:!!state.deployment.familyHosting,synchronous:true,roundMode:state.deployment.verification?.mode==='synchronous-vrf-rounds-v1',maxRoundTasks:state.deployment.verification?.maxRoundTasks,maxWorkingBytes:FAMILY_WORKING_BYTES});
   state.node={models:new Map(),memoryBytes:0,identity};
   await configureSynchronousHost(identity,k);
   setInterval(()=>loop().catch(e=>log('loop error: '+e.message)),3000);onChange();
 };
-window.addEventListener?.('beforeunload',event=>{if(['synchronous-v1','synchronous-vrf-v1'].includes(state.deployment?.verification?.mode)&&state.node&&!state.synchronousSession?.safeToClose){event.preventDefault();event.returnValue='Verification is still pending.';}});
+window.addEventListener?.('beforeunload',event=>{if(['synchronous-v1','synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(state.deployment?.verification?.mode)&&state.node&&!state.synchronousSession?.safeToClose){event.preventDefault();event.returnValue='Verification is still pending.';}});
