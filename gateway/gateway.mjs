@@ -1,6 +1,7 @@
 import {recoverPost,admissionExpense,persistVrfPost,broadcastVrfPost} from './vrf-post.mjs';
 import {AdmissionBudget} from './admission-budget.mjs';
-import {VRF_MODE,advanceAdmission,readAdmission} from '../relayer/vrf-admission.mjs';
+import {CreditSweeper} from './credit-sweep.mjs';
+import {VRF_MODE,ROUND_VRF_MODE,VrfAdmissionAbi,isVrfMode,advanceAdmission,readAdmission} from '../relayer/vrf-admission.mjs';
 // The gateway (docs/GATEWAY.md), milestones 0-1 and 3: a brain behind an OpenAI-compatible inference API.
 //
 // A request names a model (a MEP), a seed, a number of steps and an experiment; the gateway is the on-chain client
@@ -39,6 +40,7 @@ import {VRF_MODE,advanceAdmission,readAdmission} from '../relayer/vrf-admission.
 //   GATEWAY_WAKE_TIMEOUT_MS (300000) maximum cold-capacity wait before a task is posted; SSE stays alive meanwhile
 //   GATEWAY_KEEP           (5000) how many finished calls stay readable; unfinished ones are never dropped. Their counts
 //                          (~0.5 MB a call at FlyWire's size) live beside the state file and go with them
+//   GATEWAY_ROUND_CREDIT_SWEEP_MIN_WEI (1e15) withdraw accumulated market credits to the fee wallet in one transaction
 //   GATEWAY_COUNTS_WAIT_MS (15000) a provider replies AFTER it has submitted on-chain, so a task can settle before its
 //                          counts arrive: how long to wait for a vector that matches the settled digest
 //   GATEWAY_PORT / PORT, GATEWAY_HOST, GATEWAY_KEEPALIVE_MS (20000), GATEWAY_RESULT_TIMEOUT_MS (600000), GATEWAY_POLL_MS (1000)
@@ -68,6 +70,8 @@ if (!cfg.relayer) throw new Error("GATEWAY_RELAYER: the relayer's HTTP API");
 if (!cfg.bearer && !cfg.open) throw new Error("GATEWAY_BEARER is not set: anybody could spend the fee wallet. (GATEWAY_OPEN=1 says that is intended.)");
 if (!Number.isSafeInteger(cfg.wakeTimeoutMs) || cfg.wakeTimeoutMs < 1 || cfg.wakeTimeoutMs > 3600000) throw new Error("GATEWAY_WAKE_TIMEOUT_MS must be 1 … 3600000");
 if (cfg.minRedundancy < 1) throw new Error("GATEWAY_MIN_REDUNDANCY >= 1");
+const sweepMin=BigInt(e.GATEWAY_ROUND_CREDIT_SWEEP_MIN_WEI||'1000000000000000');
+if(sweepMin<=0n)throw Error('GATEWAY_ROUND_CREDIT_SWEEP_MIN_WEI must be positive');
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a); const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const relayerApi = async (p, signal = AbortSignal.timeout(10000)) => { const r = await fetch(cfg.relayer + p, { signal }); if (!r.ok) throw new Error(`relayer ${p}: HTTP ${r.status}`); return r.json(); };
@@ -75,10 +79,12 @@ const published = await relayerApi("/deployment"); const dep = deploymentFromEnv
 if (dep.addresses.market.toLowerCase() !== published.addresses.market.toLowerCase() || Number(dep.chainId) !== Number(published.chainId)) throw new Error(`the relayer at ${cfg.relayer} serves another deployment (market ${published.addresses.market} on chain ${published.chainId}) than PORW_* names`);
 if(verificationMode(dep)!==verificationMode(published))throw Error("relayer verification capability mismatch");
 const ch = clients(dep, cfg.key);
-const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion()); const VRF=verificationMode(dep)===VRF_MODE; const ME = ch.account.address.toLowerCase();
+const SYNCHRONOUS=await verifyDeployment(dep,()=>ch.market.read.protocolVersion(),()=>ch.market.read.admissionVersion()); const VRF=isVrfMode(verificationMode(dep)),ROUNDS=verificationMode(dep)===ROUND_VRF_MODE; const ME = ch.account.address.toLowerCase();
 // what the gateway reads that the relayer does not: the stored task (for finality), the timeout, and a dispute opening at settle
 const MarketExtra = parseAbi(["function TASK_TIMEOUT() view returns (uint64)", "event DisputeOpened(bytes32 indexed taskId, address a, address b)",
   "event TaskSettled(bytes32 indexed taskId, bytes32 execDigest, address[] executors)",
+  "function credits(address token,address account) view returns (uint256)",
+  "function withdrawCredit(address token,address payable recipient) returns (uint256)",
   "struct Task { bytes32 mepId; uint32 stimulusSeed; uint32 steps; uint32 commitStride; bytes32 initStateRoot; uint256 fee; uint64 deadline; uint8 redundancy; }",
   "function tasks(bytes32) view returns (Task t, address client, uint64 epoch, uint64 postedAt, uint64 settledAt, bool exists, bool settled, bool disputed, bool repudiated)"]);
 const market = dep.addresses.market; const readMarket = (functionName, args = []) => ch.pub.readContract({ address: market, abi: MarketExtra, functionName, args });
@@ -92,6 +98,54 @@ const admissionBudget=VRF?new AdmissionBudget(cfg.state+".admission.json",e.GATE
 const calls = new Map(); const bus = new Map(); // id -> call; id -> EventEmitter (only while somebody is listening or it is running)
 const save = () => { const tmp = cfg.state + ".tmp"; fs.writeFileSync(tmp, JSON.stringify([...calls.values()], null, 1), { mode: 0o600 }); fs.renameSync(tmp, cfg.state); };
 if (fs.existsSync(cfg.state)) for (const c of JSON.parse(fs.readFileSync(cfg.state, "utf8"))) calls.set(c.id, c);
+let admissionRecovery=null;
+function restoreRoundCharge(c,gross,charge){
+  if(!c)return;
+  let changed=false;
+  if(!c.post_confirmed){c.post_confirmed=true;changed=true;}
+  if(c.admission_fee_net_wei!==String(charge)){c.admission_fee_net_wei=String(charge);changed=true;}
+  if(c.receipt){
+    const fields={admission_fee_wei:String(charge),admission_deposit_wei:String(gross),admission_refund_wei:String(gross-charge),admission_fee_refundable:charge<gross};
+    for(const [key,value] of Object.entries(fields))if(c.receipt[key]!==value){c.receipt[key]=value;changed=true;}
+  }
+  if(changed)save();
+}
+function recoverRoundAdmission() {
+  if(!ROUNDS||admissionRecovery)return admissionRecovery;
+  const run=(async()=>{
+    // Only retained calls need a local-state repair; the durable ledger itself
+    // is independent of pruning. Avoid walking the full lifetime ledger each minute.
+    for(const c of calls.values()){
+      const row=admissionBudget.entries[c.id];
+      if(row&&typeof row==='object')restoreRoundCharge(c,BigInt(row.gross),BigInt(row.net));
+    }
+    for(const id of admissionBudget.pending){
+      const row=admissionBudget.entries[id],c=calls.get(id);
+      // reserve() happens before the signed post exists. A crash in that gap
+      // cannot have posted this task, so repeated RPC scans cannot repair it.
+      if(!c?.post_tx&&!c?.post_raw&&!c?.post_confirmed)continue;
+      if(c.post_reverted)continue;
+      try{
+        const charge=await readFinalized(ch.pub,async options=>{
+          const stored=await ch.pub.readContract({address:market,abi:MarketExtra,functionName:'tasks',args:[id],...options});
+          if(!stored[5]||!stored[6])return null;
+          const controller=await ch.market.read.admission([],options);
+          return ch.pub.readContract({address:controller,abi:VrfAdmissionAbi,functionName:'admissionCharge',args:[id,'0x'+'00'.repeat(20)],...options});
+        });
+        if(charge===null)continue;
+        const gross=BigInt(row);
+        if(charge>gross)throw Error('round admission exceeds deposit');
+        admissionBudget.reconcile(id,charge);
+        restoreRoundCharge(c,gross,charge);
+        sweepRoundCredits();
+        log(`recovered round admission ${id.slice(0,12)}…: ${charge}/${gross} wei`);
+      }catch(err){log(`round admission recovery deferred ${id.slice(0,12)}…: ${err?.shortMessage||err?.message||err}`);}
+    }
+  })();
+  admissionRecovery=run;
+  void run.finally(()=>{if(admissionRecovery===run)admissionRecovery=null;}).catch(()=>{});
+  return run;
+}
 const emit = (c, type, data = {}) => { c.events.push({ type, at: Date.now(), ...data }); save(); bus.get(c.id)?.emit("event", { type, ...data }); };
 const TERMINAL = new Set(["completed", "failed"]);
 // spike counts, beside the state file: bytes as the executor sent them (LE u32 per neuron), one file per call, written
@@ -181,7 +235,7 @@ async function plan(body, { signal, onCold, onCapacity } = {}) {
   let init = null; if (lif) try { init = state0Root(m.neurons, seed, stimulate, silence); } catch (err) { if (err instanceof RangeError) throw new Refusal(400, "invalid_request_error", err.message); throw err; }
   const price = priceOf(m, x.stimulate?.set ?? null); price.output_tokens = tokensFor(steps, redundancy, price);
   const fee = BigInt(price.output_tokens) * cfg.weiPerStep;
-  const admissionFee=VRF?await ch.market.read.admissionFee(["0x"+"00".repeat(20)]):0n;
+  const admissionFee=ROUNDS?await ch.pub.readContract({address:await ch.market.read.admission(),abi:VrfAdmissionAbi,functionName:'admissionFee',args:["0x"+"00".repeat(20)]}):VRF?await ch.market.read.admissionFee(["0x"+"00".repeat(20)]):0n;
   // the float ran dry: say so before the chain does, and in a way the operator's alerting can tell from a cold model
   const funds = await ch.pub.getBalance({ address: ME }); if (funds < fee + admissionFee + await gasHeadroom(redundancy)) throw new Refusal(503, "gateway_unfunded", "the gateway's fee wallet cannot cover this call: it needs topping up", { retry_after: 300 });
   // what to read out: named neurons, or (asked for nothing) the ten that fired most. Checked now, while refusing is free
@@ -207,6 +261,11 @@ const callGas = (redundancy) => 200_000n + 40_000n * BigInt(redundancy) + 100_00
 const gasHeadroom = async (redundancy) => 2n * (VRF?16777216n:callGas(redundancy)) * await ch.pub.getGasPrice();
 let sending = Promise.resolve(); // one wallet, one nonce sequence: sends are serialised
 const send = (fn) => { const p = sending.then(fn); sending = p.catch(() => {}); return p; };
+const roundCreditSweep=ROUNDS?new CreditSweeper({threshold:sweepMin,
+  read:()=>ch.pub.readContract({address:market,abi:MarketExtra,functionName:'credits',args:['0x'+'00'.repeat(20),ch.account.address]}),
+  withdraw:()=>send(()=>ch.wallet.writeContract({address:market,abi:MarketExtra,functionName:'withdrawCredit',args:['0x'+'00'.repeat(20),ch.account.address]})),
+  wait:hash=>ch.pub.waitForTransactionReceipt({hash})}):null;
+const sweepRoundCredits=()=>{if(roundCreditSweep)void roundCreditSweep.maybeSweep().then(hash=>{if(hash)log(`market credits swept: ${hash}`);}).catch(err=>log(`market credit sweep deferred: ${err?.shortMessage||err?.message||err}`));};
 const TASK_TUPLE = [{ type: "tuple", components: [{ name: "mepId", type: "bytes32" }, { name: "stimulusSeed", type: "uint32" }, { name: "steps", type: "uint32" }, { name: "commitStride", type: "uint32" }, { name: "initStateRoot", type: "bytes32" }, { name: "fee", type: "uint256" }, { name: "deadline", type: "uint64" }, { name: "redundancy", type: "uint8" }] }, { type: "bytes32" }];
 const taskIdOf = (t, nonce) => keccak256(encodeAbiParameters(TASK_TUPLE, [t, nonce]));
 const SESSION = parseAbiItem("event SessionKeySet(address indexed instance, address indexed session, uint64 expiry)");
@@ -255,7 +314,7 @@ async function create(p, body) {
   const nonce = "0x" + crypto.randomBytes(32).toString("hex"); const id = SYNCHRONOUS?await ch.market.read.taskId([p.task,"0x"+"00".repeat(20),nonce,0,ch.account.address]):taskIdOf(p.task, nonce);
   const c = { id, created_at: Math.floor(Date.now() / 1000), status: "queued", model: body.model, mepId: p.m.mepId, exec: p.m.exec, task: wire(p.task), nonce,
     stimulate: p.stimulate, silence: p.silence, stimulated: p.stimulated, readout: p.readout, price: p.price || null, admission_fee_wei:p.admissionFee||"0", admission_txs:[], executors: [], results: {}, events: [], error: null, receipt: null };
-  calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order
+  calls.set(id, c); const finished = [...calls.values()].filter((x) => TERMINAL.has(x.status)&&!(ROUNDS&&admissionBudget.pending.has(x.id))); for (const old of finished.slice(0, Math.max(0, finished.length - cfg.keep))) { calls.delete(old.id); fs.rmSync(countsFile(old.id), { force: true }); } // oldest first: a Map keeps insertion order; unreconciled round calls retain their recovery evidence
   save(); return c; // the INTENT is on disk before a wei moves: the id is the task's, so a restart can tell whether it was posted
 }
 async function drive(c, signal) {
@@ -264,7 +323,7 @@ async function drive(c, signal) {
     if(VRF&&!c.post_tx){const original=await recoverPost(ch,c.id,task,c.nonce);if(original){c.post_tx=original;c.post_confirmed=true;save();}else if(Object.hasOwn(admissionBudget.entries,c.id))throw Error('Uncertain admission reservation without persisted transaction; refusing a new broadcast');}
     if(VRF&&c.post_tx){
       if(c.post_raw)await send(()=>broadcastVrfPost(ch,c));
-      const receipt=await ch.pub.waitForTransactionReceipt({hash:c.post_tx});if(receipt.status!=='success')throw Error('postTask reverted');c.post_confirmed=true;save();
+      const receipt=await ch.pub.waitForTransactionReceipt({hash:c.post_tx});if(receipt.status!=='success'){c.post_reverted=true;save();throw Error('postTask reverted');}c.post_confirmed=true;save();
     }
     if (!ex.length) { // not on the chain yet: post it -- or, after a restart, wait for the transaction that was already sent
       if (!c.post_tx) { c.post_tx = await send(async () => {
@@ -279,7 +338,7 @@ async function drive(c, signal) {
         }
         return ch.market.write.postTask([task, c.nonce], { value: task.fee+BigInt(c.admission_fee_wei||0) });
       }); save(); }
-      const rc = await ch.pub.waitForTransactionReceipt({ hash: c.post_tx }); if (rc.status !== "success") throw new Error("postTask reverted");c.post_confirmed=true;save();
+      const rc = await ch.pub.waitForTransactionReceipt({ hash: c.post_tx }); if (rc.status !== "success") {c.post_reverted=true;save();throw new Error("postTask reverted");}c.post_confirmed=true;save();
       ex = await executorsOf(c.id);
     }
     if(VRF){
@@ -342,10 +401,15 @@ async function drive(c, signal) {
     const post = await ch.pub.getTransactionReceipt({ hash: c.post_tx }); let gasWei = post.gasUsed * post.effectiveGasPrice + rc.gasUsed * rc.effectiveGasPrice;
     let admissionGas=0n;for(const hash of c.admission_txs||[]){const r=await ch.pub.getTransactionReceipt({hash});admissionGas+=r.gasUsed;gasWei+=r.gasUsed*r.effectiveGasPrice;}
     const gas = { post_task: Number(post.gasUsed), settle: Number(rc.gasUsed), admission:Number(admissionGas), wei: String(gasWei), tokens: Number((gasWei + cfg.weiPerStep - 1n) / cfg.weiPerStep) };
-    const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, admission_fee_wei:c.admission_fee_wei||"0", admission_fee_refundable:false, total_escrow_wei:String(task.fee+BigInt(c.admission_fee_wei||0)), gas, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
+    const admissionDeposit=BigInt(c.admission_fee_wei||0);
+    const admissionCharged=ROUNDS?await readFinalized(ch.pub,async options=>ch.pub.readContract({address:await ch.market.read.admission([],options),abi:VrfAdmissionAbi,functionName:'admissionCharge',args:[c.id,"0x"+"00".repeat(20)],...options})):admissionDeposit;
+    if(admissionCharged>admissionDeposit)throw Error('round admission exceeds deposit');
+    if(ROUNDS){admissionBudget.reconcile(c.id,admissionCharged);restoreRoundCharge(c,admissionDeposit,admissionCharged);}
+    const admissionRefund=admissionDeposit-admissionCharged;
+    const base = { chain: Number(dep.chainId), market, task: c.id, post_tx: c.post_tx, settle_tx: hash, fee_wei: c.task.fee, admission_fee_wei:String(admissionCharged), admission_deposit_wei:String(admissionDeposit),admission_refund_wei:String(admissionRefund),admission_fee_refundable:admissionRefund>0n, total_escrow_wei:String(task.fee+admissionDeposit), gas, redundancy: task.redundancy, steps: task.steps, commit_stride: task.commitStride, seed: task.stimulusSeed, init_state_root: task.initStateRoot,
       stimulate_ids: c.stimulate, silence_ids: c.silence, stimulated: c.stimulated, price: c.price, results: c.results };
     if (dispute) { c.receipt = { ...base, executors: ex, disputed: [dispute.args.a, dispute.args.b].map((a) => a.toLowerCase()) }; return fail(c, 502, "disputed", "the executors disagreed and the task is in dispute: nothing is billed, and the fee is held until the dispute resolves"); }
-    if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, SYNCHRONOUS?"inconclusive":"no_result", SYNCHRONOUS?"verification ended inconclusively: execution fee refund credited to the client; admission fee remains spent":"no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
+    if (!settled || settled.args.executors.length === 0) { c.receipt = { ...base, executors: [], refunded: true }; return fail(c, 504, SYNCHRONOUS?"inconclusive":"no_result", SYNCHRONOUS?"verification ended inconclusively: execution fee and any round admission refund credited to the client":"no executor answered before the market's timeout: the fee was refunded, nothing is billed"); }
     const at = Number((await readMarket("tasks", [c.id]))[4]);
     // The output. A provider replies after it has submitted, so the task may have settled first: wait a little for a vector
     // that hashes to the SETTLED digest. One is enough, whoever sent it -- the digest is what the providers agreed on.
@@ -360,7 +424,7 @@ async function drive(c, signal) {
       ...(SYNCHRONOUS?{verification:verificationMode(dep),assumption:"independently administered executors; local adjudication assumes an honest executor"}:{}),counts: c.counts, ...(got ? { counts_url: `/v1/tasks/${c.id}/counts` } : {}) };
     c.status = "completed"; emit(c, "response.completed"); log(`task ${c.id.slice(0, 12)}… settled: ${c.receipt.executors.length} paid, digest ${c.receipt.exec_digest.slice(0, 12)}…`);
   } catch (err) { fail(c, err.status || 500, err.type || "gateway_error", String(err?.shortMessage || err?.message || err).slice(0, 300)); }
-  finally { setTimeout(() => bus.delete(c.id), 1000); }
+  finally { sweepRoundCredits(); void recoverRoundAdmission(); setTimeout(() => bus.delete(c.id), 1000); }
 }
 function fail(c, status, type, message) { c.status = "failed"; c.error = { status, type, message }; emit(c, "response.failed", { error: c.error }); log(`task ${c.id.slice(0, 12)}… failed: ${type}`); }
 function start(c, signal) { bus.set(c.id, new EventEmitter()); drive(c, signal); }
@@ -392,12 +456,12 @@ function view(c) {
     // Both are in the SAME unit (GATEWAY_WEI_PER_STEP a token), so one price per token bills a call at exactly what it
     // cost: fee = output_tokens x wei_per_token, gas = input_tokens x wei_per_token, and nothing is left behind.
     // Nothing is billed for a call that did not complete (ai.gg drops all-zero usage).
-    usage: { input_tokens: done ? gasTokensOf(c) : 0, output_tokens: done ? tokensOf(c) : 0, total_tokens: done ? gasTokensOf(c) + tokensOf(c) : 0, input_tokens_details: { cached_tokens: 0 } }, protocol_expenses:{admission_fee_wei:admissionExpense(c),admission_refundable:false,failed_call_payer:"gateway"}, error: c.error, receipt: c.receipt, executors: c.executors };
+    usage: { input_tokens: done ? gasTokensOf(c) : 0, output_tokens: done ? tokensOf(c) : 0, total_tokens: done ? gasTokensOf(c) + tokensOf(c) : 0, input_tokens_details: { cached_tokens: 0 } }, protocol_expenses:{admission_fee_wei:admissionExpense(c),admission_refundable:!!c.receipt?.admission_fee_refundable,failed_call_payer:"gateway"}, error: c.error, receipt: c.receipt, executors: c.executors };
 }
 // the work, in tokens: steps x redundancy x the brain's factor x the stimulus set's. A call whose fee carries a factor
 // its token count does not is a call the gateway pays for out of its own pocket.
 const tokensOf = (c) => c.price?.output_tokens ?? c.task.steps * c.task.redundancy;
-const admissionTokensOf=c=>Number((BigInt(c.admission_fee_wei||0)+cfg.weiPerStep-1n)/cfg.weiPerStep);
+const admissionTokensOf=c=>Number((BigInt(admissionExpense(c))+cfg.weiPerStep-1n)/cfg.weiPerStep);
 const gasTokensOf = (c) => (c.receipt?.gas?.tokens ?? 0)+admissionTokensOf(c);
 const done = (c) => new Promise((res) => { if (TERMINAL.has(c.status)) return res(); const b = bus.get(c.id); if (!b) return res(); const on = (ev) => { if (ev.type === "response.completed" || ev.type === "response.failed") { b.off("event", on); res(); } }; b.on("event", on); });
 
@@ -510,6 +574,9 @@ server.listen(cfg.port, cfg.host, () => {
   (async () => { for (const c of calls.values()) if (!TERMINAL.has(c.status)) {
     const posted = c.post_tx || (VRF ? (await readMarket("tasks",[c.id]))[5] : (await executorsOf(c.id)).length > 0); // the id is the task's: the chain knows, whatever the file had time to record
     if (!posted) fail(c, 500, "gateway_restarted", "the gateway restarted before the task was posted: nothing was spent"); else { log(`resuming ${c.id.slice(0, 12)}…`); start(c); } } })();
+  sweepRoundCredits();
+  void recoverRoundAdmission();
+  if(ROUNDS)setInterval(()=>void recoverRoundAdmission(),60000).unref();
   if (process.send) process.send({ url, wallet: ME });
 });
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => { try { relay.close(); } catch {} server.close(); process.exit(0); });

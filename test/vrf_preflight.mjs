@@ -78,3 +78,9 @@ test('rejects malformed finalized block',async()=>{
  const f=fixture();f.client.getBlock=async()=>({number:null,hash:null});
  assert.equal((await f.run()).configurationValid,false);assert.equal(f.calls.length,0);
 });
+
+test('v3 checks round bounds as well as the existing VRF configuration',async()=>{
+ const f=fixture({[`${market}:admissionVersion`]:3n,[`${controller}:ROUND_BLOCKS`]:20n,[`${controller}:MAX_ROUND_TASKS`]:8});
+ const result=await f.run();assert.equal(result.configurationValid,true);assert.equal(result.config.ROUND_BLOCKS,'20');assert.equal(result.admissionVersion,3);
+ assert.equal((await fixture({[`${market}:admissionVersion`]:3n,[`${controller}:ROUND_BLOCKS`]:0n,[`${controller}:MAX_ROUND_TASKS`]:8}).run()).configurationValid,false);
+});

@@ -6,3 +6,4 @@ test('safe close needs a confirmed drained terminal snapshot',()=>{assert.equal(
 test('missing state never invites closing while reconciling',()=>{assert.equal(sessionStatus(null).safe,false);assert.match(sessionStatus(null).label,/Checking/);});
 test('inconclusive stays distinct from successful scientific output',()=>{const s=sessionStatus({...closed,phase:'inconclusive'});assert(s.safe);assert.match(s.label,/Inconclusive/);assert.match(s.detail,/not accepted/);});
 test('all online verification phases remain unfinished',()=>{for(const phase of ['reconciling','computing','committed','waiting for peer','verifying','awaiting finalization'])assert.equal(sessionStatus({...closed,phase}).safe,false);});
+test('round status never permits closure with a remaining reservation',()=>{const result=sessionStatus({phase:'idle',safeToClose:true,confirmedBlock:20n,pendingTasks:['task'],ready:false});assert.equal(result.safe,false);});

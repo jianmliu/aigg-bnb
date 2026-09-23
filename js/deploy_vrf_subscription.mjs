@@ -23,7 +23,8 @@ export async function deployVrfSubscription({c,cfg,journal}) {
  assert([97,31337].includes(cfg.chainId),'unsupported chain');
  assert.equal(await c.pub.getChainId(),cfg.chainId,'wrong chain');
  assert(same(c.account.address,cfg.owner),'wrong owner');
- assert.equal(cfg.protocol,'synchronous-vrf-v1');
+ assert(['synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(cfg.protocol),'unsupported VRF mode');
+ if(cfg.protocol==='synchronous-vrf-rounds-v1'){assert(Number.isSafeInteger(cfg.rounds?.roundBlocks)&&cfg.rounds.roundBlocks>0,'round blocks');assert(Number.isInteger(cfg.rounds?.maxRoundTasks)&&cfg.rounds.maxRoundTasks>0&&cfg.rounds.maxRoundTasks<=64,'round task bound');}
  assert.equal(cfg.vrf.nativePayment,true,'native payment required');
  assert(Number.isInteger(cfg.vrf.requestConfirmations)&&cfg.vrf.requestConfirmations>=3&&cfg.vrf.requestConfirmations<=200,'confirmations');
  assert(Number.isInteger(cfg.vrf.callbackGasLimit)&&cfg.vrf.callbackGasLimit>=100000&&cfg.vrf.callbackGasLimit<=2500000,'callback gas');

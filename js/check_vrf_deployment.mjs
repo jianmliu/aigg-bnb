@@ -18,7 +18,7 @@ export const BSC_TESTNET_VRF = Object.freeze({
 const same=(a,b)=>typeof a==='string'&&typeof b==='string'&&a.toLowerCase()===b.toLowerCase();
 const validAddress=a=>typeof a==='string'&&isAddress(a,{strict:false})&&!same(a,zeroAddress);
 function loadAbis(){
- return Object.fromEntries(['VrfSynchronousTaskMarket','VrfAdmission','HostCapacity','InstanceRegistry','SynchronousExecutionDisputes'].map(name=>[
+ return Object.fromEntries(['VrfSynchronousTaskMarket','VrfAdmission','RoundVrfAdmission','HostCapacity','InstanceRegistry','SynchronousExecutionDisputes'].map(name=>[
   name,JSON.parse(fs.readFileSync(new URL(`../contracts/out/${name}.sol/${name}.json`,import.meta.url),'utf8')).abi,
  ]));
 }
@@ -53,14 +53,15 @@ export async function checkVrfDeployment({client,market,chainId,abis}){
   };
   if(!await code(market,'market'))return result;
   const m=name=>read(market,'VrfSynchronousTaskMarket',name);
-  requireCheck(BigInt(await m('admissionVersion'))===2n,'admission-version-not-2');
+  const version=Number(await m('admissionVersion'));result.admissionVersion=version;
+  requireCheck([2,3].includes(version),'unsupported-admission-version');
   requireCheck(BigInt(await m('protocolVersion'))===1n,'protocol-version-not-1');
   if(result.errors.length)return result;
   const controller=await m('admission'),capacity=await m('hostCapacity'),registry=await m('instances'),disputes=await m('disputes');
   result.addresses={market,controller,capacity,registry,disputes};
   for(const [label,address] of Object.entries({controller,capacity,registry,disputes}))await code(address,label);
   if(result.errors.length)return result;
-  const c=name=>read(controller,'VrfAdmission',name);
+  const c=name=>read(controller,version===3?'RoundVrfAdmission':'VrfAdmission',name);
   requireCheck(same(await c('MARKET'),market),'controller-market-mismatch');
   requireCheck(same(await c('instances'),registry),'controller-registry-mismatch');
   requireCheck(same(await read(disputes,'SynchronousExecutionDisputes','market'),market),'disputes-market-mismatch');
@@ -74,6 +75,11 @@ export async function checkVrfDeployment({client,market,chainId,abis}){
    const value=await c(name);config[name]=typeof value==='bigint'?String(value):value;
   }
   config.nativeAdmissionFee=String(await read(controller,'VrfAdmission','admissionFee',[zeroAddress]));
+  if(version===3){
+   config.ROUND_BLOCKS=String(await c('ROUND_BLOCKS'));config.MAX_ROUND_TASKS=Number(await c('MAX_ROUND_TASKS'));
+   requireCheck(BigInt(config.ROUND_BLOCKS)>0n,'invalid-round-blocks');
+   requireCheck(config.MAX_ROUND_TASKS>=1&&config.MAX_ROUND_TASKS<=64,'invalid-round-task-bound');
+  }
   result.config=config;
   requireCheck(same(config.coordinator,BSC_TESTNET_VRF.coordinator),'coordinator-not-approved-bsc-testnet');
   requireCheck(same(config.keyHash,BSC_TESTNET_VRF.keyHash),'key-hash-not-approved-bsc-testnet');

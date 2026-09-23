@@ -7,24 +7,25 @@ import {getContractAddress,stringToHex,parseEther,hexToBytes,toHex} from 'viem';
 import {withBase,withTerms} from '../contracts/lib/aigg-porw/web/porw-browser/mep.js';
 import * as H from './harness.mjs';
 import {launchInventory} from '../js/launch_founder_inventory.mjs';
-const vrf=process.env.TEST_VRF_DEPLOY==='1',synchronous=vrf||process.env.TEST_SYNCHRONOUS_DEPLOY==='1';
+const rounds=process.env.TEST_VRF_ROUNDS==='1',vrf=rounds||process.env.TEST_VRF_DEPLOY==='1',synchronous=vrf||process.env.TEST_SYNCHRONOUS_DEPLOY==='1';
 const baseEnrollment=synchronous||process.env.TEST_BASE_ENROLMENT==='1';
 const legacyJournal=fileURLToPath(new URL('../deployments/founder-inventory-97.json',import.meta.url));
 const rejected=spawnSync(process.execPath,[fileURLToPath(new URL('../js/launch_founder_inventory.mjs',import.meta.url)),'--broadcast','--base-enrollment','--journal',legacyJournal],{encoding:'utf8',env:{...process.env,PORW_DEPLOYER_KEY:''}});
 assert.notEqual(rejected.status,0);
 assert.match(rejected.stderr,/base-enrollment launch requires a separate journal/);
 H.forgeBuild();
-const anvil=await H.startAnvil(synchronous?8599:8579), journal=synchronous?'/tmp/aigg-sync-inventory-launch-anvil.json':'/tmp/aigg-inventory-launch-anvil.json';
+const anvil=await H.startAnvil(Number(process.env.TEST_INVENTORY_PORT||(synchronous?8599:8579))), journal=synchronous?'/tmp/aigg-sync-inventory-launch-anvil.json':'/tmp/aigg-inventory-launch-anvil.json';
 try {
  fs.rmSync(journal,{force:true});
  const dep=await H.deployMesh(anvil.rpc),c=H.clientsFor(dep,H.KEYS[0]);
+ const feeLibrary=rounds?await H.create(c,'RoundFeeAccounting'):null;
  let coordinator;if(vrf)coordinator=await H.create(c,'SubscriptionCoordinator');
- if(synchronous)dep.addresses.market=await H.create(c,vrf?'VrfSynchronousTaskMarket':'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,40n,40n,3000n,...(vrf?[{coordinator,keyHash:'0x'+'11'.repeat(32),subId:1n,requestConfirmations:3,callbackGasLimit:200000,nativePayment:true,waitBlocks:200n,activationBlocks:100n,readyTTL:400n,feeRecipient:c.account.address},['0x'+'00'.repeat(20)],[1000n]]:[])]);
+ if(synchronous)dep.addresses.market=await H.create(c,rounds?'RoundVrfSynchronousTaskMarket':vrf?'VrfSynchronousTaskMarket':'SynchronousTaskMarket',[dep.addresses.meps,dep.addresses.instances,dep.addresses.claims,40n,40n,3000n,...(vrf?[{coordinator,keyHash:'0x'+'11'.repeat(32),subId:1n,requestConfirmations:3,callbackGasLimit:200000,nativePayment:true,waitBlocks:200n,activationBlocks:100n,readyTTL:400n,feeRecipient:c.account.address},['0x'+'00'.repeat(20)],[1000n],...(rounds?[20n,8]:[])]:[])],rounds?{RoundFeeAccounting:feeLibrary}:{});
  for(const unit of [7209,18022])await H.sendTo(c,dep.addresses.meps,'MEPRegistry','declareLifKind',[unit]);
  const treasury=await H.create(c,'TreasuryRouter',[c.account.address,c.account.address]);
  const whitelist=await H.create(c,'CollectionWhitelist',[c.account.address]);
  const cfg={chainId:31337,treasury,whitelist,meps:dep.addresses.meps,instances:dep.addresses.instances,market:dep.addresses.market,owner:c.account.address};
- if(synchronous)cfg.protocol=vrf?'synchronous-vrf-v1':'synchronous-v1';
+ if(synchronous)cfg.protocol=rounds?'synchronous-vrf-rounds-v1':vrf?'synchronous-vrf-v1':'synchronous-v1';
  // An outsider pre-registers the exact future terms with a wrong location hint.
  const ps=JSON.parse(fs.readFileSync(new URL('../flybnb/genesis/founder-profiles-v2.json',import.meta.url)));
  if(baseEnrollment){
@@ -66,7 +67,7 @@ try {
  const result=await launchInventory({c,cfg,journal});
  assert(result.transactions['test-adoption'].status==='success');
  assert.equal(result.addresses.collection.toLowerCase(),expected.toLowerCase());
- assert.equal(result.verifiedCount,200);if(vrf)assert.equal(result.verification.mode,'synchronous-vrf-v1');
+ assert.equal(result.verifiedCount,200);if(vrf)assert.equal(result.verification.mode,rounds?'synchronous-vrf-rounds-v1':'synchronous-vrf-v1');
  // Activation was mined but its success flag was not saved; a public adoption follows.
  const interrupted=JSON.parse(fs.readFileSync(journal));interrupted.transactions['activate-sale'].status='submitted';fs.writeFileSync(journal,JSON.stringify(interrupted));
  await H.sendTo(outsider,result.addresses.sale,'TreasuryInventorySale','buy',[2n,parseEther('0.01'),1n,BigInt(result.expiresAt)],parseEther('0.01'));

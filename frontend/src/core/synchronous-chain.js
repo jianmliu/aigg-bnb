@@ -1,4 +1,4 @@
-import {VrfAdmissionAbi,normalizeAdmission} from '../../../relayer/vrf-admission.mjs';
+import {VrfAdmissionAbi,normalizeAdmission,normalizeRoundAdmission} from '../../../relayer/vrf-admission.mjs';
 import {unsupportedGetter} from '../../../relayer/enrollment.mjs';
 import {createPublicClient,http,parseAbi,encodeFunctionData,keccak256} from 'viem';
 export const SynchronousMarketAbi=parseAbi([
@@ -20,6 +20,8 @@ export const SynchronousMarketAbi=parseAbi([
  'function ready(address) view returns (bool)',
  'function readinessNonce(address) view returns (uint256)',
  'function pendingTask(address) view returns (bytes32)',
+ 'function pendingTasks(address) view returns (bytes32[])',
+ 'function hasPendingTask(bytes32,address) view returns (bool)',
  'function commitments(bytes32,address) view returns (bytes32)',
 ]);
 export const SynchronousDisputeAbi=parseAbi([
@@ -40,8 +42,8 @@ export const SynchronousDisputeAbi=parseAbi([
 
 // Finalized snapshots are read from the configured RPC, never the sponsored transport.
 export function createSynchronousChain({deployment,instance,client}) {
- if(!['synchronous-v1','synchronous-vrf-v1'].includes(deployment.verification?.mode))throw Error('unsupported synchronous capability');
- const vrf=deployment.verification.mode==='synchronous-vrf-v1';
+ if(!['synchronous-v1','synchronous-vrf-v1','synchronous-vrf-rounds-v1'].includes(deployment.verification?.mode))throw Error('unsupported synchronous capability');
+ const rounds=deployment.verification.mode==='synchronous-vrf-rounds-v1',vrf=rounds||deployment.verification.mode==='synchronous-vrf-v1';
  client ||= createPublicClient({transport:http(deployment.rpc,{retryCount:1,timeout:15000})});
  const market=deployment.addresses.market,disputes=deployment.addresses.disputes;
  const read=(functionName,args=[],blockNumber,address=market,abi=SynchronousMarketAbi)=>client.readContract({address,abi,functionName,args,...(blockNumber!==undefined?{blockNumber}:{})});
@@ -51,8 +53,20 @@ export function createSynchronousChain({deployment,instance,client}) {
   if(block.number===null||!block.hash)throw Error('finalized chain snapshot unavailable');
   if(Number(await read('protocolVersion',[],block.number))!==1)throw Error('synchronous protocol version mismatch');
   let version=1;try{const v=await read('admissionVersion',[],block.number);if(v!==undefined)version=Number(v);}catch(error){if(!unsupportedGetter(error))throw error;}
-  if(version!==(vrf?2:1))throw Error('synchronous admission version mismatch');
+  if(version!==(rounds?3:vrf?2:1))throw Error('synchronous admission version mismatch');
   return block;
+ };
+ const roundPending=async()=>{
+  const block=await finalized(),b=block.number;
+  const [taskIds,ready,nonce,controller]=await Promise.all([read('pendingTasks',[instance],b),read('ready',[instance],b),read('readinessNonce',[instance],b),read('admission',[],b)]);
+  if(taskIds.length>64)throw Error('round pending task bound exceeded');
+  const tasks=await Promise.all(taskIds.map(async taskId=>{
+   const [session,info,roundId]=await Promise.all([read('sessionState',[taskId],b),read('requestInfo',[taskId],b,controller,VrfAdmissionAbi),read('taskRound',[taskId],b,controller,VrfAdmissionAbi)]);
+   const raw=await read('roundInfo',[roundId],b,controller,VrfAdmissionAbi);
+   return {taskId,phase:Number(session[0]),commitDeadline:session[1],revealDeadline:session[2],totalDeadline:session[3],admission:normalizeRoundAdmission(normalizeAdmission(info),roundId,raw)};
+  }));
+  const check=await client.getBlock({blockNumber:b});if(check.hash!==block.hash)throw Error('chain reorganized during pending reconciliation');
+  return {taskId:taskIds[0],taskIds,tasks,ready,nonce,blockNumber:b,confirmed:true};
  };
  const pending=async()=>{const block=await finalized();const [taskId,ready,nonce]=await Promise.all([read('pendingTask',[instance],block.number),read('ready',[instance],block.number),read('readinessNonce',[instance],block.number)]);let phase,admission;
   if(vrf&&!/^0x0{64}$/.test(taskId)){
@@ -64,7 +78,7 @@ export function createSynchronousChain({deployment,instance,client}) {
   return {taskId,ready,nonce,phase,admission,blockNumber:block.number,confirmed:true};};
  const snapshot=async record=>{
   const block=await finalized(),b=block.number,id=record.taskId;
-  const [session,pendingTask,ready,commitment,revealed,executors,readinessNonce]=await Promise.all([read('sessionState',[id],b),read('pendingTask',[instance],b),read('ready',[instance],b),read('commitments',[id,instance],b),read('submitted',[id,instance],b),read('executors',[id],b),read('readinessNonce',[instance],b)]);
+  const [session,pendingTask,ready,commitment,revealed,executors,readinessNonce]=await Promise.all([read('sessionState',[id],b),rounds?read('hasPendingTask',[id,instance],b).then(found=>found?id:'0x'+'00'.repeat(32)):read('pendingTask',[instance],b),read('ready',[instance],b),read('commitments',[id,instance],b),read('submitted',[id,instance],b),read('executors',[id],b),read('readinessNonce',[instance],b)]);
   if(executors.length!==2||!executors.some(x=>x.toLowerCase()===instance.toLowerCase()))throw Error('synchronous assignment mismatch');
   const state={confirmed:true,blockNumber:b,chainId:deployment.chainId,market,instance,taskId:id,state:Number(session[0]),commitDeadline:session[1],revealDeadline:session[2],totalDeadline:session[3],pendingTask,ready,readinessNonce,committed:!/^0x0{64}$/.test(commitment),revealed};
   if(state.state===3){
@@ -75,7 +89,7 @@ export function createSynchronousChain({deployment,instance,client}) {
   const check=await client.getBlock({blockNumber:b});if(check.hash!==block.hash)throw Error('chain reorganized during synchronous reconciliation');
   return state;
  };
- return {client,read,pending,snapshot,hashes:{
+ return {client,read,pending:rounds?roundPending:pending,snapshot,hashes:{
   result:r=>read('resultDigest',[r.taskId,instance,r.result.execDigest,r.result.execRoot]),
   commitment:r=>read('resultCommitment',[r.taskId,instance,r.result.execDigest,r.result.execRoot,r.salt]),
   commit:r=>read('commitmentDigest',[r.taskId,instance,r.commitment]),
